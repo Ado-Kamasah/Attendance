@@ -1,0 +1,7 @@
+/* Custom CSS can go here */
+
+/* Removing vite default centered properties to allow 100vw layout */
+#app {
+  width: 100%;
+  height: 100%;
+}
