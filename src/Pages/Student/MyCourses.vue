@@ -68,11 +68,8 @@
             </div>
 
             <div class="card-actions">
-              <button class="action-btn outline-btn" @click="$emit('navigate', '/attendance')">
+              <button class="action-btn solid-btn" :style="{ backgroundColor: course.color }" @click="$emit('navigate', '/attendance')">
                 Mark Present
-              </button>
-              <button class="action-btn solid-btn" :style="{ backgroundColor: course.color }">
-                View Portal
               </button>
             </div>
           </div>
