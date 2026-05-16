@@ -173,7 +173,7 @@ import { masterSchedule } from '../../store.js';
 const levels = ['100', '200', '300', '400'];
 const modes = ['Regular', 'Weekend'];
 const regularDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const weekendDays = ['Saturday', 'Sunday'];
+const weekendDays = ['Friday', 'Saturday', 'Sunday'];
 
 const selectedLevel = ref('100');
 const selectedMode = ref('Regular');
@@ -183,7 +183,7 @@ const isModalOpen = ref(false);
 const activeDays = computed(() => selectedMode.value === 'Regular' ? regularDays : weekendDays);
 
 watch(selectedMode, (newMode) => {
-  selectedDay.value = newMode === 'Regular' ? 'Monday' : 'Saturday';
+  selectedDay.value = newMode === 'Regular' ? 'Monday' : 'Friday';
 });
 
 const mockData = masterSchedule;

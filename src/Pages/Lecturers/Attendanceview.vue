@@ -144,7 +144,7 @@ const startLiveSession = () => {
     isActive: true,
     code: 'CSC 101',
     name: 'Introduction to Computer Science',
-    lecturer: 'Dr. Alan Turing',
+    lecturer: 'Dr. Kwame Nkrumah',
     room: 'Hall A',
     pin: code,
     maxStudents: selectedStudents.value.length,
@@ -158,7 +158,7 @@ const startLiveSession = () => {
   systemAuditLogs.value.unshift({
     id: Date.now(),
     timestamp: new Date().toLocaleTimeString(),
-    user: 'Dr. Alan Turing',
+    user: 'Dr. Kwame Nkrumah',
     role: 'Lecturer',
     action: 'Live Session Started',
     details: `Started live session for CSC 101 with ${selectedStudents.value.length} expected students.`
@@ -172,7 +172,7 @@ const stopLiveSession = () => {
   systemAuditLogs.value.unshift({
     id: Date.now(),
     timestamp: new Date().toLocaleTimeString(),
-    user: 'Dr. Alan Turing',
+    user: 'Dr. Kwame Nkrumah',
     role: 'Lecturer',
     action: 'Live Session Ended',
     details: 'Ended live session for CSC 101.'
@@ -185,7 +185,7 @@ watch(lecturerStatus, (newVal) => {
     systemAuditLogs.value.unshift({
       id: Date.now(),
       timestamp: new Date().toLocaleTimeString(),
-      user: 'Dr. Alan Turing',
+      user: 'Dr. Kwame Nkrumah',
       role: 'Lecturer',
       action: 'Lecturer Attendance Marked',
       details: `Marked self as ${newVal} for CSC 101 session.`

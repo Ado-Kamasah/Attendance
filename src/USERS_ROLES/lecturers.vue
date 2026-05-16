@@ -49,7 +49,7 @@
             <img src="https://ui-avatars.com/api/?name=Dr+Smith&background=10b981&color=fff" alt="User Avatar" />
           </div>
           <div class="user-info" v-if="!isCollapsed">
-            <p class="user-name">Dr. Smith</p>
+            <p class="user-name">Dr. Mensah</p>
             <p class="user-role">Senior Lecturer</p>
           </div>
         </div>
