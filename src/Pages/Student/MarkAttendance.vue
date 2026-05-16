@@ -45,10 +45,10 @@
               <p>Please enter the 6-digit code provided by your instructor.</p>
               
               <div class="code-inputs">
-                <input type="text" maxlength="1" class="pin-box" v-for="n in 6" :key="n" />
+                <input type="text" maxlength="1" class="pin-box" v-for="(n, idx) in 6" :key="n" v-model="enteredPins[idx]" @input="focusNext(idx)" />
               </div>
 
-              <button class="primary-btn submit-btn">
+              <button class="primary-btn submit-btn" @click="verifyAttendance">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                   <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -93,15 +93,63 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { liveAttendanceSession, systemAuditLogs, currentUserId } from '../../store';
 
 const emit = defineEmits(['navigate']);
 
-// Leaving activeClass as null to trigger 0-state
-const activeClass = ref(null); 
+const activeClass = computed(() => {
+  return liveAttendanceSession.value.isActive ? liveAttendanceSession.value : null;
+});
 
-// Empty array for zero-state
 const attendanceHistory = ref([]);
+const enteredPins = ref(['', '', '', '', '', '']);
+
+const focusNext = (idx) => {
+  if (enteredPins.value[idx] && idx < 5) {
+    const inputs = document.querySelectorAll('.pin-box');
+    if (inputs[idx + 1]) inputs[idx + 1].focus();
+  }
+};
+
+const verifyAttendance = () => {
+  if (!activeClass.value) return;
+  const enteredCode = enteredPins.value.join('');
+  
+  if (enteredCode !== activeClass.value.pin) {
+    alert('Invalid attendance code. Please check and try again.');
+    return;
+  }
+  
+  if (activeClass.value.currentStudents >= activeClass.value.maxStudents) {
+    alert('Attendance failed: The maximum number of expected students for this class has already been reached. Only students physically present can mark attendance.');
+    return;
+  }
+  
+  // Success
+  liveAttendanceSession.value.currentStudents++;
+  
+  attendanceHistory.value.unshift({
+    id: Date.now(),
+    course: activeClass.value.code + ' - ' + activeClass.value.name,
+    date: new Date().toLocaleDateString(),
+    time: new Date().toLocaleTimeString(),
+    status: 'present',
+    statusText: 'Present'
+  });
+  
+  systemAuditLogs.value.unshift({
+    id: Date.now() + 1,
+    timestamp: new Date().toLocaleTimeString(),
+    user: currentUserId.value || 'Student',
+    role: 'Student',
+    action: 'Student Attendance Marked',
+    details: `Successfully marked present for ${activeClass.value.code} via PIN.`
+  });
+  
+  alert('Attendance marked successfully!');
+  enteredPins.value = ['', '', '', '', '', ''];
+};
 </script>
 
 <style scoped>

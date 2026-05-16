@@ -43,3 +43,18 @@ export const registerSelectedCourses = (selectedCoursesArr) => {
     }
   });
 };
+
+export const liveAttendanceSession = ref({
+  isActive: false,
+  code: '',
+  name: '',
+  lecturer: '',
+  room: '',
+  pin: '',
+  maxStudents: 0,
+  currentStudents: 0
+});
+
+export const systemAuditLogs = ref([
+  { id: 1, timestamp: new Date().toLocaleTimeString(), user: 'System', role: 'System', action: 'System Initialization', details: 'Attendance system started successfully.' }
+]);

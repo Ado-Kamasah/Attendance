@@ -49,6 +49,9 @@
              <div class="info-row">
                <svg viewBox="0 0 24 24" fill="none" class="icon" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                <span>{{ course.day }} • {{ course.time }}</span>
+               <button class="icon-btn edit-btn" @click="openEditModal(course)" title="Reschedule Class">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+               </button>
              </div>
              <div class="info-row">
                <svg viewBox="0 0 24 24" fill="none" class="icon" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -74,6 +77,37 @@
               View Class List
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for Reschedule -->
+    <div v-if="editingCourse" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Reschedule Class</h2>
+        <p>Update the schedule for {{ editingCourse.code }} - {{ editingCourse.name }}</p>
+        
+        <div class="form-group">
+          <label>Day of Week</label>
+          <select v-model="editForm.day" class="modern-input">
+            <option>Mondays</option>
+            <option>Tuesdays</option>
+            <option>Wednesdays</option>
+            <option>Thursdays</option>
+            <option>Fridays</option>
+            <option>Saturdays</option>
+            <option>Sundays</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Time</label>
+          <input type="text" v-model="editForm.time" class="modern-input" placeholder="e.g. 10:00 AM - 12:00 PM" />
+        </div>
+
+        <div class="modal-actions">
+          <button class="action-btn outline-btn" @click="cancelEdit">Cancel</button>
+          <button class="action-btn primary-btn" @click="saveEdit">Save Schedule</button>
         </div>
       </div>
     </div>
@@ -121,6 +155,27 @@ const lecturerCourses = ref([
     color: '#ec4899'
   }
 ]);
+
+const editingCourse = ref(null);
+const editForm = ref({ day: '', time: '' });
+
+const openEditModal = (course) => {
+  editingCourse.value = course;
+  editForm.value = { day: course.day, time: course.time };
+};
+
+const cancelEdit = () => {
+  editingCourse.value = null;
+};
+
+const saveEdit = () => {
+  if (editingCourse.value) {
+    editingCourse.value.day = editForm.value.day;
+    editingCourse.value.time = editForm.value.time;
+    editingCourse.value = null;
+    alert('Class schedule successfully updated!');
+  }
+};
 </script>
 
 <style scoped>
@@ -393,7 +448,119 @@ const lecturerCourses = ref([
   box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15);
 }
 
-/* Responsiveness */
+
+
+/* Reschedule Buttons */
+.icon-btn {
+  background: none;
+  border: none;
+  color: #6366f1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.icon-btn:hover {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-content h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.modal-content p {
+  margin: 0 0 1.5rem 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.modern-input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  font-size: 0.95rem;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+  width: 100%;
+}
+
+.modern-input:focus {
+  background-color: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.primary-btn {
+  background-color: #10b981;
+  color: white;
+  border: none;
+}
+
+.primary-btn:hover {
+  background-color: #059669;
+}
+
 @media (max-width: 768px) {
   .page-header {
     flex-direction: column;

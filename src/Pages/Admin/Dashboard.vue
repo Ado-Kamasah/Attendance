@@ -61,27 +61,25 @@
       </div>
 
       <div class="side-panel">
-
-        <div class="attendance-summary">
+        <div class="attendance-summary audit-panel">
           <div class="panel-header">
-            <h2>System Health</h2>
+            <h2>Live Audit Logs</h2>
           </div>
-          <div class="health-content">
-            <div class="health-item">
-              <div class="health-info">
-                <span>Database Status</span>
-                <span class="status-dot healthy"></span>
+          <div class="audit-content">
+            <div class="audit-item" v-for="log in systemAuditLogs.slice(0, 5)" :key="log.id">
+              <div class="audit-header">
+                <span class="audit-action">{{ log.action }}</span>
+                <span class="audit-time">{{ log.timestamp }}</span>
               </div>
-              <p class="health-msg">All systems operational</p>
-            </div>
-            <div class="health-item">
-              <div class="health-info">
-                <span>API Latency</span>
-                <span class="status-dot healthy"></span>
+              <p class="audit-details">{{ log.details }}</p>
+              <div class="audit-user">
+                <span class="user-role" :class="log.role.toLowerCase()">{{ log.role }}</span>
+                <span class="user-name">{{ log.user }}</span>
               </div>
-              <p class="health-msg">42ms average response</p>
             </div>
+            <div v-if="systemAuditLogs.length === 0" class="empty-msg">No audit logs available.</div>
           </div>
+          <button class="view-all-btn full-width">View Full Audit Trail</button>
         </div>
       </div>
     </div>
@@ -90,7 +88,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { availableGlobalCourses, masterSchedule } from '../../store.js';
+import { availableGlobalCourses, masterSchedule, systemAuditLogs } from '../../store.js';
 
 const currentDate = new Date().toLocaleDateString('en-US', {
   weekday: 'long',
@@ -451,45 +449,104 @@ const todaySchedule = computed(() => {
 }
 
 
-/* System Health */
-.health-content {
+/* Live Audit Logs */
+.audit-panel {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
 }
 
-.health-item {
+.audit-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.audit-item {
   background-color: #f8fafc;
   padding: 1rem;
   border-radius: 10px;
-  border: 1px solid #f1f5f9;
+  border-left: 3px solid #6366f1;
 }
 
-.health-info {
+.audit-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #1e293b;
+  margin-bottom: 0.25rem;
 }
 
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.audit-action {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0f172a;
 }
 
-.status-dot.healthy {
-  background-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+.audit-time {
+  font-size: 0.75rem;
+  color: #94a3b8;
 }
 
-.health-msg {
-  margin: 0;
+.audit-details {
+  margin: 0 0 0.5rem 0;
   font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.audit-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-role {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.user-role.system {
+  background-color: #f1f5f9;
   color: #64748b;
+}
+
+.user-role.lecturer {
+  background-color: #e0e7ff;
+  color: #4338ca;
+}
+
+.user-role.student {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.user-name {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.empty-msg {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.full-width {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  margin-top: auto;
+}
+
+.full-width:hover {
+  background-color: #f1f5f9;
+  text-decoration: none;
 }
 
 /* Dashboard Responsiveness */
