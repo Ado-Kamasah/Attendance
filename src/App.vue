@@ -19,7 +19,7 @@ import LecturerDashboard from './Pages/Lecturers/lecturerDashboard.vue';
 import LecturerCourses from './Pages/Lecturers/MyCourses.vue';
 import AttendanceView from './Pages/Lecturers/Attendanceview.vue';
 import { onMounted, onUnmounted } from 'vue';
-import { currentUserId, currentUserProgram } from './store.js';
+import { currentUserId, currentUserProgram, registerSelectedCourses, availableGlobalCourses, studentEnrolledCourses } from './store.js';
 
 const isAuthenticated = ref(false);
 const activeAuthView = ref('login'); // 'login' or 'register'
@@ -61,8 +61,24 @@ const handleLoginSuccess = (userPayload) => {
     const idUpper = currentUserId.value.toUpperCase();
     if (idUpper.startsWith('BSC/CSM/')) {
       currentUserProgram.value = 'Computer Science';
+      
+      // Auto-enroll in CS courses for testing convenience
+      if (studentEnrolledCourses.value.length === 0) {
+        const csCourses = availableGlobalCourses.value.filter(
+          c => c.program === 'Computer Science' && (c.code === 'CSC 101' || c.code === 'MTH 102')
+        );
+        registerSelectedCourses(csCourses);
+      }
     } else if (idUpper.startsWith('BBA/')) {
       currentUserProgram.value = 'Business';
+      
+      // Auto-enroll in Business courses for testing convenience
+      if (studentEnrolledCourses.value.length === 0) {
+        const bizCourses = availableGlobalCourses.value.filter(
+          c => c.program === 'Business' && (c.code === 'BBA 101' || c.code === 'MKT 201')
+        );
+        registerSelectedCourses(bizCourses);
+      }
     } else {
       currentUserProgram.value = 'Unknown';
     }

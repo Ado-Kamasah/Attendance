@@ -42,10 +42,10 @@
 
             <div class="verification-box">
               <h4>Enter Attendance Code</h4>
-              <p>Please enter the 6-digit code provided by your instructor.</p>
+              <p>Please enter the 4-digit code provided by your instructor.</p>
               
               <div class="code-inputs">
-                <input type="text" maxlength="1" class="pin-box" v-for="(n, idx) in 6" :key="n" v-model="enteredPins[idx]" @input="focusNext(idx)" />
+                <input type="text" maxlength="1" class="pin-box" v-for="(n, idx) in 4" :key="n" v-model="enteredPins[idx]" @input="focusNext(idx)" />
               </div>
 
               <button class="primary-btn submit-btn" @click="verifyAttendance">
@@ -103,10 +103,10 @@ const activeClass = computed(() => {
 });
 
 const attendanceHistory = ref([]);
-const enteredPins = ref(['', '', '', '', '', '']);
+const enteredPins = ref(['', '', '', '']);
 
 const focusNext = (idx) => {
-  if (enteredPins.value[idx] && idx < 5) {
+  if (enteredPins.value[idx] && idx < 3) {
     const inputs = document.querySelectorAll('.pin-box');
     if (inputs[idx + 1]) inputs[idx + 1].focus();
   }
@@ -148,7 +148,7 @@ const verifyAttendance = () => {
   });
   
   alert('Attendance marked successfully!');
-  enteredPins.value = ['', '', '', '', '', ''];
+  enteredPins.value = ['', '', '', ''];
 };
 </script>
 

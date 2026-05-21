@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  LECTURER
+  STUDENT
+}
+
+model User {
+  id           String       @id
+  email        String       @unique
+  passwordHash String
+  name         String
+  role         Role
+  program      String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  enrollments  Enrollment[]
+  sessions     Session[]    @relation("LecturerSessions")
+  attendances  Attendance[]
+}
+
+model Course {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  name        String
+  credits     Int
+  program     String
+  level       String
+  status      String       @default("active")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  schedules   Schedule[]
+  enrollments Enrollment[]
+  sessions    Session[]
+}
+
+model Schedule {
+  id          String   @id @default(uuid())
+  courseId    String
+  level       String
+  mode        String
+  day         String
+  startTime   String
+  endTime     String
+  venue       String
+  lecturer    String   
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course   @relation(fields: [courseId], references: [id])
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  studentId String
+  courseId  String
+  createdAt DateTime @default(now())
+
+  student   User     @relation(fields: [studentId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([studentId, courseId])
+}
+
+model Session {
+  id          String       @id @default(uuid())
+  courseId    String
+  lecturerId  String
+  date        DateTime     @default(now())
+  pin         String       @unique
+  maxStudents Int
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  course      Course       @relation(fields: [courseId], references: [id])
+  lecturer    User         @relation("LecturerSessions", fields: [lecturerId], references: [id])
+  attendances Attendance[]
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  sessionId String
+  studentId String
+  timestamp DateTime @default(now())
+  status    String   @default("present")
+
+  session   Session  @relation(fields: [sessionId], references: [id])
+  student   User     @relation(fields: [studentId], references: [id])
+
+  @@unique([sessionId, studentId])
+}
