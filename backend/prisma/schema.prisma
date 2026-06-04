@@ -98,3 +98,9 @@ model Attendance {
 
   @@unique([sessionId, studentId])
 }
+
+model Faculty {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}

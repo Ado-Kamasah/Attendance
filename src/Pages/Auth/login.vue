@@ -28,9 +28,9 @@
               </svg>
             </div>
             <div class="input-content">
-              <label for="loginId">{{ role === 'Student' ? 'Student ID' : 'Email Address' }}</label>
+              <label for="loginId">{{ role === 'Admin' ? 'Email Address' : 'ID / Email' }}</label>
               <input 
-                :type="role === 'Student' ? 'text' : 'email'" 
+                type="text" 
                 id="loginId" 
                 v-model="loginId" 
                 @focus="isEmailFocused = true" 

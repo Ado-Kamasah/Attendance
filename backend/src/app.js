@@ -8,6 +8,7 @@ import courseRoutes from './routes/courses.js';
 import scheduleRoutes from './routes/schedules.js';
 import sessionRoutes from './routes/sessions.js';
 import attendanceRoutes from './routes/attendance.js';
+import facultyRoutes from './routes/facultyRoutes.js';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/faculties', facultyRoutes);
 
 // 404 Route Not Found
 app.use((req, res) => {

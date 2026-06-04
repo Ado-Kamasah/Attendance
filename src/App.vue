@@ -12,6 +12,7 @@ import MyCourses from './Pages/Student/MyCourses.vue';
 import MarkAttendance from './Pages/Student/MarkAttendance.vue';
 import Schedule from './Pages/Admin/Schedule.vue';
 import SemesterSetup from './Pages/Admin/SemesterSetup.vue';
+import Faculties from './Pages/Admin/Faculties.vue';
 import AdminSidebar from './USERS_ROLES/admin.vue';
 import LecturerSidebar from './USERS_ROLES/lecturers.vue';
 import StudentSidebar from './USERS_ROLES/students.vue';
@@ -138,6 +139,7 @@ const handleRegisterSuccess = (userPayload) => {
         <AttendanceView v-else-if="currentRoute === '/attendance-view'" @navigate="handleNavigationEvent" />
         <Schedule v-else-if="currentRoute === '/schedule'" />
         <SemesterSetup v-else-if="currentRoute === '/semestersetup'" />
+        <Faculties v-else-if="currentRoute === '/faculties'" />
         <div v-else class="content-placeholder">
           <h2>Page not implemented yet</h2>
           <p>Navigated to {{ currentRoute }}</p>

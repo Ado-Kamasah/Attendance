@@ -76,6 +76,21 @@
               </div>
             </div>
 
+            <!-- Faculty / Program -->
+            <div class="input-group">
+              <label for="program">Faculty / Program</label>
+              <div class="input-wrapper">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                  <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                </svg>
+                <select id="program" v-model="form.program" required>
+                  <option value="" disabled>Select your faculty/program</option>
+                  <option v-for="faculty in faculties" :key="faculty.id" :value="faculty.name">{{ faculty.name }}</option>
+                </select>
+              </div>
+            </div>
+
             <!-- Password -->
             <div class="input-group">
               <label for="password">Password</label>
@@ -163,18 +178,29 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import api from '../../api.js';
 
 const showPassword = ref(false);
 const isLoading = ref(false);
 const errorMsg = ref('');
+const faculties = ref([]);
+
+onMounted(async () => {
+  try {
+    const res = await api.get('/faculties');
+    faculties.value = res.data;
+  } catch (err) {
+    console.error('Failed to load faculties', err);
+  }
+});
 
 const form = reactive({
   fullName: '',
   email: '',
   role: 'student',
   idNumber: '',
+  program: '',
   password: ''
 });
 
@@ -190,6 +216,7 @@ const handleRegister = async () => {
       email: form.email,
       role: form.role,
       idNumber: form.idNumber,
+      program: form.program,
       password: form.password
     });
     
@@ -304,7 +331,8 @@ const handleRegister = async () => {
   pointer-events: none;
 }
 
-.input-wrapper input {
+.input-wrapper input,
+.input-wrapper select {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
   font-size: 0.95rem;
@@ -317,7 +345,13 @@ const handleRegister = async () => {
   box-sizing: border-box;
 }
 
-.input-wrapper input:focus {
+.input-wrapper select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.input-wrapper input:focus,
+.input-wrapper select:focus {
   outline: none;
   border-color: #6366f1;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
