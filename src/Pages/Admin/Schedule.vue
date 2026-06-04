@@ -296,6 +296,10 @@ const saveClass = async () => {
       ...newClass.value
     };
     await api.post('/schedules', payload);
+    
+    // Switch the view to the day we just scheduled
+    selectedDay.value = newClass.value.day;
+    
     await fetchSchedules();
     closeModal();
   } catch (error) {

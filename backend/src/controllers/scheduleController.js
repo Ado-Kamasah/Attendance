@@ -58,6 +58,7 @@ export const getSchedules = async (req, res) => {
           select: {
             code: true,
             name: true,
+            semester: true,
             _count: {
               select: { enrollments: true }
             }
