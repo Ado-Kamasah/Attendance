@@ -24,7 +24,10 @@
         </button>
         <div class="title-wrap">
           <h1 class="page-title">Live Attendance Management</h1>
-          <p class="page-subtitle">{{ courseCode }} - {{ courseName }}</p>
+          <p class="page-subtitle">
+            <span class="semester-tag">{{ courseSemester }}</span> 
+            {{ courseCode }} - {{ courseName }}
+          </p>
         </div>
       </div>
     </div>
@@ -136,6 +139,7 @@ const emit = defineEmits(['navigate']);
 const courseId = ref(localStorage.getItem('activeCourseId') || '');
 const courseCode = ref(localStorage.getItem('activeCourseCode') || 'Unknown Code');
 const courseName = ref(localStorage.getItem('activeCourseName') || 'Unknown Course');
+const courseSemester = ref(localStorage.getItem('activeCourseSemester') || 'Semester 1');
 
 const lecturerStatus = ref(null);
 const enrolledStudents = ref([]);
@@ -338,6 +342,18 @@ onUnmounted(() => {
   font-size: 1rem;
   color: #6366f1;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.semester-tag {
+  background-color: #e0e7ff;
+  color: #4338ca;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
 }
 
 /* Live Session Panel */

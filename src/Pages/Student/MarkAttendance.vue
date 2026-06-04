@@ -35,7 +35,10 @@
           <!-- Active class UI (Hidden by default for initial zero state) -->
           <div v-else class="active-class-ui">
             <div class="course-banner">
-              <span class="course-code">{{ activeClass.code }}</span>
+              <div class="badge-row">
+                <span class="course-code">{{ activeClass.code }}</span>
+                <span class="semester-badge-tag">{{ activeClass.semester }}</span>
+              </div>
               <h3 class="course-name">{{ activeClass.name }}</h3>
               <p class="course-details">{{ activeClass.lecturer }} • {{ activeClass.room }}</p>
             </div>
@@ -114,10 +117,14 @@ onMounted(async () => {
     const matchingSession = activeSessions.find(s => enrolledCourseIds.includes(s.courseId));
     
     if (matchingSession) {
+      const courseMatch = enrolledRes.data.find(item => (item.course?.id || item.id) === matchingSession.courseId);
+      const semester = courseMatch?.course?.semester || courseMatch?.semester || 'Semester 1';
+
       activeClass.value = {
         id: matchingSession.id,
         code: matchingSession.courseCode,
         name: matchingSession.courseName,
+        semester: semester,
         lecturer: matchingSession.lecturerName,
         room: 'Live Session'
       };
@@ -356,6 +363,20 @@ const verifyAttendance = async () => {
   font-size: 0.8rem;
   font-weight: 600;
   display: inline-block;
+}
+
+.course-banner .semester-badge-tag {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-row {
+  display: flex;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 

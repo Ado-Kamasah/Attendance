@@ -25,12 +25,19 @@
       <div class="available-courses-panel">
         <div class="panel-header">
           <h2>Available Courses</h2>
-          <div class="search-box">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" v-model="searchQuery" placeholder="Search course code..." />
+          <div class="controls-row">
+            <select v-model="semesterFilter" class="filter-select">
+              <option value="all">All Semesters</option>
+              <option value="Semester 1">Semester 1</option>
+              <option value="Semester 2">Semester 2</option>
+            </select>
+            <div class="search-box">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" v-model="searchQuery" placeholder="Search code or name..." />
+            </div>
           </div>
         </div>
 
@@ -56,7 +63,10 @@
             </div>
             <div class="course-details">
               <div class="course-head">
-                <span class="course-code">{{ course.code }}</span>
+                <div class="head-left">
+                  <span class="course-code">{{ course.code }}</span>
+                  <span class="semester-tag">{{ course.semester || 'Semester 1' }}</span>
+                </div>
                 <span class="credit-badge">{{ course.credits }} Credits</span>
               </div>
               <h4 class="course-name">{{ course.name }}</h4>
@@ -122,6 +132,7 @@ import { ref, computed, onMounted } from 'vue';
 import api from '../../api.js';
 
 const searchQuery = ref('');
+const semesterFilter = ref('all');
 const maxCredits = 21;
 
 const currentUserProgram = ref('');
@@ -149,6 +160,10 @@ const filteredCourses = computed(() => {
   
   if (currentUserProgram.value && currentUserProgram.value !== 'Unknown') {
     courses = courses.filter(course => course.program === currentUserProgram.value);
+  }
+  
+  if (semesterFilter.value !== 'all') {
+    courses = courses.filter(course => (course.semester || 'Semester 1') === semesterFilter.value);
   }
   
   if (searchQuery.value) {
@@ -297,6 +312,36 @@ const submitRegistration = async () => {
   color: #0f172a;
 }
 
+.controls-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-select {
+  padding: 0.5rem 2rem 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  color: #334155;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 14px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.filter-select:focus {
+  background-color: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
 .search-box {
   position: relative;
   width: 280px;
@@ -437,6 +482,21 @@ const submitRegistration = async () => {
   font-weight: 700;
   color: #0f172a;
   font-size: 0.9rem;
+}
+
+.head-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.semester-tag {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background-color: #e2e8f0;
+  color: #475569;
+  font-weight: 600;
 }
 
 .credit-badge {

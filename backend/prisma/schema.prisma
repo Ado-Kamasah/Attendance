@@ -32,6 +32,7 @@ model Course {
   credits     Int
   program     String
   level       String
+  semester    String       @default("Semester 1")
   status      String       @default("active")
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

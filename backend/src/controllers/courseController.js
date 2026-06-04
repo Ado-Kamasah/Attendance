@@ -5,7 +5,7 @@ import prisma from '../config/db.js';
  */
 export const createCourse = async (req, res) => {
   try {
-    const { code, name, credits, program, level, status } = req.body;
+    const { code, name, credits, program, level, semester, status } = req.body;
 
     if (!code || !name || !credits || !program || !level) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -27,6 +27,7 @@ export const createCourse = async (req, res) => {
         credits: parseInt(credits, 10),
         program: program.trim(),
         level: level.trim(),
+        semester: semester ? semester.trim() : 'Semester 1',
         status: status || 'active'
       }
     });
@@ -43,11 +44,12 @@ export const createCourse = async (req, res) => {
  */
 export const getCourses = async (req, res) => {
   try {
-    const { program, level, status } = req.query;
+    const { program, level, semester, status } = req.query;
 
     const where = {};
     if (program) where.program = program;
     if (level) where.level = level;
+    if (semester) where.semester = semester;
     if (status) where.status = status;
 
     const courses = await prisma.course.findMany({

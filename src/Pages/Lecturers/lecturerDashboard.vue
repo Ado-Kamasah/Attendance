@@ -94,7 +94,7 @@
               </span>
               Mark / Edit Attendance
             </button>
-            <button class="action-btn">
+            <button class="action-btn" @click="$emit('navigate', '/lecturer-reports')">
               <span class="icon-wrap bg-purple">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="20" x2="18" y2="10"></line>

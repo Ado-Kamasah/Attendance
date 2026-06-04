@@ -16,6 +16,15 @@
 
     <div class="filters-panel">
       <div class="filter-section">
+        <span class="filter-label">Semester</span>
+        <div class="pill-group">
+          <button class="filter-pill" :class="{ active: selectedSemester === 'All' }" @click="selectedSemester = 'All'">All</button>
+          <button class="filter-pill" :class="{ active: selectedSemester === 'Semester 1' }" @click="selectedSemester = 'Semester 1'">Sem 1</button>
+          <button class="filter-pill" :class="{ active: selectedSemester === 'Semester 2' }" @click="selectedSemester = 'Semester 2'">Sem 2</button>
+        </div>
+      </div>
+
+      <div class="filter-section">
         <span class="filter-label">Academic Level</span>
         <div class="pill-group">
           <button v-for="level in levels" :key="level" 
@@ -61,6 +70,7 @@
             <div class="class-details">
               <div class="course-header">
                 <span class="course-code">{{ cls.courseCode }}</span>
+                <span class="semester-tag">{{ cls.semester || 'Semester 1' }}</span>
                 <h3 class="course-title">{{ cls.courseTitle }}</h3>
               </div>
               <div class="meta-info">
@@ -179,6 +189,7 @@ const weekendDays = ['Friday', 'Saturday', 'Sunday'];
 
 const selectedLevel = ref('100');
 const selectedMode = ref('Regular');
+const selectedSemester = ref('Semester 1');
 const selectedDay = ref('Monday');
 const isModalOpen = ref(false);
 
@@ -227,11 +238,13 @@ const filteredClasses = computed(() => {
   return schedules.value.filter(c => 
     c.level === selectedLevel.value && 
     c.mode === selectedMode.value && 
-    c.day === selectedDay.value
+    c.day === selectedDay.value &&
+    (selectedSemester.value === 'All' || (c.course?.semester || 'Semester 1') === selectedSemester.value)
   ).map(c => ({
     ...c,
     courseCode: c.course?.code || c.courseCode,
-    courseTitle: c.course?.name || c.courseTitle
+    courseTitle: c.course?.name || c.courseTitle,
+    semester: c.course?.semester || 'Semester 1'
   })).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
 });
 
@@ -239,7 +252,8 @@ const getClassCount = (day) => {
   return schedules.value.filter(c => 
     c.level === selectedLevel.value && 
     c.mode === selectedMode.value && 
-    c.day === day
+    c.day === day &&
+    (selectedSemester.value === 'All' || (c.course?.semester || 'Semester 1') === selectedSemester.value)
   ).length;
 };
 
@@ -623,6 +637,16 @@ const deleteClass = async (id) => {
   font-size: 1.1rem;
   font-weight: 700;
   color: #1e293b;
+}
+
+.semester-tag {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
 }
 
 .meta-info {

@@ -48,6 +48,7 @@
           <tr>
             <th>Course Code</th>
             <th>Course Name</th>
+            <th>Semester</th>
             <th>Level</th>
             <th>Lecturer</th>
             <th>Schedule</th>
@@ -59,6 +60,7 @@
           <tr v-for="course in filteredCourses" :key="course.id" class="table-row">
             <td class="font-semibold text-dark">{{ course.code }}</td>
             <td>{{ course.name }}</td>
+            <td>{{ course.semester || 'Semester 1' }}</td>
             <td>
               <span class="level-badge">L{{ course.level }}</span>
             </td>
@@ -142,6 +144,13 @@
               <input type="text" v-model="newCourse.program" placeholder="e.g. Computer Science" required class="form-control" />
             </div>
             <div class="form-group">
+              <label>Semester</label>
+              <select v-model="newCourse.semester" required class="form-control">
+                <option value="Semester 1">Semester 1</option>
+                <option value="Semester 2">Semester 2</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label>Level</label>
               <select v-model="newCourse.level" required class="form-control">
                 <option value="100">100</option>
@@ -176,6 +185,7 @@ const newCourse = ref({
   name: '',
   credits: 3,
   program: '',
+  semester: 'Semester 1',
   level: '100'
 });
 
@@ -193,7 +203,7 @@ const fetchCourses = async () => {
 };
 
 const openModal = () => {
-  newCourse.value = { code: '', name: '', credits: 3, program: '', level: '100' };
+  newCourse.value = { code: '', name: '', credits: 3, program: '', semester: 'Semester 1', level: '100' };
   isModalOpen.value = true;
 };
 

@@ -136,6 +136,7 @@ onMounted(async () => {
       id: s.courseId, // Use courseId to navigate to attendance
       code: s.course?.code || 'Unknown',
       name: s.course?.name || 'Unknown Course',
+      semester: s.course?.semester || 'Semester 1',
       studentsCount: 0, // Placeholder
       day: s.day,
       time: `${s.startTime} - ${s.endTime}`,
@@ -160,6 +161,7 @@ const goToAttendance = (course) => {
   localStorage.setItem('activeCourseId', course.id);
   localStorage.setItem('activeCourseCode', course.code);
   localStorage.setItem('activeCourseName', course.name);
+  localStorage.setItem('activeCourseSemester', course.semester);
   emit('navigate', '/attendance-view');
 };
 

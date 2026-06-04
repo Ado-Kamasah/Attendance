@@ -19,6 +19,7 @@ import StudentSidebar from './USERS_ROLES/students.vue';
 import LecturerDashboard from './Pages/Lecturers/lecturerDashboard.vue';
 import LecturerCourses from './Pages/Lecturers/MyCourses.vue';
 import AttendanceView from './Pages/Lecturers/Attendanceview.vue';
+import CourseReports from './Pages/Lecturers/CourseReports.vue';
 import { onMounted, onUnmounted } from 'vue';
 
 const isAuthenticated = ref(false);
@@ -137,6 +138,7 @@ const handleRegisterSuccess = (userPayload) => {
         <LecturerCourses v-else-if="currentRoute === '/lecturer-courses'" @navigate="handleNavigationEvent" />
         <MarkAttendance v-else-if="currentRoute === '/attendance'" />
         <AttendanceView v-else-if="currentRoute === '/attendance-view'" @navigate="handleNavigationEvent" />
+        <CourseReports v-else-if="currentRoute === '/lecturer-reports'" />
         <Schedule v-else-if="currentRoute === '/schedule'" />
         <SemesterSetup v-else-if="currentRoute === '/semestersetup'" />
         <Faculties v-else-if="currentRoute === '/faculties'" />
