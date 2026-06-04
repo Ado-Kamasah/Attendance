@@ -214,7 +214,7 @@ onMounted(async () => {
       startTime: s.startTime,
       endTime: s.endTime,
       venue: s.venue,
-      students: 'TBD' // Can't easily populate without an endpoint, wait, we do have /courses but let's just leave TBD
+      students: s.course?._count?.enrollments || 0
     }));
   } catch (error) {
     console.error('Error fetching dashboard schedules:', error);
