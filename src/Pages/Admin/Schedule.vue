@@ -309,9 +309,15 @@ const saveClass = async () => {
 };
 
 const deleteClass = async (id) => {
-  // Optional: implement real delete logic if your backend has it. 
-  // For now, let's filter it locally or alert if no endpoint exists
-  alert('Delete not implemented on backend yet.');
+  if (!confirm('Are you sure you want to delete this scheduled class?')) return;
+  
+  try {
+    await api.delete(`/schedules/${id}`);
+    await fetchSchedules();
+  } catch (error) {
+    console.error('Error deleting schedule:', error);
+    alert('Failed to delete schedule.');
+  }
 };
 </script>
 

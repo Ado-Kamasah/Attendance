@@ -77,3 +77,33 @@ export const getSchedules = async (req, res) => {
     res.status(500).json({ message: 'Server error fetching schedules', error: error.message });
   }
 };
+
+/**
+ * Delete a schedule entry (Admin only)
+ */
+export const deleteSchedule = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: 'Schedule ID is required' });
+    }
+
+    const schedule = await prisma.schedule.findUnique({
+      where: { id }
+    });
+
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    await prisma.schedule.delete({
+      where: { id }
+    });
+
+    res.status(200).json({ message: 'Schedule deleted successfully' });
+  } catch (error) {
+    console.error('Delete schedule error:', error);
+    res.status(500).json({ message: 'Server error deleting schedule', error: error.message });
+  }
+};
