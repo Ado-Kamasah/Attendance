@@ -79,10 +79,10 @@
               </span>
             </td>
             <td class="actions-cell">
-              <button class="icon-action-btn edit" title="Edit Course">
+              <button class="icon-action-btn edit" title="Edit Course" @click="editCourse(course)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
-              <button class="icon-action-btn delete" title="Archive Course">
+              <button class="icon-action-btn delete" title="Archive Course" @click="archiveCourse(course.id)" v-if="course.status !== 'archived'">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
             </td>
@@ -120,7 +120,7 @@
     <div class="modal-backdrop" v-if="isModalOpen" @click.self="closeModal">
       <div class="modal-card">
         <div class="modal-header">
-          <h2>Add New Course</h2>
+          <h2>{{ editingCourseId ? 'Edit Course' : 'Add New Course' }}</h2>
           <button class="close-btn" @click="closeModal" aria-label="Close modal">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
@@ -161,7 +161,7 @@
             </div>
             <div class="form-actions">
               <button type="button" class="clear-btn" @click="closeModal">Cancel</button>
-              <button type="submit" class="primary-btn">Save Course</button>
+              <button type="submit" class="primary-btn">{{ editingCourseId ? 'Update Course' : 'Save Course' }}</button>
             </div>
           </form>
         </div>
@@ -180,6 +180,7 @@ const statusFilter = ref('all');
 
 const courses = ref([]);
 const isModalOpen = ref(false);
+const editingCourseId = ref(null);
 const newCourse = ref({
   code: '',
   name: '',
@@ -203,22 +204,52 @@ const fetchCourses = async () => {
 };
 
 const openModal = () => {
+  editingCourseId.value = null;
   newCourse.value = { code: '', name: '', credits: 3, program: '', semester: 'Semester 1', level: '100' };
+  isModalOpen.value = true;
+};
+
+const editCourse = (course) => {
+  editingCourseId.value = course.id;
+  newCourse.value = { 
+    code: course.code, 
+    name: course.name, 
+    credits: course.credits, 
+    program: course.program, 
+    semester: course.semester || 'Semester 1', 
+    level: course.level 
+  };
   isModalOpen.value = true;
 };
 
 const closeModal = () => {
   isModalOpen.value = false;
+  editingCourseId.value = null;
 };
 
 const saveCourse = async () => {
   try {
-    await api.post('/courses', newCourse.value);
+    if (editingCourseId.value) {
+      await api.put(`/courses/${editingCourseId.value}`, newCourse.value);
+    } else {
+      await api.post('/courses', newCourse.value);
+    }
     await fetchCourses();
     closeModal();
   } catch (error) {
-    console.error('Error creating course:', error);
-    alert('Failed to create course. Code might already exist.');
+    console.error('Error saving course:', error);
+    alert(error.response?.data?.message || 'Failed to save course.');
+  }
+};
+
+const archiveCourse = async (id) => {
+  if (!confirm('Are you sure you want to archive this course?')) return;
+  try {
+    await api.patch(`/courses/${id}/archive`);
+    await fetchCourses();
+  } catch (error) {
+    console.error('Error archiving course:', error);
+    alert('Failed to archive course.');
   }
 };
 

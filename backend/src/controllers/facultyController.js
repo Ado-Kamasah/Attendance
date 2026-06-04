@@ -39,3 +39,23 @@ export const deleteFaculty = async (req, res) => {
     res.status(500).json({ message: 'Error deleting faculty', error: error.message });
   }
 };
+
+export const updateFaculty = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    
+    if (!name) return res.status(400).json({ message: 'Faculty name is required' });
+
+    const updatedFaculty = await prisma.faculty.update({
+      where: { id },
+      data: { name }
+    });
+    res.status(200).json(updatedFaculty);
+  } catch (error) {
+    if (error.code === 'P2002') {
+      return res.status(400).json({ message: 'Another faculty with this name already exists' });
+    }
+    res.status(500).json({ message: 'Error updating faculty', error: error.message });
+  }
+};

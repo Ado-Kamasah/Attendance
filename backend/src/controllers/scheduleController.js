@@ -107,3 +107,46 @@ export const deleteSchedule = async (req, res) => {
     res.status(500).json({ message: 'Server error deleting schedule', error: error.message });
   }
 };
+
+/**
+ * Update a schedule entry (Admin only)
+ */
+export const updateSchedule = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { courseId, level, mode, day, startTime, endTime, venue, lecturer } = req.body;
+    
+    if (!id) {
+      return res.status(400).json({ message: 'Schedule ID is required' });
+    }
+
+    const schedule = await prisma.schedule.findUnique({ where: { id } });
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    if (courseId) {
+      const course = await prisma.course.findUnique({ where: { id: courseId } });
+      if (!course) return res.status(404).json({ message: 'Course not found' });
+    }
+
+    const updatedSchedule = await prisma.schedule.update({
+      where: { id },
+      data: {
+        courseId: courseId || undefined,
+        level: level || undefined,
+        mode: mode || undefined,
+        day: day || undefined,
+        startTime: startTime || undefined,
+        endTime: endTime || undefined,
+        venue: venue || undefined,
+        lecturer: lecturer || undefined
+      }
+    });
+
+    res.status(200).json({ message: 'Schedule updated successfully', schedule: updatedSchedule });
+  } catch (error) {
+    console.error('Update schedule error:', error);
+    res.status(500).json({ message: 'Server error updating schedule', error: error.message });
+  }
+};

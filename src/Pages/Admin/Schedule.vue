@@ -87,7 +87,7 @@
             </div>
             
             <div class="class-actions">
-              <button class="action-btn edit" title="Edit" @click="alert('Edit class functionality coming soon')">
+              <button class="action-btn edit" title="Edit" @click="editClass(cls)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
               <button class="action-btn delete" title="Delete" @click="deleteClass(cls.id)">
@@ -117,7 +117,7 @@
     <div class="modal-backdrop" v-if="isModalOpen" @click.self="closeModal">
       <div class="modal-card">
         <div class="modal-header">
-          <h2>Add New Class</h2>
+          <h2>{{ editingScheduleId ? 'Edit Class' : 'Add New Class' }}</h2>
           <button class="close-btn" @click="closeModal" aria-label="Close modal">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
@@ -169,7 +169,7 @@
             
             <div class="modal-footer">
               <button type="button" class="btn-ghost" @click="closeModal">Cancel</button>
-              <button type="submit" class="btn-primary">Save Schedule</button>
+              <button type="submit" class="btn-primary">{{ editingScheduleId ? 'Update Schedule' : 'Save Schedule' }}</button>
             </div>
           </form>
         </div>
@@ -192,6 +192,7 @@ const selectedMode = ref('Regular');
 const selectedSemester = ref('Semester 1');
 const selectedDay = ref('Monday');
 const isModalOpen = ref(false);
+const editingScheduleId = ref(null);
 
 const activeDays = computed(() => selectedMode.value === 'Regular' ? regularDays : weekendDays);
 
@@ -277,6 +278,7 @@ const getDuration = (start, end) => {
 };
 
 const openAddModal = () => {
+  editingScheduleId.value = null;
   newClass.value = { 
     courseId: '', lecturer: '', venue: '', 
     day: selectedDay.value, startTime: '', endTime: '' 
@@ -284,8 +286,22 @@ const openAddModal = () => {
   isModalOpen.value = true;
 };
 
+const editClass = (cls) => {
+  editingScheduleId.value = cls.id;
+  newClass.value = {
+    courseId: cls.courseId,
+    lecturer: cls.lecturer,
+    venue: cls.venue,
+    day: cls.day,
+    startTime: cls.startTime,
+    endTime: cls.endTime
+  };
+  isModalOpen.value = true;
+};
+
 const closeModal = () => {
   isModalOpen.value = false;
+  editingScheduleId.value = null;
 };
 
 const saveClass = async () => {
@@ -295,7 +311,12 @@ const saveClass = async () => {
       mode: selectedMode.value,
       ...newClass.value
     };
-    await api.post('/schedules', payload);
+    
+    if (editingScheduleId.value) {
+      await api.put(`/schedules/${editingScheduleId.value}`, payload);
+    } else {
+      await api.post('/schedules', payload);
+    }
     
     // Switch the view to the day we just scheduled
     selectedDay.value = newClass.value.day;

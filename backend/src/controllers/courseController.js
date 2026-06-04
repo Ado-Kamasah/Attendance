@@ -248,3 +248,75 @@ export const getCourseStudents = async (req, res) => {
     res.status(500).json({ message: 'Server error fetching students', error: error.message });
   }
 };
+
+/**
+ * Update a course (Admin only)
+ */
+export const updateCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code, name, credits, program, level, semester, status } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ message: 'Course ID is required' });
+    }
+
+    const course = await prisma.course.findUnique({ where: { id } });
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    if (code && code.trim().toUpperCase() !== course.code) {
+      const existing = await prisma.course.findUnique({ where: { code: code.trim().toUpperCase() } });
+      if (existing) {
+        return res.status(400).json({ message: 'Course with this code already exists' });
+      }
+    }
+
+    const updatedCourse = await prisma.course.update({
+      where: { id },
+      data: {
+        code: code ? code.trim().toUpperCase() : undefined,
+        name: name ? name.trim() : undefined,
+        credits: credits ? parseInt(credits, 10) : undefined,
+        program: program ? program.trim() : undefined,
+        level: level ? level.trim() : undefined,
+        semester: semester ? semester.trim() : undefined,
+        status: status || undefined
+      }
+    });
+
+    res.status(200).json({ message: 'Course updated successfully', course: updatedCourse });
+  } catch (error) {
+    console.error('Update course error:', error);
+    res.status(500).json({ message: 'Server error updating course', error: error.message });
+  }
+};
+
+/**
+ * Archive a course (Admin only)
+ */
+export const archiveCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: 'Course ID is required' });
+    }
+
+    const course = await prisma.course.findUnique({ where: { id } });
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    const archivedCourse = await prisma.course.update({
+      where: { id },
+      data: { status: 'archived' }
+    });
+
+    res.status(200).json({ message: 'Course archived successfully', course: archivedCourse });
+  } catch (error) {
+    console.error('Archive course error:', error);
+    res.status(500).json({ message: 'Server error archiving course', error: error.message });
+  }
+};
