@@ -5,7 +5,7 @@
         <h1 class="page-title">Course Management</h1>
         <p class="page-subtitle">Manage all university courses, schedules, and assigned lecturers.</p>
       </div>
-      <button class="primary-btn">
+      <button class="primary-btn" @click="openModal">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -64,8 +64,8 @@
             </td>
             <td>
               <div class="lecturer-info">
-                <img :src="`https://ui-avatars.com/api/?name=${course.lecturer.replace(' ', '+')}&background=f1f5f9&color=475569`" alt="avatar" class="sm-avatar" />
-                <span>{{ course.lecturer }}</span>
+                <img :src="`https://ui-avatars.com/api/?name=${(course.lecturer || 'Unknown').replace(' ', '+')}&background=f1f5f9&color=475569`" alt="avatar" class="sm-avatar" />
+                <span>{{ course.lecturer || 'No Lecturer Assigned' }}</span>
               </div>
             </td>
             <td class="schedule-cell">
@@ -113,18 +113,104 @@
         <button class="page-btn">Next</button>
       </div>
     </div>
+
+    <!-- Add Course Modal -->
+    <div class="modal-backdrop" v-if="isModalOpen" @click.self="closeModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Add New Course</h2>
+          <button class="close-btn" @click="closeModal" aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="saveCourse" class="course-form">
+            <div class="form-group">
+              <label>Course Code</label>
+              <input type="text" v-model="newCourse.code" placeholder="e.g. CSC 101" required class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>Course Name</label>
+              <input type="text" v-model="newCourse.name" placeholder="e.g. Intro to Computer Science" required class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>Credits</label>
+              <input type="number" v-model="newCourse.credits" placeholder="e.g. 3" required min="1" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>Program</label>
+              <input type="text" v-model="newCourse.program" placeholder="e.g. Computer Science" required class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>Level</label>
+              <select v-model="newCourse.level" required class="form-control">
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="300">300</option>
+                <option value="400">400</option>
+              </select>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="clear-btn" @click="closeModal">Cancel</button>
+              <button type="submit" class="primary-btn">Save Course</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { availableGlobalCourses } from '../../store.js';
+import { ref, computed, onMounted } from 'vue';
+import api from '../../api.js';
 
 const searchQuery = ref('');
 const levelFilter = ref('all');
 const statusFilter = ref('all');
 
-const courses = availableGlobalCourses;
+const courses = ref([]);
+const isModalOpen = ref(false);
+const newCourse = ref({
+  code: '',
+  name: '',
+  credits: 3,
+  program: '',
+  level: '100'
+});
+
+onMounted(async () => {
+  await fetchCourses();
+});
+
+const fetchCourses = async () => {
+  try {
+    const res = await api.get('/courses');
+    courses.value = res.data;
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+  }
+};
+
+const openModal = () => {
+  newCourse.value = { code: '', name: '', credits: 3, program: '', level: '100' };
+  isModalOpen.value = true;
+};
+
+const closeModal = () => {
+  isModalOpen.value = false;
+};
+
+const saveCourse = async () => {
+  try {
+    await api.post('/courses', newCourse.value);
+    await fetchCourses();
+    closeModal();
+  } catch (error) {
+    console.error('Error creating course:', error);
+    alert('Failed to create course. Code might already exist.');
+  }
+};
 
 const filteredCourses = computed(() => {
   return courses.value.filter(course => {
@@ -542,4 +628,116 @@ const clearFilters = () => {
     gap: 1rem;
   }
 }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-card {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  overflow: hidden;
+  animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalIn {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.close-btn {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.close-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.course-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.form-control {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-control:focus {
+  border-color: #6366f1;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
 </style>

@@ -187,3 +187,43 @@ export const getAvailableCoursesForStudent = async (req, res) => {
     res.status(500).json({ message: 'Server error fetching available courses', error: error.message });
   }
 };
+
+/**
+ * Get students enrolled in a specific course
+ */
+export const getCourseStudents = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    
+    if (!courseId) {
+      return res.status(400).json({ message: 'Course ID is required' });
+    }
+
+    const enrollments = await prisma.enrollment.findMany({
+      where: { courseId },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            program: true
+          }
+        }
+      }
+    });
+
+    const students = enrollments.map(e => ({
+      id: e.student.id,
+      name: e.student.name,
+      studentId: e.student.id, // For display purposes
+      email: e.student.email,
+      program: e.student.program
+    }));
+
+    res.status(200).json(students);
+  } catch (error) {
+    console.error('Fetch course students error:', error);
+    res.status(500).json({ message: 'Server error fetching students', error: error.message });
+  }
+};

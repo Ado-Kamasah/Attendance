@@ -4,7 +4,8 @@ import {
   getCourses, 
   enrollInCourse, 
   getStudentEnrollments, 
-  getAvailableCoursesForStudent 
+  getAvailableCoursesForStudent,
+  getCourseStudents
 } from '../controllers/courseController.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
@@ -24,5 +25,8 @@ router.get('/available', authenticateToken, requireRole(['STUDENT']), getAvailab
 
 // Enroll in a specific course (Student or Admin)
 router.post('/:courseId/enroll', authenticateToken, enrollInCourse);
+
+// Get students enrolled in a specific course (Admin/Lecturer)
+router.get('/:courseId/students', authenticateToken, requireRole(['ADMIN', 'LECTURER']), getCourseStudents);
 
 export default router;

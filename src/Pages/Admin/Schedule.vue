@@ -116,11 +116,13 @@
           <form @submit.prevent="saveClass" class="schedule-form">
             <div class="form-grid">
               <div class="form-group col-span-2">
-                <label>Course Information</label>
-                <div class="input-group-row">
-                  <input type="text" v-model="newClass.courseCode" placeholder="Course Code (e.g. CSC101)" required class="form-input flex-1">
-                  <input type="text" v-model="newClass.courseTitle" placeholder="Course Title (e.g. Intro to CS)" required class="form-input flex-2">
-                </div>
+                <label>Select Course</label>
+                <select v-model="newClass.courseId" required class="form-select w-full" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px;">
+                  <option disabled value="">Choose a course</option>
+                  <option v-for="course in courses" :key="course.id" :value="course.id">
+                    {{ course.code }} - {{ course.name }}
+                  </option>
+                </select>
               </div>
               
               <div class="form-group">
@@ -167,8 +169,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { masterSchedule } from '../../store.js';
+import { ref, computed, watch, onMounted } from 'vue';
+import api from '../../api.js';
 
 const levels = ['100', '200', '300', '400'];
 const modes = ['Regular', 'Weekend'];
@@ -186,11 +188,34 @@ watch(selectedMode, (newMode) => {
   selectedDay.value = newMode === 'Regular' ? 'Monday' : 'Friday';
 });
 
-const mockData = masterSchedule;
+const schedules = ref([]);
+const courses = ref([]);
+
+onMounted(async () => {
+  await fetchSchedules();
+  await fetchCourses();
+});
+
+const fetchSchedules = async () => {
+  try {
+    const res = await api.get('/schedules');
+    schedules.value = res.data;
+  } catch (error) {
+    console.error('Error fetching schedules:', error);
+  }
+};
+
+const fetchCourses = async () => {
+  try {
+    const res = await api.get('/courses');
+    courses.value = res.data;
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+  }
+};
 
 const newClass = ref({
-  courseCode: '',
-  courseTitle: '',
+  courseId: '',
   lecturer: '',
   venue: '',
   day: 'Monday',
@@ -199,15 +224,19 @@ const newClass = ref({
 });
 
 const filteredClasses = computed(() => {
-  return mockData.value.filter(c => 
+  return schedules.value.filter(c => 
     c.level === selectedLevel.value && 
     c.mode === selectedMode.value && 
     c.day === selectedDay.value
-  ).sort((a, b) => a.startTime.localeCompare(b.startTime));
+  ).map(c => ({
+    ...c,
+    courseCode: c.course?.code || c.courseCode,
+    courseTitle: c.course?.name || c.courseTitle
+  })).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
 });
 
 const getClassCount = (day) => {
-  return mockData.value.filter(c => 
+  return schedules.value.filter(c => 
     c.level === selectedLevel.value && 
     c.mode === selectedMode.value && 
     c.day === day
@@ -225,15 +254,17 @@ const formatTime = (timeStr) => {
 
 const getDuration = (start, end) => {
   if (!start || !end) return '';
-  const [sH, sM] = start.split(':').map(Number);
-  const [eH, eM] = end.split(':').map(Number);
-  const diff = (eH * 60 + eM) - (sH * 60 + sM);
+  const startStr = String(start);
+  const endStr = String(end);
+  const [sH, sM] = startStr.split(':').map(Number);
+  const [eH, eM] = endStr.split(':').map(Number);
+  const diff = (eH * 60 + (eM || 0)) - (sH * 60 + (sM || 0));
   return (diff / 60).toFixed(1).replace('.0', '');
 };
 
 const openAddModal = () => {
   newClass.value = { 
-    courseCode: '', courseTitle: '', lecturer: '', venue: '', 
+    courseId: '', lecturer: '', venue: '', 
     day: selectedDay.value, startTime: '', endTime: '' 
   };
   isModalOpen.value = true;
@@ -243,18 +274,26 @@ const closeModal = () => {
   isModalOpen.value = false;
 };
 
-const saveClass = () => {
-  mockData.value.push({
-    id: Date.now(),
-    level: selectedLevel.value,
-    mode: selectedMode.value,
-    ...newClass.value
-  });
-  closeModal();
+const saveClass = async () => {
+  try {
+    const payload = {
+      level: selectedLevel.value,
+      mode: selectedMode.value,
+      ...newClass.value
+    };
+    await api.post('/schedules', payload);
+    await fetchSchedules();
+    closeModal();
+  } catch (error) {
+    console.error('Error saving schedule:', error);
+    alert('Failed to save schedule');
+  }
 };
 
-const deleteClass = (id) => {
-  mockData.value = mockData.value.filter(c => c.id !== id);
+const deleteClass = async (id) => {
+  // Optional: implement real delete logic if your backend has it. 
+  // For now, let's filter it locally or alert if no endpoint exists
+  alert('Delete not implemented on backend yet.');
 };
 </script>
 

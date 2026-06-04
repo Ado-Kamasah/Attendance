@@ -19,7 +19,6 @@ import LecturerDashboard from './Pages/Lecturers/lecturerDashboard.vue';
 import LecturerCourses from './Pages/Lecturers/MyCourses.vue';
 import AttendanceView from './Pages/Lecturers/Attendanceview.vue';
 import { onMounted, onUnmounted } from 'vue';
-import { currentUserId, currentUserProgram, registerSelectedCourses, availableGlobalCourses, studentEnrolledCourses } from './store.js';
 
 const isAuthenticated = ref(false);
 const activeAuthView = ref('login'); // 'login' or 'register'
@@ -36,6 +35,19 @@ const handleNavigationEvent = (path) => {
 };
 
 onMounted(() => {
+  // Check for persistent login
+  const token = localStorage.getItem('token');
+  const userJson = localStorage.getItem('user');
+  
+  if (token && userJson) {
+    try {
+      const user = JSON.parse(userJson);
+      handleLoginSuccess({ loginId: user.id, role: user.role, user: user });
+    } catch (e) {
+      console.error('Failed to parse user from localStorage');
+    }
+  }
+
   // Push initial state so back button works out of the gate
   window.history.replaceState({ path: currentRoute.value }, '', currentRoute.value);
   
@@ -44,57 +56,41 @@ onMounted(() => {
       currentRoute.value = e.state.path;
     }
   });
+
+  // Listen for unauthorized events to logout
+  window.addEventListener('auth-unauthorized', handleLogout);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('auth-unauthorized', handleLogout);
 });
 
 const handleLoginSuccess = (userPayload) => {
   isAuthenticated.value = true;
-  userRole.value = userPayload.role;
+  // Normalize role to Title Case (e.g., 'ADMIN' -> 'Admin')
+  const rawRole = userPayload.role || 'Student';
+  userRole.value = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
   
   if (userRole.value === 'Admin') {
     handleNavigationEvent('/');
   } else if (userRole.value === 'Lecturer') {
     handleNavigationEvent('/lecturer-dashboard');
   } else if (userRole.value === 'Student') {
-    currentUserId.value = userPayload.loginId || '';
-    
-    // Determine the program based on the ID prefix
-    const idUpper = currentUserId.value.toUpperCase();
-    if (idUpper.startsWith('BSC/CSM/')) {
-      currentUserProgram.value = 'Computer Science';
-      
-      // Auto-enroll in CS courses for testing convenience
-      if (studentEnrolledCourses.value.length === 0) {
-        const csCourses = availableGlobalCourses.value.filter(
-          c => c.program === 'Computer Science' && (c.code === 'CSC 101' || c.code === 'MTH 102')
-        );
-        registerSelectedCourses(csCourses);
-      }
-    } else if (idUpper.startsWith('BBA/')) {
-      currentUserProgram.value = 'Business';
-      
-      // Auto-enroll in Business courses for testing convenience
-      if (studentEnrolledCourses.value.length === 0) {
-        const bizCourses = availableGlobalCourses.value.filter(
-          c => c.program === 'Business' && (c.code === 'BBA 101' || c.code === 'MKT 201')
-        );
-        registerSelectedCourses(bizCourses);
-      }
-    } else {
-      currentUserProgram.value = 'Unknown';
-    }
-
     handleNavigationEvent('/student-dashboard');
   }
 };
 
 const handleLogout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
   isAuthenticated.value = false;
   activeAuthView.value = 'login';
 };
 
 const handleRegisterSuccess = (userPayload) => {
   console.log("Registered:", userPayload);
-  isAuthenticated.value = true;
+  activeAuthView.value = 'login';
+  // Note: user must login after registering now
 };
 </script>
 
@@ -175,6 +171,7 @@ html, body, #app {
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  overflow-x: hidden;
 }
 
 .main-content {

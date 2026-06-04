@@ -98,6 +98,10 @@
               </div>
             </div>
 
+            <div v-if="errorMsg" class="error-message">
+              {{ errorMsg }}
+            </div>
+
             <button type="submit" class="submit-btn" :class="{ 'loading': isLoading }">
               <span v-if="!isLoading">Create Account</span>
               <svg v-else class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -160,9 +164,11 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
+import api from '../../api.js';
 
 const showPassword = ref(false);
 const isLoading = ref(false);
+const errorMsg = ref('');
 
 const form = reactive({
   fullName: '',
@@ -174,15 +180,27 @@ const form = reactive({
 
 const emit = defineEmits(['register-success', 'switch-to-login']);
 
-const handleRegister = () => {
+const handleRegister = async () => {
   isLoading.value = true;
+  errorMsg.value = '';
   
-  // Simulate API call delay
-  setTimeout(() => {
+  try {
+    const response = await api.post('/auth/register', {
+      fullName: form.fullName,
+      email: form.email,
+      role: form.role,
+      idNumber: form.idNumber,
+      password: form.password
+    });
+    
+    // Auto-login on register could be done, or we emit success
+    emit('register-success', { email: response.data.user.email, role: response.data.user.role });
+  } catch (err) {
+    console.error('Registration error:', err);
+    errorMsg.value = err.response?.data?.message || 'Registration failed. Please check your inputs.';
+  } finally {
     isLoading.value = false;
-    // Emit success event and automatically switch logic normally handles passing payload
-    emit('register-success', { email: form.email, role: form.role });
-  }, 1500);
+  }
 };
 </script>
 
@@ -193,6 +211,17 @@ const handleRegister = () => {
   display: flex;
   background-color: #f1f5f9;
   font-family: 'Inter', sans-serif;
+}
+
+.error-message {
+  color: #ef4444;
+  background: #fef2f2;
+  border-left: 4px solid #ef4444;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  margin-bottom: 5px;
 }
 
 .register-split {

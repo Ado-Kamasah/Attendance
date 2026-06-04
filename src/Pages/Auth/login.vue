@@ -98,6 +98,10 @@
             <a href="#" class="forgot-link">Forgot password?</a>
           </div>
 
+          <div v-if="errorMsg" class="error-message">
+            {{ errorMsg }}
+          </div>
+
           <button type="submit" class="btn-submit" :class="{ 'is-loading': isLoading }">
             <span class="btn-text" v-if="!isLoading">Secure Sign In</span>
             <svg v-else class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -110,37 +114,6 @@
         <div class="auth-footer">
           <p>Don't have an account? <a href="#" @click.prevent="$emit('switch-to-register')" class="register-link">Register now</a></p>
         </div>
-
-        <!-- Quick Demo Accounts for Testing -->
-        <div class="demo-section">
-          <div class="demo-divider">
-            <span>Quick Test Accounts</span>
-          </div>
-          <p class="demo-hint">Click an account below to autofill and sign in instantly:</p>
-          <div class="demo-buttons">
-            <button type="button" class="demo-btn admin-btn" @click="fillDemo('Admin')">
-              <span class="role-badge admin-badge">Admin</span>
-              <span class="user-details">
-                <span class="user-id">admin@southshore.edu.gh</span>
-                <span class="user-pass">AdminPassword123</span>
-              </span>
-            </button>
-            <button type="button" class="demo-btn lecturer-btn" @click="fillDemo('Lecturer')">
-              <span class="role-badge lecturer-badge">Lecturer</span>
-              <span class="user-details">
-                <span class="user-id">STAFF/KWAME</span>
-                <span class="user-pass">StaffPassword123</span>
-              </span>
-            </button>
-            <button type="button" class="demo-btn student-btn" @click="fillDemo('Student')">
-              <span class="role-badge student-badge">Student</span>
-              <span class="user-details">
-                <span class="user-id">BSC/CSM/2026/01</span>
-                <span class="user-pass">StudentPassword123</span>
-              </span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -148,6 +121,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import api from '../../api.js';
 
 const loginId = ref('');
 const password = ref('');
@@ -155,6 +129,7 @@ const role = ref('Admin');
 const showPassword = ref(false);
 const rememberMe = ref(false);
 const isLoading = ref(false);
+const errorMsg = ref('');
 
 const isEmailFocused = ref(false);
 const isPasswordFocused = ref(false);
@@ -162,34 +137,33 @@ const isRoleFocused = ref(false);
 
 const emit = defineEmits(['login-success', 'switch-to-register']);
 
-const handleLogin = () => {
+const handleLogin = async () => {
   if (!loginId.value || !password.value || !role.value) return;
   
   isLoading.value = true;
+  errorMsg.value = '';
   
-  setTimeout(() => {
+  try {
+    const response = await api.post('/auth/login', {
+      loginId: loginId.value,
+      password: password.value,
+      role: role.value
+    });
+    
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+    
+    emit('login-success', { 
+      loginId: response.data.user.id, 
+      role: response.data.user.role,
+      user: response.data.user 
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    errorMsg.value = err.response?.data?.message || 'Failed to login. Please check your credentials.';
+  } finally {
     isLoading.value = false;
-    emit('login-success', { loginId: loginId.value, role: role.value });
-  }, 1500);
-};
-
-const fillDemo = (demoRole) => {
-  role.value = demoRole;
-  if (demoRole === 'Admin') {
-    loginId.value = 'admin@southshore.edu.gh';
-    password.value = 'AdminPassword123';
-  } else if (demoRole === 'Lecturer') {
-    loginId.value = 'STAFF/KWAME';
-    password.value = 'StaffPassword123';
-  } else if (demoRole === 'Student') {
-    loginId.value = 'BSC/CSM/2026/01';
-    password.value = 'StudentPassword123';
   }
-  
-  // Submit automatically after a short delay for smooth transition feel
-  setTimeout(() => {
-    handleLogin();
-  }, 300);
 };
 </script>
 
@@ -202,6 +176,18 @@ const fillDemo = (demoRole) => {
   --dark: #0f172a;
   --gray-light: #f8fafc;
   --gray: #94a3b8;
+  --error: #ef4444;
+}
+
+.error-message {
+  color: var(--error);
+  background: #fef2f2;
+  border-left: 4px solid var(--error);
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  margin-bottom: 5px;
 }
 
 .auth-layout {
@@ -558,113 +544,5 @@ const fillDemo = (demoRole) => {
 .register-link:hover {
   color: #6366f1;
   text-decoration: underline;
-}
-
-/* Quick Demo Section */
-.demo-section {
-  margin-top: 2rem;
-  border-top: 1px dashed #e2e8f0;
-  padding-top: 1.5rem;
-}
-
-.demo-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.75rem;
-}
-
-.demo-divider span {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #6366f1;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: white;
-  padding: 0 10px;
-}
-
-.demo-hint {
-  font-size: 0.8rem;
-  color: #64748b;
-  text-align: center;
-  margin: 0 0 1rem 0;
-}
-
-.demo-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.demo-btn {
-  display: flex;
-  align-items: center;
-  text-align: left;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 10px 14px;
-  cursor: pointer;
-  width: 100%;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.demo-btn:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.demo-btn:active {
-  transform: translateY(0);
-}
-
-.role-badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 6px;
-  margin-right: 12px;
-  min-width: 75px;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.admin-badge {
-  background-color: #fee2e2;
-  color: #ef4444;
-}
-
-.lecturer-badge {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.student-badge {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.user-details {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 2px;
-}
-
-.user-id {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.user-pass {
-  font-size: 0.75rem;
-  color: #64748b;
-  font-family: 'Courier New', Courier, monospace;
-  font-weight: 500;
 }
 </style>

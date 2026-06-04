@@ -93,17 +93,39 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { liveAttendanceSession, systemAuditLogs, currentUserId } from '../../store';
+import { ref, computed, onMounted } from 'vue';
+import api from '../../api.js';
 
 const emit = defineEmits(['navigate']);
 
-const activeClass = computed(() => {
-  return liveAttendanceSession.value.isActive ? liveAttendanceSession.value : null;
-});
-
+const activeClass = ref(null);
 const attendanceHistory = ref([]);
 const enteredPins = ref(['', '', '', '']);
+
+onMounted(async () => {
+  try {
+    const [sessionsRes, enrolledRes] = await Promise.all([
+      api.get('/sessions/active'),
+      api.get('/courses/enrolled')
+    ]);
+    const activeSessions = sessionsRes.data;
+    const enrolledCourseIds = enrolledRes.data.map(item => item.course?.id || item.id);
+    
+    const matchingSession = activeSessions.find(s => enrolledCourseIds.includes(s.courseId));
+    
+    if (matchingSession) {
+      activeClass.value = {
+        id: matchingSession.id,
+        code: matchingSession.courseCode,
+        name: matchingSession.courseName,
+        lecturer: matchingSession.lecturerName,
+        room: 'Live Session'
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+});
 
 const focusNext = (idx) => {
   if (enteredPins.value[idx] && idx < 3) {
@@ -112,43 +134,33 @@ const focusNext = (idx) => {
   }
 };
 
-const verifyAttendance = () => {
+const verifyAttendance = async () => {
   if (!activeClass.value) return;
   const enteredCode = enteredPins.value.join('');
   
-  if (enteredCode !== activeClass.value.pin) {
-    alert('Invalid attendance code. Please check and try again.');
+  if (enteredCode.length < 4) {
+    alert('Please enter a valid PIN.');
     return;
   }
   
-  if (activeClass.value.currentStudents >= activeClass.value.maxStudents) {
-    alert('Attendance failed: The maximum number of expected students for this class has already been reached. Only students physically present can mark attendance.');
-    return;
+  try {
+    await api.post('/sessions/mark', { pin: enteredCode });
+    
+    attendanceHistory.value.unshift({
+      id: Date.now(),
+      course: activeClass.value.code + ' - ' + activeClass.value.name,
+      date: new Date().toLocaleDateString(),
+      time: new Date().toLocaleTimeString(),
+      status: 'present',
+      statusText: 'Present'
+    });
+    
+    alert('Attendance marked successfully!');
+    enteredPins.value = ['', '', '', ''];
+  } catch (error) {
+    console.error(error);
+    alert(error.response?.data?.message || 'Invalid PIN or attendance already recorded.');
   }
-  
-  // Success
-  liveAttendanceSession.value.currentStudents++;
-  
-  attendanceHistory.value.unshift({
-    id: Date.now(),
-    course: activeClass.value.code + ' - ' + activeClass.value.name,
-    date: new Date().toLocaleDateString(),
-    time: new Date().toLocaleTimeString(),
-    status: 'present',
-    statusText: 'Present'
-  });
-  
-  systemAuditLogs.value.unshift({
-    id: Date.now() + 1,
-    timestamp: new Date().toLocaleTimeString(),
-    user: currentUserId.value || 'Student',
-    role: 'Student',
-    action: 'Student Attendance Marked',
-    details: `Successfully marked present for ${activeClass.value.code} via PIN.`
-  });
-  
-  alert('Attendance marked successfully!');
-  enteredPins.value = ['', '', '', ''];
 };
 </script>
 

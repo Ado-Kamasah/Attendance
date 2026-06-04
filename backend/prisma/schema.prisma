@@ -3,22 +3,18 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  LECTURER
-  STUDENT
-}
+// Role is now a String since SQLite doesn't support enums
 
 model User {
   id           String       @id
   email        String       @unique
   passwordHash String
   name         String
-  role         Role
+  role         String
   program      String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt

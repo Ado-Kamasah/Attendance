@@ -70,7 +70,7 @@
           </div>
 
           <div class="card-actions">
-            <button class="action-btn solid-btn" :style="{ backgroundColor: course.color }" @click="$emit('navigate', '/attendance-view')">
+            <button class="action-btn solid-btn" :style="{ backgroundColor: course.color }" @click="goToAttendance(course)">
               Take Attendance
             </button>
             <button class="action-btn outline-btn">
@@ -115,46 +115,38 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import api from '../../api.js';
 
 const emit = defineEmits(['navigate']);
 
-// Mock global data for the lecturer's assigned classes
-const lecturerCourses = ref([
-  {
-    id: 1,
-    code: 'CSC 101',
-    name: 'Introduction to Computer Science',
-    studentsCount: 124,
-    day: 'Mondays',
-    time: '08:00 AM - 10:00 AM',
-    venue: 'Hall A',
-    avgAttendance: 85,
-    color: '#4f46e5'
-  },
-  {
-    id: 2,
-    code: 'SWE 302',
-    name: 'Software Engineering Principles',
-    studentsCount: 45,
-    day: 'Wednesdays',
-    time: '11:00 AM - 01:00 PM',
-    venue: 'Room 304',
-    avgAttendance: 92,
-    color: '#10b981'
-  },
-  {
-    id: 3,
-    code: 'CSC 405',
-    name: 'Artificial Intelligence',
-    studentsCount: 32,
-    day: 'Fridays',
-    time: '02:00 PM - 04:00 PM',
-    venue: 'Lab C',
-    avgAttendance: 78,
-    color: '#ec4899'
+const lecturerCourses = ref([]);
+
+onMounted(async () => {
+  try {
+    const userJson = localStorage.getItem('user');
+    const user = userJson ? JSON.parse(userJson) : null;
+    const lecturerName = user ? user.name : '';
+
+    const res = await api.get('/schedules');
+    // For simplicity, showing all schedules or filtered by lecturer name
+    const schedules = res.data.filter(s => !lecturerName || s.lecturer === lecturerName);
+    
+    lecturerCourses.value = schedules.map(s => ({
+      id: s.courseId, // Use courseId to navigate to attendance
+      code: s.course?.code || 'Unknown',
+      name: s.course?.name || 'Unknown Course',
+      studentsCount: 0, // Placeholder
+      day: s.day,
+      time: `${s.startTime} - ${s.endTime}`,
+      venue: s.venue,
+      avgAttendance: 0,
+      color: '#4f46e5'
+    }));
+  } catch (error) {
+    console.error('Error fetching lecturer courses:', error);
   }
-]);
+});
 
 const editingCourse = ref(null);
 const editForm = ref({ day: '', time: '' });
@@ -162,6 +154,13 @@ const editForm = ref({ day: '', time: '' });
 const openEditModal = (course) => {
   editingCourse.value = course;
   editForm.value = { day: course.day, time: course.time };
+};
+
+const goToAttendance = (course) => {
+  localStorage.setItem('activeCourseId', course.id);
+  localStorage.setItem('activeCourseCode', course.code);
+  localStorage.setItem('activeCourseName', course.name);
+  emit('navigate', '/attendance-view');
 };
 
 const cancelEdit = () => {

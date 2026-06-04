@@ -106,10 +106,10 @@
         <div class="panel-footer">
           <button 
             class="submit-btn" 
-            :disabled="selectedCourses.length === 0 || totalSelectedCredits > maxCredits"
+            :disabled="selectedCourses.length === 0 || totalSelectedCredits > maxCredits || isSubmitting"
             @click="submitRegistration"
           >
-            Submit Registration
+            {{ isSubmitting ? 'Submitting...' : 'Submit Registration' }}
           </button>
         </div>
       </div>
@@ -118,13 +118,31 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { availableGlobalCourses, registerSelectedCourses, currentUserProgram } from '../../store.js';
+import { ref, computed, onMounted } from 'vue';
+import api from '../../api.js';
 
 const searchQuery = ref('');
 const maxCredits = 21;
 
+const currentUserProgram = ref('');
+const availableGlobalCourses = ref([]);
 const selectedCourses = ref([]);
+const isSubmitting = ref(false);
+
+onMounted(async () => {
+  const userJson = localStorage.getItem('user');
+  if (userJson) {
+    const user = JSON.parse(userJson);
+    currentUserProgram.value = user.program || 'Unknown';
+  }
+
+  try {
+    const response = await api.get('/courses/available');
+    availableGlobalCourses.value = response.data;
+  } catch (error) {
+    console.error('Error fetching available courses', error);
+  }
+});
 
 const filteredCourses = computed(() => {
   let courses = availableGlobalCourses.value;
@@ -159,10 +177,23 @@ const totalSelectedCredits = computed(() => {
   return selectedCourses.value.reduce((total, course) => total + course.credits, 0);
 });
 
-const submitRegistration = () => {
-  registerSelectedCourses(selectedCourses.value);
-  alert(`Successfully registered for ${selectedCourses.value.length} courses!`);
-  selectedCourses.value = [];
+const submitRegistration = async () => {
+  isSubmitting.value = true;
+  try {
+    for (const course of selectedCourses.value) {
+      await api.post(`/courses/${course.id}/enroll`);
+    }
+    alert(`Successfully registered for ${selectedCourses.value.length} courses!`);
+    selectedCourses.value = [];
+    // Refresh available courses
+    const response = await api.get('/courses/available');
+    availableGlobalCourses.value = response.data;
+  } catch (error) {
+    console.error('Registration failed', error);
+    alert('An error occurred during registration.');
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 </script>
 

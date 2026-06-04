@@ -1,6 +1,19 @@
 <template>
   <div class="attendance-container">
-    <div class="page-header">
+    <div v-if="!courseId" class="empty-course-state">
+      <div class="empty-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+          <polyline points="13 2 13 9 20 9"></polyline>
+        </svg>
+      </div>
+      <h2>No Course Selected</h2>
+      <p>Please select a course from the "My Courses" page to manage its attendance.</p>
+      <button class="primary-btn" @click="$emit('navigate', '/lecturer-courses')">Go to My Courses</button>
+    </div>
+    
+    <div v-else class="attendance-content-wrapper">
+      <div class="page-header">
       <div class="header-left">
         <button class="back-btn" @click="$emit('navigate', '/lecturer-courses')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -11,7 +24,7 @@
         </button>
         <div class="title-wrap">
           <h1 class="page-title">Live Attendance Management</h1>
-          <p class="page-subtitle">CSC 101 - Introduction to Computer Science</p>
+          <p class="page-subtitle">{{ courseCode }} - {{ courseName }}</p>
         </div>
       </div>
     </div>
@@ -61,6 +74,10 @@
           <div class="pin-display">
             <span>Class PIN:</span>
             <h1>{{ liveAttendanceSession.pin }}</h1>
+            <div class="timer-display" :class="{'timer-warning': timeLeft <= 15}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="timer-icon"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Time Remaining: <strong>{{ timeLeft }}s</strong>
+            </div>
           </div>
           <div class="student-count">
             <div class="count-circle">
@@ -71,6 +88,7 @@
           </div>
         </div>
         <div class="active-actions">
+           <button class="extend-btn" @click="extendTimer(15)">+15s Extension</button>
            <button class="danger-btn" @click="stopLiveSession">End Live Session</button>
         </div>
       </div>
@@ -104,31 +122,38 @@
           Status saved: <strong>{{ lecturerStatus.charAt(0).toUpperCase() + lecturerStatus.slice(1) }}</strong>
         </div>
       </div>
+      </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { liveAttendanceSession, systemAuditLogs } from '../../store';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
+import api from '../../api.js';
 
 const emit = defineEmits(['navigate']);
 
+const courseId = ref(localStorage.getItem('activeCourseId') || '');
+const courseCode = ref(localStorage.getItem('activeCourseCode') || 'Unknown Code');
+const courseName = ref(localStorage.getItem('activeCourseName') || 'Unknown Course');
+
 const lecturerStatus = ref(null);
-
-const enrolledStudents = ref([
-  { id: 1, name: 'Alice Akua', studentId: 'STD-001' },
-  { id: 2, name: 'Ben Osei', studentId: 'STD-002' },
-  { id: 3, name: 'Charles Mensah', studentId: 'STD-003' },
-  { id: 4, name: 'Diana Amoah', studentId: 'STD-004' },
-  { id: 5, name: 'Evans Appiah', studentId: 'STD-005' },
-  { id: 6, name: 'Francis Nugboryor', studentId: 'STD-006' },
-  { id: 7, name: 'George Adjei', studentId: 'STD-007' },
-  { id: 8, name: 'Hannah Adjetey', studentId: 'STD-008' },
-]);
-
+const enrolledStudents = ref([]);
 const selectedStudents = ref([]);
+const liveAttendanceSession = ref({ isActive: false });
+const timeLeft = ref(60);
+let timerInterval = null;
+
+onMounted(async () => {
+  if (courseId.value) {
+    try {
+      const response = await api.get(`/courses/${courseId.value}/students`);
+      enrolledStudents.value = response.data;
+    } catch (error) {
+      console.error('Error fetching enrolled students:', error);
+    }
+  }
+});
 
 const toggleSelectAll = () => {
   if (selectedStudents.value.length === enrolledStudents.value.length) {
@@ -138,63 +163,117 @@ const toggleSelectAll = () => {
   }
 };
 
-const startLiveSession = () => {
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  liveAttendanceSession.value = {
-    isActive: true,
-    code: 'CSC 101',
-    name: 'Introduction to Computer Science',
-    lecturer: 'Dr. Kwame Nkrumah',
-    room: 'Hall A',
-    pin: code,
-    maxStudents: selectedStudents.value.length,
-    selectedStudents: selectedStudents.value,
-    currentStudents: 0
-  };
-  
-  // Provide feedback that the code was sent
-  alert(`Attendance code ${code} has been generated and sent to ${selectedStudents.value.length} selected student(s).`);
-
-  systemAuditLogs.value.unshift({
-    id: Date.now(),
-    timestamp: new Date().toLocaleTimeString(),
-    user: 'Dr. Kwame Nkrumah',
-    role: 'Lecturer',
-    action: 'Live Session Started',
-    details: `Started live session for CSC 101 with ${selectedStudents.value.length} expected students.`
-  });
+const startLiveSession = async () => {
+  try {
+    const response = await api.post('/sessions/start', {
+      courseId: courseId.value,
+      maxStudents: selectedStudents.value.length
+    });
+    
+    liveAttendanceSession.value = {
+      id: response.data.session.id,
+      isActive: true,
+      pin: response.data.session.pin,
+      maxStudents: selectedStudents.value.length,
+      currentStudents: 0
+    };
+    
+    // Start the 60-second timer
+    timeLeft.value = 60;
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      if (timeLeft.value > 0) {
+        timeLeft.value--;
+      }
+      if (timeLeft.value === 0) {
+        stopLiveSession();
+      }
+    }, 1000);
+    
+    alert(`Attendance session started! PIN is ${response.data.session.pin}. It will automatically close in 60 seconds.`);
+  } catch (error) {
+    console.error('Failed to start session', error);
+    alert(error.response?.data?.message || 'Failed to start session');
+  }
 };
 
-const stopLiveSession = () => {
-  liveAttendanceSession.value.isActive = false;
-  lecturerStatus.value = null;
+const stopLiveSession = async () => {
+  try {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    if (liveAttendanceSession.value.id) {
+      await api.post(`/sessions/${liveAttendanceSession.value.id}/end`);
+    }
+    liveAttendanceSession.value = { isActive: false };
+    lecturerStatus.value = null;
+    alert('Session ended successfully');
+  } catch (error) {
+    console.error('Failed to end session', error);
+  }
+};
 
-  systemAuditLogs.value.unshift({
-    id: Date.now(),
-    timestamp: new Date().toLocaleTimeString(),
-    user: 'Dr. Kwame Nkrumah',
-    role: 'Lecturer',
-    action: 'Live Session Ended',
-    details: 'Ended live session for CSC 101.'
-  });
+const extendTimer = (seconds) => {
+  if (liveAttendanceSession.value.isActive) {
+    timeLeft.value += seconds;
+  }
 };
 
 // Log lecturer self-attendance using a watcher
 watch(lecturerStatus, (newVal) => {
   if (newVal) {
-    systemAuditLogs.value.unshift({
-      id: Date.now(),
-      timestamp: new Date().toLocaleTimeString(),
-      user: 'Dr. Kwame Nkrumah',
-      role: 'Lecturer',
-      action: 'Lecturer Attendance Marked',
-      details: `Marked self as ${newVal} for CSC 101 session.`
-    });
+    console.log(`Lecturer marked as ${newVal}`);
+    // Optional: Send this to backend
   }
+});
+
+onUnmounted(() => {
+  if (timerInterval) clearInterval(timerInterval);
 });
 </script>
 
 <style scoped>
+.empty-course-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  background: white;
+  border-radius: 16px;
+  border: 1px dashed #cbd5e1;
+  text-align: center;
+}
+.empty-course-state h2 {
+  margin: 1rem 0 0.5rem 0;
+  color: #0f172a;
+}
+.empty-course-state p {
+  color: #64748b;
+  margin-bottom: 2rem;
+}
+.empty-icon-wrap {
+  width: 80px;
+  height: 80px;
+  background: #f8fafc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+.empty-icon-wrap svg {
+  width: 40px;
+  height: 40px;
+}
+.attendance-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
 .attendance-container {
   display: flex;
   flex-direction: column;
@@ -492,6 +571,32 @@ watch(lecturerStatus, (newVal) => {
   color: #0f172a;
 }
 
+.timer-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #f1f5f9;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.timer-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.timer-warning {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.timer-warning strong {
+  color: #b91c1c;
+}
+
 .student-count {
   text-align: center;
 }
@@ -513,6 +618,12 @@ watch(lecturerStatus, (newVal) => {
   font-weight: 600;
 }
 
+.active-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .danger-btn {
   background: #ef4444;
   color: white;
@@ -526,6 +637,21 @@ watch(lecturerStatus, (newVal) => {
 
 .danger-btn:hover {
   background: #dc2626;
+}
+
+.extend-btn {
+  background: transparent;
+  color: #4f46e5;
+  border: 1px solid #6366f1;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.extend-btn:hover {
+  background: #e0e7ff;
 }
 
 /* Status Toggles for Lecturer Attendance */
@@ -596,5 +722,54 @@ watch(lecturerStatus, (newVal) => {
 
 .attendance-confirmation strong {
   color: #0f172a;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .live-session-active {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+  
+  .active-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    width: 100%;
+  }
+  
+  .pin-display h1 {
+    font-size: 2rem;
+  }
+  
+  .students-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .status-toggles {
+    flex-direction: column;
+    max-width: 100%;
+  }
+  
+  .active-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .extend-btn, .danger-btn {
+    width: 100%;
+    text-align: center;
+  }
 }
 </style>

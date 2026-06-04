@@ -87,8 +87,26 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { availableGlobalCourses, masterSchedule, systemAuditLogs } from '../../store.js';
+import { ref, computed, onMounted } from 'vue';
+import api from '../../api.js';
+
+const systemAuditLogs = ref([]);
+
+const availableGlobalCourses = ref([]);
+const masterSchedule = ref([]);
+
+onMounted(async () => {
+  try {
+    const [coursesRes, schedulesRes] = await Promise.all([
+      api.get('/courses'),
+      api.get('/schedules')
+    ]);
+    availableGlobalCourses.value = coursesRes.data;
+    masterSchedule.value = schedulesRes.data;
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+  }
+});
 
 const currentDate = new Date().toLocaleDateString('en-US', {
   weekday: 'long',
@@ -141,7 +159,7 @@ const todaySchedule = computed(() => {
     .map(schedule => {
       return {
         ...schedule,
-        name: schedule.courseTitle,
+        name: schedule.course?.name || schedule.courseTitle || 'Unknown Course',
         room: schedule.venue,
         status: 'upcoming',
         statusText: 'Upcoming'

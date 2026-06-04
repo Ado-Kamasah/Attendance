@@ -50,7 +50,7 @@
             </div>
             
             <div class="action-block">
-               <button class="mark-btn" @click="$emit('navigate', '/attendance-view')">Mark Attendance</button>
+               <button class="mark-btn" @click="markAttendance(cls)">Mark Attendance</button>
             </div>
           </div>
           
@@ -145,7 +145,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import api from '../../api.js';
 
 const emit = defineEmits(['navigate']);
 
@@ -180,27 +181,43 @@ const metrics = [
   }
 ];
 
-// Mock data assuming there is a class today (to see the UI visually)
-const todaySchedule = ref([
-  {
-    id: 10,
-    code: 'CSC 101',
-    name: 'Introduction to Computer Science',
-    startTime: '08:00 AM',
-    endTime: '10:00 AM',
-    venue: 'Hall A',
-    students: 124
-  },
-  {
-    id: 11,
-    code: 'SWE 302',
-    name: 'Software Engineering Principles',
-    startTime: '11:00 AM',
-    endTime: '01:00 PM',
-    venue: 'Room 304',
-    students: 45
+const todaySchedule = ref([]);
+
+onMounted(async () => {
+  try {
+    const userJson = localStorage.getItem('user');
+    const user = userJson ? JSON.parse(userJson) : null;
+    const lecturerName = user ? user.name : '';
+
+    const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' }) + 's'; // e.g., 'Mondays'
+    
+    const res = await api.get('/schedules');
+    const schedules = res.data.filter(s => 
+      (!lecturerName || s.lecturer === lecturerName) &&
+      (s.day === currentDayName || s.day === currentDayName.replace('s', ''))
+    );
+    
+    todaySchedule.value = schedules.map(s => ({
+      id: s.id,
+      courseId: s.courseId,
+      code: s.course?.code || 'Unknown',
+      name: s.course?.name || 'Unknown Course',
+      startTime: s.startTime,
+      endTime: s.endTime,
+      venue: s.venue,
+      students: 0 // Placeholder
+    }));
+  } catch (error) {
+    console.error('Error fetching dashboard schedules:', error);
   }
-]);
+});
+
+const markAttendance = (cls) => {
+  localStorage.setItem('activeCourseId', cls.courseId);
+  localStorage.setItem('activeCourseCode', cls.code);
+  localStorage.setItem('activeCourseName', cls.name);
+  emit('navigate', '/attendance-view');
+};
 </script>
 
 <style scoped>

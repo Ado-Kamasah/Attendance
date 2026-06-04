@@ -68,10 +68,29 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { studentEnrolledCourses, masterSchedule } from '../../store.js';
+import { ref, computed, onMounted } from 'vue';
+import api from '../../api.js';
 
 const emit = defineEmits(['navigate']);
+
+const studentEnrolledCourses = ref([]);
+const masterSchedule = ref([]);
+const attendanceSummary = ref([]);
+
+onMounted(async () => {
+  try {
+    const [enrolledRes, schedulesRes, summaryRes] = await Promise.all([
+      api.get('/courses/enrolled'),
+      api.get('/schedules'),
+      api.get('/attendance/summary')
+    ]);
+    studentEnrolledCourses.value = enrolledRes.data.map(item => item.course || item);
+    masterSchedule.value = schedulesRes.data;
+    attendanceSummary.value = summaryRes.data;
+  } catch (error) {
+    console.error('Error fetching student dashboard data:', error);
+  }
+});
 
 const currentDate = new Date().toLocaleDateString('en-US', {
   weekday: 'long',
@@ -80,41 +99,53 @@ const currentDate = new Date().toLocaleDateString('en-US', {
   day: 'numeric'
 });
 
-const metrics = computed(() => [
-  {
-    title: 'Enrolled Courses',
-    value: studentEnrolledCourses.value.length.toString(),
-    bgColor: 'rgba(99, 102, 241, 0.1)',
-    color: '#6366f1',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>'
-  },
-  {
-    title: 'Overall Attendance',
-    value: '0%',
-    bgColor: 'rgba(16, 185, 129, 0.1)',
-    color: '#10b981',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'
-  },
-  {
-    title: 'Classes Missed',
-    value: '0',
-    bgColor: 'rgba(239, 68, 68, 0.1)',
-    color: '#ef4444',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
-  }
-]);
+const metrics = computed(() => {
+  let totalSessions = 0;
+  let attendedSessions = 0;
+  attendanceSummary.value.forEach(s => {
+    totalSessions += s.totalSessions;
+    attendedSessions += s.attendedSessions;
+  });
+
+  const overallAttendance = totalSessions > 0 ? Math.round((attendedSessions / totalSessions) * 100) : 0;
+  const missedClasses = totalSessions - attendedSessions;
+
+  return [
+    {
+      title: 'Enrolled Courses',
+      value: studentEnrolledCourses.value.length.toString(),
+      bgColor: 'rgba(99, 102, 241, 0.1)',
+      color: '#6366f1',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>'
+    },
+    {
+      title: 'Overall Attendance',
+      value: `${overallAttendance}%`,
+      bgColor: 'rgba(16, 185, 129, 0.1)',
+      color: '#10b981',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'
+    },
+    {
+      title: 'Classes Missed',
+      value: missedClasses.toString(),
+      bgColor: 'rgba(239, 68, 68, 0.1)',
+      color: '#ef4444',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+    }
+  ];
+});
 
 const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
 const todaySchedule = computed(() => {
   const enrolledCodes = studentEnrolledCourses.value.map(c => c.code);
   return masterSchedule.value
-    .filter(schedule => schedule.day === currentDayName && enrolledCodes.includes(schedule.courseCode))
+    .filter(schedule => schedule.day === currentDayName && enrolledCodes.includes(schedule.course.code))
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
     .map(schedule => {
       return {
         ...schedule,
-        name: schedule.courseTitle,
+        name: schedule.course?.name || schedule.courseTitle || 'Unknown Course',
         room: schedule.venue,
         status: 'upcoming',
         statusText: 'Upcoming'

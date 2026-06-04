@@ -80,13 +80,30 @@
 </template>
 
 <script setup>
-import { studentEnrolledCourses } from '../../store.js';
+import { ref, onMounted } from 'vue';
+import api from '../../api.js';
 
 const emit = defineEmits(['navigate']);
 
-const myCourses = studentEnrolledCourses;
+const myCourses = ref([]);
+
+onMounted(async () => {
+  try {
+    const response = await api.get('/courses/enrolled');
+    // Map the enrolled response to course items
+    myCourses.value = response.data.map(item => {
+      const course = item;
+      course.color = '#4f46e5'; // Default color
+      course.attendance = 0; // Default attendance
+      return course;
+    });
+  } catch (error) {
+    console.error('Error fetching enrolled courses:', error);
+  }
+});
 
 const getInitials = (name) => {
+  if (!name) return 'UN';
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 </script>
