@@ -1,6 +1,6 @@
 import express from 'express';
 import { getFaculties, createFaculty, deleteFaculty } from '../controllers/facultyController.js';
-import { protect, adminOnly } from '../middleware/authMiddleware.js';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', getFaculties);
 
 // Admin only routes for managing faculties
-router.post('/', protect, adminOnly, createFaculty);
-router.delete('/:id', protect, adminOnly, deleteFaculty);
+router.post('/', authenticateToken, requireRole(['ADMIN']), createFaculty);
+router.delete('/:id', authenticateToken, requireRole(['ADMIN']), deleteFaculty);
 
 export default router;
