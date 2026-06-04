@@ -9,7 +9,8 @@ import scheduleRoutes from './routes/schedules.js';
 import sessionRoutes from './routes/sessions.js';
 import attendanceRoutes from './routes/attendance.js';
 import facultyRoutes from './routes/facultyRoutes.js';
-
+import adminRoutes from './routes/admin.js';
+import semesterRoutes from './routes/semesters.js';
 const app = express();
 
 // Middlewares
@@ -29,7 +30,8 @@ app.use('/api/schedules', scheduleRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/faculties', facultyRoutes);
-
+app.use('/api/admin', adminRoutes);
+app.use('/api/semesters', semesterRoutes);
 // 404 Route Not Found
 app.use((req, res) => {
   res.status(404).json({ message: `API route not found: ${req.method} ${req.originalUrl}` });

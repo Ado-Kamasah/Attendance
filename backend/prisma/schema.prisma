@@ -105,3 +105,22 @@ model Faculty {
   name      String   @unique
   createdAt DateTime @default(now())
 }
+
+model Semester {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String
+  userId    String
+  userRole  String
+  userName  String
+  timestamp DateTime @default(now())
+}

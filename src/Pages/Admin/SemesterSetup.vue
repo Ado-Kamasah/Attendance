@@ -153,30 +153,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import api from '../../api.js';
 
-const semesters = ref([
-  {
-    id: 1,
-    year: '2023/2024',
-    term: 'Second Semester',
-    startDate: '2024-01-15',
-    endDate: '2024-04-30',
-    examsStart: '2024-05-02',
-    examsEnd: '2024-05-15',
-    isCurrent: false
-  },
-  {
-    id: 2,
-    year: '2024/2025',
-    term: 'First Semester',
-    startDate: '2024-08-20',
-    endDate: '2024-12-10',
-    examsStart: '2024-12-13',
-    examsEnd: '2024-12-22',
-    isCurrent: true
-  }
-]);
+const semesters = ref([]);
 
 const initialForm = {
   year: '',
@@ -189,6 +169,24 @@ const initialForm = {
 };
 
 const form = ref({ ...initialForm });
+
+const fetchSemesters = async () => {
+  try {
+    const res = await api.get('/semesters');
+    semesters.value = res.data.map(s => ({
+      ...s,
+      year: s.name.split(' - ')[0],
+      term: s.name.split(' - ')[1] || s.name,
+      isCurrent: s.isActive
+    }));
+  } catch (error) {
+    console.error('Error fetching semesters:', error);
+  }
+};
+
+onMounted(() => {
+  fetchSemesters();
+});
 
 const activeSemester = computed(() => {
   return semesters.value.find(s => s.isCurrent);
@@ -208,28 +206,45 @@ const resetForm = () => {
   form.value = { ...initialForm };
 };
 
-const saveSemester = () => {
-  if (form.value.isCurrent) {
-    // Deactivate all others
-    semesters.value.forEach(s => s.isCurrent = false);
+const saveSemester = async () => {
+  try {
+    const name = `${form.value.year} - ${form.value.term}`;
+    await api.post('/semesters', {
+      name,
+      startDate: form.value.startDate,
+      endDate: form.value.endDate,
+      isActive: form.value.isCurrent
+    });
+    resetForm();
+    await fetchSemesters();
+  } catch (error) {
+    console.error('Error saving semester:', error);
   }
-  
-  semesters.value.push({
-    id: Date.now(),
-    ...form.value
-  });
-  
-  resetForm();
 };
 
-const setActive = (id) => {
-  semesters.value.forEach(s => {
-    s.isCurrent = (s.id === id);
-  });
+const setActive = async (id) => {
+  try {
+    const sem = semesters.value.find(s => s.id === id);
+    if (!sem) return;
+    await api.put(`/semesters/${id}`, {
+      name: sem.name,
+      startDate: sem.startDate,
+      endDate: sem.endDate,
+      isActive: true
+    });
+    await fetchSemesters();
+  } catch (error) {
+    console.error('Error setting active semester:', error);
+  }
 };
 
-const deleteSemester = (id) => {
-  semesters.value = semesters.value.filter(s => s.id !== id);
+const deleteSemester = async (id) => {
+  try {
+    await api.delete(`/semesters/${id}`);
+    await fetchSemesters();
+  } catch (error) {
+    console.error('Error deleting semester:', error);
+  }
 };
 </script>
 

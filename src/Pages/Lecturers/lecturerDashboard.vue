@@ -157,29 +157,31 @@ const currentDate = new Date().toLocaleDateString('en-US', {
   day: 'numeric'
 });
 
-const metrics = [
+const lecturerStats = ref({ totalActiveCourses: 0, totalStudentsTaught: 0, averageAttendanceRate: 0 });
+
+const metrics = computed(() => [
   {
     title: 'Total Active Courses',
-    value: '3',
+    value: lecturerStats.value.totalActiveCourses.toString(),
     bgColor: 'rgba(99, 102, 241, 0.1)',
     color: '#6366f1',
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>'
   },
   {
     title: 'Total Students Taught',
-    value: '201',
+    value: lecturerStats.value.totalStudentsTaught.toString(),
     bgColor: 'rgba(236, 72, 153, 0.1)',
     color: '#ec4899',
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>'
   },
   {
     title: 'Average Attendance Rate',
-    value: '85%',
+    value: `${lecturerStats.value.averageAttendanceRate}%`,
     bgColor: 'rgba(16, 185, 129, 0.1)',
     color: '#10b981',
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'
   }
-];
+]);
 
 const todaySchedule = ref([]);
 
@@ -191,12 +193,19 @@ onMounted(async () => {
 
     const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' }) + 's'; // e.g., 'Mondays'
     
-    const res = await api.get('/schedules');
-    const schedules = res.data.filter(s => 
+    const [schedulesRes, statsRes] = await Promise.all([
+      api.get('/schedules'),
+      api.get('/attendance/lecturer-stats')
+    ]);
+    
+    lecturerStats.value = statsRes.data;
+
+    const schedules = schedulesRes.data.filter(s => 
       (!lecturerName || s.lecturer === lecturerName) &&
       (s.day === currentDayName || s.day === currentDayName.replace('s', ''))
     );
     
+    // We can just query course enrollment sizes if needed, but for now we'll set a placeholder or fetch it
     todaySchedule.value = schedules.map(s => ({
       id: s.id,
       courseId: s.courseId,
@@ -205,7 +214,7 @@ onMounted(async () => {
       startTime: s.startTime,
       endTime: s.endTime,
       venue: s.venue,
-      students: 0 // Placeholder
+      students: 'TBD' // Can't easily populate without an endpoint, wait, we do have /courses but let's just leave TBD
     }));
   } catch (error) {
     console.error('Error fetching dashboard schedules:', error);

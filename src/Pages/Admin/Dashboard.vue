@@ -91,18 +91,22 @@ import { ref, computed, onMounted } from 'vue';
 import api from '../../api.js';
 
 const systemAuditLogs = ref([]);
-
 const availableGlobalCourses = ref([]);
 const masterSchedule = ref([]);
+const dashboardStats = ref({ totalStudents: 0, averageAttendance: 0, flaggedAbsences: 0 });
 
 onMounted(async () => {
   try {
-    const [coursesRes, schedulesRes] = await Promise.all([
+    const [coursesRes, schedulesRes, statsRes, logsRes] = await Promise.all([
       api.get('/courses'),
-      api.get('/schedules')
+      api.get('/schedules'),
+      api.get('/admin/dashboard-stats'),
+      api.get('/admin/audit-logs')
     ]);
     availableGlobalCourses.value = coursesRes.data;
     masterSchedule.value = schedulesRes.data;
+    dashboardStats.value = statsRes.data;
+    systemAuditLogs.value = logsRes.data;
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
   }
@@ -120,7 +124,7 @@ const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' 
 const metrics = computed(() => [
   {
     title: 'Total Students',
-    value: '1',
+    value: dashboardStats.value.totalStudents.toString(),
     trend: 5,
     bgColor: 'rgba(99, 102, 241, 0.1)',
     color: '#6366f1',
@@ -128,7 +132,7 @@ const metrics = computed(() => [
   },
   {
     title: 'Average Attendance',
-    value: '95%',
+    value: `${dashboardStats.value.averageAttendance}%`,
     trend: 2,
     bgColor: 'rgba(16, 185, 129, 0.1)',
     color: '#10b981',
@@ -144,7 +148,7 @@ const metrics = computed(() => [
   },
   {
     title: 'Flagged Absences',
-    value: '0',
+    value: dashboardStats.value.flaggedAbsences.toString(),
     trend: -4,
     bgColor: 'rgba(239, 68, 68, 0.1)',
     color: '#ef4444',

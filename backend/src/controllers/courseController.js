@@ -54,10 +54,29 @@ export const getCourses = async (req, res) => {
 
     const courses = await prisma.course.findMany({
       where,
+      include: { schedules: true },
       orderBy: { code: 'asc' }
     });
 
-    res.status(200).json(courses);
+    const formattedCourses = courses.map(course => {
+      let lecturer = null;
+      let scheduleStr = null;
+
+      if (course.schedules && course.schedules.length > 0) {
+        // Use the first assigned lecturer
+        lecturer = course.schedules[0].lecturer;
+        // Combine all schedule times for the course
+        scheduleStr = course.schedules.map(s => `${s.day} ${s.startTime}`).join(', ');
+      }
+
+      return {
+        ...course,
+        lecturer,
+        schedule: scheduleStr
+      };
+    });
+
+    res.status(200).json(formattedCourses);
   } catch (error) {
     console.error('Fetch courses error:', error);
     res.status(500).json({ message: 'Server error fetching courses', error: error.message });

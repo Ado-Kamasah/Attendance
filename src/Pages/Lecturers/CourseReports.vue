@@ -137,27 +137,8 @@ const isLoadingStudents = ref(false);
 
 onMounted(async () => {
   try {
-    const userJson = localStorage.getItem('user');
-    const user = userJson ? JSON.parse(userJson) : null;
-    const lecturerName = user ? user.name : '';
-
-    // Fetch schedules to get lecturer's courses
-    const res = await api.get('/schedules');
-    const schedules = res.data.filter(s => !lecturerName || s.lecturer === lecturerName);
-    
-    // In a real app, you would fetch actual attendance stats from the backend.
-    // Here we generate placeholder report data based on their assigned courses.
-    reportData.value = schedules.map(s => ({
-      courseId: s.courseId,
-      code: s.course?.code || 'Unknown',
-      name: s.course?.name || 'Unknown Course',
-      semester: s.course?.semester || 'Semester 1',
-      avgAttendance: Math.floor(Math.random() * (95 - 60) + 60), // Mock data: 60-95%
-      totalStudents: Math.floor(Math.random() * (120 - 20) + 20), // Mock data: 20-120 students
-      sessionsHeld: Math.floor(Math.random() * (15 - 3) + 3), // Mock data
-      perfectAttendance: Math.floor(Math.random() * 15),
-      atRisk: Math.floor(Math.random() * 5)
-    }));
+    const res = await api.get('/attendance/course-reports');
+    reportData.value = res.data;
   } catch (error) {
     console.error('Error fetching course reports:', error);
   }
@@ -173,12 +154,8 @@ const openStudentList = async (report) => {
   isLoadingStudents.value = true;
   
   try {
-    const response = await api.get(`/courses/${report.courseId}/students`);
-    // Assign a random attendance rate for demonstration purposes since backend doesn't provide it yet
-    studentsList.value = response.data.map(student => ({
-      ...student,
-      attendanceRate: Math.floor(Math.random() * (100 - 50) + 50)
-    }));
+    const response = await api.get(`/attendance/course-reports/${report.courseId}/students`);
+    studentsList.value = response.data;
   } catch (error) {
     console.error('Error fetching students:', error);
     studentsList.value = [];

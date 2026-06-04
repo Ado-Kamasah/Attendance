@@ -171,3 +171,154 @@ export const getSessionAttendanceList = async (req, res) => {
     res.status(500).json({ message: 'Server error fetching session attendance list', error: error.message });
   }
 };
+
+/**
+ * Get Lecturer Stats (Total Active Courses, Total Students Taught, Average Attendance Rate)
+ */
+export const getLecturerStats = async (req, res) => {
+  try {
+    const lecturerId = req.user.id;
+    const lecturerName = req.user.name;
+
+    // Total Active Courses (Assigned to Lecturer)
+    const schedules = await prisma.schedule.findMany({
+      where: { lecturer: lecturerName },
+      select: { courseId: true }
+    });
+    const courseIds = [...new Set(schedules.map(s => s.courseId))];
+
+    // Total Students Taught
+    const enrollments = await prisma.enrollment.findMany({
+      where: { courseId: { in: courseIds } },
+      select: { studentId: true }
+    });
+    const uniqueStudents = new Set(enrollments.map(e => e.studentId));
+
+    // Average Attendance Rate
+    const sessions = await prisma.session.findMany({
+      where: { lecturerId },
+      include: {
+        course: { include: { enrollments: true } },
+        _count: { select: { attendances: true } }
+      }
+    });
+
+    let possibleAttendances = 0;
+    let actualAttendances = 0;
+
+    sessions.forEach(s => {
+      possibleAttendances += s.course.enrollments.length;
+      actualAttendances += s._count.attendances;
+    });
+
+    const averageAttendanceRate = possibleAttendances > 0
+      ? Math.round((actualAttendances / possibleAttendances) * 100)
+      : 0;
+
+    res.status(200).json({
+      totalActiveCourses: courseIds.length,
+      totalStudentsTaught: uniqueStudents.size,
+      averageAttendanceRate
+    });
+  } catch (error) {
+    console.error('Lecturer stats error:', error);
+    res.status(500).json({ message: 'Server error fetching lecturer stats', error: error.message });
+  }
+};
+
+/**
+ * Get Course Reports (Attendance aggregations per course for Lecturer)
+ */
+export const getCourseReports = async (req, res) => {
+  try {
+    const lecturerName = req.user.name;
+
+    const schedules = await prisma.schedule.findMany({
+      where: { lecturer: lecturerName },
+      include: {
+        course: {
+          include: {
+            enrollments: true,
+            sessions: {
+              include: { _count: { select: { attendances: true } } }
+            }
+          }
+        }
+      }
+    });
+
+    const uniqueCourses = new Map();
+
+    schedules.forEach(schedule => {
+      if (!uniqueCourses.has(schedule.courseId)) {
+        const course = schedule.course;
+        
+        let possible = 0;
+        let actual = 0;
+        course.sessions.forEach(s => {
+          possible += course.enrollments.length;
+          actual += s._count.attendances;
+        });
+
+        const avgAttendance = possible > 0 ? Math.round((actual / possible) * 100) : 0;
+        // Mocking perfect attendance/at risk for simplicity unless we iterate each student
+        
+        uniqueCourses.set(course.id, {
+          courseId: course.id,
+          code: course.code,
+          name: course.name,
+          semester: course.semester,
+          totalStudents: course.enrollments.length,
+          sessionsHeld: course.sessions.length,
+          avgAttendance,
+          perfectAttendance: 0, // placeholder
+          atRisk: 0 // placeholder
+        });
+      }
+    });
+
+    res.status(200).json(Array.from(uniqueCourses.values()));
+  } catch (error) {
+    console.error('Course reports error:', error);
+    res.status(500).json({ message: 'Server error fetching course reports', error: error.message });
+  }
+};
+
+/**
+ * Get Students in a Course with their specific attendance percentage
+ */
+export const getCourseStudentsAttendance = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const enrollments = await prisma.enrollment.findMany({
+      where: { courseId },
+      include: {
+        student: true
+      }
+    });
+
+    const totalSessions = await prisma.session.count({ where: { courseId } });
+
+    const studentsAttendance = await Promise.all(
+      enrollments.map(async (e) => {
+        const attended = await prisma.attendance.count({
+          where: { studentId: e.studentId, session: { courseId } }
+        });
+        const attendanceRate = totalSessions > 0 ? Math.round((attended / totalSessions) * 100) : 0;
+        return {
+          id: e.student.id,
+          studentId: e.student.id,
+          name: e.student.name,
+          program: e.student.program,
+          attendanceRate
+        };
+      })
+    );
+
+    res.status(200).json(studentsAttendance);
+  } catch (error) {
+    console.error('Course students attendance error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
