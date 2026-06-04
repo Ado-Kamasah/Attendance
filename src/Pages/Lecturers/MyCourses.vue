@@ -73,7 +73,7 @@
             <button class="action-btn solid-btn" :style="{ backgroundColor: course.color }" @click="goToAttendance(course)">
               Take Attendance
             </button>
-            <button class="action-btn outline-btn">
+            <button class="action-btn outline-btn" @click="openClassList(course)">
               View Class List
             </button>
           </div>
@@ -108,6 +108,51 @@
         <div class="modal-actions">
           <button class="action-btn outline-btn" @click="cancelEdit">Cancel</button>
           <button class="action-btn primary-btn" @click="saveEdit">Save Schedule</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for Class List -->
+    <div v-if="showingClassList" class="modal-overlay" @click.self="closeClassList">
+      <div class="modal-content class-list-modal">
+        <div class="modal-header-row">
+          <div>
+            <h2>{{ activeCourse?.name }}</h2>
+            <p>Class Enrollment List</p>
+          </div>
+          <button class="icon-btn" @click="closeClassList">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        
+        <div v-if="isLoadingStudents" class="loading-state">
+          Loading students...
+        </div>
+        <div v-else-if="studentsList.length === 0" class="empty-state-small">
+          <p>No students enrolled in this course.</p>
+        </div>
+        <div v-else class="table-container">
+          <table class="students-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Student ID</th>
+                <th>Program</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="student in studentsList" :key="student.id">
+                <td>
+                  <div class="student-cell">
+                    <div class="student-avatar">{{ student.name.charAt(0) }}</div>
+                    <span>{{ student.name }}</span>
+                  </div>
+                </td>
+                <td>{{ student.studentId }}</td>
+                <td>{{ student.program || 'N/A' }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -176,6 +221,33 @@ const saveEdit = () => {
     editingCourse.value = null;
     alert('Class schedule successfully updated!');
   }
+};
+
+const showingClassList = ref(false);
+const activeCourse = ref(null);
+const studentsList = ref([]);
+const isLoadingStudents = ref(false);
+
+const openClassList = async (course) => {
+  activeCourse.value = course;
+  showingClassList.value = true;
+  isLoadingStudents.value = true;
+  
+  try {
+    const response = await api.get(`/courses/${course.id}/students`);
+    studentsList.value = response.data;
+  } catch (error) {
+    console.error('Error fetching class list:', error);
+    studentsList.value = [];
+  } finally {
+    isLoadingStudents.value = false;
+  }
+};
+
+const closeClassList = () => {
+  showingClassList.value = false;
+  activeCourse.value = null;
+  studentsList.value = [];
 };
 </script>
 
@@ -576,5 +648,75 @@ const saveEdit = () => {
   .card-actions {
     flex-direction: column;
   }
+}
+
+.class-list-modal {
+  max-width: 600px !important;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.loading-state, .empty-state-small {
+  text-align: center;
+  padding: 3rem 0;
+  color: #64748b;
+  font-style: italic;
+}
+
+.table-container {
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.students-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.students-table th {
+  background-color: #f8fafc;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.students-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.student-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+}
+
+.student-avatar {
+  width: 32px;
+  height: 32px;
+  background-color: #e0e7ff;
+  color: #4338ca;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 </style>
