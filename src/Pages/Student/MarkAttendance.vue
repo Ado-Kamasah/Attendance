@@ -66,11 +66,11 @@
       <!-- Right Column: Recent History -->
       <div class="history-panel">
         <div class="panel-header">
-          <h2>Recent History</h2>
-          <button class="text-btn">View Full Log</button>
+          <h2>Recent Sessions</h2>
+          <button class="text-btn" @click="alert('Full Attendance Log Coming Soon')">View Full Log</button>
         </div>
 
-        <div class="history-list">
+        <div class="sessions-list">
           <div v-if="attendanceHistory.length === 0" class="empty-history">
             <p>No recent attendance records found.</p>
           </div>

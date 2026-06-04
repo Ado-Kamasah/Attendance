@@ -34,7 +34,7 @@
       <div class="schedule-panel">
         <div class="panel-header">
           <h2>My Schedule For Today</h2>
-          <button class="view-all-btn">Full Timetable</button>
+          <button class="view-all-btn" @click="$emit('navigate', '/my-courses')">Full Timetable</button>
         </div>
         
         <div class="schedule-list">

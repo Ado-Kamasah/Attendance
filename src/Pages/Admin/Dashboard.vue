@@ -36,7 +36,7 @@
       <div class="schedule-panel">
         <div class="panel-header">
           <h2>Today's Schedule</h2>
-          <button class="view-all-btn">View All</button>
+          <button class="view-all-btn" @click="$emit('navigate', '/schedule')">View All</button>
         </div>
         
         <div class="schedule-list">
@@ -79,7 +79,7 @@
             </div>
             <div v-if="systemAuditLogs.length === 0" class="empty-msg">No audit logs available.</div>
           </div>
-          <button class="view-all-btn full-width">View Full Audit Trail</button>
+          <button class="view-all-btn full-width" @click="alert('Full Audit Trail functionality coming soon')">View Full Audit Trail</button>
         </div>
       </div>
     </div>

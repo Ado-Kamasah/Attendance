@@ -49,7 +49,7 @@
               <div v-if="notifications.length === 0" class="empty-state">No new notifications.</div>
             </div>
             <div class="panel-footer">
-              <button class="block-btn">View All</button>
+              <button class="block-btn" @click="alert('Full Notification History Coming Soon!')">View All</button>
             </div>
           </div>
         </div>
@@ -78,7 +78,6 @@
                  <span>Language</span>
                  <select v-model="userSettings.language" class="setting-select">
                    <option value="English">English</option>
-                   <option value="French">Français</option>
                  </select>
                </div>
                <div class="setting-row toggle-row">
@@ -97,7 +96,7 @@
                </div>
             </div>
             <div class="panel-footer">
-              <button class="block-btn" @click="closeSettings">Save Options</button>
+              <button class="block-btn" @click="saveSettings">Save Options</button>
             </div>
           </div>
         </div>
@@ -155,6 +154,21 @@ const userSettings = ref({
 
 const closeSettings = () => {
   showSettings.value = false;
+};
+
+const saveSettings = () => {
+  showSettings.value = false;
+  
+  // Apply Theme
+  if (userSettings.value.theme === 'Dark') {
+    document.body.classList.add('dark-theme');
+  } else {
+    document.body.classList.remove('dark-theme');
+  }
+
+  // Apply Language
+  document.documentElement.lang = 'en';
+  alert('Your preferences have been saved successfully!');
 };
 
 const closeDropdowns = (e) => {
@@ -591,5 +605,57 @@ input:checked + .slider:before {
   .mobile-toggle-btn {
     display: none;
   }
+}
+
+/* Global Dark Theme Mock */
+:global(body.dark-theme) {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+:global(body.dark-theme .navbar),
+:global(body.dark-theme .main-content),
+:global(body.dark-theme .dashboard-container),
+:global(body.dark-theme .schedule-panel),
+:global(body.dark-theme .action-panel),
+:global(body.dark-theme .side-panel > div),
+:global(body.dark-theme .metric-card),
+:global(body.dark-theme .card),
+:global(body.dark-theme .course-card),
+:global(body.dark-theme .panel-header),
+:global(body.dark-theme .empty-state),
+:global(body.dark-theme .modal-card),
+:global(body.dark-theme .modal-content),
+:global(body.dark-theme .content-placeholder) {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+:global(body.dark-theme h1),
+:global(body.dark-theme h2),
+:global(body.dark-theme h3),
+:global(body.dark-theme h4),
+:global(body.dark-theme p),
+:global(body.dark-theme span),
+:global(body.dark-theme div) {
+  color: #f8fafc;
+}
+
+:global(body.dark-theme .dropdown-panel) {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:global(body.dark-theme .setting-row),
+:global(body.dark-theme .notif-item) {
+  border-color: #334155 !important;
+}
+
+:global(body.dark-theme .search-input),
+:global(body.dark-theme .setting-select) {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
 }
 </style>
