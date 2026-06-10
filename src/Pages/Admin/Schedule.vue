@@ -187,17 +187,21 @@ const modes = ['Regular', 'Weekend'];
 const regularDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const weekendDays = ['Friday', 'Saturday', 'Sunday'];
 
+// Auto-detect today's day name
+const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' }); // e.g. 'Wednesday'
+const defaultDay = regularDays.includes(todayName) ? todayName : 'Monday';
+
 const selectedLevel = ref('100');
 const selectedMode = ref('Regular');
 const selectedSemester = ref('Semester 1');
-const selectedDay = ref('Monday');
+const selectedDay = ref(defaultDay); // Start on today
 const isModalOpen = ref(false);
 const editingScheduleId = ref(null);
 
 const activeDays = computed(() => selectedMode.value === 'Regular' ? regularDays : weekendDays);
 
 watch(selectedMode, (newMode) => {
-  selectedDay.value = newMode === 'Regular' ? 'Monday' : 'Friday';
+  selectedDay.value = newMode === 'Regular' ? defaultDay : 'Friday';
 });
 
 const schedules = ref([]);

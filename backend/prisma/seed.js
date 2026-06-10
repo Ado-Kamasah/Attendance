@@ -206,64 +206,88 @@ async function main() {
   console.log('Seeded course enrollments.');
 
   // 5. Weekly master schedule entries
-  const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  // Clear existing schedules to seed cleanly
+  // Clear existing records to seed cleanly
+  await prisma.attendance.deleteMany({});
   await prisma.schedule.deleteMany({});
+  await prisma.session.deleteMany({});
 
-  await prisma.schedule.create({
+  for (const day of daysOfWeek) {
+    await prisma.schedule.create({
+      data: {
+        courseId: csc101.id,
+        level: '100',
+        mode: 'Regular',
+        day: day,
+        startTime: '08:00',
+        endTime: '10:00',
+        venue: 'Hall A',
+        lecturer: 'Dr. Kwame Nkrumah'
+      }
+    });
+
+    await prisma.schedule.create({
+      data: {
+        courseId: mth102.id,
+        level: '100',
+        mode: 'Regular',
+        day: day,
+        startTime: '10:30',
+        endTime: '12:30',
+        venue: 'Hall B',
+        lecturer: 'Prof. Frimpong Boateng'
+      }
+    });
+
+    await prisma.schedule.create({
+      data: {
+        courseId: bba101.id,
+        level: '100',
+        mode: 'Regular',
+        day: day,
+        startTime: '14:00',
+        endTime: '16:00',
+        venue: 'Hall C',
+        lecturer: 'Dr. Osei Tutu'
+      }
+    });
+  }
+
+  console.log('Seeded schedules for all days of the week.');
+
+  // 6. Active Live Sessions for testing
+  await prisma.session.create({
     data: {
       courseId: csc101.id,
-      level: '100',
-      mode: 'Regular',
-      day: currentDayName,
-      startTime: '08:00',
-      endTime: '10:00',
-      venue: 'Hall A',
-      lecturer: 'Dr. Kwame Nkrumah'
+      lecturerId: lecturer1.id,
+      pin: '111111',
+      maxStudents: 50,
+      isActive: true
     }
   });
 
-  await prisma.schedule.create({
+  await prisma.session.create({
     data: {
       courseId: mth102.id,
-      level: '100',
-      mode: 'Regular',
-      day: 'Monday',
-      startTime: '10:30',
-      endTime: '12:30',
-      venue: 'Hall B',
-      lecturer: 'Prof. Frimpong Boateng'
+      lecturerId: lecturer2.id,
+      pin: '222222',
+      maxStudents: 50,
+      isActive: true
     }
   });
 
-  await prisma.schedule.create({
+  await prisma.session.create({
     data: {
       courseId: bba101.id,
-      level: '100',
-      mode: 'Regular',
-      day: currentDayName,
-      startTime: '14:00',
-      endTime: '16:00',
-      venue: 'Hall C',
-      lecturer: 'Dr. Osei Tutu'
+      lecturerId: lecturer3.id,
+      pin: '333333',
+      maxStudents: 50,
+      isActive: true
     }
   });
 
-  await prisma.schedule.create({
-    data: {
-      courseId: mkt201.id,
-      level: '200',
-      mode: 'Weekend',
-      day: 'Saturday',
-      startTime: '09:00',
-      endTime: '12:00',
-      venue: 'Room 3',
-      lecturer: 'Prof. Jane Naana Opoku-Agyemang'
-    }
-  });
-
-  console.log('Seeded schedules.');
+  console.log('Seeded active live sessions (PINs: 111111, 222222, 333333).');
   console.log('Database seeding complete!');
 }
 
