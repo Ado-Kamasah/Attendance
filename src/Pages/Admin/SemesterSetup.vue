@@ -12,7 +12,7 @@
       <div class="setup-column">
         <div class="card form-card">
           <div class="card-header">
-            <h2>Configure New Semester</h2>
+            <h2>{{ editingSemesterId ? 'Update Semester' : 'Configure New Semester' }}</h2>
             <p>Define the dates and parameters for an academic term.</p>
           </div>
           
@@ -84,9 +84,9 @@
             <div class="form-actions">
               <button type="submit" class="btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                Save Configuration
+                {{ editingSemesterId ? 'Update Configuration' : 'Save Configuration' }}
               </button>
-              <button type="button" class="btn-ghost" @click="resetForm">Clear</button>
+              <button type="button" class="btn-ghost" @click="resetForm">{{ editingSemesterId ? 'Cancel' : 'Clear' }}</button>
             </div>
           </form>
         </div>
@@ -136,6 +136,9 @@
               </div>
               <div class="history-actions" v-if="!sem.isCurrent">
                 <button class="btn-activate" title="Set as Current" @click="setActive(sem.id)">Set Active</button>
+                <button class="btn-icon edit" title="Edit" @click="editSemester(sem)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
                 <button class="btn-icon" title="Delete" @click="deleteSemester(sem.id)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
@@ -169,6 +172,7 @@ const initialForm = {
 };
 
 const form = ref({ ...initialForm });
+const editingSemesterId = ref(null);
 
 const fetchSemesters = async () => {
   try {
@@ -204,17 +208,38 @@ const formatDate = (dateStr) => {
 
 const resetForm = () => {
   form.value = { ...initialForm };
+  editingSemesterId.value = null;
+};
+
+const editSemester = (sem) => {
+  editingSemesterId.value = sem.id;
+  form.value = {
+    year: sem.year,
+    term: sem.term,
+    startDate: sem.startDate ? sem.startDate.split('T')[0] : '',
+    endDate: sem.endDate ? sem.endDate.split('T')[0] : '',
+    examsStart: sem.examsStart ? sem.examsStart.split('T')[0] : '',
+    examsEnd: sem.examsEnd ? sem.examsEnd.split('T')[0] : '',
+    isCurrent: sem.isCurrent
+  };
 };
 
 const saveSemester = async () => {
   try {
     const name = `${form.value.year} - ${form.value.term}`;
-    await api.post('/semesters', {
+    const payload = {
       name,
       startDate: form.value.startDate,
       endDate: form.value.endDate,
       isActive: form.value.isCurrent
-    });
+    };
+    
+    if (editingSemesterId.value) {
+      await api.put(`/semesters/${editingSemesterId.value}`, payload);
+    } else {
+      await api.post('/semesters', payload);
+    }
+    
     resetForm();
     await fetchSemesters();
   } catch (error) {
@@ -720,40 +745,49 @@ const deleteSemester = async (id) => {
   }
 }
 
+.history-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .btn-activate {
-  background: transparent;
-  border: 1px solid #6366f1;
-  color: #6366f1;
-  padding: 6px 12px;
-  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
   font-size: 0.8rem;
   font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
-  white-space: nowrap;
 }
 
 .btn-activate:hover {
-  background: #6366f1;
-  color: white;
+  background: #e2e8f0;
+  color: #1e293b;
 }
 
 .btn-icon {
   background: transparent;
   border: none;
-  width: 32px;
-  height: 32px;
+  color: #94a3b8;
+  padding: 6px;
   border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
-  cursor: pointer;
 }
 
-.btn-icon:hover {
-  background: #fee2e2;
+.btn-icon.edit:hover {
+  color: #4f46e5;
+  background: #e0e7ff;
+}
+
+.btn-icon:hover:not(.edit) {
   color: #ef4444;
+  background: #fee2e2;
 }
 
 .btn-icon svg {
