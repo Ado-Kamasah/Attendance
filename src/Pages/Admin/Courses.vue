@@ -82,6 +82,9 @@
               <button class="icon-action-btn edit" title="Edit Course" @click="editCourse(course)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
+              <button class="icon-action-btn assign" title="Assign Lecturer" @click="openAssignModal(course)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="16" y1="11" x2="22" y2="11"></line></svg>
+              </button>
               <button class="icon-action-btn delete" title="Archive Course" @click="archiveCourse(course.id)" v-if="course.status !== 'archived'">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
@@ -167,6 +170,103 @@
         </div>
       </div>
     </div>
+
+    <!-- Assign Lecturer Modal -->
+    <div class="modal-backdrop" v-if="isAssignModalOpen" @click.self="closeAssignModal">
+      <div class="modal-card assign-modal">
+        <div class="modal-header">
+          <div>
+            <h2>Assign Lecturer</h2>
+            <p class="modal-subtitle">{{ assigningCourse?.code }} — {{ assigningCourse?.name }}</p>
+          </div>
+          <button class="close-btn" @click="closeAssignModal" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="saveAssignment" class="course-form">
+
+            <!-- Lecturer Select -->
+            <div class="form-group">
+              <label>Select Lecturer</label>
+              <div class="lecturer-select-wrap">
+                <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <select v-model="assignForm.lecturerId" required class="form-control pl-icon" @change="onLecturerChange">
+                  <option value="" disabled>-- Choose a Lecturer --</option>
+                  <option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option>
+                </select>
+              </div>
+              <p v-if="isLoadingLecturers" class="hint-text">Loading lecturers...</p>
+              <p v-else-if="lecturers.length === 0" class="hint-text warn">No lecturer accounts found. Create one first.</p>
+            </div>
+
+            <div class="form-row">
+              <!-- Day -->
+              <div class="form-group">
+                <label>Day of Week</label>
+                <select v-model="assignForm.day" required class="form-control">
+                  <option value="" disabled>Select day</option>
+                  <option>Mondays</option>
+                  <option>Tuesdays</option>
+                  <option>Wednesdays</option>
+                  <option>Thursdays</option>
+                  <option>Fridays</option>
+                  <option>Saturdays</option>
+                </select>
+              </div>
+
+              <!-- Mode -->
+              <div class="form-group">
+                <label>Mode</label>
+                <select v-model="assignForm.mode" required class="form-control">
+                  <option>Lecture</option>
+                  <option>Tutorial</option>
+                  <option>Lab</option>
+                  <option>Seminar</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <!-- Start Time -->
+              <div class="form-group">
+                <label>Start Time</label>
+                <input type="time" v-model="assignForm.startTime" required class="form-control" />
+              </div>
+              <!-- End Time -->
+              <div class="form-group">
+                <label>End Time</label>
+                <input type="time" v-model="assignForm.endTime" required class="form-control" />
+              </div>
+            </div>
+
+            <!-- Venue -->
+            <div class="form-group">
+              <label>Venue / Room</label>
+              <input type="text" v-model="assignForm.venue" placeholder="e.g. Lecture Hall A, Room 204" required class="form-control" />
+            </div>
+
+            <!-- Success/Error Banner -->
+            <div v-if="assignSuccess" class="alert-banner success">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              Lecturer assigned successfully!
+            </div>
+            <div v-if="assignError" class="alert-banner error">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              {{ assignError }}
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="clear-btn" @click="closeAssignModal">Cancel</button>
+              <button type="submit" class="primary-btn" :disabled="isAssigning">
+                <svg v-if="isAssigning" class="spinner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"></circle></svg>
+                {{ isAssigning ? 'Assigning...' : 'Confirm Assignment' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -188,6 +288,24 @@ const newCourse = ref({
   program: '',
   semester: 'Semester 1',
   level: '100'
+});
+
+// Assign Lecturer State
+const isAssignModalOpen = ref(false);
+const assigningCourse = ref(null);
+const lecturers = ref([]);
+const isLoadingLecturers = ref(false);
+const isAssigning = ref(false);
+const assignSuccess = ref(false);
+const assignError = ref('');
+const assignForm = ref({
+  lecturerId: '',
+  lecturerName: '',
+  day: '',
+  startTime: '',
+  endTime: '',
+  venue: '',
+  mode: 'Lecture'
 });
 
 onMounted(async () => {
@@ -253,18 +371,71 @@ const archiveCourse = async (id) => {
   }
 };
 
+// --- Assign Lecturer Logic ---
+const openAssignModal = async (course) => {
+  assigningCourse.value = course;
+  assignSuccess.value = false;
+  assignError.value = '';
+  assignForm.value = { lecturerId: '', lecturerName: '', day: '', startTime: '', endTime: '', venue: '', mode: 'Lecture' };
+  isAssignModalOpen.value = true;
+
+  // Fetch lecturers
+  isLoadingLecturers.value = true;
+  try {
+    const res = await api.get('/admin/lecturers');
+    lecturers.value = res.data;
+  } catch (err) {
+    console.error('Failed to load lecturers:', err);
+    lecturers.value = [];
+  } finally {
+    isLoadingLecturers.value = false;
+  }
+};
+
+const closeAssignModal = () => {
+  isAssignModalOpen.value = false;
+  assigningCourse.value = null;
+};
+
+const onLecturerChange = () => {
+  const found = lecturers.value.find(l => l.id === assignForm.value.lecturerId);
+  assignForm.value.lecturerName = found ? found.name : '';
+};
+
+const saveAssignment = async () => {
+  if (!assigningCourse.value) return;
+  assignSuccess.value = false;
+  assignError.value = '';
+  isAssigning.value = true;
+
+  try {
+    await api.post(`/admin/courses/${assigningCourse.value.id}/assign-lecturer`, {
+      lecturerId: assignForm.value.lecturerId,
+      lecturerName: assignForm.value.lecturerName,
+      day: assignForm.value.day,
+      startTime: assignForm.value.startTime,
+      endTime: assignForm.value.endTime,
+      venue: assignForm.value.venue,
+      mode: assignForm.value.mode
+    });
+    assignSuccess.value = true;
+    await fetchCourses();
+    // Auto-close after short delay
+    setTimeout(() => closeAssignModal(), 1800);
+  } catch (err) {
+    console.error('Assign lecturer error:', err);
+    assignError.value = err.response?.data?.message || 'Failed to assign lecturer. Please try again.';
+  } finally {
+    isAssigning.value = false;
+  }
+};
+
 const filteredCourses = computed(() => {
   return courses.value.filter(course => {
-    // Search matching
     const matchesSearch = course.code.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
                           course.name.toLowerCase().includes(searchQuery.value.toLowerCase());
-    
-    // Level matching
     const matchesLevel = levelFilter.value === 'all' || course.level === levelFilter.value;
-    
-    // Status matching
     const matchesStatus = statusFilter.value === 'all' || course.status === statusFilter.value;
-    
     return matchesSearch && matchesLevel && matchesStatus;
   });
 });
@@ -504,7 +675,7 @@ const clearFilters = () => {
 }
 
 .actions-col {
-  width: 100px;
+  width: 120px;
   text-align: right;
 }
 
@@ -535,6 +706,11 @@ const clearFilters = () => {
 .icon-action-btn.edit:hover {
   background-color: #e0e7ff;
   color: #4f46e5;
+}
+
+.icon-action-btn.assign:hover {
+  background-color: #d1fae5;
+  color: #059669;
 }
 
 .icon-action-btn.delete:hover {
@@ -781,4 +957,97 @@ const clearFilters = () => {
   margin-top: 16px;
 }
 
+/* Assign Lecturer Modal extras */
+.assign-modal {
+  max-width: 560px;
+}
+
+.modal-subtitle {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.lecturer-select-wrap {
+  position: relative;
+}
+
+.select-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.pl-icon {
+  padding-left: 2.5rem !important;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.hint-text {
+  margin: 4px 0 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.hint-text.warn {
+  color: #d97706;
+}
+
+.alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.alert-banner svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.alert-banner.success {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.alert-banner.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.spinner-icon {
+  width: 16px;
+  height: 16px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.primary-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
+}
 </style>

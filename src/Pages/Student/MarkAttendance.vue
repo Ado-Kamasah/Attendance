@@ -12,82 +12,108 @@
     </div>
 
     <div class="attendance-content">
-      <!-- Left Column: Active Session Entry -->
+      <!-- Left: Current Session -->
       <div class="active-session-panel">
         <div class="panel-header">
           <h2>Current Session</h2>
+          <button class="refresh-btn" @click="fetchActiveSessions" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          </button>
         </div>
 
         <div class="session-body">
-          <!-- Zero state fallback -->
-          <div v-if="!activeClass" class="no-session-state">
-            <div class="icon-wrap-large">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-            </div>
-            <h3>No Active Classes</h3>
-            <p>You don't have any classes currently running. Attendance marking is only available during scheduled class times.</p>
-            <button class="outline-btn" @click="$emit('navigate', '/student-dashboard')">Return to Dashboard</button>
+          <!-- Loading state -->
+          <div v-if="isLoading" class="loading-state">
+            <div class="loader"></div>
+            <p>Checking for active sessions…</p>
           </div>
 
-          <!-- Active class UI (Hidden by default for initial zero state) -->
+          <!-- SUCCESS STATE -->
+          <div v-else-if="attendanceMarked" class="success-state">
+            <div class="success-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <h3>Attendance Marked!</h3>
+            <p>You are marked <strong>present</strong> for</p>
+            <div class="marked-course-badge">{{ markedCourseName }}</div>
+            <span class="marked-time">Recorded at {{ markedAtTime }}</span>
+            <button class="outline-btn" @click="resetState">Done</button>
+          </div>
+
+          <!-- No active class -->
+          <div v-else-if="!activeClass" class="no-session-state">
+            <div class="icon-wrap-large">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <h3>No Active Classes</h3>
+            <p>No attendance session is currently running for your enrolled courses. This page refreshes automatically.</p>
+            <button class="outline-btn" @click="fetchActiveSessions">Check Again</button>
+          </div>
+
+          <!-- Active class PIN entry -->
           <div v-else class="active-class-ui">
+            <!-- "CLASS IN SESSION" indicator -->
+            <div class="in-session-indicator">
+              <span class="session-live-dot"></span>
+              <span class="session-live-text">CLASS IN SESSION</span>
+            </div>
+
             <div class="course-banner">
               <div class="badge-row">
                 <span class="course-code">{{ activeClass.code }}</span>
                 <span class="semester-badge-tag">{{ activeClass.semester }}</span>
               </div>
               <h3 class="course-name">{{ activeClass.name }}</h3>
-              <p class="course-details">{{ activeClass.lecturer }} • {{ activeClass.room }}</p>
+              <p class="course-details">{{ activeClass.lecturer }} • Live Session</p>
             </div>
 
             <div class="verification-box">
-              <h4>Enter Attendance Code</h4>
-              <p>Please enter the 4-digit code provided by your instructor.</p>
-              
+              <h4>Enter Attendance PIN</h4>
+              <p>Enter the 4-digit code shown by your instructor.</p>
+
               <div class="code-inputs">
-                <input type="text" maxlength="1" class="pin-box" v-for="(n, idx) in 4" :key="n" v-model="enteredPins[idx]" @input="focusNext(idx)" />
+                <input v-for="(n, idx) in 4" :key="idx" type="text" inputmode="numeric" maxlength="1"
+                  class="pin-box" :class="{ 'pin-filled': enteredPins[idx] }"
+                  v-model="enteredPins[idx]"
+                  @input="onPinInput(idx, $event)"
+                  @keydown.backspace="onBackspace(idx, $event)"
+                  :ref="el => { if(el) pinRefs[idx] = el }" />
               </div>
 
-              <button class="primary-btn submit-btn" @click="verifyAttendance">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                Verify Attendance
+              <div v-if="pinError" class="pin-error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                {{ pinError }}
+              </div>
+
+              <button class="primary-btn submit-btn" @click="verifyAttendance" :disabled="isVerifying || enteredPins.join('').length < 4">
+                <svg v-if="isVerifying" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"></circle></svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                {{ isVerifying ? 'Verifying…' : 'Verify Attendance' }}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Right Column: Recent History -->
+      <!-- Right: Recent History -->
       <div class="history-panel">
         <div class="panel-header">
           <h2>Recent Sessions</h2>
-          <button class="text-btn" @click="alert('Full Attendance Log Coming Soon')">View Full Log</button>
         </div>
-
         <div class="sessions-list">
           <div v-if="attendanceHistory.length === 0" class="empty-history">
             <p>No recent attendance records found.</p>
           </div>
-
           <div v-else class="history-item" v-for="record in attendanceHistory" :key="record.id">
             <div class="status-icon" :class="record.status">
               <svg v-if="record.status === 'present'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <svg v-else-if="record.status === 'late'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </div>
             <div class="history-details">
               <h4>{{ record.course }}</h4>
               <p>{{ record.date }} • {{ record.time }}</p>
             </div>
-            <div class="history-status" :class="record.status">
-              {{ record.statusText }}
-            </div>
+            <div class="history-status" :class="record.status">{{ record.statusText }}</div>
           </div>
         </div>
       </div>
@@ -96,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import api from '../../api.js';
 
 const emit = defineEmits(['navigate']);
@@ -104,8 +130,19 @@ const emit = defineEmits(['navigate']);
 const activeClass = ref(null);
 const attendanceHistory = ref([]);
 const enteredPins = ref(['', '', '', '']);
+const pinRefs = ref([]);
+const pinError = ref('');
+const isLoading = ref(false);
+const isVerifying = ref(false);
+const attendanceMarked = ref(false);
+const markedCourseName = ref('');
+const markedAtTime = ref('');
 
-onMounted(async () => {
+let sessionPollInterval = null;
+
+const fetchActiveSessions = async () => {
+  isLoading.value = true;
+  pinError.value = '';
   try {
     const [sessionsRes, enrolledRes] = await Promise.all([
       api.get('/sessions/active'),
@@ -113,443 +150,183 @@ onMounted(async () => {
     ]);
     const activeSessions = sessionsRes.data;
     const enrolledCourseIds = enrolledRes.data.map(item => item.course?.id || item.id);
-    
-    const matchingSession = activeSessions.find(s => enrolledCourseIds.includes(s.courseId));
-    
-    if (matchingSession) {
-      const courseMatch = enrolledRes.data.find(item => (item.course?.id || item.id) === matchingSession.courseId);
-      const semester = courseMatch?.course?.semester || courseMatch?.semester || 'Semester 1';
+    const match = activeSessions.find(s => enrolledCourseIds.includes(s.courseId));
 
+    if (match) {
+      const courseMatch = enrolledRes.data.find(item => (item.course?.id || item.id) === match.courseId);
       activeClass.value = {
-        id: matchingSession.id,
-        code: matchingSession.courseCode,
-        name: matchingSession.courseName,
-        semester: semester,
-        lecturer: matchingSession.lecturerName,
-        room: 'Live Session'
+        id: match.id,
+        code: match.courseCode,
+        name: match.courseName,
+        semester: courseMatch?.course?.semester || courseMatch?.semester || 'Semester 1',
+        lecturer: match.lecturerName
       };
+    } else {
+      activeClass.value = null;
     }
-  } catch (error) {
-    console.error('Error fetching data:', error);
+  } catch (e) {
+    console.error('Error fetching sessions:', e);
+  } finally {
+    isLoading.value = false;
   }
+};
+
+onMounted(async () => {
+  await fetchActiveSessions();
+  // Auto-poll every 12 seconds for new sessions
+  sessionPollInterval = setInterval(fetchActiveSessions, 12000);
 });
 
-const focusNext = (idx) => {
+onUnmounted(() => { clearInterval(sessionPollInterval); });
+
+const onPinInput = (idx, event) => {
+  const val = event.target.value.replace(/\D/g, '');
+  enteredPins.value[idx] = val ? val[val.length - 1] : '';
+  pinError.value = '';
   if (enteredPins.value[idx] && idx < 3) {
-    const inputs = document.querySelectorAll('.pin-box');
-    if (inputs[idx + 1]) inputs[idx + 1].focus();
+    pinRefs.value[idx + 1]?.focus();
+  }
+};
+
+const onBackspace = (idx, event) => {
+  if (!enteredPins.value[idx] && idx > 0) {
+    pinRefs.value[idx - 1]?.focus();
   }
 };
 
 const verifyAttendance = async () => {
   if (!activeClass.value) return;
-  const enteredCode = enteredPins.value.join('');
-  
-  if (enteredCode.length < 4) {
-    alert('Please enter a valid PIN.');
-    return;
-  }
-  
+  const pin = enteredPins.value.join('');
+  if (pin.length < 4) { pinError.value = 'Please enter the complete 4-digit PIN.'; return; }
+
+  isVerifying.value = true;
+  pinError.value = '';
   try {
-    await api.post('/sessions/mark', { pin: enteredCode });
-    
+    await api.post('/sessions/mark', { pin });
+    const now = new Date();
+    markedCourseName.value = `${activeClass.value.code} — ${activeClass.value.name}`;
+    markedAtTime.value = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
     attendanceHistory.value.unshift({
       id: Date.now(),
-      course: activeClass.value.code + ' - ' + activeClass.value.name,
-      date: new Date().toLocaleDateString(),
-      time: new Date().toLocaleTimeString(),
+      course: `${activeClass.value.code} — ${activeClass.value.name}`,
+      date: now.toLocaleDateString(),
+      time: now.toLocaleTimeString(),
       status: 'present',
       statusText: 'Present'
     });
-    
-    alert('Attendance marked successfully!');
+
+    attendanceMarked.value = true;
     enteredPins.value = ['', '', '', ''];
-  } catch (error) {
-    console.error(error);
-    alert(error.response?.data?.message || 'Invalid PIN or attendance already recorded.');
+  } catch (e) {
+    pinError.value = e.response?.data?.message || 'Invalid PIN or attendance already recorded.';
+    enteredPins.value = ['', '', '', ''];
+    pinRefs.value[0]?.focus();
+  } finally {
+    isVerifying.value = false;
   }
+};
+
+const resetState = () => {
+  attendanceMarked.value = false;
+  activeClass.value = null;
+  fetchActiveSessions();
 };
 </script>
 
 <style scoped>
-.attendance-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+* { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.attendance-container { display:flex;flex-direction:column;gap:2rem;width:100%; }
+.page-header { display:flex;justify-content:space-between;align-items:center; }
+.page-title { margin:0;font-size:1.75rem;font-weight:700;color:#0f172a;letter-spacing:-0.025em; }
+.page-subtitle { margin:0.25rem 0 0;font-size:0.95rem;color:#64748b; }
+.live-badge { display:flex;align-items:center;gap:0.5rem;background:#f1f5f9;color:#334155;padding:0.5rem 1rem;border-radius:9999px;font-size:0.85rem;font-weight:600;border:1px solid #e2e8f0; }
+.pulse-dot { width:8px;height:8px;background:#10b981;border-radius:50%;animation:pulse 2s infinite; }
+@keyframes pulse { 0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(16,185,129,.7)} 70%{transform:scale(1);box-shadow:0 0 0 5px rgba(16,185,129,0)} 100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(16,185,129,0)} }
 
-.page-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
+.attendance-content { display:grid;grid-template-columns:3fr 2fr;gap:1.5rem; }
+.active-session-panel,.history-panel { background:#fff;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,.05);border:1px solid rgba(226,232,240,.8);display:flex;flex-direction:column; }
+.panel-header { padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center; }
+.panel-header h2 { margin:0;font-size:1.1rem;font-weight:700;color:#0f172a; }
+.refresh-btn { background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.2s; }
+.refresh-btn:hover { background:#f1f5f9;color:#475569; }
+.refresh-btn svg { width:16px;height:16px; }
+.session-body { padding:1.5rem;flex:1;display:flex;flex-direction:column; }
 
-.page-subtitle {
-  margin: 0.25rem 0 0 0;
-  font-size: 0.95rem;
-  color: #64748b;
-}
+/* Loading */
+.loading-state { display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:1rem;color:#64748b; }
+.loader { width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
 
-.live-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #f1f5f9;
-  color: #334155;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
+/* Success State */
+.success-state { display:flex;flex-direction:column;align-items:center;text-align:center;gap:0.75rem;padding:2rem 1rem;flex:1;justify-content:center; }
+.success-icon-wrap { width:72px;height:72px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#16a34a;margin-bottom:0.5rem;animation:popIn 0.4s cubic-bezier(0.16,1,0.3,1); }
+@keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+.success-icon-wrap svg { width:36px;height:36px; }
+.success-state h3 { margin:0;font-size:1.4rem;font-weight:800;color:#0f172a; }
+.success-state p { margin:0;color:#64748b;font-size:0.95rem; }
+.marked-course-badge { background:#e0e7ff;color:#3730a3;padding:0.4rem 1rem;border-radius:8px;font-weight:700;font-size:0.9rem; }
+.marked-time { font-size:0.8rem;color:#94a3b8; }
 
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #10b981;
-  border-radius: 50%;
-  animation: pulse 2s infinite;
-}
+/* No Session */
+.no-session-state { display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3rem 1rem;background:#f8fafc;border-radius:12px;border:1px dashed #cbd5e1;flex:1; }
+.icon-wrap-large { width:64px;height:64px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#94a3b8;box-shadow:0 4px 6px rgba(0,0,0,.05);margin-bottom:1.5rem; }
+.icon-wrap-large svg { width:32px;height:32px; }
+.no-session-state h3 { margin:0 0 0.5rem;color:#1e293b;font-size:1.2rem; }
+.no-session-state p { color:#64748b;margin:0 0 1.5rem;max-width:280px;line-height:1.5;font-size:0.9rem; }
 
-@keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
+/* In-session indicator */
+.active-class-ui { display:flex;flex-direction:column;gap:1.25rem; }
+.in-session-indicator { display:flex;align-items:center;gap:8px; }
+.session-live-dot { width:10px;height:10px;background:#ef4444;border-radius:50%;animation:pulseRed 1.5s infinite; }
+@keyframes pulseRed { 0%,100%{opacity:1}50%{opacity:0.25} }
+.session-live-text { font-size:0.75rem;font-weight:800;letter-spacing:0.1em;color:#ef4444;text-transform:uppercase; }
 
-/* Content Layout */
-.attendance-content {
-  display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 1.5rem;
-}
+/* Course Banner */
+.course-banner { background:linear-gradient(135deg,#4f46e5 0%,#6366f1 100%);border-radius:12px;padding:1.25rem;color:white; }
+.badge-row { display:flex;gap:0.5rem;margin-bottom:0.5rem; }
+.course-code { background:rgba(255,255,255,.2);padding:.2rem .7rem;border-radius:6px;font-size:.78rem;font-weight:600; }
+.semester-badge-tag { background:rgba(0,0,0,.2);padding:.2rem .7rem;border-radius:6px;font-size:.78rem;font-weight:600; }
+.course-name { margin:0 0 0.4rem;font-size:1.15rem;font-weight:700; }
+.course-details { margin:0;font-size:.85rem;opacity:.85; }
 
-.active-session-panel,
-.history-panel {
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  display: flex;
-  flex-direction: column;
-}
+/* PIN Entry */
+.verification-box { background:#f8fafc;border-radius:12px;padding:1.5rem;text-align:center;border:1px solid #e2e8f0; }
+.verification-box h4 { margin:0 0 .4rem;font-size:1.05rem;color:#0f172a; }
+.verification-box p { margin:0 0 1.25rem;color:#64748b;font-size:.9rem; }
+.code-inputs { display:flex;justify-content:center;gap:.6rem;margin-bottom:1.25rem; }
+.pin-box { width:52px;height:60px;font-size:1.6rem;font-weight:800;text-align:center;border-radius:10px;border:2px solid #cbd5e1;background:#fff;color:#0f172a;outline:none;transition:all .2s; }
+.pin-box:focus { border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+.pin-filled { border-color:#10b981;background:#ecfdf5;color:#065f46; }
+.pin-error { display:flex;align-items:center;gap:8px;color:#dc2626;font-size:.85rem;font-weight:500;margin-bottom:0.75rem;background:#fef2f2;padding:0.6rem 0.75rem;border-radius:8px;text-align:left; }
+.pin-error svg { width:16px;height:16px;flex-shrink:0; }
+.primary-btn { background:#4f46e5;color:white;border:none;padding:.85rem 1.75rem;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:background .2s; }
+.primary-btn:hover:not(:disabled) { background:#4338ca; }
+.primary-btn:disabled { background:#94a3b8;cursor:not-allowed; }
+.primary-btn svg { width:20px;height:20px; }
+.spin { animation:spin 0.8s linear infinite; }
 
-.panel-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+/* Buttons */
+.outline-btn { background:transparent;color:#0f172a;border:1px solid #cbd5e1;padding:.65rem 1.5rem;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:0.5rem; }
+.outline-btn:hover { background:#f1f5f9;border-color:#94a3b8; }
 
-.panel-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #0f172a;
-}
+/* History */
+.sessions-list { padding:1rem;display:flex;flex-direction:column;gap:.75rem;flex:1;overflow-y:auto; }
+.empty-history { text-align:center;color:#94a3b8;font-size:.9rem;padding:2rem;font-style:italic; }
+.history-item { display:flex;align-items:center;gap:.75rem;padding:.9rem;background:#f8fafc;border-radius:10px;border:1px solid #f1f5f9; }
+.status-icon { width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.status-icon.present { background:#dcfce7;color:#10b981; }
+.status-icon.absent { background:#fee2e2;color:#ef4444; }
+.status-icon svg { width:16px;height:16px; }
+.history-details { flex:1; }
+.history-details h4 { margin:0 0 .2rem;font-size:.88rem;color:#1e293b;font-weight:600; }
+.history-details p { margin:0;font-size:.75rem;color:#64748b; }
+.history-status { font-size:.75rem;font-weight:700;text-transform:uppercase; }
+.history-status.present { color:#10b981; }
+.history-status.absent { color:#ef4444; }
 
-.text-btn {
-  background: none;
-  border: none;
-  color: #6366f1;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.text-btn:hover {
-  color: #4f46e5;
-  text-decoration: underline;
-}
-
-/* Zero State */
-.session-body {
-  padding: 2rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.no-session-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 3rem 1rem;
-  background-color: #f8fafc;
-  border-radius: 12px;
-  border: 1px dashed #cbd5e1;
-  height: 100%;
-}
-
-.icon-wrap-large {
-  width: 64px;
-  height: 64px;
-  background-color: #ffffff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  margin-bottom: 1.5rem;
-}
-
-.icon-wrap-large svg {
-  width: 32px;
-  height: 32px;
-}
-
-.no-session-state h3 {
-  margin: 0 0 0.5rem 0;
-  color: #1e293b;
-  font-size: 1.25rem;
-}
-
-.no-session-state p {
-  color: #64748b;
-  margin: 0 0 2rem 0;
-  max-width: 300px;
-  line-height: 1.5;
-}
-
-.outline-btn {
-  background-color: transparent;
-  color: #0f172a;
-  border: 1px solid #cbd5e1;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.outline-btn:hover {
-  background-color: #f1f5f9;
-  border-color: #94a3b8;
-}
-
-/* Active Class UI Placeholder */
-.active-class-ui {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 2rem;
-}
-
-.course-banner {
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-  border-radius: 12px;
-  padding: 1.5rem;
-  color: white;
-}
-
-.course-banner .course-code {
-  background-color: rgba(255, 255, 255, 0.2);
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: inline-block;
-}
-
-.course-banner .semester-badge-tag {
-  background-color: rgba(0, 0, 0, 0.2);
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: inline-block;
-}
-
-.badge-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.course-banner .course-name {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.course-banner .course-details {
-  margin: 0;
-  font-size: 0.9rem;
-  opacity: 0.9;
-}
-
-.verification-box {
-  background-color: #f8fafc;
-  border-radius: 12px;
-  padding: 2rem 1.5rem;
-  text-align: center;
-  border: 1px solid #e2e8f0;
-}
-
-.verification-box h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.15rem;
-  color: #0f172a;
-}
-
-.verification-box p {
-  margin: 0 0 1.5rem 0;
-  color: #64748b;
-  font-size: 0.9rem;
-}
-
-.code-inputs {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-.pin-box {
-  width: 48px;
-  height: 56px;
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-align: center;
-  border-radius: 8px;
-  border: 2px solid #cbd5e1;
-  background-color: #ffffff;
-  color: #0f172a;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.pin-box:focus {
-  border-color: #6366f1;
-}
-
-.primary-btn {
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  padding: 0.85rem 1.75rem;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: background-color 0.2s;
-}
-
-.primary-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.primary-btn:hover {
-  background-color: #4338ca;
-}
-
-/* History Detail */
-.history-list {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.empty-history {
-  text-align: center;
-  color: #94a3b8;
-  font-size: 0.9rem;
-  padding: 2rem 0;
-  font-style: italic;
-}
-
-.history-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: #f8fafc;
-  border-radius: 10px;
-  border: 1px solid #f1f5f9;
-}
-
-.status-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.status-icon.present { background-color: #dcfce7; color: #10b981; }
-.status-icon.late { background-color: #fef3c7; color: #f59e0b; }
-.status-icon.absent { background-color: #fee2e2; color: #ef4444; }
-
-.status-icon svg {
-  width: 18px;
-  height: 18px;
-}
-
-.history-details {
-  flex: 1;
-}
-
-.history-details h4 {
-  margin: 0 0 0.25rem 0;
-  font-size: 0.95rem;
-  color: #1e293b;
-}
-
-.history-details p {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #64748b;
-}
-
-.history-status {
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.history-status.present { color: #10b981; }
-.history-status.late { color: #f59e0b; }
-.history-status.absent { color: #ef4444; }
-
-/* Responsiveness */
-@media (max-width: 1024px) {
-  .attendance-content {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .code-inputs {
-    flex-wrap: wrap;
-  }
-}
+@media(max-width:1024px) { .attendance-content { grid-template-columns:1fr; } }
+@media(max-width:768px) { .page-header { flex-direction:column;align-items:flex-start;gap:1rem; } .code-inputs { gap:.4rem; } .pin-box { width:44px;height:52px;font-size:1.3rem; } }
 </style>

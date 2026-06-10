@@ -3,7 +3,8 @@ import {
   startSession, 
   getActiveSessions, 
   markAttendance, 
-  endSession 
+  endSession,
+  getSessionAttendances
 } from '../controllers/sessionController.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
@@ -20,5 +21,8 @@ router.post('/mark', authenticateToken, requireRole(['STUDENT']), markAttendance
 
 // End a live session (Lecturers and Admins only)
 router.post('/:sessionId/end', authenticateToken, requireRole(['LECTURER', 'ADMIN']), endSession);
+
+// Get checked-in students for a session (Lecturer/Admin live polling)
+router.get('/:sessionId/attendances', authenticateToken, requireRole(['LECTURER', 'ADMIN']), getSessionAttendances);
 
 export default router;

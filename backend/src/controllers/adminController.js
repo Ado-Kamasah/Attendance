@@ -83,3 +83,64 @@ export const createAuditLog = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+/**
+ * Get all lecturer accounts (Admin only)
+ */
+export const getLecturers = async (req, res) => {
+  try {
+    const lecturers = await prisma.user.findMany({
+      where: { role: 'LECTURER' },
+      select: { id: true, name: true, email: true }
+    });
+    res.status(200).json(lecturers);
+  } catch (error) {
+    console.error('Error fetching lecturers:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * Assign a lecturer to a course by creating/replacing a Schedule entry (Admin only)
+ * Body: { lecturerId, lecturerName, day, startTime, endTime, venue, mode }
+ */
+export const assignLecturerToCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { lecturerId, lecturerName, day, startTime, endTime, venue, mode } = req.body;
+
+    if (!courseId || !lecturerId || !lecturerName || !day || !startTime || !endTime || !venue) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const course = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // Check if a schedule already exists for this course and delete it to replace
+    const existing = await prisma.schedule.findFirst({ where: { courseId } });
+    if (existing) {
+      await prisma.schedule.delete({ where: { id: existing.id } });
+    }
+
+    // Create the new schedule linking the lecturer to the course
+    const schedule = await prisma.schedule.create({
+      data: {
+        courseId,
+        level: course.level,
+        mode: mode || 'Lecture',
+        day,
+        startTime,
+        endTime,
+        venue,
+        lecturer: lecturerName
+      }
+    });
+
+    res.status(201).json({ message: 'Lecturer assigned to course successfully', schedule });
+  } catch (error) {
+    console.error('Error assigning lecturer:', error);
+    res.status(500).json({ message: 'Server error assigning lecturer', error: error.message });
+  }
+};

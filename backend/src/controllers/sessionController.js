@@ -264,3 +264,27 @@ export const endSession = async (req, res) => {
     res.status(500).json({ message: 'Server error closing session', error: error.message });
   }
 };
+
+/**
+ * Get checked-in students for a specific session (for live polling)
+ */
+export const getSessionAttendances = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const attendances = await prisma.attendance.findMany({
+      where: { sessionId },
+      include: { student: { select: { id: true, name: true } } },
+      orderBy: { timestamp: 'asc' }
+    });
+    res.status(200).json(attendances.map(a => ({
+      id: a.id,
+      studentId: a.studentId,
+      name: a.student.name,
+      timestamp: a.timestamp,
+      status: a.status
+    })));
+  } catch (error) {
+    console.error('Get session attendances error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
