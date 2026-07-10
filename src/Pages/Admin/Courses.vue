@@ -99,8 +99,8 @@
                   <circle cx="8.5" cy="8.5" r="1.5"></circle>
                   <polyline points="21 15 16 10 5 21"></polyline>
                 </svg>
-                <p>No courses found matching your criteria.</p>
-                <button class="clear-btn" @click="clearFilters">Clear Filters</button>
+                <p>{{ isLoading ? 'Loading courses...' : 'No courses found matching your criteria.' }}</p>
+                <button v-if="!isLoading" class="clear-btn" @click="clearFilters">Clear Filters</button>
               </div>
             </td>
           </tr>
@@ -140,11 +140,17 @@
             </div>
             <div class="form-group">
               <label>Credits</label>
-              <input type="number" v-model="newCourse.credits" placeholder="e.g. 3" required min="1" class="form-control" />
+              <input type="number" v-model.number="newCourse.credits" placeholder="e.g. 3" required min="1" class="form-control" />
             </div>
-            <div class="form-group">
-              <label>Program</label>
-              <input type="text" v-model="newCourse.program" placeholder="e.g. Computer Science" required class="form-control" />
+            <!-- Faculty / Program -->
+            <div class="input-group">
+              <label for="programme">Faculty / Program</label>
+              <div class="input-wrapper">
+                <select id="programme" v-model="newCourse.programme" required>
+                  <option value="" disabled>Select your faculty/program</option>
+                  <option v-for="programme in programmes" :key="programme.id" :value="programme.name">{{ programme.name }}</option>
+                </select>
+              </div>
             </div>
             <div class="form-group">
               <label>Semester</label>
@@ -164,7 +170,9 @@
             </div>
             <div class="form-actions">
               <button type="button" class="clear-btn" @click="closeModal">Cancel</button>
-              <button type="submit" class="primary-btn">{{ editingCourseId ? 'Update Course' : 'Save Course' }}</button>
+              <button type="submit" class="primary-btn" :disabled="isSavingCourse">
+                {{ isSavingCourse ? 'Saving...' : (editingCourseId ? 'Update Course' : 'Save Course') }}
+              </button>
             </div>
           </form>
         </div>
@@ -271,21 +279,26 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import api from '../../api.js';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useCoursesStore } from '@/stores/courses';
+import { supabase } from '@/stores/supabase';
+
+const coursesStore = useCoursesStore();
+const { courses, isLoading } = storeToRefs(coursesStore);
 
 const searchQuery = ref('');
 const levelFilter = ref('all');
 const statusFilter = ref('all');
 
-const courses = ref([]);
 const isModalOpen = ref(false);
+const isSavingCourse = ref(false);
 const editingCourseId = ref(null);
 const newCourse = ref({
   code: '',
   name: '',
   credits: 3,
-  program: '',
+  programme: '',
   semester: 'Semester 1',
   level: '100'
 });
@@ -307,35 +320,86 @@ const assignForm = ref({
   venue: '',
   mode: 'Lecture'
 });
+const programmes = ref([]);
+
+// schedules aren't owned by coursesStore — course_id -> { lecturer, summary }
+const schedulesByCourseId = ref({});
+
+const fetchSchedules = async () => {
+  const ids = courses.value.map((c) => c.id);
+  if (ids.length === 0) {
+    schedulesByCourseId.value = {};
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from('schedules')
+    .select('*')
+    .in('course_id', ids)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Failed to load schedules:', error);
+    return;
+  }
+
+  const map = {};
+  for (const row of data ?? []) {
+    // most recent schedule per course wins, since results are newest-first
+    if (!map[row.course_id]) {
+      map[row.course_id] = {
+        lecturer: row.lecturer,
+        summary: `${row.day} ${row.start_time}-${row.end_time}, ${row.venue}`,
+      };
+    }
+  }
+  schedulesByCourseId.value = map;
+};
+
+// keep the schedule map in sync whenever the course list changes
+// (initial load, realtime insert/delete, etc.)
+watch(courses, fetchSchedules, { deep: true });
 
 onMounted(async () => {
-  await fetchCourses();
+  await coursesStore.fetchCourses();
+  coursesStore.subscribeToCourses();
+  const { data, error } = await supabase.from('programmes').select('id, name').order('name');
+  if (error) {
+    console.error('Failed to load faculties', error);
+    return;
+  }
+  programmes.value = data;
 });
 
-const fetchCourses = async () => {
-  try {
-    const res = await api.get('/courses');
-    courses.value = res.data;
-  } catch (error) {
-    console.error('Error fetching courses:', error);
-  }
-};
+
+
+onUnmounted(() => {
+  coursesStore.unsubscribeFromCourses();
+});
+
+const coursesWithSchedule = computed(() =>
+  courses.value.map((course) => ({
+    ...course,
+    lecturer: schedulesByCourseId.value[course.id]?.lecturer ?? null,
+    schedule: schedulesByCourseId.value[course.id]?.summary ?? null,
+  }))
+);
 
 const openModal = () => {
   editingCourseId.value = null;
-  newCourse.value = { code: '', name: '', credits: 3, program: '', semester: 'Semester 1', level: '100' };
+  newCourse.value = { code: '', name: '', credits: 3, programme: '', semester: 'Semester 1', level: '100' };
   isModalOpen.value = true;
 };
 
 const editCourse = (course) => {
   editingCourseId.value = course.id;
-  newCourse.value = { 
-    code: course.code, 
-    name: course.name, 
-    credits: course.credits, 
-    program: course.program, 
-    semester: course.semester || 'Semester 1', 
-    level: course.level 
+  newCourse.value = {
+    code: course.code,
+    name: course.name,
+    credits: course.credits,
+    programme: course.programme,
+    semester: course.semester || 'Semester 1',
+    level: course.level
   };
   isModalOpen.value = true;
 };
@@ -346,28 +410,29 @@ const closeModal = () => {
 };
 
 const saveCourse = async () => {
+  isSavingCourse.value = true;
   try {
     if (editingCourseId.value) {
-      await api.put(`/courses/${editingCourseId.value}`, newCourse.value);
+      await coursesStore.updateCourse(editingCourseId.value, newCourse.value);
     } else {
-      await api.post('/courses', newCourse.value);
+      await coursesStore.createCourse(newCourse.value);
     }
-    await fetchCourses();
     closeModal();
   } catch (error) {
+    // coursesStore already surfaces a toast — keep the modal open so the
+    // person can fix the code/name and retry.
     console.error('Error saving course:', error);
-    alert(error.response?.data?.message || 'Failed to save course.');
+  } finally {
+    isSavingCourse.value = false;
   }
 };
 
 const archiveCourse = async (id) => {
   if (!confirm('Are you sure you want to archive this course?')) return;
   try {
-    await api.patch(`/courses/${id}/archive`);
-    await fetchCourses();
+    await coursesStore.updateCourse(id, { status: 'archived' });
   } catch (error) {
     console.error('Error archiving course:', error);
-    alert('Failed to archive course.');
   }
 };
 
@@ -379,11 +444,16 @@ const openAssignModal = async (course) => {
   assignForm.value = { lecturerId: '', lecturerName: '', day: '', startTime: '', endTime: '', venue: '', mode: 'Lecture' };
   isAssignModalOpen.value = true;
 
-  // Fetch lecturers
   isLoadingLecturers.value = true;
   try {
-    const res = await api.get('/admin/lecturers');
-    lecturers.value = res.data;
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name')
+      .eq('role', 'Lecturer')
+      .order('name');
+
+    if (error) throw error;
+    lecturers.value = data ?? [];
   } catch (err) {
     console.error('Failed to load lecturers:', err);
     lecturers.value = [];
@@ -398,7 +468,7 @@ const closeAssignModal = () => {
 };
 
 const onLecturerChange = () => {
-  const found = lecturers.value.find(l => l.id === assignForm.value.lecturerId);
+  const found = lecturers.value.find((l) => l.id === assignForm.value.lecturerId);
   assignForm.value.lecturerName = found ? found.name : '';
 };
 
@@ -409,29 +479,33 @@ const saveAssignment = async () => {
   isAssigning.value = true;
 
   try {
-    await api.post(`/admin/courses/${assigningCourse.value.id}/assign-lecturer`, {
-      lecturerId: assignForm.value.lecturerId,
-      lecturerName: assignForm.value.lecturerName,
+    const { error } = await supabase.from('schedules').insert({
+      course_id: assigningCourse.value.id,
+      level: assigningCourse.value.level,
+      mode: assignForm.value.mode,
       day: assignForm.value.day,
-      startTime: assignForm.value.startTime,
-      endTime: assignForm.value.endTime,
+      start_time: assignForm.value.startTime,
+      end_time: assignForm.value.endTime,
       venue: assignForm.value.venue,
-      mode: assignForm.value.mode
+      lecturer: assignForm.value.lecturerName,
     });
+
+    if (error) throw error;
+
     assignSuccess.value = true;
-    await fetchCourses();
+    await fetchSchedules();
     // Auto-close after short delay
     setTimeout(() => closeAssignModal(), 1800);
   } catch (err) {
     console.error('Assign lecturer error:', err);
-    assignError.value = err.response?.data?.message || 'Failed to assign lecturer. Please try again.';
+    assignError.value = err.message || 'Failed to assign lecturer. Please try again.';
   } finally {
     isAssigning.value = false;
   }
 };
 
 const filteredCourses = computed(() => {
-  return courses.value.filter(course => {
+  return coursesWithSchedule.value.filter(course => {
     const matchesSearch = course.code.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
                           course.name.toLowerCase().includes(searchQuery.value.toLowerCase());
     const matchesLevel = levelFilter.value === 'all' || course.level === levelFilter.value;

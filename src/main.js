@@ -3,5 +3,13 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import App from './App.vue'
+import { createPinia } from 'pinia'
+import { createNotivue } from 'notivue'
 
-createApp(App).mount('#app')
+const pinia   = createPinia()
+const notivue = createNotivue(/* options */)
+
+const app = createApp(App)
+app.use(notivue)
+app.use(pinia)
+app.mount('#app')

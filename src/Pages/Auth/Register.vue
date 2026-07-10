@@ -31,8 +31,16 @@
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                   <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
-                <input type="email" id="email" v-model="form.email" placeholder="student@southshore.edu.gh" required />
+                <input
+                  type="email"
+                  id="email"
+                  v-model="form.email"
+                  placeholder="student@southshore.edu.gh"
+                  @blur="validateEmailDomain"
+                  required
+                />
               </div>
+              <p v-if="emailDomainError" class="field-hint">{{ emailDomainError }}</p>
             </div>
 
             <!-- Role Selection -->
@@ -74,6 +82,7 @@
                 </svg>
                 <input type="text" id="idNumber" v-model="form.idNumber" placeholder="ID Number" required />
               </div>
+              <p class="field-hint">You can use this ID number to sign in instead of your email.</p>
             </div>
 
             <!-- Faculty / Program -->
@@ -99,7 +108,7 @@
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
-                <input :type="showPassword ? 'text' : 'password'" id="password" v-model="form.password" placeholder="Create a strong password" required />
+                <input :type="showPassword ? 'text' : 'password'" id="password" v-model="form.password" placeholder="Create a strong password" required minlength="8" />
                 <button type="button" class="password-toggle" @click="showPassword = !showPassword" aria-label="Toggle password visibility">
                   <svg v-if="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -117,7 +126,7 @@
               {{ errorMsg }}
             </div>
 
-            <button type="submit" class="submit-btn" :class="{ 'loading': isLoading }">
+            <button type="submit" class="submit-btn" :class="{ 'loading': isLoading }" :disabled="!!emailDomainError">
               <span v-if="!isLoading">Create Account</span>
               <svg v-else class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
@@ -179,20 +188,26 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import api from '../../api.js';
+import { supabase } from '@/stores/supabase';
+import { useAuthStore } from '@/stores/authstore';
+
+const ALLOWED_DOMAIN = 'southshore.edu.gh';
+
+const authStore = useAuthStore();
 
 const showPassword = ref(false);
 const isLoading = ref(false);
 const errorMsg = ref('');
+const emailDomainError = ref('');
 const faculties = ref([]);
 
 onMounted(async () => {
-  try {
-    const res = await api.get('/faculties');
-    faculties.value = res.data;
-  } catch (err) {
-    console.error('Failed to load faculties', err);
+  const { data, error } = await supabase.from('faculties', 'programmes').select('id, name').order('name');
+  if (error) {
+    console.error('Failed to load faculties', error);
+    return;
   }
+  faculties.value = data;
 });
 
 const form = reactive({
@@ -206,25 +221,35 @@ const form = reactive({
 
 const emit = defineEmits(['register-success', 'switch-to-login']);
 
+const validateEmailDomain = () => {
+  if (!form.email) {
+    emailDomainError.value = '';
+    return;
+  }
+  const domain = form.email.trim().toLowerCase().split('@')[1];
+  emailDomainError.value = domain === ALLOWED_DOMAIN
+    ? ''
+    : `Please use your @${ALLOWED_DOMAIN} email address`;
+};
+
 const handleRegister = async () => {
+  validateEmailDomain();
+  if (emailDomainError.value) return;
+
   isLoading.value = true;
   errorMsg.value = '';
-  
+
   try {
-    const response = await api.post('/auth/register', {
-      fullName: form.fullName,
-      email: form.email,
-      role: form.role,
-      idNumber: form.idNumber,
-      program: form.program,
-      password: form.password
+    const data = await authStore.register(form);
+
+    emit('register-success', {
+      email: data.user?.email,
+      role: form.role === 'staff' ? 'Lecturer' : 'Student',
+      needsEmailConfirmation: !data.session,
     });
-    
-    // Auto-login on register could be done, or we emit success
-    emit('register-success', { email: response.data.user.email, role: response.data.user.role });
   } catch (err) {
     console.error('Registration error:', err);
-    errorMsg.value = err.response?.data?.message || 'Registration failed. Please check your inputs.';
+    errorMsg.value = err.message || 'Registration failed. Please check your inputs.';
   } finally {
     isLoading.value = false;
   }
@@ -249,6 +274,12 @@ const handleRegister = async () => {
   font-size: 0.9rem;
   margin-top: 10px;
   margin-bottom: 5px;
+}
+
+.field-hint {
+  margin: 6px 2px 0;
+  font-size: 0.8rem;
+  color: #64748b;
 }
 
 .register-split {
@@ -467,7 +498,8 @@ const handleRegister = async () => {
   transform: translateY(0);
 }
 
-.submit-btn.loading {
+.submit-btn.loading,
+.submit-btn:disabled {
   background-color: #818cf8;
   cursor: not-allowed;
   transform: none;

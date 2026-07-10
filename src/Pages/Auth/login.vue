@@ -100,6 +100,11 @@
 
           <div v-if="errorMsg" class="error-message">
             {{ errorMsg }}
+            <span v-if="showResend">
+              <a href="#" @click.prevent="handleResend" class="resend-link">
+                {{ resendSent ? 'Confirmation email sent' : 'Resend confirmation email' }}
+              </a>
+            </span>
           </div>
 
           <button type="submit" class="btn-submit" :class="{ 'is-loading': isLoading }">
@@ -121,7 +126,9 @@
 
 <script setup>
 import { ref } from 'vue';
-import api from '../../api.js';
+import { useAuthStore } from '@/stores/authstore';
+
+const authStore = useAuthStore();
 
 const loginId = ref('');
 const password = ref('');
@@ -130,6 +137,9 @@ const showPassword = ref(false);
 const rememberMe = ref(false);
 const isLoading = ref(false);
 const errorMsg = ref('');
+const showResend = ref(false);
+const resendSent = ref(false);
+const unconfirmedEmail = ref('');
 
 const isEmailFocused = ref(false);
 const isPasswordFocused = ref(false);
@@ -139,30 +149,43 @@ const emit = defineEmits(['login-success', 'switch-to-register']);
 
 const handleLogin = async () => {
   if (!loginId.value || !password.value || !role.value) return;
-  
+
   isLoading.value = true;
   errorMsg.value = '';
-  
+  showResend.value = false;
+  resendSent.value = false;
+
   try {
-    const response = await api.post('/auth/login', {
-      loginId: loginId.value,
+    const profile = await authStore.login({
+      loginId: loginId.value.trim(),
       password: password.value,
-      role: role.value
+      selectedRole: role.value,
     });
-    
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-    
-    emit('login-success', { 
-      loginId: response.data.user.id, 
-      role: response.data.user.role,
-      user: response.data.user 
+
+    emit('login-success', {
+      loginId: profile.id,
+      role: profile.role,
+      user: profile,
     });
   } catch (err) {
     console.error('Login error:', err);
-    errorMsg.value = err.response?.data?.message || 'Failed to login. Please check your credentials.';
+    errorMsg.value = err.message || 'Failed to login. Please check your credentials.';
+    if (err.code === 'EMAIL_NOT_CONFIRMED') {
+      showResend.value = true;
+      unconfirmedEmail.value = err.email;
+    }
   } finally {
     isLoading.value = false;
+  }
+};
+
+const handleResend = async () => {
+  try {
+    await authStore.resendConfirmation(unconfirmedEmail.value);
+    resendSent.value = true;
+  } catch (err) {
+    console.error('Resend error:', err);
+    errorMsg.value = err.message || 'Failed to resend confirmation email.';
   }
 };
 </script>
@@ -188,6 +211,15 @@ const handleLogin = async () => {
   font-size: 0.9rem;
   margin-top: 10px;
   margin-bottom: 5px;
+}
+
+.resend-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: #4f46e5;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .auth-layout {
