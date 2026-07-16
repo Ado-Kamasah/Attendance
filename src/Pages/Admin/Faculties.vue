@@ -65,27 +65,45 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import api from '../../api.js';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useFacultiesStore } from '@/stores/faculties';
+import { useAuditLogsStore } from '@/stores/auditlogs';
+import { supabase } from '@/stores/supabase';
 
-const faculties = ref([]);
+const facultiesStore = useFacultiesStore();
+const auditLogsStore = useAuditLogsStore();
+const { faculties, isLoading } = storeToRefs(facultiesStore);
+
 const newFacultyName = ref('');
 const editingFacultyId = ref(null);
-const isLoading = ref(false);
 const isAdding = ref(false);
 const errorMsg = ref('');
 const successMsg = ref('');
+const currentUser = ref(null);
 
-const fetchFaculties = async () => {
-  isLoading.value = true;
-  try {
-    const res = await api.get('/faculties');
-    faculties.value = res.data;
-  } catch (error) {
-    console.error('Error fetching faculties:', error);
-  } finally {
-    isLoading.value = false;
-  }
+const loadCurrentUser = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, name, role')
+    .eq('id', user.id)
+    .single();
+
+  if (!error) currentUser.value = data;
+};
+
+const logAudit = (action, details) => {
+  if (!currentUser.value) return;
+  auditLogsStore.logAction({
+    action,
+    details,
+    userId: currentUser.value.id,
+    userRole: currentUser.value.role,
+    userName: currentUser.value.name,
+  });
 };
 
 const handleAddFaculty = async () => {
@@ -93,27 +111,26 @@ const handleAddFaculty = async () => {
   isAdding.value = true;
   errorMsg.value = '';
   successMsg.value = '';
-  
+
+  const name = newFacultyName.value.trim();
+
   try {
     if (editingFacultyId.value) {
-      const res = await api.put(`/faculties/${editingFacultyId.value}`, { name: newFacultyName.value.trim() });
-      const index = faculties.value.findIndex(f => f.id === editingFacultyId.value);
-      if (index !== -1) {
-        faculties.value[index] = res.data;
-      }
+      await facultiesStore.updateFaculty(editingFacultyId.value, { name });
+      logAudit('faculty_updated', `Renamed faculty to "${name}"`);
       successMsg.value = 'Faculty updated successfully!';
     } else {
-      const res = await api.post('/faculties', { name: newFacultyName.value.trim() });
-      faculties.value.push(res.data);
+      await facultiesStore.createFaculty({ name });
+      logAudit('faculty_created', `Added faculty "${name}"`);
       successMsg.value = 'Faculty added successfully!';
     }
-    
+
     faculties.value.sort((a, b) => a.name.localeCompare(b.name));
     cancelEdit();
     setTimeout(() => { successMsg.value = ''; }, 3000);
   } catch (error) {
     console.error('Error saving faculty:', error);
-    errorMsg.value = error.response?.data?.message || 'Failed to save faculty.';
+    errorMsg.value = error.message || 'Failed to save faculty.';
   } finally {
     isAdding.value = false;
   }
@@ -134,18 +151,25 @@ const cancelEdit = () => {
 
 const deleteFaculty = async (id) => {
   if (!confirm('Are you sure you want to delete this faculty?')) return;
-  
+
+  const faculty = faculties.value.find(f => f.id === id);
+
   try {
-    await api.delete(`/faculties/${id}`);
-    faculties.value = faculties.value.filter(f => f.id !== id);
+    await facultiesStore.deleteFaculty(id);
+    logAudit('faculty_deleted', `Deleted faculty "${faculty?.name ?? ''}"`);
   } catch (error) {
     console.error('Error deleting faculty:', error);
     alert('Failed to delete faculty.');
   }
 };
 
-onMounted(() => {
-  fetchFaculties();
+onMounted(async () => {
+  await Promise.all([facultiesStore.fetchFaculties(), loadCurrentUser()]);
+  facultiesStore.subscribeToFaculties();
+});
+
+onUnmounted(() => {
+  facultiesStore.unsubscribeFromFaculties();
 });
 </script>
 

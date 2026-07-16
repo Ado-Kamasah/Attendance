@@ -137,7 +137,12 @@
               
               <div class="form-group">
                 <label>Lecturer</label>
-                <input type="text" v-model="newClass.lecturer" placeholder="Assigned Lecturer" required class="form-input">
+                <select v-model="newClass.lecturer" required class="form-select">
+                  <option disabled value="">Select lecturer</option>
+                  <option v-for="l in lecturers" :key="l.id" :value="l.name">{{ l.name }}</option>
+                </select>
+                <p v-if="isLoadingLecturers" class="hint-text">Loading lecturers...</p>
+<p v-else-if="lecturers.length === 0" class="hint-text warn">No lecturer accounts found. Create one first.</p>
               </div>
               
               <div class="form-group">
@@ -179,8 +184,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
-import api from '../../api.js';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useSchedulesStore } from '@/stores/schedules';
+import { useCoursesStore } from '@/stores/courses';
+import { useAuditLogsStore } from '@/stores/auditlogs';
+import { supabase } from '@/stores/supabase';
 
 const levels = ['100', '200', '300', '400'];
 const modes = ['Regular', 'Weekend'];
@@ -204,31 +213,64 @@ watch(selectedMode, (newMode) => {
   selectedDay.value = newMode === 'Regular' ? defaultDay : 'Friday';
 });
 
-const schedules = ref([]);
-const courses = ref([]);
+
+
+const schedulesStore = useSchedulesStore();
+const coursesStore = useCoursesStore();
+const auditLogsStore = useAuditLogsStore();
+
+const { schedules } = storeToRefs(schedulesStore);
+const { courses } = storeToRefs(coursesStore);
+
+const currentUser = ref(null);
+
+const lecturers = ref([]);
+const isLoadingLecturers = ref(false);
+
+const loadLecturers = async () => {
+  isLoadingLecturers.value = true;
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name')
+      .eq('role', 'Lecturer')
+      .order('name');
+
+    if (error) throw error;
+    lecturers.value = data ?? [];
+  } catch (err) {
+    console.error('Failed to load lecturers:', err);
+    lecturers.value = [];
+  } finally {
+    isLoadingLecturers.value = false;
+  }
+};
+
+const logAudit = (action, details) => {
+  if (!currentUser.value) return;
+  auditLogsStore.logAction({
+    action,
+    details,
+    userId: currentUser.value.id,
+    userRole: currentUser.value.role,
+    userName: currentUser.value.name,
+  });
+};
 
 onMounted(async () => {
-  await fetchSchedules();
-  await fetchCourses();
+  await Promise.all([
+    schedulesStore.fetchSchedules(),
+    coursesStore.fetchCourses(),
+    loadLecturers(),
+  ]);
+  schedulesStore.subscribeToSchedules();
+  coursesStore.subscribeToCourses();
 });
 
-const fetchSchedules = async () => {
-  try {
-    const res = await api.get('/schedules');
-    schedules.value = res.data;
-  } catch (error) {
-    console.error('Error fetching schedules:', error);
-  }
-};
-
-const fetchCourses = async () => {
-  try {
-    const res = await api.get('/courses');
-    courses.value = res.data;
-  } catch (error) {
-    console.error('Error fetching courses:', error);
-  }
-};
+onUnmounted(() => {
+  schedulesStore.unsubscribeFromSchedules();
+  coursesStore.unsubscribeFromCourses();
+});
 
 const newClass = ref({
   courseId: '',
@@ -239,26 +281,35 @@ const newClass = ref({
   endTime: ''
 });
 
+// schedules store rows only carry courseId — attach course code/title/semester
+// from coursesStore for display and semester filtering.
+const schedulesWithCourse = computed(() =>
+  schedules.value.map((s) => {
+    const course = coursesStore.getCourseById(s.courseId);
+    return {
+      ...s,
+      courseCode: course?.code ?? 'Unknown',
+      courseTitle: course?.name ?? 'Unknown course',
+      semester: course?.semester || 'Semester 1',
+    };
+  })
+);
+
 const filteredClasses = computed(() => {
-  return schedules.value.filter(c => 
+  return schedulesWithCourse.value.filter(c => 
     c.level === selectedLevel.value && 
     c.mode === selectedMode.value && 
     c.day === selectedDay.value &&
-    (selectedSemester.value === 'All' || (c.course?.semester || 'Semester 1') === selectedSemester.value)
-  ).map(c => ({
-    ...c,
-    courseCode: c.course?.code || c.courseCode,
-    courseTitle: c.course?.name || c.courseTitle,
-    semester: c.course?.semester || 'Semester 1'
-  })).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+    (selectedSemester.value === 'All' || c.semester === selectedSemester.value)
+  ).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
 });
 
 const getClassCount = (day) => {
-  return schedules.value.filter(c => 
+  return schedulesWithCourse.value.filter(c => 
     c.level === selectedLevel.value && 
     c.mode === selectedMode.value && 
     c.day === day &&
-    (selectedSemester.value === 'All' || (c.course?.semester || 'Semester 1') === selectedSemester.value)
+    (selectedSemester.value === 'All' || c.semester === selectedSemester.value)
   ).length;
 };
 
@@ -315,17 +366,38 @@ const saveClass = async () => {
       mode: selectedMode.value,
       ...newClass.value
     };
-    
+
+const conflict = schedulesStore.findConflict(
+  {
+    day: payload.day,
+    startTime: payload.startTime,
+    endTime: payload.endTime,   // ✅ now included
+    lecturer: payload.lecturer,
+    venue: payload.venue,
+  },
+  editingScheduleId.value
+);
+
+if (conflict) {
+  const reason = conflict.lecturer === payload.lecturer
+    ? `${payload.lecturer} is already scheduled from ${formatTime(conflict.startTime)} to ${formatTime(conflict.endTime)} on ${payload.day}, which overlaps with this slot.`
+    : `${payload.venue} is already booked from ${formatTime(conflict.startTime)} to ${formatTime(conflict.endTime)} on ${payload.day}, which overlaps with this slot.`;
+  alert(`Scheduling conflict: ${reason}`);
+  return;
+}
+
+    const course = coursesStore.getCourseById(payload.courseId);
+    const label = `${course?.code ?? 'course'} on ${payload.day} ${payload.startTime}-${payload.endTime}`;
+
     if (editingScheduleId.value) {
-      await api.put(`/schedules/${editingScheduleId.value}`, payload);
+      await schedulesStore.updateSchedule(editingScheduleId.value, payload);
+      logAudit('schedule_updated', `Updated class: ${label}`);
     } else {
-      await api.post('/schedules', payload);
+      await schedulesStore.createSchedule(payload);
+      logAudit('schedule_created', `Scheduled class: ${label}`);
     }
-    
-    // Switch the view to the day we just scheduled
+
     selectedDay.value = newClass.value.day;
-    
-    await fetchSchedules();
     closeModal();
   } catch (error) {
     console.error('Error saving schedule:', error);
@@ -335,10 +407,14 @@ const saveClass = async () => {
 
 const deleteClass = async (id) => {
   if (!confirm('Are you sure you want to delete this scheduled class?')) return;
-  
+
+  const cls = schedulesWithCourse.value.find(c => c.id === id);
+
   try {
-    await api.delete(`/schedules/${id}`);
-    await fetchSchedules();
+    await schedulesStore.deleteSchedule(id);
+    if (cls) {
+      logAudit('schedule_deleted', `Deleted class: ${cls.courseCode} on ${cls.day} ${cls.startTime}-${cls.endTime}`);
+    }
   } catch (error) {
     console.error('Error deleting schedule:', error);
     alert('Failed to delete schedule.');

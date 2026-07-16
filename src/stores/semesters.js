@@ -11,6 +11,8 @@ function mapSemester(row) {
     name: row.name,
     startDate: row.start_date,
     endDate: row.end_date,
+    examsStart: row.exams_start,
+    examsEnd: row.exams_end,
     isActive: row.is_active ?? false,
     createdAt: row.created_at,
   };
@@ -21,6 +23,8 @@ function toRow(semester) {
   if (semester.name !== undefined) row.name = semester.name;
   if (semester.startDate !== undefined) row.start_date = semester.startDate;
   if (semester.endDate !== undefined) row.end_date = semester.endDate;
+  if (semester.examsStart !== undefined) row.exams_start = semester.examsStart;
+  if (semester.examsEnd !== undefined) row.exams_end = semester.examsEnd;
   if (semester.isActive !== undefined) row.is_active = semester.isActive;
   return row;
 }

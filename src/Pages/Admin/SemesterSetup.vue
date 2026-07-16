@@ -82,7 +82,7 @@
             </div>
             
             <div class="form-actions">
-              <button type="submit" class="btn-primary">
+              <button type="submit" class="btn-primary" :disabled="semestersStore.isLoading">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                 {{ editingSemesterId ? 'Update Configuration' : 'Save Configuration' }}
               </button>
@@ -156,10 +156,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import api from '../../api.js';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useSemestersStore } from '@/stores/semesters';
+import { useAuditLogsStore } from '@/stores/auditlogs';
+import { supabase } from '@/stores/supabase';
 
-const semesters = ref([]);
+const semestersStore = useSemestersStore();
+const auditLogsStore = useAuditLogsStore();
 
 const initialForm = {
   year: '',
@@ -173,23 +176,50 @@ const initialForm = {
 
 const form = ref({ ...initialForm });
 const editingSemesterId = ref(null);
+const currentUser = ref(null);
 
-const fetchSemesters = async () => {
-  try {
-    const res = await api.get('/semesters');
-    semesters.value = res.data.map(s => ({
-      ...s,
-      year: s.name.split(' - ')[0],
-      term: s.name.split(' - ')[1] || s.name,
-      isCurrent: s.isActive
-    }));
-  } catch (error) {
-    console.error('Error fetching semesters:', error);
-  }
+// UI-shaped view over the store's semesters: derives year/term from `name`
+// ("2025/2026 - First Semester") and isCurrent from isActive.
+const semesters = computed(() =>
+  semestersStore.semesters.map((s) => ({
+    ...s,
+    year: s.name.split(' - ')[0],
+    term: s.name.split(' - ')[1] || s.name,
+    isCurrent: s.isActive,
+  }))
+);
+
+const loadCurrentUser = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, name, role')
+    .eq('id', user.id)
+    .single();
+
+  if (!error) currentUser.value = data;
 };
 
-onMounted(() => {
-  fetchSemesters();
+const logAudit = (action, details) => {
+  if (!currentUser.value) return;
+  auditLogsStore.logAction({
+    action,
+    details,
+    userId: currentUser.value.id,
+    userRole: currentUser.value.role,
+    userName: currentUser.value.name,
+  });
+};
+
+onMounted(async () => {
+  await Promise.all([semestersStore.fetchSemesters(), loadCurrentUser()]);
+  semestersStore.subscribeToSemesters();
+});
+
+onUnmounted(() => {
+  semestersStore.unsubscribeFromSemesters();
 });
 
 const activeSemester = computed(() => {
@@ -225,23 +255,35 @@ const editSemester = (sem) => {
 };
 
 const saveSemester = async () => {
+  const name = `${form.value.year} - ${form.value.term}`;
+  const payload = {
+    name,
+    startDate: form.value.startDate,
+    endDate: form.value.endDate,
+    examsStart: form.value.examsStart || null,
+    examsEnd: form.value.examsEnd || null,
+  };
+
   try {
-    const name = `${form.value.year} - ${form.value.term}`;
-    const payload = {
-      name,
-      startDate: form.value.startDate,
-      endDate: form.value.endDate,
-      isActive: form.value.isCurrent
-    };
-    
-    if (editingSemesterId.value) {
-      await api.put(`/semesters/${editingSemesterId.value}`, payload);
+    let semesterId = editingSemesterId.value;
+
+    if (semesterId) {
+      await semestersStore.updateSemester(semesterId, payload);
+      logAudit('semester_updated', `Updated semester "${name}"`);
     } else {
-      await api.post('/semesters', payload);
+      const created = await semestersStore.createSemester({ ...payload, isActive: false });
+      semesterId = created.id;
+      logAudit('semester_created', `Created semester "${name}"`);
     }
-    
+
+    // setActiveSemester deactivates every other semester atomically, so at
+    // most one semester is ever marked active.
+    if (form.value.isCurrent) {
+      await semestersStore.setActiveSemester(semesterId);
+      logAudit('semester_activated', `Set semester "${name}" as active`);
+    }
+
     resetForm();
-    await fetchSemesters();
   } catch (error) {
     console.error('Error saving semester:', error);
   }
@@ -250,23 +292,20 @@ const saveSemester = async () => {
 const setActive = async (id) => {
   try {
     const sem = semesters.value.find(s => s.id === id);
-    if (!sem) return;
-    await api.put(`/semesters/${id}`, {
-      name: sem.name,
-      startDate: sem.startDate,
-      endDate: sem.endDate,
-      isActive: true
-    });
-    await fetchSemesters();
+    await semestersStore.setActiveSemester(id);
+    if (sem) logAudit('semester_activated', `Set semester "${sem.name}" as active`);
   } catch (error) {
     console.error('Error setting active semester:', error);
   }
 };
 
 const deleteSemester = async (id) => {
+  const sem = semesters.value.find(s => s.id === id);
+  if (!confirm(`Delete semester "${sem?.name ?? ''}"? This cannot be undone.`)) return;
+
   try {
-    await api.delete(`/semesters/${id}`);
-    await fetchSemesters();
+    await semestersStore.deleteSemester(id);
+    logAudit('semester_deleted', `Deleted semester "${sem?.name ?? ''}"`);
   } catch (error) {
     console.error('Error deleting semester:', error);
   }
@@ -526,6 +565,12 @@ const deleteSemester = async (id) => {
 .btn-primary svg {
   width: 20px;
   height: 20px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
 }
 
 .btn-ghost {

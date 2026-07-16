@@ -194,6 +194,25 @@ export const useSchedulesStore = defineStore('schedules', () => {
       .subscribe();
   }
 
+/**
+ * Checks whether a new/edited schedule would clash with an existing one.
+ * Clash = same day AND overlapping time range AND (same lecturer OR same venue).
+ * Overlap test: existing.start < new.end AND new.start < existing.end
+ * (this correctly excludes back-to-back classes, e.g. one ending 11:00 and one starting 11:00)
+ * excludeId lets edits ignore the row being edited.
+ */
+function findConflict({ id, day, startTime, endTime, lecturer, venue }, excludeId = null) {
+  return schedules.value.find((s) => {
+    if (excludeId && s.id === excludeId) return false;
+    if (s.day !== day) return false;
+
+    const overlaps = s.startTime < endTime && startTime < s.endTime;
+    if (!overlaps) return false;
+
+    return s.lecturer === lecturer || s.venue === venue;
+  }) ?? null;
+}
+
   function unsubscribeFromSchedules() {
     if (!realtimeChannel) return;
     supabase.removeChannel(realtimeChannel);
@@ -205,6 +224,7 @@ export const useSchedulesStore = defineStore('schedules', () => {
     isLoading,
     error,
     schedulesCount,
+    findConflict,
     schedulesByCourse,
     getScheduleById,
     fetchSchedules,
