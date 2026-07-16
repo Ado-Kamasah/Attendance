@@ -174,6 +174,31 @@ async function register(form) {
     profile.value = null;
   }
 
+  /**
+ * Batch-fetches public.users profiles by id — used whenever a component
+ * needs student/lecturer display info (name, student_id, program_id) for
+ * a set of ids resolved from another table (e.g. enrollments.student_id).
+ * Returns [] on failure rather than throwing, since a lookup failure
+ * shouldn't crash a list view — callers can render "Unknown" instead.
+ */
+async function fetchUsersByIds(ids) {
+  const uniqueIds = [...new Set((ids || []).filter(Boolean))];
+  if (uniqueIds.length === 0) return [];
+
+  const { data, error: fetchErr } = await supabase
+    .from('users')
+    .select('id, name, student_id, program_id, role')
+    .in('id', uniqueIds)
+    .order('name');
+
+  if (fetchErr) {
+    console.error('Failed to fetch users by id:', fetchErr);
+    return [];
+  }
+
+  return data ?? [];
+}
+
   return {
     user,
     profile,
@@ -181,6 +206,7 @@ async function register(form) {
     error,
     initialize,
     fetchProfile,
+    fetchUsersByIds,
     login,
     register,
     resendConfirmation,

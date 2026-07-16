@@ -213,7 +213,7 @@ onMounted(async () => {
       if (studentIds.length > 0) {
         const { data, error } = await supabase
           .from('users')
-          .select('id, name, student_id')
+          .select('id, name, id_number')
           .in('id', studentIds)
           .order('name');
 
@@ -222,7 +222,7 @@ onMounted(async () => {
         enrolledStudents.value = (data ?? []).map((u) => ({
           id: u.id,
           name: u.name,
-          studentId: u.student_id,
+          studentId: u.id_number,
         }));
       }
     } catch (e) {

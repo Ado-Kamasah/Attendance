@@ -152,8 +152,7 @@
                   </div>
                 </td>
                 <td>{{ student.studentId }}</td>
-                <td>{{ student.program || 'N/A' }}</td>
-              </tr>
+<td>{{ programmesStore.getProgrammeById(student.programId)?.name || 'N/A' }}</td>              </tr>
             </tbody>
           </table>
         </div>
@@ -172,6 +171,7 @@ import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { supabase } from '@/stores/supabase';
+import { useProgrammesStore } from '@/stores/programmes';
 
 const emit = defineEmits(['navigate']);
 
@@ -181,6 +181,7 @@ const coursesStore = useCoursesStore();
 const enrollmentsStore = useEnrollmentsStore();
 const sessionsStore = useSessionsStore();
 const attendancesStore = useAttendancesStore();
+const programmesStore = useProgrammesStore();
 
 const { profile } = storeToRefs(authStore);
 const { schedules } = storeToRefs(schedulesStore);
@@ -200,6 +201,8 @@ onMounted(async () => {
       enrollmentsStore.fetchEnrollments(),
       sessionsStore.fetchSessions(),
       attendancesStore.fetchAttendances(),
+      programmesStore.fetchProgrammes(),   // ✅ new
+
     ]);
 
     schedulesStore.subscribeToSchedules();
@@ -207,6 +210,7 @@ onMounted(async () => {
     enrollmentsStore.subscribeToEnrollments();
     sessionsStore.subscribeToSessions();
     attendancesStore.subscribeToAttendances();
+    programmesStore.subscribeToProgrammes();   // ✅ new
   } catch (error) {
     console.error('Error fetching lecturer courses:', error);
   }
@@ -335,29 +339,31 @@ const openClassList = async (course) => {
   isLoadingStudents.value = true;
 
   try {
-    const studentIds = enrollmentsStore
-      .enrollmentsByCourse(course.id)
-      .map((e) => e.studentId);
-
-    if (studentIds.length === 0) {
-      studentsList.value = [];
-      return;
-    }
-
     const { data, error } = await supabase
-      .from('users')
-      .select('id, name, student_id, program')
-      .in('id', studentIds)
-      .order('name');
+      .from('enrollments')
+      .select(`
+        student_id,
+        users!enrollments_student_id_fkey (
+          id,
+          name,
+          id_number,
+          program_id
+        )
+      `)
+      .eq('course_id', course.id);
 
     if (error) throw error;
 
-    studentsList.value = (data ?? []).map((u) => ({
-      id: u.id,
-      name: u.name,
-      studentId: u.student_id,
-      program: u.program,
-    }));
+    studentsList.value = (data ?? [])
+      .map((row) => row.users)
+      .filter(Boolean)
+      .map((u) => ({
+        id: u.id,
+        name: u.name,
+        studentId: u.id_number,
+        programId: u.program_id,
+      }))
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   } catch (error) {
     console.error('Error fetching class list:', error);
     studentsList.value = [];
@@ -365,6 +371,7 @@ const openClassList = async (course) => {
     isLoadingStudents.value = false;
   }
 };
+
 
 const closeClassList = () => {
   showingClassList.value = false;
