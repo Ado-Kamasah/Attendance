@@ -87,29 +87,52 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import api from '../../api.js';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useCoursesStore } from '@/stores/courses';
+import { useSchedulesStore } from '@/stores/schedules';
+import { useAuditLogsStore } from '@/stores/auditlogs';
+import { useEnrollmentsStore } from '@/stores/enrollments';
+import { useAttendancesStore } from '@/stores/attendances';
 
-const systemAuditLogs = ref([]);
-const availableGlobalCourses = ref([]);
-const masterSchedule = ref([]);
-const dashboardStats = ref({ totalStudents: 0, averageAttendance: 0, flaggedAbsences: 0 });
+const coursesStore = useCoursesStore();
+const schedulesStore = useSchedulesStore();
+const auditLogsStore = useAuditLogsStore();
+const enrollmentsStore = useEnrollmentsStore();
+const attendancesStore = useAttendancesStore();
+
+const { courses } = storeToRefs(coursesStore);
+const { schedules } = storeToRefs(schedulesStore);
+const { logs } = storeToRefs(auditLogsStore);
+const { enrollments } = storeToRefs(enrollmentsStore);
+const { attendances } = storeToRefs(attendancesStore);
 
 onMounted(async () => {
   try {
-    const [coursesRes, schedulesRes, statsRes, logsRes] = await Promise.all([
-      api.get('/courses'),
-      api.get('/schedules'),
-      api.get('/admin/dashboard-stats'),
-      api.get('/admin/audit-logs')
+    await Promise.all([
+      coursesStore.fetchCourses(),
+      schedulesStore.fetchSchedules(),
+      auditLogsStore.fetchLogs(),
+      enrollmentsStore.fetchEnrollments(),
+      attendancesStore.fetchAttendances(),
     ]);
-    availableGlobalCourses.value = coursesRes.data;
-    masterSchedule.value = schedulesRes.data;
-    dashboardStats.value = statsRes.data;
-    systemAuditLogs.value = logsRes.data;
+
+    coursesStore.subscribeToCourses();
+    schedulesStore.subscribeToSchedules();
+    auditLogsStore.subscribeToLogs();
+    enrollmentsStore.subscribeToEnrollments();
+    attendancesStore.subscribeToAttendances();
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
   }
+});
+
+onUnmounted(() => {
+  coursesStore.unsubscribeFromCourses();
+  schedulesStore.unsubscribeFromSchedules();
+  auditLogsStore.unsubscribeFromLogs();
+  enrollmentsStore.unsubscribeFromEnrollments();
+  attendancesStore.unsubscribeFromAttendances();
 });
 
 const currentDate = new Date().toLocaleDateString('en-US', {
@@ -121,10 +144,27 @@ const currentDate = new Date().toLocaleDateString('en-US', {
 
 const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
+// --- Derived stats (replacing the old /admin/dashboard-stats endpoint) ---
+
+const totalStudents = computed(() => {
+  const uniqueStudentIds = new Set(enrollments.value.map((e) => e.studentId));
+  return uniqueStudentIds.size;
+});
+
+const averageAttendance = computed(() => {
+  if (attendances.value.length === 0) return 0;
+  const presentCount = attendances.value.filter((a) => a.status === 'present').length;
+  return Math.round((presentCount / attendances.value.length) * 100);
+});
+
+const flaggedAbsences = computed(() =>
+  attendances.value.filter((a) => a.status === 'absent').length
+);
+
 const metrics = computed(() => [
   {
     title: 'Total Students',
-    value: dashboardStats.value.totalStudents.toString(),
+    value: totalStudents.value.toString(),
     trend: 5,
     bgColor: 'rgba(99, 102, 241, 0.1)',
     color: '#6366f1',
@@ -132,7 +172,7 @@ const metrics = computed(() => [
   },
   {
     title: 'Average Attendance',
-    value: `${dashboardStats.value.averageAttendance}%`,
+    value: `${averageAttendance.value}%`,
     trend: 2,
     bgColor: 'rgba(16, 185, 129, 0.1)',
     color: '#10b981',
@@ -140,7 +180,7 @@ const metrics = computed(() => [
   },
   {
     title: 'Active Courses',
-    value: availableGlobalCourses.value.filter(c => c.status === 'active').length.toString(),
+    value: courses.value.filter((c) => c.status === 'active').length.toString(),
     trend: 12,
     bgColor: 'rgba(245, 158, 11, 0.1)',
     color: '#f59e0b',
@@ -148,7 +188,7 @@ const metrics = computed(() => [
   },
   {
     title: 'Flagged Absences',
-    value: dashboardStats.value.flaggedAbsences.toString(),
+    value: flaggedAbsences.value.toString(),
     trend: -4,
     bgColor: 'rgba(239, 68, 68, 0.1)',
     color: '#ef4444',
@@ -156,20 +196,41 @@ const metrics = computed(() => [
   }
 ]);
 
+// --- Today's schedule (attach course info via coursesStore, same pattern as Schedule.vue) ---
 const todaySchedule = computed(() => {
-  return masterSchedule.value
-    .filter(schedule => schedule.day === currentDayName)
-    .sort((a, b) => a.startTime.localeCompare(b.startTime))
-    .map(schedule => {
+  return schedules.value
+    .filter((s) => s.day === currentDayName)
+    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+    .map((s) => {
+      const course = coursesStore.getCourseById(s.courseId);
       return {
-        ...schedule,
-        name: schedule.course?.name || schedule.courseTitle || 'Unknown Course',
-        room: schedule.venue,
+        ...s,
+        name: course?.name ?? 'Unknown Course',
+        room: s.venue,
         status: 'upcoming',
         statusText: 'Upcoming'
       };
     });
 });
+
+// --- Audit logs reshaped to match the template's expected field names ---
+const systemAuditLogs = computed(() =>
+  logs.value.map((l) => ({
+    id: l.id,
+    action: l.action,
+    details: l.details,
+    timestamp: l.timestamp
+      ? new Date(l.timestamp).toLocaleString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          month: 'short',
+          day: 'numeric'
+        })
+      : '',
+    role: l.userRole || 'System',
+    user: l.userName || 'System',
+  }))
+);
 </script>
 
 <style scoped>
