@@ -80,31 +80,120 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import api from '../../api.js';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/authstore';
+import { useCoursesStore } from '@/stores/courses';
+import { useSchedulesStore } from '@/stores/schedules';
+import { useEnrollmentsStore } from '@/stores/enrollments';
+import { useSessionsStore } from '@/stores/sessions';
+import { useAttendancesStore } from '@/stores/attendances';
+import { useAuditLogsStore } from '@/stores/auditlogs';
 
 const emit = defineEmits(['navigate']);
 
-const myCourses = ref([]);
+const authStore = useAuthStore();
+const coursesStore = useCoursesStore();
+const schedulesStore = useSchedulesStore();
+const enrollmentsStore = useEnrollmentsStore();
+const sessionsStore = useSessionsStore();
+const attendancesStore = useAttendancesStore();
+const auditLogsStore = useAuditLogsStore();
+
+const { profile } = storeToRefs(authStore);
+const { courses } = storeToRefs(coursesStore);
+const { schedules } = storeToRefs(schedulesStore);
+const { enrollments } = storeToRefs(enrollmentsStore);
+const { sessions } = storeToRefs(sessionsStore);
+const { attendances } = storeToRefs(attendancesStore);
+
+const palette = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6'];
 
 onMounted(async () => {
   try {
-    const response = await api.get('/courses/enrolled');
-    // Map the enrolled response to course items
-    myCourses.value = response.data.map(item => {
-      const course = item;
-      course.color = '#4f46e5'; // Default color
-      course.attendance = 0; // Default attendance
-      return course;
-    });
+    await Promise.all([
+      coursesStore.fetchCourses(),
+      schedulesStore.fetchSchedules(),
+      enrollmentsStore.fetchEnrollments({ studentId: profile.value?.id }),
+      sessionsStore.fetchSessions(),
+      attendancesStore.fetchAttendances({ studentId: profile.value?.id }),
+    ]);
+
+    coursesStore.subscribeToCourses();
+    schedulesStore.subscribeToSchedules();
+    enrollmentsStore.subscribeToEnrollments();
+    sessionsStore.subscribeToSessions();
+    attendancesStore.subscribeToAttendances();
   } catch (error) {
     console.error('Error fetching enrolled courses:', error);
   }
 });
 
+onUnmounted(() => {
+  coursesStore.unsubscribeFromCourses();
+  schedulesStore.unsubscribeFromSchedules();
+  enrollmentsStore.unsubscribeFromEnrollments();
+  sessionsStore.unsubscribeFromSessions();
+  attendancesStore.unsubscribeFromAttendances();
+});
+
+/** First scheduled slot for a course, used for lecturer + a display string. */
+function scheduleForCourse(courseId) {
+  return schedules.value.find((s) => s.courseId === courseId) ?? null;
+}
+
+/** Present-count / total-sessions for this student on this course. */
+function attendanceForCourse(courseId) {
+  const sessionIds = new Set(
+    sessions.value.filter((s) => s.courseId === courseId).map((s) => s.id)
+  );
+  if (sessionIds.size === 0) return 0;
+
+  const relevant = attendances.value.filter(
+    (a) => a.studentId === profile.value?.id && sessionIds.has(a.sessionId)
+  );
+  if (relevant.length === 0) return 0;
+
+  const present = relevant.filter((a) => a.status === 'present').length;
+  return Math.round((present / sessionIds.size) * 100);
+}
+
+const myCourses = computed(() => {
+  return enrollments.value
+    .filter((e) => e.studentId === profile.value?.id)
+    .map((e, index) => {
+      const course = coursesStore.getCourseById(e.courseId);
+      const schedule = scheduleForCourse(e.courseId);
+
+      return {
+        id: e.courseId,
+        code: course?.code ?? 'Unknown',
+        name: course?.name ?? 'Unknown Course',
+        credits: course?.credits ?? 0,
+        lecturer: schedule?.lecturer ?? 'Unassigned',
+        schedule: schedule
+          ? `${schedule.day} • ${schedule.startTime} - ${schedule.endTime}`
+          : 'Schedule pending',
+        attendance: attendanceForCourse(e.courseId),
+        color: palette[index % palette.length],
+      };
+    });
+});
+
 const getInitials = (name) => {
   if (!name) return 'UN';
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+};
+
+const goToAttendance = (course) => {
+  auditLogsStore.logAction({
+    action: 'attendance_check_initiated',
+    details: `Opened attendance check-in for ${course.code} — ${course.name}`,
+    userId: profile.value?.id,
+    userRole: profile.value?.role,
+    userName: profile.value?.name,
+  });
+  emit('navigate', '/attendance');
 };
 </script>
 

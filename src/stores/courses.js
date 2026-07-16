@@ -11,7 +11,7 @@ function mapCourse(row) {
     code: row.code,
     name: row.name,
     credits: row.credits ?? 0,
-    program: row.program,
+    programId: row.program_id,        // ✅ FK now
     level: row.level,
     semester: row.semester ?? 'Semester 1',
     status: row.status ?? 'active',
@@ -25,7 +25,7 @@ function toRow(course) {
   if (course.code !== undefined) row.code = course.code;
   if (course.name !== undefined) row.name = course.name;
   if (course.credits !== undefined) row.credits = course.credits;
-  if (course.program !== undefined) row.program = course.program;
+  if (course.programId !== undefined) row.program_id = course.programId;  // ✅
   if (course.level !== undefined) row.level = course.level;
   if (course.semester !== undefined) row.semester = course.semester;
   if (course.status !== undefined) row.status = course.status;
@@ -41,7 +41,7 @@ function normalizeError(err) {
   }
   if (err?.code === '23503') {
     const normalized = new Error(
-      'This course has schedules, enrollments, or sessions attached and cannot be deleted.'
+      'This course has schedules, enrollments, or sessions attached and cannot be deleted, or the selected programme no longer exists.'
     );
     normalized.code = 'COURSE_IN_USE';
     return normalized;
@@ -58,8 +58,8 @@ export const useCoursesStore = defineStore('courses', () => {
   const activeCourses = computed(() => courses.value.filter((c) => c.status === 'active'));
   const coursesCount = computed(() => courses.value.length);
 
-  function coursesByProgram(program) {
-    return courses.value.filter((c) => c.program === program);
+  function coursesByProgram(programId) {
+    return courses.value.filter((c) => c.programId === programId);
   }
 
   function getCourseById(id) {
@@ -71,7 +71,7 @@ export const useCoursesStore = defineStore('courses', () => {
   }
 
   /**
-   * filters: { program?, level?, semester?, status? }
+   * filters: { programId?, level?, semester?, status? }
    */
   async function fetchCourses(filters = {}) {
     isLoading.value = true;
@@ -80,7 +80,7 @@ export const useCoursesStore = defineStore('courses', () => {
     try {
       let query = supabase.from(TABLE).select('*').order('code', { ascending: true });
 
-      if (filters.program) query = query.eq('program', filters.program);
+      if (filters.programId) query = query.eq('program_id', filters.programId);
       if (filters.level) query = query.eq('level', filters.level);
       if (filters.semester) query = query.eq('semester', filters.semester);
       if (filters.status) query = query.eq('status', filters.status);
@@ -132,7 +132,7 @@ export const useCoursesStore = defineStore('courses', () => {
   }
 
   /**
-   * course: { code, name, credits, program, level, semester?, status? }
+   * course: { code, name, credits, programId, level, semester?, status? }
    */
   async function createCourse(course) {
     isLoading.value = true;
@@ -210,10 +210,6 @@ export const useCoursesStore = defineStore('courses', () => {
     }
   }
 
-  /**
-   * Subscribes to realtime changes on the courses table and keeps local
-   * state in sync. Call unsubscribeFromCourses() on unmount.
-   */
   function subscribeToCourses() {
     if (realtimeChannel) return;
 

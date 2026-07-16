@@ -90,21 +90,24 @@
         <div class="form-group">
           <label>Day of Week</label>
           <select v-model="editForm.day" class="modern-input">
-            <option>Mondays</option>
-            <option>Tuesdays</option>
-            <option>Wednesdays</option>
-            <option>Thursdays</option>
-            <option>Fridays</option>
-            <option>Saturdays</option>
-            <option>Sundays</option>
-          </select>
+  <option value="Monday">Mondays</option>
+  <option value="Tuesday">Tuesdays</option>
+  <option value="Wednesday">Wednesdays</option>
+  <option value="Thursday">Thursdays</option>
+  <option value="Friday">Fridays</option>
+  <option value="Saturday">Saturdays</option>
+  <option value="Sunday">Sundays</option>
+</select>
         </div>
 
-        <div class="form-group">
-          <label>Time</label>
-          <input type="text" v-model="editForm.time" class="modern-input" placeholder="e.g. 10:00 AM - 12:00 PM" />
-        </div>
-
+       <div class="form-group">
+  <label>Start Time</label>
+  <input type="time" v-model="editForm.startTime" class="modern-input" />
+</div>
+<div class="form-group">
+  <label>End Time</label>
+  <input type="time" v-model="editForm.endTime" class="modern-input" />
+</div>
         <div class="modal-actions">
           <button class="action-btn outline-btn" @click="cancelEdit">Cancel</button>
           <button class="action-btn primary-btn" @click="saveEdit">Save Schedule</button>
@@ -160,67 +163,165 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import api from '../../api.js';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/authstore';
+import { useSchedulesStore } from '@/stores/schedules';
+import { useCoursesStore } from '@/stores/courses';
+import { useEnrollmentsStore } from '@/stores/enrollments';
+import { useSessionsStore } from '@/stores/sessions';
+import { useAttendancesStore } from '@/stores/attendances';
+import { supabase } from '@/stores/supabase';
 
 const emit = defineEmits(['navigate']);
 
-const lecturerCourses = ref([]);
+const authStore = useAuthStore();
+const schedulesStore = useSchedulesStore();
+const coursesStore = useCoursesStore();
+const enrollmentsStore = useEnrollmentsStore();
+const sessionsStore = useSessionsStore();
+const attendancesStore = useAttendancesStore();
+
+const { profile } = storeToRefs(authStore);
+const { schedules } = storeToRefs(schedulesStore);
+const { sessions } = storeToRefs(sessionsStore);
+const { attendances } = storeToRefs(attendancesStore);
+
+const lecturerName = computed(() => profile.value?.name ?? '');
+
+// A rotating palette so cards don't all render the same color.
+const palette = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6'];
 
 onMounted(async () => {
   try {
-    const userJson = localStorage.getItem('user');
-    const user = userJson ? JSON.parse(userJson) : null;
-    const lecturerName = user ? user.name : '';
+    await Promise.all([
+      schedulesStore.fetchSchedules(),
+      coursesStore.fetchCourses(),
+      enrollmentsStore.fetchEnrollments(),
+      sessionsStore.fetchSessions(),
+      attendancesStore.fetchAttendances(),
+    ]);
 
-    const res = await api.get('/schedules');
-    // For simplicity, showing all schedules or filtered by lecturer name
-    const schedules = res.data.filter(s => !lecturerName || s.lecturer === lecturerName);
-    
-    lecturerCourses.value = schedules.map(s => ({
-      id: s.courseId, // Use courseId to navigate to attendance
-      code: s.course?.code || 'Unknown',
-      name: s.course?.name || 'Unknown Course',
-      semester: s.course?.semester || 'Semester 1',
-      studentsCount: 0, // Placeholder
-      day: s.day,
-      time: `${s.startTime} - ${s.endTime}`,
-      venue: s.venue,
-      avgAttendance: 0,
-      color: '#4f46e5'
-    }));
+    schedulesStore.subscribeToSchedules();
+    coursesStore.subscribeToCourses();
+    enrollmentsStore.subscribeToEnrollments();
+    sessionsStore.subscribeToSessions();
+    attendancesStore.subscribeToAttendances();
   } catch (error) {
     console.error('Error fetching lecturer courses:', error);
   }
 });
 
+onUnmounted(() => {
+  schedulesStore.unsubscribeFromSchedules();
+  coursesStore.unsubscribeFromCourses();
+  enrollmentsStore.unsubscribeFromEnrollments();
+  sessionsStore.unsubscribeFromSessions();
+  attendancesStore.unsubscribeFromAttendances();
+});
+
+/**
+ * Attendance rate for one course: present / total across sessions
+ * belonging to that course.
+ */
+function avgAttendanceForCourse(courseId) {
+  const sessionIds = new Set(
+    sessions.value.filter((s) => s.courseId === courseId).map((s) => s.id)
+  );
+  if (sessionIds.size === 0) return 0;
+
+  const relevant = attendances.value.filter((a) => sessionIds.has(a.sessionId));
+  if (relevant.length === 0) return 0;
+
+  const present = relevant.filter((a) => a.status === 'present').length;
+  return Math.round((present / relevant.length) * 100);
+}
+
+// One card per scheduled class this lecturer teaches (a lecturer could
+// teach the same course in two different slots, so we key by schedule id,
+// not course id).
+const lecturerCourses = computed(() => {
+  return schedules.value
+    .filter((s) => s.lecturer === lecturerName.value)
+    .map((s, index) => {
+      const course = coursesStore.getCourseById(s.courseId);
+      return {
+        scheduleId: s.id,          // used for reschedule
+        id: s.courseId,            // used for attendance / class list (matches original behavior)
+        code: course?.code ?? 'Unknown',
+        name: course?.name ?? 'Unknown Course',
+        semester: course?.semester || 'Semester 1',
+        studentsCount: enrollmentsStore.enrollmentsByCourse(s.courseId).length,
+        day: s.day,
+        time: `${s.startTime} - ${s.endTime}`,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        venue: s.venue,
+        avgAttendance: avgAttendanceForCourse(s.courseId),
+        color: palette[index % palette.length],
+      };
+    });
+});
+
+// --- Reschedule modal ---
 const editingCourse = ref(null);
-const editForm = ref({ day: '', time: '' });
+const editForm = ref({ day: '', startTime: '', endTime: '' });
 
 const openEditModal = (course) => {
   editingCourse.value = course;
-  editForm.value = { day: course.day, time: course.time };
-};
-
-const goToAttendance = (course) => {
-  localStorage.setItem('activeCourseId', course.id);
-  localStorage.setItem('activeCourseCode', course.code);
-  localStorage.setItem('activeCourseName', course.name);
-  localStorage.setItem('activeCourseSemester', course.semester);
-  emit('navigate', '/attendance-view');
+  editForm.value = {
+    day: course.day,
+    startTime: course.startTime,
+    endTime: course.endTime,
+  };
 };
 
 const cancelEdit = () => {
   editingCourse.value = null;
 };
 
-const saveEdit = () => {
-  if (editingCourse.value) {
-    editingCourse.value.day = editForm.value.day;
-    editingCourse.value.time = editForm.value.time;
-    editingCourse.value = null;
-    alert('Class schedule successfully updated!');
+const saveEdit = async () => {
+  if (!editingCourse.value) return;
+
+  // Same overlap-based conflict check used in the admin Schedule.vue —
+  // prevents this lecturer (or the venue) from double-booking a slot.
+  const conflict = schedulesStore.findConflict(
+    {
+      day: editForm.value.day,
+      startTime: editForm.value.startTime,
+      endTime: editForm.value.endTime,
+      lecturer: lecturerName.value,
+      venue: editingCourse.value.venue,
+    },
+    editingCourse.value.scheduleId
+  );
+
+  if (conflict) {
+    alert(
+      `Scheduling conflict: this overlaps with another class from ${conflict.startTime} to ${conflict.endTime} on ${editForm.value.day}.`
+    );
+    return;
   }
+
+  try {
+    await schedulesStore.updateSchedule(editingCourse.value.scheduleId, {
+      day: editForm.value.day,
+      startTime: editForm.value.startTime,
+      endTime: editForm.value.endTime,
+    });
+    editingCourse.value = null;
+  } catch (error) {
+    console.error('Error updating schedule:', error);
+  }
+};
+
+// --- Attendance / class list navigation ---
+const goToAttendance = (course) => {
+  localStorage.setItem('activeCourseId', course.id);
+  localStorage.setItem('activeCourseCode', course.code);
+  localStorage.setItem('activeCourseName', course.name);
+  localStorage.setItem('activeCourseSemester', course.semester);
+  emit('navigate', '/attendance-view');
 };
 
 const showingClassList = ref(false);
@@ -232,10 +333,31 @@ const openClassList = async (course) => {
   activeCourse.value = course;
   showingClassList.value = true;
   isLoadingStudents.value = true;
-  
+
   try {
-    const response = await api.get(`/courses/${course.id}/students`);
-    studentsList.value = response.data;
+    const studentIds = enrollmentsStore
+      .enrollmentsByCourse(course.id)
+      .map((e) => e.studentId);
+
+    if (studentIds.length === 0) {
+      studentsList.value = [];
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, student_id, program')
+      .in('id', studentIds)
+      .order('name');
+
+    if (error) throw error;
+
+    studentsList.value = (data ?? []).map((u) => ({
+      id: u.id,
+      name: u.name,
+      studentId: u.student_id,
+      program: u.program,
+    }));
   } catch (error) {
     console.error('Error fetching class list:', error);
     studentsList.value = [];

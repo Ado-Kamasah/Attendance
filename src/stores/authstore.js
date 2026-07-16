@@ -117,51 +117,48 @@ export const useAuthStore = defineStore('auth', () => {
    * Email domain is checked client-side for a fast error message, and
    * authoritatively re-checked by the on_auth_user_created DB trigger.
    */
-  async function register(form) {
-    isLoading.value = true;
-    error.value = '';
+async function register(form) {
+  isLoading.value = true;
+  error.value = '';
 
-    try {
-      const email = (form.email || '').trim().toLowerCase();
-      const domain = email.split('@')[1];
+  try {
+    const email = (form.email || '').trim().toLowerCase();
+    const domain = email.split('@')[1];
 
-      if (domain !== ALLOWED_DOMAIN) {
-        throw new Error(`Registration is restricted to @${ALLOWED_DOMAIN} email addresses`);
-      }
-
-      const { data, error: signUpErr } = await supabase.auth.signUp({
-        email,
-        password: form.password,
-        options: {
-          data: {
-            full_name: form.fullName,
-            role: form.role === 'staff' ? 'Lecturer' : 'Student',
-            id_number: form.idNumber,
-            program: form.program,
-          },
-        },
-      });
-
-      if (signUpErr) {
-        throw new Error(signUpErr.message);
-      }
-
-      // If email confirmation is enabled in your Supabase Auth settings,
-      // data.session will be null here and the user must confirm before
-      // signing in. If it's disabled, they're already signed in.
-      if (data.session) {
-        user.value = data.user;
-        await fetchProfile();
-      }
-
-      return data;
-    } catch (err) {
-      error.value = err.message || 'Registration failed. Please check your inputs.';
-      throw err;
-    } finally {
-      isLoading.value = false;
+    if (domain !== ALLOWED_DOMAIN) {
+      throw new Error(`Registration is restricted to @${ALLOWED_DOMAIN} email addresses`);
     }
+
+    const { data, error: signUpErr } = await supabase.auth.signUp({
+      email,
+      password: form.password,
+      options: {
+        data: {
+          full_name: form.fullName,
+          role: form.role === 'staff' ? 'Lecturer' : 'Student',
+          id_number: form.idNumber,
+          program_id: form.programId,   // ✅ FK now sent instead of a name string
+        },
+      },
+    });
+
+    if (signUpErr) {
+      throw new Error(signUpErr.message);
+    }
+
+    if (data.session) {
+      user.value = data.user;
+      await fetchProfile();
+    }
+
+    return data;
+  } catch (err) {
+    error.value = err.message || 'Registration failed. Please check your inputs.';
+    throw err;
+  } finally {
+    isLoading.value = false;
   }
+}
 
   async function resendConfirmation(email) {
     const { error: resendErr } = await supabase.auth.resend({

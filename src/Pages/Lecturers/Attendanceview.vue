@@ -142,9 +142,22 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import api from '../../api.js';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/authstore';
+import { useSessionsStore } from '@/stores/sessions';
+import { useAttendancesStore } from '@/stores/attendances';
+import { useEnrollmentsStore } from '@/stores/enrollments';
+import { supabase } from '@/stores/supabase';
 
 const emit = defineEmits(['navigate']);
+
+const authStore = useAuthStore();
+const sessionsStore = useSessionsStore();
+const attendancesStore = useAttendancesStore();
+const enrollmentsStore = useEnrollmentsStore();
+
+const { profile } = storeToRefs(authStore);
+const { attendances } = storeToRefs(attendancesStore);
 
 const courseId = ref(localStorage.getItem('activeCourseId') || '');
 const courseCode = ref(localStorage.getItem('activeCourseCode') || '');
@@ -154,14 +167,12 @@ const courseSemester = ref(localStorage.getItem('activeCourseSemester') || 'Seme
 const enrolledStudents = ref([]);
 const selectedStudents = ref([]);
 const liveAttendanceSession = ref({ isActive: false });
-const checkedInStudents = ref([]);
 const timeLeft = ref(60);
 const totalTime = ref(60);
 const isStarting = ref(false);
 const startError = ref('');
 
 let timerInterval = null;
-let pollInterval = null;
 
 const circumference = 2 * Math.PI * 66; // r=66
 const strokeOffset = computed(() => circumference * (1 - timeLeft.value / totalTime.value));
@@ -173,13 +184,54 @@ const progressPct = computed(() =>
 
 const formatTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
+// Live check-ins for the active session, joined with student names/ids
+// already loaded in enrolledStudents (attendances only carry studentId).
+const checkedInStudents = computed(() => {
+  if (!liveAttendanceSession.value.id) return [];
+
+  return attendances.value
+    .filter((a) => a.sessionId === liveAttendanceSession.value.id && a.status === 'present')
+    .map((a) => {
+      const student = enrolledStudents.value.find((s) => s.id === a.studentId);
+      return {
+        id: a.id,
+        studentId: a.studentId,
+        name: student?.name ?? 'Unknown student',
+        timestamp: a.timestamp,
+      };
+    })
+    .sort((x, y) => new Date(x.timestamp) - new Date(y.timestamp));
+});
+
 onMounted(async () => {
   if (courseId.value) {
     try {
-      const res = await api.get(`/courses/${courseId.value}/students`);
-      enrolledStudents.value = res.data;
-    } catch (e) { console.error(e); }
+      const studentIds = enrollmentsStore
+        .enrollmentsByCourse(courseId.value)
+        .map((e) => e.studentId);
+
+      if (studentIds.length > 0) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, student_id')
+          .in('id', studentIds)
+          .order('name');
+
+        if (error) throw error;
+
+        enrolledStudents.value = (data ?? []).map((u) => ({
+          id: u.id,
+          name: u.name,
+          studentId: u.student_id,
+        }));
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
+
+  // Realtime feed of attendance inserts replaces the old polling loop.
+  attendancesStore.subscribeToAttendances();
 });
 
 const toggleSelectAll = () => {
@@ -188,66 +240,55 @@ const toggleSelectAll = () => {
     : enrolledStudents.value.map(s => s.id);
 };
 
-const startPolling = () => {
-  pollInterval = setInterval(async () => {
-    if (!liveAttendanceSession.value.isActive || !liveAttendanceSession.value.id) return;
-    try {
-      const res = await api.get(`/sessions/${liveAttendanceSession.value.id}/attendances`);
-      checkedInStudents.value = res.data;
-    } catch (e) { console.error('Poll error', e); }
-  }, 3000);
-};
-
-const stopPolling = () => { clearInterval(pollInterval); pollInterval = null; };
-
 const startLiveSession = async () => {
   startError.value = '';
   isStarting.value = true;
   try {
-    const res = await api.post('/sessions/start', {
+    const created = await sessionsStore.createSession({
       courseId: courseId.value,
-      maxStudents: selectedStudents.value.length
+      lecturerId: profile.value?.id,
+      maxStudents: selectedStudents.value.length,
+      isActive: true,
     });
-    checkedInStudents.value = [];
+
     totalTime.value = 60;
     timeLeft.value = 60;
     liveAttendanceSession.value = {
-      id: res.data.session.id,
+      id: created.id,
       isActive: true,
-      pin: res.data.session.pin,
+      pin: created.pin,
       maxStudents: selectedStudents.value.length,
-      currentStudents: 0
     };
+
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       if (timeLeft.value > 0) { timeLeft.value--; }
       else { stopLiveSession(); }
     }, 1000);
-    startPolling();
   } catch (e) {
-    startError.value = e.response?.data?.message || 'Failed to start session.';
+    startError.value = e.message || 'Failed to start session.';
   } finally {
     isStarting.value = false;
   }
 };
 
 const stopLiveSession = async () => {
-  stopPolling();
   clearInterval(timerInterval); timerInterval = null;
   try {
     if (liveAttendanceSession.value.id) {
-      await api.post(`/sessions/${liveAttendanceSession.value.id}/end`);
+      await sessionsStore.closeSession(liveAttendanceSession.value.id);
     }
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
   liveAttendanceSession.value = { isActive: false };
-  checkedInStudents.value = [];
 };
 
 const extendTimer = (secs) => { if (liveAttendanceSession.value.isActive) timeLeft.value += secs; };
 
 onUnmounted(() => {
   clearInterval(timerInterval);
-  stopPolling();
+  attendancesStore.unsubscribeFromAttendances();
 });
 </script>
 

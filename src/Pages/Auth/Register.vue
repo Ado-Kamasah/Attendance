@@ -93,10 +93,12 @@
                   <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
                   <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
                 </svg>
-                <select id="program" v-model="form.program" required>
-                  <option value="" disabled>Select your faculty/program</option>
-                  <option v-for="faculty in faculties" :key="faculty.id" :value="faculty.name">{{ faculty.name }}</option>
-                </select>
+                <select id="program" v-model="form.programId" required>
+  <option value="" disabled>Select your faculty/program</option>
+  <option v-for="programme in activeProgrammes" :key="programme.id" :value="programme.id">
+    {{ programme.name }}
+  </option>
+</select>
               </div>
             </div>
 
@@ -188,26 +190,27 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { supabase } from '@/stores/supabase';
 import { useAuthStore } from '@/stores/authstore';
+import { useProgrammesStore } from '@/stores/programmes';
+import { storeToRefs } from 'pinia';
 
 const ALLOWED_DOMAIN = 'southshore.edu.gh';
 
 const authStore = useAuthStore();
+const programmesStore = useProgrammesStore();
+const { activeProgrammes } = storeToRefs(programmesStore);
 
 const showPassword = ref(false);
 const isLoading = ref(false);
 const errorMsg = ref('');
 const emailDomainError = ref('');
-const faculties = ref([]);
 
 onMounted(async () => {
-  const { data, error } = await supabase.from('faculties', 'programmes').select('id, name').order('name');
-  if (error) {
-    console.error('Failed to load faculties', error);
-    return;
+  try {
+    await programmesStore.fetchProgrammes({ isActive: true });
+  } catch (error) {
+    console.error('Failed to load programmes', error);
   }
-  faculties.value = data;
 });
 
 const form = reactive({
@@ -215,7 +218,7 @@ const form = reactive({
   email: '',
   role: 'student',
   idNumber: '',
-  program: '',
+  programId: '',   // FK -> programmes.id
   password: ''
 });
 

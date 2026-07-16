@@ -122,62 +122,118 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import api from '../../api.js';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/authstore';
+import { useCoursesStore } from '@/stores/courses';
+import { useSchedulesStore } from '@/stores/schedules';
+import { useEnrollmentsStore } from '@/stores/enrollments';
+import { useSessionsStore } from '@/stores/sessions';
+import { useAttendancesStore } from '@/stores/attendances';
+import { useAuditLogsStore } from '@/stores/auditlogs';
 
 const emit = defineEmits(['navigate']);
 
-const activeClass = ref(null);
-const attendanceHistory = ref([]);
+const authStore = useAuthStore();
+const coursesStore = useCoursesStore();
+const schedulesStore = useSchedulesStore();
+const enrollmentsStore = useEnrollmentsStore();
+const sessionsStore = useSessionsStore();
+const attendancesStore = useAttendancesStore();
+const auditLogsStore = useAuditLogsStore();
+
+const { profile } = storeToRefs(authStore);
+const { enrollments } = storeToRefs(enrollmentsStore);
+const { sessions } = storeToRefs(sessionsStore);
+const { attendances } = storeToRefs(attendancesStore);
+
 const enteredPins = ref(['', '', '', '']);
 const pinRefs = ref([]);
 const pinError = ref('');
-const isLoading = ref(false);
+const isLoading = ref(true);
 const isVerifying = ref(false);
 const attendanceMarked = ref(false);
 const markedCourseName = ref('');
 const markedAtTime = ref('');
 
-let sessionPollInterval = null;
+onMounted(async () => {
+  isLoading.value = true;
+  try {
+    await Promise.all([
+      coursesStore.fetchCourses(),
+      schedulesStore.fetchSchedules(),
+      enrollmentsStore.fetchEnrollments({ studentId: profile.value?.id }),
+      sessionsStore.fetchSessions({ isActive: true }),
+      attendancesStore.fetchAttendances({ studentId: profile.value?.id }),
+    ]);
+
+    coursesStore.subscribeToCourses();
+    schedulesStore.subscribeToSchedules();
+    enrollmentsStore.subscribeToEnrollments();
+    sessionsStore.subscribeToSessions();
+    attendancesStore.subscribeToAttendances();
+  } catch (e) {
+    console.error('Error loading attendance data:', e);
+  } finally {
+    isLoading.value = false;
+  }
+});
+
+onUnmounted(() => {
+  coursesStore.unsubscribeFromCourses();
+  schedulesStore.unsubscribeFromSchedules();
+  enrollmentsStore.unsubscribeFromEnrollments();
+  sessionsStore.unsubscribeFromSessions();
+  attendancesStore.unsubscribeFromAttendances();
+});
+
+const enrolledCourseIds = computed(() =>
+  enrollments.value
+    .filter((e) => e.studentId === profile.value?.id)
+    .map((e) => e.courseId)
+);
+
+/** First active session running for any course this student is enrolled in. */
+const activeSessionRaw = computed(() =>
+  sessions.value.find(
+    (s) => s.isActive && enrolledCourseIds.value.includes(s.courseId)
+  ) ?? null
+);
+
+const activeClass = computed(() => {
+  const session = activeSessionRaw.value;
+  if (!session) return null;
+
+  const course = coursesStore.getCourseById(session.courseId);
+  const schedule = schedulesStore.schedules.find((s) => s.courseId === session.courseId);
+
+  return {
+    id: session.id,
+    code: course?.code ?? 'Unknown',
+    name: course?.name ?? 'Unknown Course',
+    semester: course?.semester || 'Semester 1',
+    lecturer: schedule?.lecturer ?? 'Unknown Lecturer',
+  };
+});
+
+// If the live session ends or changes while the success screen is showing,
+// don't yank it away — resetState() clears attendanceMarked when the user
+// clicks "Done".
+watch(activeSessionRaw, () => {
+  pinError.value = '';
+});
 
 const fetchActiveSessions = async () => {
   isLoading.value = true;
   pinError.value = '';
   try {
-    const [sessionsRes, enrolledRes] = await Promise.all([
-      api.get('/sessions/active'),
-      api.get('/courses/enrolled')
-    ]);
-    const activeSessions = sessionsRes.data;
-    const enrolledCourseIds = enrolledRes.data.map(item => item.course?.id || item.id);
-    const match = activeSessions.find(s => enrolledCourseIds.includes(s.courseId));
-
-    if (match) {
-      const courseMatch = enrolledRes.data.find(item => (item.course?.id || item.id) === match.courseId);
-      activeClass.value = {
-        id: match.id,
-        code: match.courseCode,
-        name: match.courseName,
-        semester: courseMatch?.course?.semester || courseMatch?.semester || 'Semester 1',
-        lecturer: match.lecturerName
-      };
-    } else {
-      activeClass.value = null;
-    }
+    await sessionsStore.fetchSessions({ isActive: true });
   } catch (e) {
-    console.error('Error fetching sessions:', e);
+    console.error('Error refreshing sessions:', e);
   } finally {
     isLoading.value = false;
   }
 };
-
-onMounted(async () => {
-  await fetchActiveSessions();
-  // Auto-poll every 12 seconds for new sessions
-  sessionPollInterval = setInterval(fetchActiveSessions, 12000);
-});
-
-onUnmounted(() => { clearInterval(sessionPollInterval); });
 
 const onPinInput = (idx, event) => {
   const val = event.target.value.replace(/\D/g, '');
@@ -197,29 +253,49 @@ const onBackspace = (idx, event) => {
 const verifyAttendance = async () => {
   if (!activeClass.value) return;
   const pin = enteredPins.value.join('');
-  if (pin.length < 4) { pinError.value = 'Please enter the complete 4-digit PIN.'; return; }
+  if (pin.length < 4) {
+    pinError.value = 'Please enter the complete 4-digit PIN.';
+    return;
+  }
 
   isVerifying.value = true;
   pinError.value = '';
+
   try {
-    await api.post('/sessions/mark', { pin });
+    const session = sessionsStore.getSessionByPin(pin);
+
+    if (!session || !session.isActive) {
+      throw new Error('Invalid or expired PIN.');
+    }
+    if (session.id !== activeClass.value.id) {
+      throw new Error('That PIN does not match the active session for your course.');
+    }
+    if (attendancesStore.hasAttended(session.id, profile.value?.id)) {
+      throw new Error('Attendance already recorded for this session.');
+    }
+
+    await attendancesStore.markAttendance({
+      sessionId: session.id,
+      studentId: profile.value?.id,
+      status: 'present',
+    });
+
     const now = new Date();
     markedCourseName.value = `${activeClass.value.code} — ${activeClass.value.name}`;
     markedAtTime.value = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-    attendanceHistory.value.unshift({
-      id: Date.now(),
-      course: `${activeClass.value.code} — ${activeClass.value.name}`,
-      date: now.toLocaleDateString(),
-      time: now.toLocaleTimeString(),
-      status: 'present',
-      statusText: 'Present'
+    auditLogsStore.logAction({
+      action: 'attendance_marked',
+      details: `Marked present for ${markedCourseName.value}`,
+      userId: profile.value?.id,
+      userRole: profile.value?.role,
+      userName: profile.value?.name,
     });
 
     attendanceMarked.value = true;
     enteredPins.value = ['', '', '', ''];
   } catch (e) {
-    pinError.value = e.response?.data?.message || 'Invalid PIN or attendance already recorded.';
+    pinError.value = e.message || 'Invalid PIN or attendance already recorded.';
     enteredPins.value = ['', '', '', ''];
     pinRefs.value[0]?.focus();
   } finally {
@@ -229,9 +305,31 @@ const verifyAttendance = async () => {
 
 const resetState = () => {
   attendanceMarked.value = false;
-  activeClass.value = null;
   fetchActiveSessions();
 };
+
+// --- Recent history (right panel) ---
+const attendanceHistory = computed(() => {
+  return attendances.value
+    .filter((a) => a.studentId === profile.value?.id)
+    .map((a) => {
+      const session = sessionsStore.getSessionById(a.sessionId);
+      const course = session ? coursesStore.getCourseById(session.courseId) : null;
+      const ts = a.timestamp ? new Date(a.timestamp) : null;
+
+      return {
+        id: a.id,
+        course: course ? `${course.code} — ${course.name}` : 'Unknown course',
+        date: ts ? ts.toLocaleDateString() : '',
+        time: ts ? ts.toLocaleTimeString() : '',
+        status: a.status,
+        statusText: a.status === 'present' ? 'Present' : 'Absent',
+        rawTimestamp: a.timestamp,
+      };
+    })
+    .sort((x, y) => new Date(y.rawTimestamp) - new Date(x.rawTimestamp))
+    .slice(0, 10);
+});
 </script>
 
 <style scoped>

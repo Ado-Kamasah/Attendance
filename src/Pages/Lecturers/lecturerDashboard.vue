@@ -143,12 +143,31 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import api from '../../api.js';
+import { computed, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/authstore';
+import { useSchedulesStore } from '@/stores/schedules';
+import { useCoursesStore } from '@/stores/courses';
+import { useEnrollmentsStore } from '@/stores/enrollments';
+import { useSessionsStore } from '@/stores/sessions';
+import { useAttendancesStore } from '@/stores/attendances';
 
 const emit = defineEmits(['navigate']);
+
+const authStore = useAuthStore();
+const schedulesStore = useSchedulesStore();
+const coursesStore = useCoursesStore();
+const enrollmentsStore = useEnrollmentsStore();
+const sessionsStore = useSessionsStore();
+const attendancesStore = useAttendancesStore();
+
+const { profile } = storeToRefs(authStore);
+const { schedules } = storeToRefs(schedulesStore);
+const { courses } = storeToRefs(coursesStore);
+const { enrollments } = storeToRefs(enrollmentsStore);
+const { sessions } = storeToRefs(sessionsStore);
+const { attendances } = storeToRefs(attendancesStore);
 
 const currentDate = new Date().toLocaleDateString('en-US', {
   weekday: 'long',
@@ -157,7 +176,90 @@ const currentDate = new Date().toLocaleDateString('en-US', {
   day: 'numeric'
 });
 
-const lecturerStats = ref({ totalActiveCourses: 0, totalStudentsTaught: 0, averageAttendanceRate: 0 });
+const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+
+onMounted(async () => {
+  try {
+    await Promise.all([
+      schedulesStore.fetchSchedules(),
+      coursesStore.fetchCourses(),
+      enrollmentsStore.fetchEnrollments(),
+      sessionsStore.fetchSessions(),
+      attendancesStore.fetchAttendances(),
+    ]);
+
+    schedulesStore.subscribeToSchedules();
+    coursesStore.subscribeToCourses();
+    enrollmentsStore.subscribeToEnrollments();
+    sessionsStore.subscribeToSessions();
+    attendancesStore.subscribeToAttendances();
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+  }
+});
+
+onUnmounted(() => {
+  schedulesStore.unsubscribeFromSchedules();
+  coursesStore.unsubscribeFromCourses();
+  enrollmentsStore.unsubscribeFromEnrollments();
+  sessionsStore.unsubscribeFromSessions();
+  attendancesStore.unsubscribeFromAttendances();
+});
+
+const lecturerName = computed(() => profile.value?.name ?? '');
+
+// Course ids this lecturer teaches, derived from the schedules table
+// (schedules.lecturer stores the lecturer's name — see Schedule.vue).
+const lecturerCourseIds = computed(() => {
+  const ids = new Set(
+    schedules.value
+      .filter((s) => s.lecturer === lecturerName.value)
+      .map((s) => s.courseId)
+  );
+  return [...ids];
+});
+
+const lecturerCourses = computed(() =>
+  lecturerCourseIds.value
+    .map((id) => coursesStore.getCourseById(id))
+    .filter(Boolean)
+);
+
+// --- Stats (replacing the old /attendance/lecturer-stats endpoint) ---
+
+const totalActiveCourses = computed(
+  () => lecturerCourses.value.filter((c) => c.status === 'active').length
+);
+
+const totalStudentsTaught = computed(() => {
+  const studentIds = new Set(
+    enrollments.value
+      .filter((e) => lecturerCourseIds.value.includes(e.courseId))
+      .map((e) => e.studentId)
+  );
+  return studentIds.size;
+});
+
+const averageAttendanceRate = computed(() => {
+  const lecturerSessionIds = new Set(
+    sessions.value
+      .filter((s) => lecturerCourseIds.value.includes(s.courseId))
+      .map((s) => s.id)
+  );
+  if (lecturerSessionIds.size === 0) return 0;
+
+  const relevant = attendances.value.filter((a) => lecturerSessionIds.has(a.sessionId));
+  if (relevant.length === 0) return 0;
+
+  const present = relevant.filter((a) => a.status === 'present').length;
+  return Math.round((present / relevant.length) * 100);
+});
+
+const lecturerStats = computed(() => ({
+  totalActiveCourses: totalActiveCourses.value,
+  totalStudentsTaught: totalStudentsTaught.value,
+  averageAttendanceRate: averageAttendanceRate.value,
+}));
 
 const metrics = computed(() => [
   {
@@ -183,42 +285,24 @@ const metrics = computed(() => [
   }
 ]);
 
-const todaySchedule = ref([]);
-
-onMounted(async () => {
-  try {
-    const userJson = localStorage.getItem('user');
-    const user = userJson ? JSON.parse(userJson) : null;
-    const lecturerName = user ? user.name : '';
-
-    const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' }) + 's'; // e.g., 'Mondays'
-    
-    const [schedulesRes, statsRes] = await Promise.all([
-      api.get('/schedules'),
-      api.get('/attendance/lecturer-stats')
-    ]);
-    
-    lecturerStats.value = statsRes.data;
-
-    const schedules = schedulesRes.data.filter(s => 
-      (!lecturerName || s.lecturer === lecturerName) &&
-      (s.day === currentDayName || s.day === currentDayName.replace('s', ''))
-    );
-    
-    // We can just query course enrollment sizes if needed, but for now we'll set a placeholder or fetch it
-    todaySchedule.value = schedules.map(s => ({
-      id: s.id,
-      courseId: s.courseId,
-      code: s.course?.code || 'Unknown',
-      name: s.course?.name || 'Unknown Course',
-      startTime: s.startTime,
-      endTime: s.endTime,
-      venue: s.venue,
-      students: s.course?._count?.enrollments || 0
-    }));
-  } catch (error) {
-    console.error('Error fetching dashboard schedules:', error);
-  }
+// --- Today's schedule ---
+const todaySchedule = computed(() => {
+  return schedules.value
+    .filter((s) => s.lecturer === lecturerName.value && s.day === currentDayName)
+    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+    .map((s) => {
+      const course = coursesStore.getCourseById(s.courseId);
+      return {
+        id: s.id,
+        courseId: s.courseId,
+        code: course?.code ?? 'Unknown',
+        name: course?.name ?? 'Unknown Course',
+        startTime: s.startTime,
+        endTime: s.endTime,
+        venue: s.venue,
+        students: enrollmentsStore.enrollmentsByCourse(s.courseId).length,
+      };
+    });
 });
 
 const markAttendance = (cls) => {

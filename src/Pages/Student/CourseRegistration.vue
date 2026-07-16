@@ -128,61 +128,102 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import api from '../../api.js';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/authstore';
+import { useCoursesStore } from '@/stores/courses';
+import { useSchedulesStore } from '@/stores/schedules';
+import { useEnrollmentsStore } from '@/stores/enrollments';
+import { useAuditLogsStore } from '@/stores/auditlogs';
+
+const authStore = useAuthStore();
+const coursesStore = useCoursesStore();
+const schedulesStore = useSchedulesStore();
+const enrollmentsStore = useEnrollmentsStore();
+const auditLogsStore = useAuditLogsStore();
+
+const { profile } = storeToRefs(authStore);
+const { courses } = storeToRefs(coursesStore);
+const { schedules } = storeToRefs(schedulesStore);
+const { enrollments } = storeToRefs(enrollmentsStore);
 
 const searchQuery = ref('');
 const semesterFilter = ref('all');
 const maxCredits = 21;
 
-const currentUserProgram = ref('');
-const availableGlobalCourses = ref([]);
 const selectedCourses = ref([]);
 const isSubmitting = ref(false);
 
-onMounted(async () => {
-  const userJson = localStorage.getItem('user');
-  if (userJson) {
-    const user = JSON.parse(userJson);
-    currentUserProgram.value = user.program || 'Unknown';
-  }
+const currentUserProgram = computed(() => profile.value?.program || 'Unknown');
 
+onMounted(async () => {
   try {
-    const response = await api.get('/courses/available');
-    availableGlobalCourses.value = response.data;
+    await Promise.all([
+      coursesStore.fetchCourses({ status: 'active' }),
+      schedulesStore.fetchSchedules(),
+      enrollmentsStore.fetchEnrollments({ studentId: profile.value?.id }),
+    ]);
+
+    coursesStore.subscribeToCourses();
+    enrollmentsStore.subscribeToEnrollments();
   } catch (error) {
     console.error('Error fetching available courses', error);
   }
 });
 
+onUnmounted(() => {
+  coursesStore.unsubscribeFromCourses();
+  enrollmentsStore.unsubscribeFromEnrollments();
+});
+
+/** Lecturer name for a course, taken from any schedule slot on that course. */
+function lecturerForCourse(courseId) {
+  const match = schedules.value.find((s) => s.courseId === courseId);
+  return match?.lecturer || 'Unassigned';
+}
+
+const enrolledCourseIds = computed(
+  () => new Set(enrollments.value.map((e) => e.courseId))
+);
+
+const availableGlobalCourses = computed(() =>
+  courses.value
+    .filter((c) => !enrolledCourseIds.value.has(c.id))
+    .map((c) => ({
+      ...c,
+      lecturer: lecturerForCourse(c.id),
+    }))
+);
+
 const filteredCourses = computed(() => {
-  let courses = availableGlobalCourses.value;
-  
+  let list = availableGlobalCourses.value;
+
   if (currentUserProgram.value && currentUserProgram.value !== 'Unknown') {
-    courses = courses.filter(course => course.program === currentUserProgram.value);
-  }
-  
+list = list.filter((course) => course.programId === profile.value?.programId);  }
+
   if (semesterFilter.value !== 'all') {
-    courses = courses.filter(course => (course.semester || 'Semester 1') === semesterFilter.value);
+    list = list.filter((course) => (course.semester || 'Semester 1') === semesterFilter.value);
   }
-  
+
   if (searchQuery.value) {
-    courses = courses.filter(course => 
-      course.code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      course.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const q = searchQuery.value.toLowerCase();
+    list = list.filter(
+      (course) =>
+        course.code.toLowerCase().includes(q) ||
+        course.name.toLowerCase().includes(q)
     );
   }
-  
-  return courses;
+
+  return list;
 });
 
 const isSelected = (course) => {
-  return selectedCourses.value.some(c => c.id === course.id);
+  return selectedCourses.value.some((c) => c.id === course.id);
 };
 
 const toggleSelection = (course) => {
   if (isSelected(course)) {
-    selectedCourses.value = selectedCourses.value.filter(c => c.id !== course.id);
+    selectedCourses.value = selectedCourses.value.filter((c) => c.id !== course.id);
   } else {
     selectedCourses.value.push(course);
   }
@@ -194,15 +235,38 @@ const totalSelectedCredits = computed(() => {
 
 const submitRegistration = async () => {
   isSubmitting.value = true;
+  const studentId = profile.value?.id;
+  const registered = [];
+  const failed = [];
+
   try {
     for (const course of selectedCourses.value) {
-      await api.post(`/courses/${course.id}/enroll`);
+      try {
+        await enrollmentsStore.createEnrollment({ studentId, courseId: course.id });
+        registered.push(course);
+
+        auditLogsStore.logAction({
+          action: 'course_registered',
+          details: `Registered for ${course.code} — ${course.name}`,
+          userId: studentId,
+          userRole: profile.value?.role,
+          userName: profile.value?.name,
+        });
+      } catch (err) {
+        failed.push({ course, message: err.message });
+      }
     }
-    alert(`Successfully registered for ${selectedCourses.value.length} courses!`);
+
+    if (registered.length > 0) {
+      alert(`Successfully registered for ${registered.length} course(s)!`);
+    }
+    if (failed.length > 0) {
+      alert(
+        `Could not register for: ${failed.map((f) => `${f.course.code} (${f.message})`).join(', ')}`
+      );
+    }
+
     selectedCourses.value = [];
-    // Refresh available courses
-    const response = await api.get('/courses/available');
-    availableGlobalCourses.value = response.data;
   } catch (error) {
     console.error('Registration failed', error);
     alert('An error occurred during registration.');
