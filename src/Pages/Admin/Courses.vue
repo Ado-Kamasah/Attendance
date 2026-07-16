@@ -6,7 +6,8 @@
         <p class="page-subtitle">Manage all university courses, schedules, and assigned lecturers.</p>
       </div>
       <button class="primary-btn" @click="openModal">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
@@ -32,7 +33,7 @@
           <option value="300">Level 300</option>
           <option value="400">Level 400</option>
         </select>
-        
+
         <select v-model="statusFilter" class="filter-select">
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
@@ -66,7 +67,9 @@
             </td>
             <td>
               <div class="lecturer-info">
-                <img :src="`https://ui-avatars.com/api/?name=${(course.lecturer || 'Unknown').replace(' ', '+')}&background=f1f5f9&color=475569`" alt="avatar" class="sm-avatar" />
+                <img
+                  :src="`https://ui-avatars.com/api/?name=${(course.lecturer || 'Unknown').replace(' ', '+')}&background=f1f5f9&color=475569`"
+                  alt="avatar" class="sm-avatar" />
                 <span>{{ course.lecturer || 'No Lecturer Assigned' }}</span>
               </div>
             </td>
@@ -80,17 +83,32 @@
             </td>
             <td class="actions-cell">
               <button class="icon-action-btn edit" title="Edit Course" @click="editCourse(course)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
               </button>
               <button class="icon-action-btn assign" title="Assign Lecturer" @click="openAssignModal(course)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="16" y1="11" x2="22" y2="11"></line></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="16" y1="11" x2="22" y2="11"></line>
+                </svg>
               </button>
-              <button class="icon-action-btn delete" title="Archive Course" @click="archiveCourse(course.id)" v-if="course.status !== 'archived'">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              <button class="icon-action-btn delete" title="Archive Course" @click="archiveCourse(course.id)"
+                v-if="course.status !== 'archived'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
               </button>
             </td>
           </tr>
-          
+
           <tr v-if="filteredCourses.length === 0" class="empty-state">
             <td colspan="7">
               <div class="empty-content">
@@ -125,7 +143,10 @@
         <div class="modal-header">
           <h2>{{ editingCourseId ? 'Edit Course' : 'Add New Course' }}</h2>
           <button class="close-btn" @click="closeModal" aria-label="Close modal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
         <div class="modal-body">
@@ -136,21 +157,22 @@
             </div>
             <div class="form-group">
               <label>Course Name</label>
-              <input type="text" v-model="newCourse.name" placeholder="e.g. Intro to Computer Science" required class="form-control" />
+              <input type="text" v-model="newCourse.name" placeholder="e.g. Intro to Computer Science" required
+                class="form-control" />
             </div>
             <div class="form-group">
               <label>Credits</label>
-              <input type="number" v-model.number="newCourse.credits" placeholder="e.g. 3" required min="1" class="form-control" />
+              <input type="number" v-model.number="newCourse.credits" placeholder="e.g. 3" required min="1"
+                class="form-control" />
             </div>
             <!-- Faculty / Program -->
-            <div class="input-group">
+            <div class="form-group">
               <label for="programme">Faculty / Program</label>
-              <div class="input-wrapper">
-                <select id="programme" v-model="newCourse.programme" required>
+                <select id="programme" v-model="newCourse.program" required class="form-control">
                   <option value="" disabled>Select your faculty/program</option>
-                  <option v-for="programme in programmes" :key="programme.id" :value="programme.name">{{ programme.name }}</option>
+                  <option  v-for="programme in programmes" :key="programme.id" :value="programme.name">{{ programme.name
+                    }}</option>
                 </select>
-              </div>
             </div>
             <div class="form-group">
               <label>Semester</label>
@@ -188,7 +210,10 @@
             <p class="modal-subtitle">{{ assigningCourse?.code }} — {{ assigningCourse?.name }}</p>
           </div>
           <button class="close-btn" @click="closeAssignModal" aria-label="Close">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
         <div class="modal-body">
@@ -198,14 +223,19 @@
             <div class="form-group">
               <label>Select Lecturer</label>
               <div class="lecturer-select-wrap">
-                <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                <select v-model="assignForm.lecturerId" required class="form-control pl-icon" @change="onLecturerChange">
+                <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <select v-model="assignForm.lecturerId" required class="form-control pl-icon"
+                  @change="onLecturerChange">
                   <option value="" disabled>-- Choose a Lecturer --</option>
                   <option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option>
                 </select>
               </div>
               <p v-if="isLoadingLecturers" class="hint-text">Loading lecturers...</p>
-              <p v-else-if="lecturers.length === 0" class="hint-text warn">No lecturer accounts found. Create one first.</p>
+              <p v-else-if="lecturers.length === 0" class="hint-text warn">No lecturer accounts found. Create one first.
+              </p>
             </div>
 
             <div class="form-row">
@@ -251,23 +281,34 @@
             <!-- Venue -->
             <div class="form-group">
               <label>Venue / Room</label>
-              <input type="text" v-model="assignForm.venue" placeholder="e.g. Lecture Hall A, Room 204" required class="form-control" />
+              <input type="text" v-model="assignForm.venue" placeholder="e.g. Lecture Hall A, Room 204" required
+                class="form-control" />
             </div>
 
             <!-- Success/Error Banner -->
             <div v-if="assignSuccess" class="alert-banner success">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
               Lecturer assigned successfully!
             </div>
             <div v-if="assignError" class="alert-banner error">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
               {{ assignError }}
             </div>
 
             <div class="form-actions">
               <button type="button" class="clear-btn" @click="closeAssignModal">Cancel</button>
               <button type="submit" class="primary-btn" :disabled="isAssigning">
-                <svg v-if="isAssigning" class="spinner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"></circle></svg>
+                <svg v-if="isAssigning" class="spinner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2">
+                  <circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"></circle>
+                </svg>
                 {{ isAssigning ? 'Assigning...' : 'Confirm Assignment' }}
               </button>
             </div>
@@ -298,7 +339,7 @@ const newCourse = ref({
   code: '',
   name: '',
   credits: 3,
-  programme: '',
+  program: '',
   semester: 'Semester 1',
   level: '100'
 });
@@ -387,7 +428,7 @@ const coursesWithSchedule = computed(() =>
 
 const openModal = () => {
   editingCourseId.value = null;
-  newCourse.value = { code: '', name: '', credits: 3, programme: '', semester: 'Semester 1', level: '100' };
+  newCourse.value = { code: '', name: '', credits: 3, program: '', semester: 'Semester 1', level: '100' };
   isModalOpen.value = true;
 };
 
@@ -397,12 +438,13 @@ const editCourse = (course) => {
     code: course.code,
     name: course.name,
     credits: course.credits,
-    programme: course.programme,
+    program: course.program,   // was: course.programme
     semester: course.semester || 'Semester 1',
     level: course.level
   };
   isModalOpen.value = true;
 };
+
 
 const closeModal = () => {
   isModalOpen.value = false;
@@ -506,8 +548,8 @@ const saveAssignment = async () => {
 
 const filteredCourses = computed(() => {
   return coursesWithSchedule.value.filter(course => {
-    const matchesSearch = course.code.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                          course.name.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchesSearch = course.code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      course.name.toLowerCase().includes(searchQuery.value.toLowerCase());
     const matchesLevel = levelFilter.value === 'all' || course.level === levelFilter.value;
     const matchesStatus = statusFilter.value === 'all' || course.status === statusFilter.value;
     return matchesSearch && matchesLevel && matchesStatus;
@@ -888,25 +930,25 @@ const clearFilters = () => {
     align-items: flex-start;
     gap: 1.25rem;
   }
-  
+
   .table-controls {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-box {
     max-width: 100%;
   }
-  
+
   .filters {
     flex-wrap: wrap;
   }
-  
+
   .filter-select {
     flex: 1;
     min-width: 140px;
   }
-  
+
   .page-title {
     font-size: 1.5rem;
   }
@@ -941,14 +983,21 @@ const clearFilters = () => {
   border-radius: 20px;
   width: 100%;
   max-width: 500px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modalIn {
-  0% { transform: translateY(20px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-header {
@@ -1115,8 +1164,13 @@ const clearFilters = () => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .primary-btn:disabled {
