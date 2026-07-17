@@ -72,6 +72,26 @@
               </button>
             </div>
             <p class="share-hint">Share this PIN with students present in class</p>
+          <div v-if="Object.keys(otpDispatch).length" class="otp-status-block">
+  <div class="otp-status-header">
+    <span>Email Codes</span>
+    <span v-if="isDispatchingOtp" class="otp-sending-label">Sending…</span>
+  </div>
+  <p v-if="otpBannerMessage" class="otp-banner">{{ otpBannerMessage }}</p>
+  <div class="otp-status-list">
+    <div v-for="s in enrolledStudents.filter(st => otpDispatch[st.id])" :key="s.id" class="otp-status-row">
+      <span class="otp-status-name">{{ s.name }}</span>
+      <span class="otp-status-badge" :class="'otp-' + otpDispatch[s.id].status">
+        {{ otpDispatch[s.id].status === 'sending' ? 'Sending…' : otpDispatch[s.id].status === 'sent' ? 'Sent ✓' : 'Failed' }}
+      </span>
+      <button
+        v-if="otpDispatch[s.id].status === 'failed'"
+        class="otp-retry-btn"
+        @click="resendOtpToStudent(s.id)"
+      >Retry</button>
+    </div>
+  </div>
+</div>
           </div>
         </div>
 
@@ -173,6 +193,7 @@ const isStarting = ref(false);
 const startError = ref('');
 
 let timerInterval = null;
+const OTP_API_BASE = import.meta.env.VITE_OTP_API_URL || '';
 
 const circumference = 2 * Math.PI * 66; // r=66
 const strokeOffset = computed(() => circumference * (1 - timeLeft.value / totalTime.value));
@@ -212,18 +233,19 @@ onMounted(async () => {
 
       if (studentIds.length > 0) {
         const { data, error } = await supabase
-          .from('users')
-          .select('id, name, id_number')
-          .in('id', studentIds)
-          .order('name');
+  .from('users')
+  .select('id, name, id_number, email')
+  .in('id', studentIds)
+  .order('name');
 
-        if (error) throw error;
+if (error) throw error;
 
-        enrolledStudents.value = (data ?? []).map((u) => ({
-          id: u.id,
-          name: u.name,
-          studentId: u.id_number,
-        }));
+enrolledStudents.value = (data ?? []).map((u) => ({
+  id: u.id,
+  name: u.name,
+  studentId: u.id_number,
+  email: u.email,
+}));
       }
     } catch (e) {
       console.error(e);
@@ -238,6 +260,79 @@ const toggleSelectAll = () => {
   selectedStudents.value = selectedStudents.value.length === enrolledStudents.value.length
     ? []
     : enrolledStudents.value.map(s => s.id);
+};
+
+const dispatchOtpsToSelected = async (sessionId) => {
+  const targets = enrolledStudents.value.filter((s) => selectedStudents.value.includes(s.id));
+
+  // Reset status for this batch
+  otpDispatch.value = Object.fromEntries(targets.map((s) => [s.id, { status: 'sending', message: '' }]));
+  isDispatchingOtp.value = true;
+  otpBannerMessage.value = '';
+
+  try {
+    const res = await fetch(`${OTP_API_BASE}/api/otp/send-bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        students: targets
+          .filter((s) => !!s.email)
+          .map((s) => ({ studentId: s.id, email: s.email, name: s.name })),
+      }),
+    });
+    const data = await res.json();
+
+    const byId = Object.fromEntries((data.results || []).map((r) => [r.studentId, r]));
+    const next = {};
+    for (const s of targets) {
+      if (!s.email) {
+        next[s.id] = { status: 'failed', message: 'No email on file' };
+        continue;
+      }
+      const r = byId[s.id];
+      next[s.id] = r
+        ? { status: r.success ? 'sent' : 'failed', message: r.message }
+        : { status: 'failed', message: 'No response' };
+    }
+    otpDispatch.value = next;
+    otpBannerMessage.value = res.ok
+      ? `${data.sent}/${targets.length} codes emailed successfully`
+      : (data.message || 'Failed to send codes');
+  } catch (e) {
+    const next = {};
+    for (const s of targets) next[s.id] = { status: 'failed', message: 'Network error' };
+    otpDispatch.value = next;
+    otpBannerMessage.value = 'Could not reach the OTP server. Codes were not sent.';
+  } finally {
+    isDispatchingOtp.value = false;
+  }
+};
+
+const resendOtpToStudent = async (studentId) => {
+  const student = enrolledStudents.value.find((s) => s.id === studentId);
+  if (!student?.email || !liveAttendanceSession.value.id) return;
+
+  otpDispatch.value = { ...otpDispatch.value, [studentId]: { status: 'sending', message: '' } };
+  try {
+    const res = await fetch(`${OTP_API_BASE}/api/otp/resend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: liveAttendanceSession.value.id,
+        studentId,
+        email: student.email,
+        name: student.name,
+      }),
+    });
+    const data = await res.json();
+    otpDispatch.value = {
+      ...otpDispatch.value,
+      [studentId]: { status: res.ok ? 'sent' : 'failed', message: data.message },
+    };
+  } catch (e) {
+    otpDispatch.value = { ...otpDispatch.value, [studentId]: { status: 'failed', message: 'Network error' } };
+  }
 };
 
 const startLiveSession = async () => {
@@ -265,6 +360,9 @@ const startLiveSession = async () => {
       if (timeLeft.value > 0) { timeLeft.value--; }
       else { stopLiveSession(); }
     }, 1000);
+
+    // Fire-and-track: PIN session is already live even if some emails fail.
+    dispatchOtpsToSelected(created.id);
   } catch (e) {
     startError.value = e.message || 'Failed to start session.';
   } finally {
@@ -282,9 +380,17 @@ const stopLiveSession = async () => {
     console.error(e);
   }
   liveAttendanceSession.value = { isActive: false };
+  otpDispatch.value = {};
+  otpBannerMessage.value = '';
 };
 
 const extendTimer = (secs) => { if (liveAttendanceSession.value.isActive) timeLeft.value += secs; };
+
+
+// studentId -> { status: 'idle'|'sending'|'sent'|'failed', message }
+const otpDispatch = ref({});
+const isDispatchingOtp = ref(false);
+const otpBannerMessage = ref('');
 
 onUnmounted(() => {
   clearInterval(timerInterval);
@@ -358,6 +464,20 @@ onUnmounted(() => {
 .extend-btn:hover { background:#e0e7ff; }
 .danger-btn { background:#ef4444;color:white;border:none; }
 .danger-btn:hover { background:#dc2626; }
+
+.otp-status-block { width:100%; border-top:1px solid #f1f5f9; padding-top:0.9rem; margin-top:0.25rem; }
+.otp-status-header { display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.5rem; }
+.otp-sending-label { color:#6366f1; font-weight:600; text-transform:none; }
+.otp-banner { font-size:0.78rem; color:#64748b; margin:0 0 0.5rem; }
+.otp-status-list { max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:0.35rem; }
+.otp-status-row { display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; }
+.otp-status-name { flex:1; color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.otp-status-badge { font-weight:700; font-size:0.7rem; padding:0.15rem 0.5rem; border-radius:9999px; }
+.otp-sending { background:#e0e7ff; color:#4338ca; }
+.otp-sent { background:#dcfce7; color:#166534; }
+.otp-failed { background:#fee2e2; color:#991b1b; }
+.otp-retry-btn { border:none; background:none; color:#6366f1; font-size:0.72rem; font-weight:700; cursor:pointer; padding:0; }
+.otp-retry-btn:hover { text-decoration:underline; }
 
 /* Checkin Panel */
 .count-badge { background:#dcfce7;color:#166534;font-size:0.8rem;font-weight:700;padding:0.25rem 0.75rem;border-radius:9999px; }
