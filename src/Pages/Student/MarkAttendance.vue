@@ -2,7 +2,6 @@
   <div class="attendance-container">
     <div class="page-header">
       <div>
-        <p class="institution-tag">Sothshore University</p>
         <h1 class="page-title">Mark Attendance</h1>
         <p class="page-subtitle">Verify your presence for active classes securely.</p>
       </div>
@@ -51,7 +50,7 @@
             <button class="outline-btn" @click="fetchActiveSessions">Check Again</button>
           </div>
 
-          <!-- Active class OTP entry -->
+          <!-- Active class PIN entry -->
           <div v-else class="active-class-ui">
             <!-- "CLASS IN SESSION" indicator -->
             <div class="in-session-indicator">
@@ -69,54 +68,28 @@
             </div>
 
             <div class="verification-box">
-              <!-- Stage 1: request the code -->
-              <template v-if="otpStage === 'idle'">
-                <h4>Verify Your Attendance</h4>
-                <p>
-                  We'll send a 6-digit verification code to your registered email
-                  <strong v-if="maskedEmail">{{ maskedEmail }}</strong>
-                  <span v-else>on file</span>.
-                </p>
-                <button class="primary-btn submit-btn" @click="sendOtp" :disabled="otpSending || !profile?.email">
-                  <svg v-if="otpSending" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"></circle></svg>
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z" opacity="0"></path><path d="M22 6l-10 7L2 6"></path><path d="M2 6h20v12H2z"></path></svg>
-                  {{ otpSending ? 'Sending Code…' : 'Send Verification Code' }}
-                </button>
-              </template>
+              <h4>Enter Attendance PIN</h4>
+              <p>Enter the 4-digit code shown by your instructor.</p>
 
-              <!-- Stage 2: enter the code -->
-              <template v-else>
-                <h4>Enter Verification Code</h4>
-                <p>
-                  Enter the 6-digit code sent to
-                  <strong v-if="maskedEmail">{{ maskedEmail }}</strong>
-                  <span v-else>your email</span>.
-                </p>
-
-                <div class="code-inputs">
-                  <input v-for="(n, idx) in 6" :key="idx" type="text" inputmode="numeric" maxlength="1"
-                    class="pin-box" :class="{ 'pin-filled': otpCode[idx] }"
-                    v-model="otpCode[idx]"
-                    @input="onOtpInput(idx, $event)"
-                    @keydown.backspace="onOtpBackspace(idx, $event)"
-                    :ref="el => { if (el) otpRefs[idx] = el }" />
-                </div>
-
-                <button class="primary-btn submit-btn" @click="verifyOtp" :disabled="otpVerifying || otpCode.join('').length < 6">
-                  <svg v-if="otpVerifying" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"></circle></svg>
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                  {{ otpVerifying ? 'Verifying…' : 'Verify & Mark Present' }}
-                </button>
-
-                <button class="resend-link" @click="resendOtp" :disabled="otpCooldown > 0 || otpSending">
-                  {{ otpCooldown > 0 ? `Resend code in ${otpCooldown}s` : (otpSending ? 'Resending…' : 'Resend code') }}
-                </button>
-              </template>
-
-              <div v-if="otpError" class="pin-error">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                {{ otpError }}
+              <div class="code-inputs">
+                <input v-for="(n, idx) in 4" :key="idx" type="text" inputmode="numeric" maxlength="1"
+                  class="pin-box" :class="{ 'pin-filled': enteredPins[idx] }"
+                  v-model="enteredPins[idx]"
+                  @input="onPinInput(idx, $event)"
+                  @keydown.backspace="onBackspace(idx, $event)"
+                  :ref="el => { if(el) pinRefs[idx] = el }" />
               </div>
+
+              <div v-if="pinError" class="pin-error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                {{ pinError }}
+              </div>
+
+              <button class="primary-btn submit-btn" @click="verifyAttendance" :disabled="isVerifying || enteredPins.join('').length < 4">
+                <svg v-if="isVerifying" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"></circle></svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                {{ isVerifying ? 'Verifying…' : 'Verify Attendance' }}
+              </button>
             </div>
           </div>
         </div>
@@ -149,287 +122,116 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/stores/authstore';
-import { useCoursesStore } from '@/stores/courses';
-import { useSchedulesStore } from '@/stores/schedules';
-import { useEnrollmentsStore } from '@/stores/enrollments';
-import { useSessionsStore } from '@/stores/sessions';
-import { useAttendancesStore } from '@/stores/attendances';
-import { useAuditLogsStore } from '@/stores/auditlogs';
+import { ref, onMounted, onUnmounted } from 'vue';
+import api from '../../api.js';
 
 const emit = defineEmits(['navigate']);
 
-const authStore = useAuthStore();
-const coursesStore = useCoursesStore();
-const schedulesStore = useSchedulesStore();
-const enrollmentsStore = useEnrollmentsStore();
-const sessionsStore = useSessionsStore();
-const attendancesStore = useAttendancesStore();
-const auditLogsStore = useAuditLogsStore();
-
-const { profile } = storeToRefs(authStore);
-const { enrollments } = storeToRefs(enrollmentsStore);
-const { sessions } = storeToRefs(sessionsStore);
-const { attendances } = storeToRefs(attendancesStore);
-
-const isLoading = ref(true);
+const activeClass = ref(null);
+const attendanceHistory = ref([]);
+const enteredPins = ref(['', '', '', '']);
+const pinRefs = ref([]);
+const pinError = ref('');
+const isLoading = ref(false);
+const isVerifying = ref(false);
 const attendanceMarked = ref(false);
 const markedCourseName = ref('');
 const markedAtTime = ref('');
 
-// --- Email OTP verification state ---
-const otpStage = ref('idle'); // 'idle' | 'sent'
-const otpCode = ref(['', '', '', '', '', '']);
-const otpRefs = ref([]);
-const otpError = ref('');
-const otpSending = ref(false);
-const otpVerifying = ref(false);
-const otpCooldown = ref(0);
-let cooldownTimer = null;
-
-const maskedEmail = computed(() => {
-  const email = profile.value?.email;
-  if (!email || !email.includes('@')) return '';
-  const [user, domain] = email.split('@');
-  const visible = user.slice(0, Math.min(2, user.length));
-  return `${visible}${'*'.repeat(Math.max(user.length - visible.length, 3))}@${domain}`;
-});
-
-onMounted(async () => {
-  isLoading.value = true;
-  try {
-    await Promise.all([
-      coursesStore.fetchCourses(),
-      schedulesStore.fetchSchedules(),
-      enrollmentsStore.fetchEnrollments({ studentId: profile.value?.id }),
-      sessionsStore.fetchSessions({ isActive: true }),
-      attendancesStore.fetchAttendances({ studentId: profile.value?.id }),
-    ]);
-
-    coursesStore.subscribeToCourses();
-    schedulesStore.subscribeToSchedules();
-    enrollmentsStore.subscribeToEnrollments();
-    sessionsStore.subscribeToSessions();
-    attendancesStore.subscribeToAttendances();
-  } catch (e) {
-    console.error('Error loading attendance data:', e);
-  } finally {
-    isLoading.value = false;
-  }
-});
-
-onUnmounted(() => {
-  coursesStore.unsubscribeFromCourses();
-  schedulesStore.unsubscribeFromSchedules();
-  enrollmentsStore.unsubscribeFromEnrollments();
-  sessionsStore.unsubscribeFromSessions();
-  attendancesStore.unsubscribeFromAttendances();
-  clearInterval(cooldownTimer);
-});
-
-const enrolledCourseIds = computed(() =>
-  enrollments.value
-    .filter((e) => e.studentId === profile.value?.id)
-    .map((e) => e.courseId)
-);
-
-/** First active session running for any course this student is enrolled in. */
-const activeSessionRaw = computed(() =>
-  sessions.value.find(
-    (s) => s.isActive && enrolledCourseIds.value.includes(s.courseId)
-  ) ?? null
-);
-
-const activeClass = computed(() => {
-  const session = activeSessionRaw.value;
-  if (!session) return null;
-
-  const course = coursesStore.getCourseById(session.courseId);
-  const schedule = schedulesStore.schedules.find((s) => s.courseId === session.courseId);
-
-  return {
-    id: session.id,
-    code: course?.code ?? 'Unknown',
-    name: course?.name ?? 'Unknown Course',
-    semester: course?.semester || 'Semester 1',
-    lecturer: schedule?.lecturer ?? 'Unknown Lecturer',
-  };
-});
-
-// If the live session ends or changes while the success screen is showing,
-// don't yank it away — resetState() clears attendanceMarked when the user
-// clicks "Done". If the session itself changes underneath an in-progress
-// OTP flow, reset back to stage 1 so the student re-verifies against the
-// new session.
-watch(activeSessionRaw, () => {
-  otpError.value = '';
-  otpStage.value = 'idle';
-  otpCode.value = ['', '', '', '', '', ''];
-  clearInterval(cooldownTimer);
-  otpCooldown.value = 0;
-});
+let sessionPollInterval = null;
 
 const fetchActiveSessions = async () => {
   isLoading.value = true;
-  otpError.value = '';
+  pinError.value = '';
   try {
-    await sessionsStore.fetchSessions({ isActive: true });
+    const [sessionsRes, enrolledRes] = await Promise.all([
+      api.get('/sessions/active'),
+      api.get('/courses/enrolled')
+    ]);
+    const activeSessions = sessionsRes.data;
+    const enrolledCourseIds = enrolledRes.data.map(item => item.course?.id || item.id);
+    const match = activeSessions.find(s => enrolledCourseIds.includes(s.courseId));
+
+    if (match) {
+      const courseMatch = enrolledRes.data.find(item => (item.course?.id || item.id) === match.courseId);
+      activeClass.value = {
+        id: match.id,
+        code: match.courseCode,
+        name: match.courseName,
+        semester: courseMatch?.course?.semester || courseMatch?.semester || 'Semester 1',
+        lecturer: match.lecturerName
+      };
+    } else {
+      activeClass.value = null;
+    }
   } catch (e) {
-    console.error('Error refreshing sessions:', e);
+    console.error('Error fetching sessions:', e);
   } finally {
     isLoading.value = false;
   }
 };
 
-const startCooldown = (seconds) => {
-  otpCooldown.value = seconds;
-  clearInterval(cooldownTimer);
-  cooldownTimer = setInterval(() => {
-    otpCooldown.value -= 1;
-    if (otpCooldown.value <= 0) clearInterval(cooldownTimer);
-  }, 1000);
-};
+onMounted(async () => {
+  await fetchActiveSessions();
+  // Auto-poll every 12 seconds for new sessions
+  sessionPollInterval = setInterval(fetchActiveSessions, 12000);
+});
 
-const sendOtp = async () => {
-  otpError.value = '';
-  const email = profile.value?.email;
-  if (!email) {
-    otpError.value = 'No registered email found on your profile. Contact your administrator.';
-    return;
-  }
+onUnmounted(() => { clearInterval(sessionPollInterval); });
 
-  otpSending.value = true;
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/otp/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name: profile.value?.name }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to send verification code.');
-
-    otpStage.value = 'sent';
-    otpCode.value = ['', '', '', '', '', ''];
-    startCooldown(60);
-    nextTick(() => otpRefs.value[0]?.focus());
-  } catch (e) {
-    otpError.value = e.message || 'Could not send verification code. Try again.';
-  } finally {
-    otpSending.value = false;
-  }
-};
-
-const resendOtp = async () => {
-  if (otpCooldown.value > 0 || otpSending.value) return;
-  await sendOtp();
-};
-
-const onOtpInput = (idx, event) => {
+const onPinInput = (idx, event) => {
   const val = event.target.value.replace(/\D/g, '');
-  otpCode.value[idx] = val ? val[val.length - 1] : '';
-  otpError.value = '';
-  if (otpCode.value[idx] && idx < 5) {
-    otpRefs.value[idx + 1]?.focus();
+  enteredPins.value[idx] = val ? val[val.length - 1] : '';
+  pinError.value = '';
+  if (enteredPins.value[idx] && idx < 3) {
+    pinRefs.value[idx + 1]?.focus();
   }
 };
 
-const onOtpBackspace = (idx, event) => {
-  if (!otpCode.value[idx] && idx > 0) {
-    otpRefs.value[idx - 1]?.focus();
+const onBackspace = (idx, event) => {
+  if (!enteredPins.value[idx] && idx > 0) {
+    pinRefs.value[idx - 1]?.focus();
   }
 };
 
-const verifyOtp = async () => {
+const verifyAttendance = async () => {
   if (!activeClass.value) return;
-  const code = otpCode.value.join('');
-  if (code.length < 6) {
-    otpError.value = 'Enter the complete 6-digit code.';
-    return;
-  }
+  const pin = enteredPins.value.join('');
+  if (pin.length < 4) { pinError.value = 'Please enter the complete 4-digit PIN.'; return; }
 
-  otpVerifying.value = true;
-  otpError.value = '';
-
+  isVerifying.value = true;
+  pinError.value = '';
   try {
-    const email = profile.value?.email;
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/otp/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp: code }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Invalid verification code.');
-
-    if (attendancesStore.hasAttended(activeClass.value.id, profile.value?.id)) {
-      throw new Error('Attendance already recorded for this session.');
-    }
-
-    await attendancesStore.markAttendance({
-      sessionId: activeClass.value.id,
-      studentId: profile.value?.id,
-      status: 'present',
-    });
-
+    await api.post('/sessions/mark', { pin });
     const now = new Date();
     markedCourseName.value = `${activeClass.value.code} — ${activeClass.value.name}`;
     markedAtTime.value = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-    auditLogsStore.logAction({
-      action: 'attendance_marked',
-      details: `Marked present for ${markedCourseName.value} (email OTP verified)`,
-      userId: profile.value?.id,
-      userRole: profile.value?.role,
-      userName: profile.value?.name,
+    attendanceHistory.value.unshift({
+      id: Date.now(),
+      course: `${activeClass.value.code} — ${activeClass.value.name}`,
+      date: now.toLocaleDateString(),
+      time: now.toLocaleTimeString(),
+      status: 'present',
+      statusText: 'Present'
     });
 
     attendanceMarked.value = true;
-    otpStage.value = 'idle';
-    otpCode.value = ['', '', '', '', '', ''];
-    clearInterval(cooldownTimer);
-    otpCooldown.value = 0;
+    enteredPins.value = ['', '', '', ''];
   } catch (e) {
-    otpError.value = e.message || 'Verification failed. Please try again.';
-    otpCode.value = ['', '', '', '', '', ''];
-    otpRefs.value[0]?.focus();
+    pinError.value = e.response?.data?.message || 'Invalid PIN or attendance already recorded.';
+    enteredPins.value = ['', '', '', ''];
+    pinRefs.value[0]?.focus();
   } finally {
-    otpVerifying.value = false;
+    isVerifying.value = false;
   }
 };
 
 const resetState = () => {
   attendanceMarked.value = false;
-  otpStage.value = 'idle';
-  otpCode.value = ['', '', '', '', '', ''];
-  otpError.value = '';
-  clearInterval(cooldownTimer);
-  otpCooldown.value = 0;
+  activeClass.value = null;
   fetchActiveSessions();
 };
-
-// --- Recent history (right panel) ---
-const attendanceHistory = computed(() => {
-  return attendances.value
-    .filter((a) => a.studentId === profile.value?.id)
-    .map((a) => {
-      const session = sessionsStore.getSessionById(a.sessionId);
-      const course = session ? coursesStore.getCourseById(session.courseId) : null;
-      const ts = a.timestamp ? new Date(a.timestamp) : null;
-
-      return {
-        id: a.id,
-        course: course ? `${course.code} — ${course.name}` : 'Unknown course',
-        date: ts ? ts.toLocaleDateString() : '',
-        time: ts ? ts.toLocaleTimeString() : '',
-        status: a.status,
-        statusText: a.status === 'present' ? 'Present' : 'Absent',
-        rawTimestamp: a.timestamp,
-      };
-    })
-    .sort((x, y) => new Date(y.rawTimestamp) - new Date(x.rawTimestamp))
-    .slice(0, 10);
-});
 </script>
 
 <style scoped>
@@ -438,7 +240,6 @@ const attendanceHistory = computed(() => {
 
 .attendance-container { display:flex;flex-direction:column;gap:2rem;width:100%; }
 .page-header { display:flex;justify-content:space-between;align-items:center; }
-.institution-tag { margin:0 0 .35rem;font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#6366f1; }
 .page-title { margin:0;font-size:1.75rem;font-weight:700;color:#0f172a;letter-spacing:-0.025em; }
 .page-subtitle { margin:0.25rem 0 0;font-size:0.95rem;color:#64748b; }
 .live-badge { display:flex;align-items:center;gap:0.5rem;background:#f1f5f9;color:#334155;padding:0.5rem 1rem;border-radius:9999px;font-size:0.85rem;font-weight:600;border:1px solid #e2e8f0; }
@@ -491,7 +292,7 @@ const attendanceHistory = computed(() => {
 .course-name { margin:0 0 0.4rem;font-size:1.15rem;font-weight:700; }
 .course-details { margin:0;font-size:.85rem;opacity:.85; }
 
-/* OTP Entry */
+/* PIN Entry */
 .verification-box { background:#f8fafc;border-radius:12px;padding:1.5rem;text-align:center;border:1px solid #e2e8f0; }
 .verification-box h4 { margin:0 0 .4rem;font-size:1.05rem;color:#0f172a; }
 .verification-box p { margin:0 0 1.25rem;color:#64748b;font-size:.9rem; }
@@ -499,16 +300,13 @@ const attendanceHistory = computed(() => {
 .pin-box { width:52px;height:60px;font-size:1.6rem;font-weight:800;text-align:center;border-radius:10px;border:2px solid #cbd5e1;background:#fff;color:#0f172a;outline:none;transition:all .2s; }
 .pin-box:focus { border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1); }
 .pin-filled { border-color:#10b981;background:#ecfdf5;color:#065f46; }
-.pin-error { display:flex;align-items:center;gap:8px;color:#dc2626;font-size:.85rem;font-weight:500;margin-top:0.9rem;background:#fef2f2;padding:0.6rem 0.75rem;border-radius:8px;text-align:left; }
+.pin-error { display:flex;align-items:center;gap:8px;color:#dc2626;font-size:.85rem;font-weight:500;margin-bottom:0.75rem;background:#fef2f2;padding:0.6rem 0.75rem;border-radius:8px;text-align:left; }
 .pin-error svg { width:16px;height:16px;flex-shrink:0; }
 .primary-btn { background:#4f46e5;color:white;border:none;padding:.85rem 1.75rem;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:background .2s; }
 .primary-btn:hover:not(:disabled) { background:#4338ca; }
 .primary-btn:disabled { background:#94a3b8;cursor:not-allowed; }
 .primary-btn svg { width:20px;height:20px; }
 .spin { animation:spin 0.8s linear infinite; }
-.resend-link { background:none;border:none;color:#6366f1;font-size:.85rem;font-weight:600;cursor:pointer;margin-top:.85rem;padding:.25rem; }
-.resend-link:disabled { color:#94a3b8;cursor:not-allowed; }
-.resend-link:hover:not(:disabled) { text-decoration:underline; }
 
 /* Buttons */
 .outline-btn { background:transparent;color:#0f172a;border:1px solid #cbd5e1;padding:.65rem 1.5rem;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:0.5rem; }
