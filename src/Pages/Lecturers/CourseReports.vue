@@ -15,60 +15,170 @@
       </button>
     </div>
 
-    <!-- Empty State -->
-    <div v-if="reportData.length === 0" class="empty-state">
-      <div class="icon-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10 9 9 9 8 9"></polyline>
-        </svg>
-      </div>
-      <h2>No Reports Available</h2>
-      <p>There is currently no attendance data available to generate reports for your courses.</p>
+    <!-- Loading -->
+    <div v-if="isLoading" class="loading-state page-loading">
+      <div class="spinner"></div>
+      <p>Loading attendance data…</p>
     </div>
 
-    <!-- Reports Content -->
-    <div v-else class="reports-content">
-      <div class="course-report-card" v-for="report in reportData" :key="report.courseId">
-        <div class="card-header">
-          <div class="course-info">
-            <span class="course-code">{{ report.code }}</span>
-            <span class="semester-tag">{{ report.semester }}</span>
-            <h3>{{ report.name }}</h3>
-          </div>
-          <div class="attendance-stat">
-            <span class="stat-value">{{ report.avgAttendance }}%</span>
-            <span class="stat-label">Avg. Attendance</span>
+    <template v-else>
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="filter-field">
+          <label>Course</label>
+          <select v-model="filters.courseId">
+            <option value="">All courses</option>
+            <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} — {{ c.name }}</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Level</label>
+          <select v-model="filters.level">
+            <option value="">All levels</option>
+            <option v-for="lvl in levelOptions" :key="lvl" :value="lvl">{{ lvl }}</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Semester</label>
+          <select v-model="filters.semester">
+            <option value="">All semesters</option>
+            <option v-for="sem in semesterOptions" :key="sem" :value="sem">{{ sem }}</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Student</label>
+          <select v-model="filters.studentId">
+            <option value="">All students</option>
+            <option v-for="s in studentOptions" :key="s.id" :value="s.id">{{ s.name }} ({{ s.studentId }})</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>From</label>
+          <input type="date" v-model="filters.dateFrom" />
+        </div>
+
+        <div class="filter-field">
+          <label>To</label>
+          <input type="date" v-model="filters.dateTo" />
+        </div>
+
+        <div class="filter-field">
+          <label>Session Code / PIN</label>
+          <input type="text" v-model="filters.pinSearch" placeholder="e.g. 4821" maxlength="8" />
+        </div>
+
+        <button class="clear-filters-btn" @click="clearFilters" :disabled="!hasActiveFilters">
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      <div v-if="reportData.length === 0" class="empty-state">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <h2>No Reports Available</h2>
+        <p>No attendance data matches the current filters. Try widening your date range or clearing filters.</p>
+      </div>
+
+      <!-- Reports Content -->
+      <template v-else>
+        <div class="reports-content">
+          <div class="course-report-card" v-for="report in reportData" :key="report.courseId">
+            <div class="card-header">
+              <div class="course-info">
+                <span class="course-code">{{ report.code }}</span>
+                <span class="semester-tag">{{ report.semester }}</span>
+                <span class="semester-tag level-tag">{{ report.level }}</span>
+                <h3>{{ report.name }}</h3>
+              </div>
+              <div class="attendance-stat">
+                <span class="stat-value">{{ report.avgAttendance }}%</span>
+                <span class="stat-label">Avg. Attendance</span>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <span class="label">Total Students</span>
+                  <span class="value">{{ report.totalStudents }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="label">Sessions Held</span>
+                  <span class="value">{{ report.sessionsHeld }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="label">Perfect Attendance</span>
+                  <span class="value text-emerald">{{ report.perfectAttendance }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="label">At Risk (&lt; 50%)</span>
+                  <span class="value text-rose">{{ report.atRisk }}</span>
+                </div>
+              </div>
+
+              <button class="view-details-btn" @click="openStudentList(report)">View Full Student List</button>
+            </div>
           </div>
         </div>
 
-        <div class="card-body">
-          <div class="stats-grid">
-            <div class="stat-item">
-              <span class="label">Total Students</span>
-              <span class="value">{{ report.totalStudents }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="label">Sessions Held</span>
-              <span class="value">{{ report.sessionsHeld }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="label">Perfect Attendance</span>
-              <span class="value text-emerald">{{ report.perfectAttendance }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="label">At Risk (< 50%)</span>
-              <span class="value text-rose">{{ report.atRisk }}</span>
-            </div>
+        <!-- History table -->
+        <div class="history-card">
+          <div class="history-header">
+            <h2>Attendance History</h2>
+            <span class="count-pill">{{ historyRows.length }} record{{ historyRows.length === 1 ? '' : 's' }}</span>
           </div>
-          
-          <button class="view-details-btn" @click="openStudentList(report)">View Full Student List</button>
+
+          <div v-if="historyRows.length === 0" class="empty-students">
+            <p>No individual attendance records match the current filters.</p>
+          </div>
+          <div v-else class="students-table-wrapper">
+            <table class="students-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Course</th>
+                  <th>Session Code</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in historyRows" :key="row.id">
+                  <td>
+                    <div class="student-cell">
+                      <div class="student-avatar">{{ row.studentName.charAt(0) }}</div>
+                      <span class="student-name">{{ row.studentName }}</span>
+                    </div>
+                  </td>
+                  <td>{{ row.courseCode }} — {{ row.courseName }}</td>
+                  <td><span class="pin-chip">{{ row.pin }}</span></td>
+                  <td>{{ row.dateStr }}</td>
+                  <td>{{ row.timeStr }}</td>
+                  <td>
+                    <span class="attendance-badge" :class="row.status === 'present' ? 'excellent' : 'poor'">
+                      {{ row.status === 'present' ? 'Present' : 'Absent' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </template>
 
     <!-- Student List Modal -->
     <div class="modal-backdrop" v-if="isModalOpen" @click.self="closeModal">
@@ -83,11 +193,7 @@
           </button>
         </div>
         <div class="modal-body">
-          <div v-if="isLoadingStudents" class="loading-state">
-            <div class="spinner"></div>
-            <p>Loading students...</p>
-          </div>
-          <div v-else-if="studentsList.length === 0" class="empty-students">
+          <div v-if="studentsList.length === 0" class="empty-students">
             <p>No students are currently enrolled in this course.</p>
           </div>
           <div v-else class="students-table-wrapper">
@@ -126,42 +232,294 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import api from '../../api.js';
+import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/authstore';
+import { useCoursesStore } from '@/stores/courses';
+import { useSchedulesStore } from '@/stores/schedules';
+import { useEnrollmentsStore } from '@/stores/enrollments';
+import { useSessionsStore } from '@/stores/sessions';
+import { useAttendancesStore } from '@/stores/attendances';
+import { supabase } from '@/stores/supabase';
 
-const reportData = ref([]);
+const authStore = useAuthStore();
+const coursesStore = useCoursesStore();
+const schedulesStore = useSchedulesStore();
+const enrollmentsStore = useEnrollmentsStore();
+const sessionsStore = useSessionsStore();
+const attendancesStore = useAttendancesStore();
+
+const { profile } = storeToRefs(authStore);
+const { courses } = storeToRefs(coursesStore);
+const { enrollments } = storeToRefs(enrollmentsStore);
+const { sessions } = storeToRefs(sessionsStore);
+const { attendances } = storeToRefs(attendancesStore);
+
+const isLoading = ref(true);
+const studentsById = ref({}); // id -> { id, name, studentId, program }
+
 const isModalOpen = ref(false);
 const selectedReport = ref(null);
 const studentsList = ref([]);
-const isLoadingStudents = ref(false);
+
+const filters = ref({
+  courseId: '',
+  level: '',
+  semester: '',
+  studentId: '',
+  dateFrom: '',
+  dateTo: '',
+  pinSearch: '',
+});
+
+const hasActiveFilters = computed(() =>
+  Object.values(filters.value).some((v) => v !== '')
+);
+
+const clearFilters = () => {
+  filters.value = { courseId: '', level: '', semester: '', studentId: '', dateFrom: '', dateTo: '', pinSearch: '' };
+};
 
 onMounted(async () => {
+  isLoading.value = true;
   try {
-    const res = await api.get('/attendance/course-reports');
-    reportData.value = res.data;
-  } catch (error) {
-    console.error('Error fetching course reports:', error);
+    await Promise.all([
+      coursesStore.fetchCourses(),
+      schedulesStore.fetchSchedules(),
+      enrollmentsStore.fetchEnrollments(),
+      sessionsStore.fetchSessions({ lecturerId: profile.value?.id }),
+      attendancesStore.fetchAttendances(),
+    ]);
+
+    // Students aren't covered by a dedicated Pinia store elsewhere in the
+    // app (AttendanceManagement.vue queries `users` directly too) — pull
+    // everyone enrolled in this lecturer's courses in one batch.
+    const lecturerCourseIds = new Set(
+      sessions.value.filter((s) => s.lecturerId === profile.value?.id).map((s) => s.courseId)
+    );
+    // Fall back to ALL of the lecturer's courses (not just ones with a
+    // session yet) so the student filter isn't empty for a lecturer who
+    // hasn't run a session at all.
+    coursesForLecturer.value.forEach((c) => lecturerCourseIds.add(c.id));
+
+    const studentIds = [
+      ...new Set(
+        enrollments.value
+          .filter((e) => lecturerCourseIds.has(e.courseId))
+          .map((e) => e.studentId)
+      ),
+    ];
+
+    if (studentIds.length > 0) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, id_number, program')
+        .in('id', studentIds)
+        .order('name');
+
+      if (error) throw error;
+
+      studentsById.value = Object.fromEntries(
+        (data ?? []).map((u) => [u.id, { id: u.id, name: u.name, studentId: u.id_number, program: u.program }])
+      );
+    }
+  } catch (e) {
+    console.error('Error loading report data:', e);
+  } finally {
+    isLoading.value = false;
   }
 });
 
-const exportReport = () => {
-  alert('Report export feature will be implemented soon.');
+// Courses this lecturer actually teaches, inferred from schedules
+// (schedules.lecturer is a free-text name in the schema shown elsewhere —
+// fall back to "all courses" if that linkage can't be made reliably).
+const coursesForLecturer = computed(() => {
+  const lecturerName = profile.value?.name;
+  if (!lecturerName) return courses.value;
+  const scheduledCourseIds = new Set(
+    schedulesStore.schedules
+      .filter((s) => s.lecturer === lecturerName)
+      .map((s) => s.courseId)
+  );
+  const bySchedule = courses.value.filter((c) => scheduledCourseIds.has(c.id));
+  return bySchedule.length > 0 ? bySchedule : courses.value;
+});
+
+const levelOptions = computed(() =>
+  [...new Set(coursesForLecturer.value.map((c) => c.level).filter(Boolean))].sort()
+);
+const semesterOptions = computed(() =>
+  [...new Set(coursesForLecturer.value.map((c) => c.semester).filter(Boolean))].sort()
+);
+const studentOptions = computed(() =>
+  Object.values(studentsById.value).sort((a, b) => a.name.localeCompare(b.name))
+);
+
+const inDateRange = (dateStr, from, to) => {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (from && d < new Date(from)) return false;
+  if (to) {
+    const toEnd = new Date(to);
+    toEnd.setHours(23, 59, 59, 999);
+    if (d > toEnd) return false;
+  }
+  return true;
 };
 
-const openStudentList = async (report) => {
+// Sessions after course/level/semester/date/pin filters — student filter is
+// applied later, at the attendance-row level, since "student" narrows
+// PEOPLE within a session rather than which sessions existed.
+const filteredSessions = computed(() => {
+  const f = filters.value;
+  return sessions.value.filter((s) => {
+    if (s.lecturerId !== profile.value?.id) return false;
+    const course = coursesStore.getCourseById(s.courseId);
+    if (!course) return false;
+
+    if (f.courseId && s.courseId !== f.courseId) return false;
+    if (f.level && course.level !== f.level) return false;
+    if (f.semester && course.semester !== f.semester) return false;
+    if ((f.dateFrom || f.dateTo) && !inDateRange(s.date, f.dateFrom, f.dateTo)) return false;
+    if (f.pinSearch && !s.pin?.toLowerCase().includes(f.pinSearch.toLowerCase())) return false;
+
+    return true;
+  });
+});
+
+const filteredSessionIds = computed(() => new Set(filteredSessions.value.map((s) => s.id)));
+
+// Individual attendance rows for the history table — every present record
+// whose session survived the filters above, further narrowed by student.
+const historyRows = computed(() => {
+  const f = filters.value;
+  return attendances.value
+    .filter((a) => filteredSessionIds.value.has(a.sessionId))
+    .filter((a) => !f.studentId || a.studentId === f.studentId)
+    .map((a) => {
+      const session = sessionsStore.getSessionById(a.sessionId);
+      const course = session ? coursesStore.getCourseById(session.courseId) : null;
+      const student = studentsById.value[a.studentId];
+      const ts = a.timestamp ? new Date(a.timestamp) : null;
+
+      return {
+        id: a.id,
+        studentName: student?.name ?? 'Unknown student',
+        courseCode: course?.code ?? '—',
+        courseName: course?.name ?? 'Unknown course',
+        pin: session?.pin ?? '—',
+        dateStr: ts ? ts.toLocaleDateString() : '—',
+        timeStr: ts ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—',
+        status: a.status,
+        rawTimestamp: a.timestamp,
+      };
+    })
+    .sort((x, y) => new Date(y.rawTimestamp) - new Date(x.rawTimestamp));
+});
+
+// Per-course aggregate cards, built from the same filtered session set.
+const reportData = computed(() => {
+  const f = filters.value;
+  const byCourse = new Map();
+
+  for (const session of filteredSessions.value) {
+    const course = coursesStore.getCourseById(session.courseId);
+    if (!course) continue;
+    if (!byCourse.has(course.id)) {
+      byCourse.set(course.id, { course, sessions: [] });
+    }
+    byCourse.get(course.id).sessions.push(session);
+  }
+
+  const rows = [];
+  for (const [courseId, { course, sessions: courseSessions }] of byCourse) {
+    const sessionIds = new Set(courseSessions.map((s) => s.id));
+
+    let enrolledStudentIds = enrollments.value
+      .filter((e) => e.courseId === courseId)
+      .map((e) => e.studentId);
+
+    if (f.studentId) {
+      enrolledStudentIds = enrolledStudentIds.filter((id) => id === f.studentId);
+    }
+    if (enrolledStudentIds.length === 0) continue;
+
+    const totalStudents = enrolledStudentIds.length;
+    const sessionsHeld = courseSessions.length;
+
+    // present count per student, within this course's filtered sessions
+    const presentCountByStudent = new Map(enrolledStudentIds.map((id) => [id, 0]));
+    for (const a of attendances.value) {
+      if (a.status !== 'present') continue;
+      if (!sessionIds.has(a.sessionId)) continue;
+      if (!presentCountByStudent.has(a.studentId)) continue;
+      presentCountByStudent.set(a.studentId, presentCountByStudent.get(a.studentId) + 1);
+    }
+
+    let perfectAttendance = 0;
+    let atRisk = 0;
+    let totalRatioSum = 0;
+
+    for (const studentId of enrolledStudentIds) {
+      const present = presentCountByStudent.get(studentId) ?? 0;
+      const rate = sessionsHeld > 0 ? present / sessionsHeld : 0;
+      totalRatioSum += rate;
+      if (sessionsHeld > 0 && present === sessionsHeld) perfectAttendance += 1;
+      if (rate < 0.5) atRisk += 1;
+    }
+
+    const avgAttendance = totalStudents > 0 ? Math.round((totalRatioSum / totalStudents) * 100) : 0;
+
+    rows.push({
+      courseId,
+      code: course.code,
+      name: course.name,
+      level: course.level,
+      semester: course.semester,
+      totalStudents,
+      sessionsHeld,
+      perfectAttendance,
+      atRisk,
+      avgAttendance,
+      sessionIds,
+    });
+  }
+
+  return rows.sort((a, b) => a.code.localeCompare(b.code));
+});
+
+const openStudentList = (report) => {
   selectedReport.value = report;
   isModalOpen.value = true;
-  isLoadingStudents.value = true;
-  
-  try {
-    const response = await api.get(`/attendance/course-reports/${report.courseId}/students`);
-    studentsList.value = response.data;
-  } catch (error) {
-    console.error('Error fetching students:', error);
-    studentsList.value = [];
-  } finally {
-    isLoadingStudents.value = false;
+
+  const f = filters.value;
+  let enrolledStudentIds = enrollments.value
+    .filter((e) => e.courseId === report.courseId)
+    .map((e) => e.studentId);
+
+  if (f.studentId) {
+    enrolledStudentIds = enrolledStudentIds.filter((id) => id === f.studentId);
   }
+
+  studentsList.value = enrolledStudentIds
+    .map((studentId) => {
+      const student = studentsById.value[studentId];
+      if (!student) return null;
+
+      let presentCount = 0;
+      for (const a of attendances.value) {
+        if (a.status === 'present' && a.studentId === studentId && report.sessionIds.has(a.sessionId)) {
+          presentCount += 1;
+        }
+      }
+      const attendanceRate = report.sessionsHeld > 0
+        ? Math.round((presentCount / report.sessionsHeld) * 100)
+        : 0;
+
+      return { ...student, attendanceRate };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name));
 };
 
 const closeModal = () => {
@@ -174,6 +532,10 @@ const getAttendanceClass = (rate) => {
   if (rate >= 85) return 'excellent';
   if (rate >= 70) return 'good';
   return 'poor';
+};
+
+const exportReport = () => {
+  alert('Report export feature will be implemented soon.');
 };
 </script>
 
@@ -230,6 +592,47 @@ const getAttendanceClass = (rate) => {
   width: 18px;
   height: 18px;
 }
+
+/* Page loading */
+.page-loading { padding: 4rem 0; }
+
+/* Filters */
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+.filter-field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 150px; }
+.filter-field label { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+.filter-field select,
+.filter-field input {
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 0.85rem;
+  color: #0f172a;
+  background: #fff;
+}
+.filter-field select:focus,
+.filter-field input:focus { outline: none; border-color: #6366f1; }
+.clear-filters-btn {
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: transparent;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.clear-filters-btn:hover:not(:disabled) { background: #f1f5f9; color: #0f172a; }
+.clear-filters-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Empty State */
 .empty-state {
@@ -323,6 +726,7 @@ const getAttendanceClass = (rate) => {
   padding: 4px 8px;
   border-radius: 6px;
 }
+.level-tag { margin-left: 0.4rem; }
 
 .attendance-stat {
   display: flex;
@@ -397,6 +801,25 @@ const getAttendanceClass = (rate) => {
 .view-details-btn:hover {
   background-color: #e0e7ff;
 }
+
+/* History section */
+.history-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.history-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+}
+.history-header h2 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+.count-pill { font-size: 0.78rem; font-weight: 700; color: #4338ca; background: #e0e7ff; padding: 0.25rem 0.7rem; border-radius: 9999px; }
+.pin-chip { font-family: 'Courier New', monospace; font-weight: 700; letter-spacing: 0.08em; background: #f1f5f9; color: #334155; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; }
 
 /* Modal Styles */
 .modal-backdrop {
@@ -580,11 +1003,14 @@ const getAttendanceClass = (rate) => {
   .reports-content {
     grid-template-columns: 1fr;
   }
-  
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
+
+  .filters-bar { flex-direction: column; align-items: stretch; }
+  .filter-field { min-width: 0; }
 }
 </style>

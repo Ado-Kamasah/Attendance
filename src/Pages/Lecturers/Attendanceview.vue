@@ -62,9 +62,9 @@
               </div>
             </div>
             <div class="session-btns">
-              <button class="extend-btn" @click="extendTimer(15)">
+              <button class="extend-btn" @click="extendTimer(extendIncrement)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                +15s
+                +{{ extendIncrement }}s
               </button>
               <button class="danger-btn" @click="stopLiveSession">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
@@ -99,7 +99,13 @@
         <div class="checkin-panel card">
           <div class="card-header">
             <h2>Live Check-ins</h2>
-            <span class="count-badge">{{ checkedInStudents.length }}/{{ liveAttendanceSession.maxStudents }}</span>
+            <div class="checkin-header-right">
+              <span class="realtime-pill" :class="{ 'realtime-off': !isRealtimeConnected }">
+                <span class="realtime-dot"></span>
+                {{ isRealtimeConnected ? 'Live' : 'Reconnecting…' }}
+              </span>
+              <span class="count-badge">{{ checkedInStudents.length }}/{{ liveAttendanceSession.maxStudents }}</span>
+            </div>
           </div>
           <div class="checkin-progress-wrap">
             <div class="checkin-progress" :style="{ width: progressPct + '%' }"></div>
@@ -123,7 +129,48 @@
       <div v-else class="setup-panel card">
         <div class="card-header"><h2>Start Attendance Session</h2></div>
         <div class="setup-body">
-          <p class="setup-hint">Select students physically present, then start the session to generate a secure 4-digit PIN.</p>
+          <p class="setup-hint">Select students physically present, then start the session to generate a secure PIN.</p>
+
+          <!-- Custom timer settings -->
+          <div class="timer-settings">
+            <div class="list-header">
+              <h3>Session Duration</h3>
+            </div>
+            <div class="duration-presets">
+              <button
+                v-for="preset in durationPresets"
+                :key="preset.secs"
+                type="button"
+                class="preset-btn"
+                :class="{ active: !useCustomDuration && durationSecs === preset.secs }"
+                @click="selectPreset(preset.secs)"
+              >{{ preset.label }}</button>
+              <button
+                type="button"
+                class="preset-btn"
+                :class="{ active: useCustomDuration }"
+                @click="useCustomDuration = true"
+              >Custom</button>
+            </div>
+
+            <div v-if="useCustomDuration" class="custom-duration-row">
+              <label class="custom-duration-field">
+                <span>Minutes</span>
+                <input type="number" min="0" max="60" v-model.number="customMinutes" @input="clampCustomDuration" />
+              </label>
+              <label class="custom-duration-field">
+                <span>Seconds</span>
+                <input type="number" min="0" max="59" v-model.number="customSeconds" @input="clampCustomDuration" />
+              </label>
+            </div>
+
+            <p class="duration-summary">
+              Session will run for <strong>{{ formattedDuration }}</strong> once started.
+              Extend button adds <strong>{{ extendIncrement }}s</strong> at a time.
+            </p>
+
+            <div v-if="durationError" class="error-banner">{{ durationError }}</div>
+          </div>
 
           <div class="student-selection-list">
             <div class="list-header">
@@ -148,7 +195,7 @@
           <div v-if="startError" class="error-banner">{{ startError }}</div>
 
           <div class="start-controls">
-            <button class="start-btn" @click="startLiveSession" :disabled="selectedStudents.length === 0 || isStarting">
+            <button class="start-btn" @click="startLiveSession" :disabled="selectedStudents.length === 0 || isStarting || durationSecs <= 0">
               <svg v-if="isStarting" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"></circle></svg>
               <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
               {{ isStarting ? 'Starting…' : 'Start Class Session' }}
@@ -161,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authstore';
 import { useSessionsStore } from '@/stores/sessions';
@@ -195,6 +242,60 @@ const startError = ref('');
 let timerInterval = null;
 const OTP_API_BASE = import.meta.env.VITE_OTP_API_URL || '';
 
+// ── Custom timer settings (lecturer-configurable, set before starting) ──
+const durationPresets = [
+  { label: '30s', secs: 30 },
+  { label: '1m', secs: 60 },
+  { label: '2m', secs: 120 },
+  { label: '5m', secs: 300 },
+];
+const useCustomDuration = ref(false);
+const durationSecs = ref(60); // preset selection lands here
+const customMinutes = ref(1);
+const customSeconds = ref(0);
+const durationError = ref('');
+
+// The +N button on the ring reuses whatever duration the lecturer picked,
+// capped so it can't be absurdly long — matches "custom timer" intent
+// without needing a second separate control.
+const extendIncrement = computed(() => Math.min(Math.max(durationSecs.value, 5), 120));
+
+const selectPreset = (secs) => {
+  useCustomDuration.value = false;
+  durationSecs.value = secs;
+  durationError.value = '';
+};
+
+const clampCustomDuration = () => {
+  if (customMinutes.value < 0 || Number.isNaN(customMinutes.value)) customMinutes.value = 0;
+  if (customMinutes.value > 60) customMinutes.value = 60;
+  if (customSeconds.value < 0 || Number.isNaN(customSeconds.value)) customSeconds.value = 0;
+  if (customSeconds.value > 59) customSeconds.value = 59;
+};
+
+// Keep durationSecs in sync whenever custom mode is active and the
+// minute/second fields change.
+watch([useCustomDuration, customMinutes, customSeconds], () => {
+  if (!useCustomDuration.value) return;
+  clampCustomDuration();
+  const total = customMinutes.value * 60 + customSeconds.value;
+  durationSecs.value = total;
+  durationError.value = total <= 0 ? 'Session duration must be at least a few seconds.' : '';
+});
+
+const formattedDuration = computed(() => {
+  const secs = durationSecs.value;
+  if (secs <= 0) return '0s';
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  if (m === 0) return `${s}s`;
+  if (s === 0) return `${m}m`;
+  return `${m}m ${s}s`;
+});
+
+// ── Realtime check-in connection state ──
+const isRealtimeConnected = ref(false);
+
 const circumference = 2 * Math.PI * 66; // r=66
 const strokeOffset = computed(() => circumference * (1 - timeLeft.value / totalTime.value));
 const progressPct = computed(() =>
@@ -205,8 +306,13 @@ const progressPct = computed(() =>
 
 const formatTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-// Live check-ins for the active session, joined with student names/ids
-// already loaded in enrolledStudents (attendances only carry studentId).
+// Live check-ins for the active session — this is the realtime feed:
+// attendancesStore.subscribeToAttendances() (below) opens a Supabase
+// postgres_changes channel on the `attendances` table and pushes new
+// INSERT rows straight into attendances.value. Because this is a Vue
+// computed over that same reactive array, every new check-in that lands
+// via the realtime channel re-runs this filter automatically — no polling,
+// no manual refresh needed.
 const checkedInStudents = computed(() => {
   if (!liveAttendanceSession.value.id) return [];
 
@@ -233,27 +339,38 @@ onMounted(async () => {
 
       if (studentIds.length > 0) {
         const { data, error } = await supabase
-  .from('users')
-  .select('id, name, id_number, email')
-  .in('id', studentIds)
-  .order('name');
+          .from('users')
+          .select('id, name, id_number, email')
+          .in('id', studentIds)
+          .order('name');
 
-if (error) throw error;
+        if (error) throw error;
 
-enrolledStudents.value = (data ?? []).map((u) => ({
-  id: u.id,
-  name: u.name,
-  studentId: u.id_number,
-  email: u.email,
-}));
+        enrolledStudents.value = (data ?? []).map((u) => ({
+          id: u.id,
+          name: u.name,
+          studentId: u.id_number,
+          email: u.email,
+        }));
       }
     } catch (e) {
       console.error(e);
     }
   }
 
-  // Realtime feed of attendance inserts replaces the old polling loop.
+  // Pull any check-ins that happened before this page was open, THEN open
+  // the realtime channel — otherwise a check-in that landed in the gap
+  // between page load and subscribe would be missed until a refresh.
+  try {
+    if (liveAttendanceSession.value.id) {
+      await attendancesStore.fetchAttendances({ sessionId: liveAttendanceSession.value.id });
+    }
+  } catch (e) {
+    console.error('Error fetching existing attendances:', e);
+  }
+
   attendancesStore.subscribeToAttendances();
+  isRealtimeConnected.value = true;
 });
 
 const toggleSelectAll = () => {
@@ -262,10 +379,9 @@ const toggleSelectAll = () => {
     : enrolledStudents.value.map(s => s.id);
 };
 
-const dispatchOtpsToSelected = async (sessionId) => {
+const dispatchOtpsToSelected = async (sessionId, otp) => {
   const targets = enrolledStudents.value.filter((s) => selectedStudents.value.includes(s.id));
 
-  // Reset status for this batch
   otpDispatch.value = Object.fromEntries(targets.map((s) => [s.id, { status: 'sending', message: '' }]));
   isDispatchingOtp.value = true;
   otpBannerMessage.value = '';
@@ -276,6 +392,7 @@ const dispatchOtpsToSelected = async (sessionId) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId,
+        otp, // the PIN shown in the ring — same code for every student
         students: targets
           .filter((s) => !!s.email)
           .map((s) => ({ studentId: s.id, email: s.email, name: s.name })),
@@ -322,6 +439,7 @@ const resendOtpToStudent = async (studentId) => {
         sessionId: liveAttendanceSession.value.id,
         studentId,
         email: student.email,
+        otp: liveAttendanceSession.value.pin, // re-send the SAME dashboard PIN, not a new code
         name: student.name,
       }),
     });
@@ -337,6 +455,12 @@ const resendOtpToStudent = async (studentId) => {
 
 const startLiveSession = async () => {
   startError.value = '';
+
+  if (durationSecs.value <= 0) {
+    startError.value = 'Set a session duration before starting.';
+    return;
+  }
+
   isStarting.value = true;
   try {
     const created = await sessionsStore.createSession({
@@ -346,8 +470,9 @@ const startLiveSession = async () => {
       isActive: true,
     });
 
-    totalTime.value = 60;
-    timeLeft.value = 60;
+    // Use the lecturer's configured duration instead of a fixed 60s.
+    totalTime.value = durationSecs.value;
+    timeLeft.value = durationSecs.value;
     liveAttendanceSession.value = {
       id: created.id,
       isActive: true,
@@ -361,8 +486,9 @@ const startLiveSession = async () => {
       else { stopLiveSession(); }
     }, 1000);
 
-    // Fire-and-track: PIN session is already live even if some emails fail.
-    dispatchOtpsToSelected(created.id);
+    // Email the SAME PIN just generated for the ring display — no separate
+    // per-student code, no backend generation.
+    dispatchOtpsToSelected(created.id, created.pin);
   } catch (e) {
     startError.value = e.message || 'Failed to start session.';
   } finally {
@@ -386,7 +512,6 @@ const stopLiveSession = async () => {
 
 const extendTimer = (secs) => { if (liveAttendanceSession.value.isActive) timeLeft.value += secs; };
 
-
 // studentId -> { status: 'idle'|'sending'|'sent'|'failed', message }
 const otpDispatch = ref({});
 const isDispatchingOtp = ref(false);
@@ -395,6 +520,7 @@ const otpBannerMessage = ref('');
 onUnmounted(() => {
   clearInterval(timerInterval);
   attendancesStore.unsubscribeFromAttendances();
+  isRealtimeConnected.value = false;
 });
 </script>
 
@@ -441,6 +567,14 @@ onUnmounted(() => {
 .card { background:#fff;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);border:1px solid #e2e8f0; }
 .card-header { padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center; }
 .card-header h2 { margin:0;font-size:1.15rem;font-weight:700;color:#0f172a; }
+.checkin-header-right { display:flex;align-items:center;gap:0.6rem; }
+
+/* Realtime pill */
+.realtime-pill { display:flex;align-items:center;gap:6px;font-size:0.72rem;font-weight:700;color:#166534;background:#dcfce7;padding:0.25rem 0.6rem;border-radius:9999px;text-transform:uppercase;letter-spacing:0.04em; }
+.realtime-pill.realtime-off { color:#92400e;background:#fef3c7; }
+.realtime-dot { width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulseGreen 1.6s infinite; }
+.realtime-off .realtime-dot { background:#f59e0b;animation:none; }
+@keyframes pulseGreen { 0%,100%{opacity:1}50%{opacity:0.3} }
 
 /* Session Split */
 .session-split { display:grid;grid-template-columns:300px 1fr;gap:1.5rem; }
@@ -503,6 +637,20 @@ onUnmounted(() => {
 /* Setup Panel */
 .setup-body { padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem; }
 .setup-hint { margin:0;color:#64748b;font-size:0.95rem; }
+
+/* Timer settings */
+.timer-settings { background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;gap:0.9rem; }
+.duration-presets { display:flex;flex-wrap:wrap;gap:0.6rem; }
+.preset-btn { padding:0.5rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:white;color:#475569;border:1.5px solid #cbd5e1;transition:all 0.2s; }
+.preset-btn:hover { border-color:#94a3b8; }
+.preset-btn.active { border-color:#10b981;background:#ecfdf5;color:#065f46; }
+.custom-duration-row { display:flex;gap:1rem; }
+.custom-duration-field { display:flex;flex-direction:column;gap:0.35rem;font-size:0.78rem;font-weight:600;color:#64748b; }
+.custom-duration-field input { width:90px;padding:0.5rem 0.65rem;border-radius:8px;border:1.5px solid #cbd5e1;font-size:0.95rem;color:#0f172a; }
+.custom-duration-field input:focus { outline:none;border-color:#6366f1; }
+.duration-summary { margin:0;font-size:0.85rem;color:#64748b; }
+.duration-summary strong { color:#1e293b; }
+
 .student-selection-list { background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem; }
 .list-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem; }
 .list-header h3 { margin:0;font-size:1rem;color:#1e293b;font-weight:600; }
