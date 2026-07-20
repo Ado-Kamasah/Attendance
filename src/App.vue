@@ -21,45 +21,44 @@ import LecturerCourses from './Pages/Lecturers/MyCourses.vue';
 import AttendanceView from './Pages/Lecturers/Attendanceview.vue';
 import CourseReports from './Pages/Lecturers/CourseReports.vue';
 import { onMounted, onUnmounted } from 'vue';
+import { useAuthStore } from './stores/authstore.js';
 
-const isAuthenticated = ref(false);
-const activeAuthView = ref('login'); // 'login' or 'register'
+const authStore = useAuthStore();
+
+const activeAuthView = ref('login');
 const currentRoute = ref(window.location.pathname === '/' ? '/' : window.location.pathname);
-const userRole = ref('Admin');
 const isMobileSidebarOpen = ref(false);
+const isReady = ref(false); // avoid flashing the login screen while we check session
+
+const isAuthenticated = computed(() => !!authStore.user);
+const userRole = computed(() => {
+  const raw = authStore.profile?.role || 'Student';
+  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+});
 
 const handleNavigationEvent = (path) => {
   if (currentRoute.value !== path) {
     currentRoute.value = path;
     window.history.pushState({ path }, '', path);
   }
-  isMobileSidebarOpen.value = false; // Always close mobile menu on nav
+  isMobileSidebarOpen.value = false;
 };
 
-onMounted(() => {
-  // Check for persistent login
-  const token = localStorage.getItem('token');
-  const userJson = localStorage.getItem('user');
-  
-  if (token && userJson) {
-    try {
-      const user = JSON.parse(userJson);
-      handleLoginSuccess({ loginId: user.id, role: user.role, user: user });
-    } catch (e) {
-      console.error('Failed to parse user from localStorage');
+onMounted(async () => {
+  await authStore.initialize(); // restores Supabase session + profile if one exists
+  isReady.value = true;
+
+  if (authStore.user && authStore.profile) {
+    // Only auto-redirect if we're not already deep-linked somewhere valid
+    if (currentRoute.value === '/' || currentRoute.value === '/login') {
+      redirectForRole(userRole.value);
     }
   }
 
-  // Push initial state so back button works out of the gate
   window.history.replaceState({ path: currentRoute.value }, '', currentRoute.value);
-  
   window.addEventListener('popstate', (e) => {
-    if (e.state && e.state.path) {
-      currentRoute.value = e.state.path;
-    }
+    if (e.state && e.state.path) currentRoute.value = e.state.path;
   });
-
-  // Listen for unauthorized events to logout
   window.addEventListener('auth-unauthorized', handleLogout);
 });
 
@@ -67,39 +66,34 @@ onUnmounted(() => {
   window.removeEventListener('auth-unauthorized', handleLogout);
 });
 
-const handleLoginSuccess = (userPayload) => {
-  isAuthenticated.value = true;
-  // Normalize role to Title Case (e.g., 'ADMIN' -> 'Admin')
-  const rawRole = userPayload.role || 'Student';
-  userRole.value = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
-  
-  if (userRole.value === 'Admin') {
-    handleNavigationEvent('/');
-  } else if (userRole.value === 'Lecturer') {
-    handleNavigationEvent('/lecturer-dashboard');
-  } else if (userRole.value === 'Student') {
-    handleNavigationEvent('/student-dashboard');
-  }
+const redirectForRole = (role) => {
+  if (role === 'Admin') handleNavigationEvent('/');
+  else if (role === 'Lecturer') handleNavigationEvent('/lecturer-dashboard');
+  else if (role === 'Student') handleNavigationEvent('/student-dashboard');
 };
 
-const handleLogout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  isAuthenticated.value = false;
+const handleLoginSuccess = () => {
+  // authStore.user/profile are already set by authStore.login() by the time
+  // Login.vue emits this — just redirect based on the now-current role.
+  redirectForRole(userRole.value);
+};
+
+const handleLogout = async () => {
+  await authStore.logout();
   activeAuthView.value = 'login';
 };
 
-const handleRegisterSuccess = (userPayload) => {
-  console.log("Registered:", userPayload);
-  activeAuthView.value = 'login';
-  // Note: user must login after registering now
+const handleRegisterSuccess = () => {
+  activeAuthView.value = 'register' ? (activeAuthView.value = 'login') : null;
 };
 </script>
 
 <template>
-  <div v-if="!isAuthenticated">
-    <Login v-if="activeAuthView === 'login'" 
-           @login-success="handleLoginSuccess" 
+  <div v-if="!isReady" class="app-loading">
+    <!-- spinner / splash -->
+  </div>
+  <div v-else-if="!isAuthenticated">
+    <Login v-if="activeAuthView === 'login'" @login-success="handleLoginSuccess"
            @switch-to-register="activeAuthView = 'register'" />
            
     <Register v-else 
