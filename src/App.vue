@@ -20,6 +20,7 @@ import LecturerDashboard from './Pages/Lecturers/lecturerDashboard.vue';
 import LecturerCourses from './Pages/Lecturers/MyCourses.vue';
 import AttendanceView from './Pages/Lecturers/Attendanceview.vue';
 import CourseReports from './Pages/Lecturers/CourseReports.vue';
+import Profile from './Pages/Profile/Profile.vue';
 import { onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from './stores/authstore.js';
 
@@ -136,6 +137,7 @@ const handleRegisterSuccess = () => {
         <Schedule v-else-if="currentRoute === '/schedule'" />
         <SemesterSetup v-else-if="currentRoute === '/semestersetup'" />
         <Faculties v-else-if="currentRoute === '/faculties'" />
+        <Profile v-else-if="currentRoute === '/profile'" />
         <div v-else class="content-placeholder">
           <h2>Page not implemented yet</h2>
           <p>Navigated to {{ currentRoute }}</p>

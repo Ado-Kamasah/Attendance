@@ -44,13 +44,13 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="user-profile">
+        <div class="user-profile" @click="navigate('/profile')">
           <div class="avatar">
-            <img src="https://ui-avatars.com/api/?name=Dr+Smith&background=10b981&color=fff" alt="User Avatar" />
+            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=10b981&color=fff`" alt="User Avatar" />
           </div>
           <div class="user-info" v-if="!isCollapsed">
-            <p class="user-name">Dr. Mensah</p>
-            <p class="user-role">Senior Lecturer</p>
+            <p class="user-name">{{ userName }}</p>
+            <p class="user-role">{{ userRole }}</p>
           </div>
         </div>
       </div>
@@ -59,7 +59,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useAuthStore } from '../stores/authstore.js';
+
+const authStore = useAuthStore();
 
 const props = defineProps({
   isMobileOpen: {
@@ -81,6 +84,9 @@ const navigate = (path) => {
   activeRoute.value = path;
   emit('navigate', path);
 };
+
+const userName = computed(() => authStore.profile?.name || 'Lecturer');
+const userRole = computed(() => authStore.profile?.role || 'Lecturer');
 
 const navGroups = [
   {
@@ -105,6 +111,11 @@ const navGroups = [
         name: 'Course Reports',
         path: '/lecturer-reports',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`
+      },
+      {
+        name: 'My Profile',
+        path: '/profile',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
       }
     ]
   }
