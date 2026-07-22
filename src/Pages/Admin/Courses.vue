@@ -323,10 +323,20 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCoursesStore } from '@/stores/courses';
+import { useAuthStore } from '@/stores/authstore';
+import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
 
 const coursesStore = useCoursesStore();
+const authStore = useAuthStore();
+const auditLogsStore = useAuditLogsStore();
 const { courses, isLoading } = storeToRefs(coursesStore);
+
+const logAudit = (action, details) => {
+  const p = authStore.profile;
+  if (!p) return;
+  auditLogsStore.logAction({ action, details, userId: p.id, userRole: p.role, userName: p.name });
+};
 
 const searchQuery = ref('');
 const levelFilter = ref('all');
@@ -456,13 +466,13 @@ const saveCourse = async () => {
   try {
     if (editingCourseId.value) {
       await coursesStore.updateCourse(editingCourseId.value, newCourse.value);
+      logAudit('course_updated', `Updated course "${newCourse.value.code} — ${newCourse.value.name}"`);
     } else {
       await coursesStore.createCourse(newCourse.value);
+      logAudit('course_created', `Created course "${newCourse.value.code} — ${newCourse.value.name}"`);
     }
     closeModal();
   } catch (error) {
-    // coursesStore already surfaces a toast — keep the modal open so the
-    // person can fix the code/name and retry.
     console.error('Error saving course:', error);
   } finally {
     isSavingCourse.value = false;
@@ -471,8 +481,10 @@ const saveCourse = async () => {
 
 const archiveCourse = async (id) => {
   if (!confirm('Are you sure you want to archive this course?')) return;
+  const course = courses.value.find(c => c.id === id);
   try {
     await coursesStore.updateCourse(id, { status: 'archived' });
+    logAudit('course_archived', `Archived course "${course?.code ?? id}"`);
   } catch (error) {
     console.error('Error archiving course:', error);
   }
@@ -534,6 +546,7 @@ const saveAssignment = async () => {
 
     if (error) throw error;
 
+    logAudit('lecturer_assigned', `Assigned ${assignForm.value.lecturerName} to ${assigningCourse.value.code} — ${assignForm.value.day} ${assignForm.value.startTime}-${assignForm.value.endTime}, ${assignForm.value.venue}`);
     assignSuccess.value = true;
     await fetchSchedules();
     // Auto-close after short delay
