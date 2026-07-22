@@ -52,7 +52,7 @@
             <th>Semester</th>
             <th>Level</th>
             <th>Lecturer</th>
-            <th>Schedule</th>
+           <!-- <th>Schedule</th>-->
             <th>Status</th>
             <th class="actions-col">Actions</th>
           </tr>
@@ -73,9 +73,9 @@
                 <span>{{ course.lecturer || 'No Lecturer Assigned' }}</span>
               </div>
             </td>
-            <td class="schedule-cell">
+           <!-- <td class="schedule-cell">
               {{ course.schedule || 'Not Assigned' }}
-            </td>
+            </td>--> 
             <td>
               <span class="status-badge" :class="course.status">
                 {{ course.status === 'active' ? 'Active' : 'Archived' }}
@@ -89,7 +89,7 @@
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
               </button>
-              <button class="icon-action-btn assign" title="Assign Lecturer" @click="openAssignModal(course)">
+             <!--<button class="icon-action-btn assign" title="Assign Lecturer" @click="openAssignModal(course)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                   stroke-linejoin="round">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -97,7 +97,7 @@
                   <line x1="19" y1="8" x2="19" y2="14"></line>
                   <line x1="16" y1="11" x2="22" y2="11"></line>
                 </svg>
-              </button>
+              </button> --> 
               <button class="icon-action-btn delete" title="Archive Course" @click="archiveCourse(course.id)"
                 v-if="course.status !== 'archived'">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
