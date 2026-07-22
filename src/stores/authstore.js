@@ -35,22 +35,21 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
-  async function fetchProfile() {
-    if (!user.value) return null;
-    const { data, error: fetchErr } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.value.id)
-      .single();
+async function fetchProfile() {
+  if (!user.value) return null;
+  const { data, error: fetchErr } = await supabase
+    .from('users')
+    .select('*, programmes(id, name, degree_abbreviation, level)')
+    .eq('id', user.value.id)
+    .single();
 
-    if (fetchErr) {
-      console.error('Failed to load profile:', fetchErr);
-      return null;
-    }
-    profile.value = data;
-    return data;
+  if (fetchErr) {
+    console.error('Failed to load profile:', fetchErr);
+    return null;
   }
-
+  profile.value = data;
+  return data;
+}
   /**
    * loginId can be either the full @southshore.edu.gh email or the
    * user's Student/Staff ID number. selectedRole is whatever the login
@@ -187,7 +186,7 @@ async function fetchUsersByIds(ids) {
 
   const { data, error: fetchErr } = await supabase
     .from('users')
-    .select('id, name, student_id, program_id, role')
+    .select('id, name, student_id, program_id, role, programmes(id, name, degree_abbreviation)')
     .in('id', uniqueIds)
     .order('name');
 
