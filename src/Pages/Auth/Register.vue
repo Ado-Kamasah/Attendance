@@ -43,7 +43,7 @@
               <p v-if="emailDomainError" class="field-hint">{{ emailDomainError }}</p>
             </div>
 
-            <!-- Role Selection -->
+            <!-- Role Selection 
             <div class="input-group">
               <label>I am a</label>
               <div class="radio-group">
@@ -68,7 +68,7 @@
                   </span>
                 </label>
               </div>
-            </div>
+            </div>/ -->
 
             <!-- ID number -->
             <div class="input-group">

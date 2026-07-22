@@ -75,7 +75,7 @@
                       <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                   </span>
-                  <span class="checkbox-text">Set as current active semester</span>
+                  <span class="checkbox-text ">Set as current active semester</span>
                 </label>
                 <p class="checkbox-hint">This will deactivate any currently active semester automatically.</p>
               </div>
@@ -125,8 +125,9 @@
           <div class="history-list">
             <div v-for="sem in sortedSemesters" :key="sem.id" class="history-item">
               <div class="history-icon" :class="{ 'is-active': sem.isCurrent }">
-                <svg v-if="sem.isCurrent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <svg v-if="sem.isCurrent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                
               </div>
               <div class="history-details">
                 <div class="history-title">
