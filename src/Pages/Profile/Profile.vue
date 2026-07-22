@@ -40,7 +40,7 @@
         <div class="avatar-meta">
           <div class="meta-item">
             <span class="meta-label">User ID</span>
-            <span class="meta-value">{{ profile?.id || '—' }}</span>
+            <span class="meta-value">{{ profile?.id_number || '—' }}</span>
           </div>
           <div class="meta-item" v-if="profile?.program">
             <span class="meta-label">Program</span>
@@ -78,7 +78,7 @@
             </div>
             <div class="info-item">
               <label>User ID / Index</label>
-              <span class="mono">{{ profile?.id || '—' }}</span>
+              <span class="mono">{{ profile?.id_number || '—' }}</span>
             </div>
             <div class="info-item">
               <label>Account Created</label>
