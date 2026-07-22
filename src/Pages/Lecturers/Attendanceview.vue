@@ -214,6 +214,7 @@ import { useAuthStore } from '@/stores/authstore';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { useEnrollmentsStore } from '@/stores/enrollments';
+import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
 
 const emit = defineEmits(['navigate']);
@@ -222,6 +223,7 @@ const authStore = useAuthStore();
 const sessionsStore = useSessionsStore();
 const attendancesStore = useAttendancesStore();
 const enrollmentsStore = useEnrollmentsStore();
+const auditLogsStore = useAuditLogsStore();
 
 const { profile } = storeToRefs(authStore);
 const { attendances } = storeToRefs(attendancesStore);
@@ -480,6 +482,14 @@ const startLiveSession = async () => {
       maxStudents: selectedStudents.value.length,
     };
 
+    auditLogsStore.logAction({
+      action: 'session_started',
+      details: `Started attendance session for ${courseCode.value} (PIN: ${created.pin}, ${selectedStudents.value.length} students)`,
+      userId: profile.value?.id,
+      userRole: profile.value?.role,
+      userName: profile.value?.name,
+    });
+
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       if (timeLeft.value > 0) { timeLeft.value--; }
@@ -501,6 +511,13 @@ const stopLiveSession = async () => {
   try {
     if (liveAttendanceSession.value.id) {
       await sessionsStore.closeSession(liveAttendanceSession.value.id);
+      auditLogsStore.logAction({
+        action: 'session_ended',
+        details: `Ended attendance session for ${courseCode.value} (${checkedInStudents.value.length} checked in)`,
+        userId: profile.value?.id,
+        userRole: profile.value?.role,
+        userName: profile.value?.name,
+      });
     }
   } catch (e) {
     console.error(e);

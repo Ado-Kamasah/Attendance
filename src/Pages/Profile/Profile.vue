@@ -165,9 +165,11 @@
 import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authstore';
+import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
 
 const authStore = useAuthStore();
+const auditLogsStore = useAuditLogsStore();
 const { profile } = storeToRefs(authStore);
 
 // ── UI state ──────────────────────────────────────────
@@ -243,6 +245,13 @@ async function saveProfile() {
     if (error) throw error;
     await authStore.fetchProfile();
     isEditing.value = false;
+    auditLogsStore.logAction({
+      action: 'profile_updated',
+      details: `Updated profile name to "${updates.name}"${updates.program ? `, program to "${updates.program}"` : ''}`,
+      userId: profile.value.id,
+      userRole: profile.value.role,
+      userName: profile.value.name,
+    });
     successMsg.value = 'Profile updated successfully!';
     setTimeout(() => (successMsg.value = ''), 4000);
   } catch (e) {
@@ -269,6 +278,13 @@ async function changePassword() {
     if (error) throw error;
     pwForm.value = { newPassword: '', confirmPassword: '' };
     showPasswordSection.value = false;
+    auditLogsStore.logAction({
+      action: 'password_changed',
+      details: 'Changed account password',
+      userId: profile.value?.id,
+      userRole: profile.value?.role,
+      userName: profile.value?.name,
+    });
     successMsg.value = 'Password changed successfully!';
     setTimeout(() => (successMsg.value = ''), 4000);
   } catch (e) {
