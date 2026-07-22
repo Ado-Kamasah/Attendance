@@ -39,7 +39,7 @@ async function fetchProfile() {
   if (!user.value) return null;
   const { data, error: fetchErr } = await supabase
     .from('users')
-    .select('*, programmes(id, name, degree_abbreviation, level)')
+    .select('*, programmes!users_program_id_fkey(id, name, degree_abbreviation, level)')
     .eq('id', user.value.id)
     .single();
 
@@ -186,7 +186,7 @@ async function fetchUsersByIds(ids) {
 
   const { data, error: fetchErr } = await supabase
     .from('users')
-    .select('id, name, student_id, program_id, role, programmes(id, name, degree_abbreviation)')
+    .select('id, name, student_id, program_id, role, programmes!users_program_id_fkey(id, name, degree_abbreviation)')
     .in('id', uniqueIds)
     .order('name');
 
