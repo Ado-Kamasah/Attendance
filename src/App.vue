@@ -13,6 +13,7 @@ import MarkAttendance from './Pages/Student/MarkAttendance.vue';
 import Schedule from './Pages/Admin/Schedule.vue';
 import SemesterSetup from './Pages/Admin/SemesterSetup.vue';
 import Faculties from './Pages/Admin/Faculties.vue';
+import Analytics from './Pages/Admin/Analytics.vue';
 import AdminSidebar from './USERS_ROLES/admin.vue';
 import LecturerSidebar from './USERS_ROLES/lecturers.vue';
 import StudentSidebar from './USERS_ROLES/students.vue';
@@ -21,6 +22,7 @@ import LecturerCourses from './Pages/Lecturers/MyCourses.vue';
 import AttendanceView from './Pages/Lecturers/Attendanceview.vue';
 import CourseReports from './Pages/Lecturers/CourseReports.vue';
 import Profile from './Pages/Profile/Profile.vue';
+import Notifications from './Pages/Notifications.vue';
 import { onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from './stores/authstore.js';
 
@@ -122,7 +124,7 @@ const handleRegisterSuccess = () => {
       @close-mobile="isMobileSidebarOpen = false"
     />
     <div class="main-wrapper">
-      <Navbar @toggle-mobile-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen" @logout="handleLogout" />
+      <Navbar @toggle-mobile-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen" @logout="handleLogout" @navigate="handleNavigationEvent" />
       <main class="main-content">
         <Dashboard v-if="currentRoute === '/'" />
         <StudentDashboard v-else-if="currentRoute === '/student-dashboard'" @navigate="handleNavigationEvent" />
@@ -137,7 +139,9 @@ const handleRegisterSuccess = () => {
         <Schedule v-else-if="currentRoute === '/schedule'" />
         <SemesterSetup v-else-if="currentRoute === '/semestersetup'" />
         <Faculties v-else-if="currentRoute === '/faculties'" />
+        <Analytics v-else-if="currentRoute === '/analytics'" />
         <Profile v-else-if="currentRoute === '/profile'" />
+        <Notifications v-else-if="currentRoute === '/notifications'" />
         <div v-else class="content-placeholder">
           <h2>Page not implemented yet</h2>
           <p>Navigated to {{ currentRoute }}</p>

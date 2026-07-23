@@ -9,8 +9,8 @@
         </svg>
       </button>
       <div class="greeting">
-        <h2 class="greeting-text">Welcome back</h2>
-        <p class="greeting-subtext">.</p>
+        <h2 class="greeting-text">Welcome back, <span class="greeting-name">{{ firstName }}</span></h2>
+        <p class="greeting-subtext">{{ roleBadge }}</p>
       </div>
     </div>
 
@@ -39,17 +39,30 @@
               <button class="text-link" @click="markAllRead" v-if="unreadCount > 0">Mark read</button>
             </div>
             <div class="panel-body list-body">
-              <div v-for="notif in notifications" :key="notif.id" class="notif-item" :class="{'is-unread': notif.unread}">
-                <div class="notif-dot" v-if="notif.unread"></div>
+              <div v-if="isLoadingLogs" class="empty-state">Loading…</div>
+              <div v-else-if="recentLogs.length === 0" class="empty-state">No notifications yet.</div>
+              <div
+                v-for="notif in recentLogs"
+                :key="notif.id"
+                class="notif-item"
+                :class="{ 'is-unread': !readIds.has(notif.id), [`notif-${notif.typeClass}`]: true }"
+              >
+                <div class="notif-icon" :class="notif.typeClass">
+                  <svg v-if="notif.typeClass === 'type-created'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <svg v-else-if="notif.typeClass === 'type-deleted'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <svg v-else-if="notif.typeClass === 'type-updated'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <svg v-else-if="notif.typeClass === 'type-conflict'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
                 <div class="notif-content">
-                  <p>{{ notif.text }}</p>
-                  <span class="notif-time">{{ notif.time }}</span>
+                  <p class="notif-action">{{ notif.actionLabel }}</p>
+                  <p class="notif-detail">{{ notif.details }}</p>
+                  <span class="notif-time">{{ notif.relativeTime }} &bull; {{ notif.userName }}</span>
                 </div>
               </div>
-              <div v-if="notifications.length === 0" class="empty-state">No new notifications.</div>
             </div>
             <div class="panel-footer">
-              <button class="block-btn" @click="alert('Full Notification History Coming Soon!')">View All</button>
+              <button class="block-btn" @click="goToNotifications">View All Notifications</button>
             </div>
           </div>
         </div>
@@ -117,23 +130,91 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuditLogsStore } from '@/stores/auditlogs';
+import { useAuthStore } from '@/stores/authstore';
 
-defineEmits(['toggle-mobile-sidebar', 'logout']);
+const emit = defineEmits(['toggle-mobile-sidebar', 'logout', 'navigate']);
+
+const auditStore = useAuditLogsStore();
+const authStore = useAuthStore();
+const { logs, isLoading: isLoadingLogs } = storeToRefs(auditStore);
+const { profile } = storeToRefs(authStore);
 
 const showNotifications = ref(false);
 const showSettings = ref(false);
 
-const notifications = ref([
-  { id: 1, text: 'System maintenance scheduled for tonight at 2 AM.', time: '10m ago', unread: true },
-  { id: 2, text: 'New course "Introduction to AI" has been added.', time: '2h ago', unread: true },
-  { id: 3, text: 'Your attendance report is ready for download.', time: '1d ago', unread: false }
-]);
+// ── User info ──────────────────────────────────────────────────────────────
+const firstName = computed(() => {
+  const name = profile.value?.name || 'User';
+  return name.split(' ')[0];
+});
+const roleBadge = computed(() => {
+  const role = profile.value?.role || '';
+  if (role === 'Admin')    return '🛡️ Administrator';
+  if (role === 'Lecturer') return '🏫 Lecturer';
+  if (role === 'Student')  return '📚 Student';
+  return role;
+});
 
-const unreadCount = computed(() => notifications.value.filter(n => n.unread).length);
+// ── Audit log → notifications ─────────────────────────────────────────────
+const readIds = ref(new Set());
+
+// Role-based slice
+const visibleLogs = computed(() => {
+  const role = profile.value?.role;
+  const uid  = profile.value?.id;
+  if (role === 'Admin') return logs.value;
+  if (role === 'Lecturer') return logs.value.filter(l => l.userId === uid);
+  // Students: schedule notifications only
+  return logs.value.filter(l =>
+    ['schedule_created', 'schedule_updated', 'schedule_deleted'].includes(l.action)
+  );
+});
+
+const recentLogs = computed(() =>
+  visibleLogs.value.slice(0, 8).map(l => ({
+    id: l.id,
+    actionLabel: l.action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    typeClass: actionTypeClass(l.action),
+    details: l.details || '—',
+    userName: l.userName || 'System',
+    relativeTime: relTime(l.timestamp),
+  }))
+);
+
+const unreadCount = computed(() =>
+  recentLogs.value.filter(n => !readIds.value.has(n.id)).length
+);
+
+function actionTypeClass(action) {
+  if (action.includes('created'))  return 'type-created';
+  if (action.includes('deleted'))  return 'type-deleted';
+  if (action.includes('updated'))  return 'type-updated';
+  if (action.includes('conflict')) return 'type-conflict';
+  if (action.includes('failed'))   return 'type-failed';
+  return 'type-info';
+}
+
+function relTime(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(diff / 3600000);
+  const d = Math.floor(diff / 86400000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  if (h < 24) return `${h}h ago`;
+  return `${d}d ago`;
+}
 
 const toggleNotifications = () => {
   showNotifications.value = !showNotifications.value;
-  if (showNotifications.value) showSettings.value = false;
+  if (showNotifications.value) {
+    showSettings.value = false;
+    // Fetch fresh logs every time the panel opens
+    auditStore.fetchLogs();
+  }
 };
 
 const toggleSettings = () => {
@@ -142,7 +223,12 @@ const toggleSettings = () => {
 };
 
 const markAllRead = () => {
-  notifications.value.forEach(n => n.unread = false);
+  recentLogs.value.forEach(n => readIds.value.add(n.id));
+};
+
+const goToNotifications = () => {
+  showNotifications.value = false;
+  emit('navigate', '/notifications');
 };
 
 const userSettings = ref({
@@ -178,8 +264,15 @@ const closeDropdowns = (e) => {
   }
 };
 
-onMounted(() => document.addEventListener('click', closeDropdowns));
-onUnmounted(() => document.removeEventListener('click', closeDropdowns));
+onMounted(async () => {
+  document.addEventListener('click', closeDropdowns);
+  await auditStore.fetchLogs();
+  auditStore.subscribeToLogs();
+});
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdowns);
+  auditStore.unsubscribeFromLogs();
+});
 </script>
 
 <style scoped>
@@ -215,6 +308,11 @@ onUnmounted(() => document.removeEventListener('click', closeDropdowns));
   font-size: 0.875rem;
   color: #64748b;
   margin: 0;
+}
+
+.greeting-name {
+  color: #6366f1;
+  font-weight: 800;
 }
 
 .navbar-right {
@@ -402,12 +500,31 @@ onUnmounted(() => document.removeEventListener('click', closeDropdowns));
 /* Notifications Specific */
 .notif-item {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   padding: 0.75rem 1.25rem;
   border-bottom: 1px solid #f1f5f9;
   transition: background-color 0.2s;
   cursor: pointer;
+  align-items: flex-start;
 }
+
+.notif-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.notif-icon svg { width: 14px; height: 14px; }
+.notif-icon.type-created  { background: rgba(16,185,129,0.1); color: #10b981; }
+.notif-icon.type-deleted  { background: rgba(239,68,68,0.1);  color: #ef4444; }
+.notif-icon.type-updated  { background: rgba(245,158,11,0.1); color: #f59e0b; }
+.notif-icon.type-conflict { background: rgba(249,115,22,0.1); color: #f97316; }
+.notif-icon.type-failed   { background: rgba(220,38,38,0.1);  color: #dc2626; }
+.notif-icon.type-info     { background: rgba(99,102,241,0.1); color: #6366f1; }
 
 .notif-item:hover {
   background-color: #f8fafc;
@@ -430,11 +547,22 @@ onUnmounted(() => document.removeEventListener('click', closeDropdowns));
   flex-shrink: 0;
 }
 
-.notif-content p {
+.notif-action {
+  margin: 0 0 2px 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.notif-detail {
   margin: 0 0 4px 0;
-  font-size: 0.9rem;
-  color: #334155;
+  font-size: 0.82rem;
+  color: #475569;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .notif-time {

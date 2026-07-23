@@ -189,6 +189,7 @@ import { storeToRefs } from 'pinia';
 import { useSchedulesStore } from '@/stores/schedules';
 import { useCoursesStore } from '@/stores/courses';
 import { useAuditLogsStore } from '@/stores/auditlogs';
+import { useAuthStore } from '@/stores/authstore';
 import { supabase } from '@/stores/supabase';
 
 const levels = ['100', '200', '300', '400'];
@@ -218,11 +219,10 @@ watch(selectedMode, (newMode) => {
 const schedulesStore = useSchedulesStore();
 const coursesStore = useCoursesStore();
 const auditLogsStore = useAuditLogsStore();
+const authStore = useAuthStore();
 
 const { schedules } = storeToRefs(schedulesStore);
 const { courses } = storeToRefs(coursesStore);
-
-const currentUser = ref(null);
 
 const lecturers = ref([]);
 const isLoadingLecturers = ref(false);
@@ -247,13 +247,17 @@ const loadLecturers = async () => {
 };
 
 const logAudit = (action, details) => {
-  if (!currentUser.value) return;
+  const profile = authStore.profile;
+  if (!profile) {
+    console.warn('[Audit] No profile loaded — skipping log for:', action);
+    return;
+  }
   auditLogsStore.logAction({
     action,
     details,
-    userId: currentUser.value.id,
-    userRole: currentUser.value.role,
-    userName: currentUser.value.name,
+    userId: profile.id,
+    userRole: profile.role ?? 'Admin',
+    userName: profile.name ?? 'Administrator',
   });
 };
 
@@ -341,8 +345,20 @@ const openAddModal = () => {
   isModalOpen.value = true;
 };
 
+// Snapshot of the schedule BEFORE editing — used to produce a before/after audit detail
+const beforeEditSnapshot = ref(null);
+
 const editClass = (cls) => {
   editingScheduleId.value = cls.id;
+  // Capture the current state for diff logging
+  beforeEditSnapshot.value = {
+    courseCode: cls.courseCode,
+    lecturer: cls.lecturer,
+    venue: cls.venue,
+    day: cls.day,
+    startTime: cls.startTime,
+    endTime: cls.endTime,
+  };
   newClass.value = {
     courseId: cls.courseId,
     lecturer: cls.lecturer,
@@ -357,6 +373,7 @@ const editClass = (cls) => {
 const closeModal = () => {
   isModalOpen.value = false;
   editingScheduleId.value = null;
+  beforeEditSnapshot.value = null;
 };
 
 const saveClass = async () => {
@@ -367,56 +384,76 @@ const saveClass = async () => {
       ...newClass.value
     };
 
-const conflict = schedulesStore.findConflict(
-  {
-    day: payload.day,
-    startTime: payload.startTime,
-    endTime: payload.endTime,   // ✅ now included
-    lecturer: payload.lecturer,
-    venue: payload.venue,
-  },
-  editingScheduleId.value
-);
+    const conflict = schedulesStore.findConflict(
+      {
+        day: payload.day,
+        startTime: payload.startTime,
+        endTime: payload.endTime,
+        lecturer: payload.lecturer,
+        venue: payload.venue,
+      },
+      editingScheduleId.value
+    );
 
-if (conflict) {
-  const reason = conflict.lecturer === payload.lecturer
-    ? `${payload.lecturer} is already scheduled from ${formatTime(conflict.startTime)} to ${formatTime(conflict.endTime)} on ${payload.day}, which overlaps with this slot.`
-    : `${payload.venue} is already booked from ${formatTime(conflict.startTime)} to ${formatTime(conflict.endTime)} on ${payload.day}, which overlaps with this slot.`;
-  alert(`Scheduling conflict: ${reason}`);
-  return;
-}
+    if (conflict) {
+      const reason = conflict.lecturer === payload.lecturer
+        ? `${payload.lecturer} is already scheduled from ${formatTime(conflict.startTime)} to ${formatTime(conflict.endTime)} on ${payload.day}, which overlaps with this slot.`
+        : `${payload.venue} is already booked from ${formatTime(conflict.startTime)} to ${formatTime(conflict.endTime)} on ${payload.day}, which overlaps with this slot.`;
+      // Log the rejected attempt
+      logAudit(
+        'schedule_conflict_rejected',
+        `Rejected: tried to schedule ${payload.lecturer} in ${payload.venue} on ${payload.day} ${payload.startTime}-${payload.endTime}. Reason: ${reason}`
+      );
+      alert(`Scheduling conflict: ${reason}`);
+      return;
+    }
 
     const course = coursesStore.getCourseById(payload.courseId);
-    const label = `${course?.code ?? 'course'} on ${payload.day} ${payload.startTime}-${payload.endTime}`;
+    const label = `${course?.code ?? 'course'} on ${payload.day} ${formatTime(payload.startTime)}-${formatTime(payload.endTime)}, venue: ${payload.venue}, lecturer: ${payload.lecturer}`;
 
     if (editingScheduleId.value) {
       await schedulesStore.updateSchedule(editingScheduleId.value, payload);
-      logAudit('schedule_updated', `Updated class: ${label}`);
+      // Build a before/after diff detail
+      const before = beforeEditSnapshot.value;
+      const changes = [];
+      if (before) {
+        if (before.lecturer !== payload.lecturer) changes.push(`Lecturer: "${before.lecturer}" → "${payload.lecturer}"`);
+        if (before.venue !== payload.venue)     changes.push(`Venue: "${before.venue}" → "${payload.venue}"`);
+        if (before.day !== payload.day)         changes.push(`Day: ${before.day} → ${payload.day}`);
+        if (before.startTime !== payload.startTime || before.endTime !== payload.endTime)
+          changes.push(`Time: ${formatTime(before.startTime)}-${formatTime(before.endTime)} → ${formatTime(payload.startTime)}-${formatTime(payload.endTime)}`);
+      }
+      const changeDetail = changes.length > 0 ? ` Changes — ${changes.join('; ')}` : '';
+      logAudit('schedule_updated', `Updated class: ${label}.${changeDetail}`);
     } else {
       await schedulesStore.createSchedule(payload);
-      logAudit('schedule_created', `Scheduled class: ${label}`);
+      logAudit('schedule_created', `Scheduled new class: ${label}`);
     }
 
     selectedDay.value = newClass.value.day;
     closeModal();
   } catch (error) {
     console.error('Error saving schedule:', error);
+    logAudit('schedule_save_failed', `Failed to save schedule for ${newClass.value.lecturer ?? 'unknown'} on ${newClass.value.day}: ${error?.message ?? error}`);
     alert('Failed to save schedule');
   }
 };
 
 const deleteClass = async (id) => {
-  if (!confirm('Are you sure you want to delete this scheduled class?')) return;
-
   const cls = schedulesWithCourse.value.find(c => c.id === id);
+  if (!confirm(`Are you sure you want to delete this scheduled class${cls ? ` (${cls.courseCode} on ${cls.day} ${formatTime(cls.startTime)}-${formatTime(cls.endTime)})` : ''}?`)) return;
 
   try {
     await schedulesStore.deleteSchedule(id);
     if (cls) {
-      logAudit('schedule_deleted', `Deleted class: ${cls.courseCode} on ${cls.day} ${cls.startTime}-${cls.endTime}`);
+      logAudit(
+        'schedule_deleted',
+        `Deleted class: ${cls.courseCode} — ${cls.courseTitle} | ${cls.day} ${formatTime(cls.startTime)}-${formatTime(cls.endTime)} | Lecturer: ${cls.lecturer} | Venue: ${cls.venue}`
+      );
     }
   } catch (error) {
     console.error('Error deleting schedule:', error);
+    logAudit('schedule_delete_failed', `Failed to delete schedule id=${id}: ${error?.message ?? error}`);
     alert('Failed to delete schedule.');
   }
 };
