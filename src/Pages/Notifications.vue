@@ -4,7 +4,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">Notifications</h1>
-        <p class="page-subtitle">Activity feed from the system audit trail</p>
+        <p class="page-subtitle">{{ roleSubtitle }}</p>
       </div>
       <div class="header-actions">
         <select v-model="filterAction" class="filter-sel" id="notif-action-filter">
@@ -25,6 +25,34 @@
         <button class="btn-mark-all" @click="clearFilters" id="clear-filters-btn" v-if="filterAction || filterRole || searchQuery">
           Clear filters
         </button>
+      </div>
+    </div>
+
+    <!-- Stats strip -->
+    <div class="stats-strip" v-if="!isLoading && visibleLogs.length > 0">
+      <div class="stat-pill stat-total">
+        <span class="stat-num">{{ visibleLogs.length }}</span>
+        <span class="stat-lbl">Total</span>
+      </div>
+      <div class="stat-pill stat-created">
+        <span class="stat-num">{{ countByType('created') }}</span>
+        <span class="stat-lbl">Created</span>
+      </div>
+      <div class="stat-pill stat-updated">
+        <span class="stat-num">{{ countByType('updated') }}</span>
+        <span class="stat-lbl">Updated</span>
+      </div>
+      <div class="stat-pill stat-deleted">
+        <span class="stat-num">{{ countByType('deleted') }}</span>
+        <span class="stat-lbl">Deleted</span>
+      </div>
+      <div class="stat-pill stat-conflict" v-if="countByType('conflict') > 0">
+        <span class="stat-num">{{ countByType('conflict') }}</span>
+        <span class="stat-lbl">Conflicts</span>
+      </div>
+      <div class="stat-pill stat-failed" v-if="countByType('failed') > 0">
+        <span class="stat-num">{{ countByType('failed') }}</span>
+        <span class="stat-lbl">Failures</span>
       </div>
     </div>
 
@@ -71,6 +99,11 @@
               <div class="log-meta">
                 <span class="role-pill" :class="log.userRole?.toLowerCase()">{{ log.userRole }}</span>
                 <span class="log-user">{{ log.userName }}</span>
+                <!-- relevance tag for non-admins -->
+                <span class="relevance-tag" v-if="log.relevance && !isAdmin" :title="log.relevance">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6l11 12 11-12"/></svg>
+                  {{ log.relevance }}
+                </span>
                 <span class="log-timestamp">{{ log.formattedTime }}</span>
               </div>
             </div>
@@ -118,6 +151,13 @@ onMounted(async () => {
 });
 onUnmounted(() => auditStore.unsubscribeFromLogs());
 
+const roleSubtitle = computed(() => {
+  const role = profile.value?.role;
+  if (role === 'Admin')    return 'Full system audit trail — all actions by all users';
+  if (role === 'Lecturer') return 'Your actions and schedule changes that mention you';
+  return 'Timetable announcements and schedule updates relevant to you';
+});
+
 // ── Enriched logs ──────────────────────────────────────────────────────────────
 const enrichedLogs = computed(() => {
   return logs.value.map(l => ({
@@ -132,15 +172,40 @@ const enrichedLogs = computed(() => {
 
 // ── Role-based visibility ──────────────────────────────────────────────────────
 const visibleLogs = computed(() => {
-  if (isAdmin.value) return enrichedLogs.value;
-  if (isLecturer.value) {
-    // Lecturers see only their own audit actions
-    return enrichedLogs.value.filter(l => l.userId === profile.value?.id);
+  const role = profile.value?.role;
+  const uid  = profile.value?.id;
+  const name = (profile.value?.name || '').toLowerCase();
+
+  if (role === 'Admin') {
+    // Admin sees every log
+    return enrichedLogs.value;
   }
-  // Students: see schedule & attendance relevant system notifications
-  return enrichedLogs.value.filter(l =>
-    ['schedule_created', 'schedule_updated', 'schedule_deleted'].includes(l.action)
-  );
+
+  if (role === 'Lecturer') {
+    // Lecturers see:
+    // 1. Logs they personally triggered (their own userId)
+    // 2. Logs whose details mention their name (e.g. schedule assigned to them)
+    return enrichedLogs.value
+      .filter(l =>
+        l.userId === uid ||
+        (l.details && l.details.toLowerCase().includes(name))
+      )
+      .map(l => ({
+        ...l,
+        relevance:
+          l.userId === uid
+            ? 'Your action'
+            : 'Mentions you',
+      }));
+  }
+
+  // Students: see schedule changes (timetable announcements) + conflict notices
+  return enrichedLogs.value
+    .filter(l =>
+      ['schedule_created', 'schedule_updated', 'schedule_deleted',
+       'schedule_conflict_rejected'].includes(l.action)
+    )
+    .map(l => ({ ...l, relevance: 'Timetable update' }));
 });
 
 // ── Filter ─────────────────────────────────────────────────────────────────────
@@ -204,6 +269,10 @@ function actionClass(action) {
   return 'type-info';
 }
 
+function countByType(keyword) {
+  return visibleLogs.value.filter(l => l.action.includes(keyword)).length;
+}
+
 function relativeTime(ts) {
   if (!ts) return '';
   const diff = Date.now() - new Date(ts).getTime();
@@ -236,7 +305,48 @@ function friendlyDate(ts) {
   width: 100%;
 }
 
-/* Header */
+/* Stats strip */
+.stats-strip {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.85rem;
+}
+
+.stat-num { font-weight: 700; font-size: 1rem; }
+.stat-lbl { color: inherit; opacity: 0.75; }
+
+.stat-total    { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
+.stat-created  { background: #dcfce7; border-color: #bbf7d0; color: #15803d; }
+.stat-updated  { background: #fef9c3; border-color: #fde047; color: #a16207; }
+.stat-deleted  { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+.stat-conflict { background: #ffedd5; border-color: #fed7aa; color: #c2410c; }
+.stat-failed   { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+
+/* Relevance tag */
+.relevance-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
+  background: #e0e7ff;
+  color: #4338ca;
+  letter-spacing: 0.02em;
+}
+.relevance-tag svg { width: 10px; height: 10px; }
+
 .page-header {
   display: flex;
   justify-content: space-between;

@@ -131,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authstore';
 import { useCoursesStore } from '@/stores/courses';
@@ -140,6 +140,7 @@ import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { useAuditLogsStore } from '@/stores/auditlogs';
+import { supabase } from '@/stores/supabase';
 
 const emit = defineEmits(['navigate']);
 
@@ -158,7 +159,8 @@ const { attendances } = storeToRefs(attendancesStore);
 
 const OTP_API_BASE = import.meta.env.VITE_OTP_API_URL || '';
 
-const isLoading = ref(true);
+// sessionCourseMap: sessionId -> { code, name } — resolved via store first, then Supabase fallback
+const sessionCourseMap = ref({});
 const attendanceMarked = ref(false);
 const markedCourseName = ref('');
 const markedAtTime = ref('');
@@ -184,7 +186,8 @@ onMounted(async () => {
       coursesStore.fetchCourses(),
       schedulesStore.fetchSchedules(),
       enrollmentsStore.fetchEnrollments({ studentId: profile.value?.id }),
-      sessionsStore.fetchSessions({ isActive: true }),
+      // Fetch ALL sessions (no isActive filter) so history can resolve past sessions
+      sessionsStore.fetchSessions(),
       attendancesStore.fetchAttendances({ studentId: profile.value?.id }),
     ]);
 
@@ -193,12 +196,18 @@ onMounted(async () => {
     enrollmentsStore.subscribeToEnrollments();
     sessionsStore.subscribeToSessions();
     attendancesStore.subscribeToAttendances();
+
+    // Initial course resolution for existing attendance records
+    await resolveSessionCourses();
   } catch (e) {
     console.error('Error loading attendance data:', e);
   } finally {
     isLoading.value = false;
   }
 });
+
+// When attendances change (new record arrives via realtime), resolve any new session ids
+watch(attendances, async () => { await resolveSessionCourses(); }, { deep: true });
 
 onUnmounted(() => {
   coursesStore.unsubscribeFromCourses();
@@ -207,6 +216,81 @@ onUnmounted(() => {
   sessionsStore.unsubscribeFromSessions();
   attendancesStore.unsubscribeFromAttendances();
 });
+
+// ── Course resolution ─────────────────────────────────────────────────────────
+const isLoading = ref(true);
+
+/**
+ * For every attendance record, try to resolve the course via:
+ *   1. Local sessions store (fast path)
+ *   2. Supabase join sessions -> courses (fallback for sessions not in store cache)
+ * Results are cached in sessionCourseMap.
+ */
+async function resolveSessionCourses() {
+  const myAttendances = attendances.value.filter(
+    (a) => a.studentId === profile.value?.id
+  );
+  const unresolvedIds = myAttendances
+    .map((a) => a.sessionId)
+    .filter((sid) => sid && !sessionCourseMap.value[sid]);
+
+  if (unresolvedIds.length === 0) return;
+
+  // Step 1: resolve from local store
+  const stillMissing = [];
+  for (const sid of unresolvedIds) {
+    const session = sessionsStore.getSessionById(sid);
+    if (session?.courseId) {
+      const course = coursesStore.getCourseById(session.courseId);
+      if (course) {
+        sessionCourseMap.value = {
+          ...sessionCourseMap.value,
+          [sid]: { code: course.code, name: course.name },
+        };
+        continue;
+      }
+    }
+    stillMissing.push(sid);
+  }
+
+  if (stillMissing.length === 0) return;
+
+  // Step 2: Supabase fallback — two-step: get course_id from sessions, then fetch courses
+  const { data: sessionRows, error: sessErr } = await supabase
+    .from('sessions')
+    .select('id, course_id')
+    .in('id', stillMissing);
+
+  if (sessErr) {
+    console.error('[MarkAttendance] Failed to resolve sessions:', sessErr);
+    return;
+  }
+
+  const courseIds = [...new Set((sessionRows ?? []).map(r => r.course_id).filter(Boolean))];
+  if (courseIds.length === 0) return;
+
+  const { data: courseRows, error: courseErr } = await supabase
+    .from('courses')
+    .select('id, code, name')
+    .in('id', courseIds);
+
+  if (courseErr) {
+    console.error('[MarkAttendance] Failed to resolve courses:', courseErr);
+    return;
+  }
+
+  const courseById = {};
+  (courseRows ?? []).forEach(c => { courseById[c.id] = c; });
+
+  const updated = { ...sessionCourseMap.value };
+  (sessionRows ?? []).forEach((row) => {
+    const course = courseById[row.course_id];
+    updated[row.id] = course
+      ? { code: course.code, name: course.name }
+      : { code: row.course_id?.slice(0, 8) ?? '?', name: 'Unknown Course' };
+  });
+  sessionCourseMap.value = updated;
+}
 
 const enrolledCourseIds = computed(() =>
   enrollments.value
@@ -300,6 +384,12 @@ const verifyOtp = async () => {
     markedCourseName.value = `${activeClass.value.code} — ${activeClass.value.name}`;
     markedAtTime.value = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
+    // ✔ Immediately cache the course for this session so Recent Sessions shows it right away
+    sessionCourseMap.value = {
+      ...sessionCourseMap.value,
+      [sessionId]: { code: activeClass.value.code, name: activeClass.value.name },
+    };
+
     auditLogsStore.logAction({
       action: 'attendance_marked',
       details: `Marked present for ${markedCourseName.value} (dashboard code verified)`,
@@ -330,13 +420,18 @@ const attendanceHistory = computed(() => {
   return attendances.value
     .filter((a) => a.studentId === profile.value?.id)
     .map((a) => {
-      const session = sessionsStore.getSessionById(a.sessionId);
-      const course = session ? coursesStore.getCourseById(session.courseId) : null;
+      const resolved = sessionCourseMap.value[a.sessionId];
+      // Show course code + name if resolved; fall back to raw session ID prefix so it's never blank
+      const courseLabel = resolved
+        ? `${resolved.code} — ${resolved.name}`
+        : a.sessionId
+          ? `Session ${a.sessionId.slice(0, 8)}…`
+          : 'Loading…';
       const ts = a.timestamp ? new Date(a.timestamp) : null;
 
       return {
         id: a.id,
-        course: course ? `${course.code} — ${course.name}` : 'Unknown course',
+        course: courseLabel,
         date: ts ? ts.toLocaleDateString() : '',
         time: ts ? ts.toLocaleTimeString() : '',
         status: a.status,
