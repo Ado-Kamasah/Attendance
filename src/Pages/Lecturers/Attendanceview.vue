@@ -236,6 +236,8 @@ const courseSemester = ref(localStorage.getItem('activeCourseSemester') || 'Seme
 const enrolledStudents = ref([]);
 const selectedStudents = ref([]);
 const liveAttendanceSession = ref({ isActive: false });
+// Snapshot of ALL enrolled student IDs at session-start time (includes unselected)
+const sessionEnrolledIds = ref([]);
 const timeLeft = ref(60);
 const totalTime = ref(60);
 const isStarting = ref(false);
@@ -482,6 +484,9 @@ const startLiveSession = async () => {
       maxStudents: selectedStudents.value.length,
     };
 
+    // Snapshot ALL enrolled student IDs so absent-marking covers unselected students too
+    sessionEnrolledIds.value = enrolledStudents.value.map(s => s.id);
+
     auditLogsStore.logAction({
       action: 'session_started',
       details: `Started attendance session for ${courseCode.value} (PIN: ${created.pin}, ${selectedStudents.value.length} students)`,
@@ -508,13 +513,36 @@ const startLiveSession = async () => {
 
 const stopLiveSession = async () => {
   clearInterval(timerInterval); timerInterval = null;
+  const sessionId    = liveAttendanceSession.value.id;
+  const courseCode_  = courseCode.value;
+  const presentIds   = new Set(checkedInStudents.value.map(s => s.studentId));
+  const allEnrolled  = [...sessionEnrolledIds.value];
+
   try {
-    if (liveAttendanceSession.value.id) {
-      await sessionsStore.closeSession(liveAttendanceSession.value.id);
+    if (sessionId) {
+      await sessionsStore.closeSession(sessionId);
+
+      // Auto-mark absent: every enrolled student who didn't mark present
+      const absentIds = allEnrolled.filter(id => !presentIds.has(id));
+      if (absentIds.length > 0) {
+        const absentRows = absentIds.map(studentId => ({
+          session_id: sessionId,
+          student_id: studentId,
+          status: 'absent',
+          timestamp: new Date().toISOString(),
+        }));
+        const { error: insertErr } = await supabase
+          .from('attendances')
+          .insert(absentRows);
+        if (insertErr) {
+          console.error('[Attendance] Failed to auto-mark absentees:', insertErr);
+        }
+      }
+
       auditLogsStore.logAction({
         action: 'session_ended',
-        details: `Ended attendance session for ${courseCode.value} (${checkedInStudents.value.length} checked in)`,
-        userId: profile.value?.id,
+        details: `Ended session for ${courseCode_} — ${checkedInStudents.value.length} present, ${absentIds?.length ?? 0} auto-marked absent`,
+        userId:   profile.value?.id,
         userRole: profile.value?.role,
         userName: profile.value?.name,
       });
@@ -523,6 +551,7 @@ const stopLiveSession = async () => {
     console.error(e);
   }
   liveAttendanceSession.value = { isActive: false };
+  sessionEnrolledIds.value = [];
   otpDispatch.value = {};
   otpBannerMessage.value = '';
 };

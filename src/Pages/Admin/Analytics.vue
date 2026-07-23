@@ -331,9 +331,9 @@ const courseBreakdown = computed(() => {
     const sessionIds = new Set(courseSessions.map(s => s.id));
     const courseAttendances = attendances.value.filter(a => sessionIds.has(a.sessionId));
     const present = courseAttendances.filter(a => a.status === 'present').length;
-    const absent = courseAttendances.filter(a => a.status === 'absent').length;
-    const total = courseAttendances.length;
-    const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+    const absent  = courseAttendances.filter(a => a.status === 'absent').length;
+    const total   = courseAttendances.length;
+    const rate    = total > 0 ? Math.round((present / total) * 100) : 0;
     return {
       courseId: course.id,
       courseName: course.name || course.code || 'Unknown',
@@ -364,9 +364,9 @@ const studentCourseBreakdown = computed(() => {
       a => a.studentId === enr.studentId && sessionIds.has(a.sessionId)
     );
     const present = stuAttendances.filter(a => a.status === 'present').length;
-    const absent = stuAttendances.filter(a => a.status === 'absent').length;
-    const total = stuAttendances.length;
-    const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+    const absent  = stuAttendances.filter(a => a.status === 'absent').length;
+    const total   = stuAttendances.length;
+    const rate    = total > 0 ? Math.round((present / total) * 100) : 0;
 
     const user = userMap.value[enr.studentId];
     const course = coursesStore.getCourseById(enr.courseId);
