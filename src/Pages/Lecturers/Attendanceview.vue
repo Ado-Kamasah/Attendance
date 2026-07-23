@@ -236,8 +236,6 @@ const courseSemester = ref(localStorage.getItem('activeCourseSemester') || 'Seme
 const enrolledStudents = ref([]);
 const selectedStudents = ref([]);
 const liveAttendanceSession = ref({ isActive: false });
-// Snapshot of ALL enrolled student IDs at session-start time (includes unselected)
-const sessionEnrolledIds = ref([]);
 const timeLeft = ref(60);
 const totalTime = ref(60);
 const isStarting = ref(false);
@@ -277,8 +275,6 @@ const clampCustomDuration = () => {
   if (customSeconds.value > 59) customSeconds.value = 59;
 };
 
-// Keep durationSecs in sync whenever custom mode is active and the
-// minute/second fields change.
 watch([useCustomDuration, customMinutes, customSeconds], () => {
   if (!useCustomDuration.value) return;
   clampCustomDuration();
@@ -310,13 +306,9 @@ const progressPct = computed(() =>
 
 const formatTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-// Live check-ins for the active session — this is the realtime feed:
-// attendancesStore.subscribeToAttendances() (below) opens a Supabase
-// postgres_changes channel on the `attendances` table and pushes new
-// INSERT rows straight into attendances.value. Because this is a Vue
-// computed over that same reactive array, every new check-in that lands
-// via the realtime channel re-runs this filter automatically — no polling,
-// no manual refresh needed.
+// Live check-ins for the active session — realtime feed via
+// attendancesStore.subscribeToAttendances(). Pending/absent seed rows are
+// filtered out here since only 'present' rows count as checked in.
 const checkedInStudents = computed(() => {
   if (!liveAttendanceSession.value.id) return [];
 
@@ -362,9 +354,6 @@ onMounted(async () => {
     }
   }
 
-  // Pull any check-ins that happened before this page was open, THEN open
-  // the realtime channel — otherwise a check-in that landed in the gap
-  // between page load and subscribe would be missed until a refresh.
   try {
     if (liveAttendanceSession.value.id) {
       await attendancesStore.fetchAttendances({ sessionId: liveAttendanceSession.value.id });
@@ -396,7 +385,7 @@ const dispatchOtpsToSelected = async (sessionId, otp) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId,
-        otp, // the PIN shown in the ring — same code for every student
+        otp,
         students: targets
           .filter((s) => !!s.email)
           .map((s) => ({ studentId: s.id, email: s.email, name: s.name })),
@@ -443,7 +432,7 @@ const resendOtpToStudent = async (studentId) => {
         sessionId: liveAttendanceSession.value.id,
         studentId,
         email: student.email,
-        otp: liveAttendanceSession.value.pin, // re-send the SAME dashboard PIN, not a new code
+        otp: liveAttendanceSession.value.pin,
         name: student.name,
       }),
     });
@@ -474,7 +463,6 @@ const startLiveSession = async () => {
       isActive: true,
     });
 
-    // Use the lecturer's configured duration instead of a fixed 60s.
     totalTime.value = durationSecs.value;
     timeLeft.value = durationSecs.value;
     liveAttendanceSession.value = {
@@ -484,8 +472,23 @@ const startLiveSession = async () => {
       maxStudents: selectedStudents.value.length,
     };
 
-    // Snapshot ALL enrolled student IDs so absent-marking covers unselected students too
-    sessionEnrolledIds.value = enrolledStudents.value.map(s => s.id);
+    // Seed an attendance row for every enrolled student right when the session
+    // opens: selected students start 'pending' until they check in with the
+    // PIN; unselected students (not present in class) are marked 'absent'
+    // immediately. Silent so this doesn't fire a toast per student.
+    const selectedIds = new Set(selectedStudents.value);
+    await Promise.allSettled(
+      enrolledStudents.value.map((s) =>
+        attendancesStore.markAttendance(
+          {
+            sessionId: created.id,
+            studentId: s.id,
+            status: selectedIds.has(s.id) ? 'pending' : 'absent',
+          },
+          { silent: true }
+        )
+      )
+    );
 
     auditLogsStore.logAction({
       action: 'session_started',
@@ -501,8 +504,6 @@ const startLiveSession = async () => {
       else { stopLiveSession(); }
     }, 1000);
 
-    // Email the SAME PIN just generated for the ring display — no separate
-    // per-student code, no backend generation.
     dispatchOtpsToSelected(created.id, created.pin);
   } catch (e) {
     startError.value = e.message || 'Failed to start session.';
@@ -513,36 +514,29 @@ const startLiveSession = async () => {
 
 const stopLiveSession = async () => {
   clearInterval(timerInterval); timerInterval = null;
-  const sessionId    = liveAttendanceSession.value.id;
-  const courseCode_  = courseCode.value;
-  const presentIds   = new Set(checkedInStudents.value.map(s => s.studentId));
-  const allEnrolled  = [...sessionEnrolledIds.value];
+  const sessionId = liveAttendanceSession.value.id;
+  const courseCode_ = courseCode.value;
 
   try {
     if (sessionId) {
       await sessionsStore.closeSession(sessionId);
 
-      // Auto-mark absent: every enrolled student who didn't mark present
-      const absentIds = allEnrolled.filter(id => !presentIds.has(id));
-      if (absentIds.length > 0) {
-        const absentRows = absentIds.map(studentId => ({
-          session_id: sessionId,
-          student_id: studentId,
-          status: 'absent',
-          timestamp: new Date().toISOString(),
-        }));
-        const { error: insertErr } = await supabase
-          .from('attendances')
-          .insert(absentRows);
-        if (insertErr) {
-          console.error('[Attendance] Failed to auto-mark absentees:', insertErr);
-        }
+      // Any seed row still 'pending' means that student never checked in —
+      // flip it to 'absent'. Students already 'present' or 'absent' (the
+      // unselected ones) are left untouched.
+      const pendingRecords = attendances.value.filter(
+        (a) => a.sessionId === sessionId && a.status === 'pending'
+      );
+      if (pendingRecords.length > 0) {
+        await Promise.allSettled(
+          pendingRecords.map((r) => attendancesStore.updateAttendanceStatus(r.id, 'absent', { silent: true }))
+        );
       }
 
       auditLogsStore.logAction({
         action: 'session_ended',
-        details: `Ended session for ${courseCode_} — ${checkedInStudents.value.length} present, ${absentIds?.length ?? 0} auto-marked absent`,
-        userId:   profile.value?.id,
+        details: `Ended session for ${courseCode_} — ${checkedInStudents.value.length} present, ${pendingRecords.length} auto-marked absent`,
+        userId: profile.value?.id,
         userRole: profile.value?.role,
         userName: profile.value?.name,
       });
@@ -551,7 +545,6 @@ const stopLiveSession = async () => {
     console.error(e);
   }
   liveAttendanceSession.value = { isActive: false };
-  sessionEnrolledIds.value = [];
   otpDispatch.value = {};
   otpBannerMessage.value = '';
 };

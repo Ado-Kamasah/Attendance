@@ -59,6 +59,11 @@ export const useAttendancesStore = defineStore('attendances', () => {
     return attendances.value.some((a) => a.sessionId === sessionId && a.studentId === studentId);
   }
 
+  /** Finds the attendance row (if any) for a given session + student pair. */
+  function getAttendanceRecord(sessionId, studentId) {
+    return attendances.value.find((a) => a.sessionId === sessionId && a.studentId === studentId) ?? null;
+  }
+
   /**
    * filters: { sessionId?, studentId?, status? }
    */
@@ -90,9 +95,10 @@ export const useAttendancesStore = defineStore('attendances', () => {
 
   /**
    * attendance: { sessionId, studentId, status? } — status defaults to 'present'.
-   * Typically used when a student submits a session PIN.
+   * options: { silent? } — pass { silent: true } for bulk/background writes (e.g.
+   * seeding pending/absent rows for a whole class) so it doesn't fire a toast per row.
    */
-  async function markAttendance(attendance) {
+  async function markAttendance(attendance, options = {}) {
     isLoading.value = true;
     error.value = '';
 
@@ -107,19 +113,22 @@ export const useAttendancesStore = defineStore('attendances', () => {
 
       const created = mapAttendance(data);
       attendances.value.unshift(created);
-      push.success({ title: 'Attendance recorded' });
+      if (!options.silent) push.success({ title: 'Attendance recorded' });
       return created;
     } catch (err) {
       const normalized = normalizeError(err);
       error.value = normalized.message;
-      push.error({ title: 'Failed to record attendance', message: normalized.message });
+      if (!options.silent) push.error({ title: 'Failed to record attendance', message: normalized.message });
       throw normalized;
     } finally {
       isLoading.value = false;
     }
   }
 
-  async function updateAttendanceStatus(id, status) {
+  /**
+   * options: { silent? } — see markAttendance.
+   */
+  async function updateAttendanceStatus(id, status, options = {}) {
     isLoading.value = true;
     error.value = '';
 
@@ -136,12 +145,12 @@ export const useAttendancesStore = defineStore('attendances', () => {
       const updated = mapAttendance(data);
       const index = attendances.value.findIndex((a) => a.id === id);
       if (index !== -1) attendances.value[index] = updated;
-      push.success({ title: 'Attendance updated' });
+      if (!options.silent) push.success({ title: 'Attendance updated' });
       return updated;
     } catch (err) {
       const normalized = normalizeError(err);
       error.value = normalized.message;
-      push.error({ title: 'Failed to update attendance', message: normalized.message });
+      if (!options.silent) push.error({ title: 'Failed to update attendance', message: normalized.message });
       throw normalized;
     } finally {
       isLoading.value = false;
@@ -209,6 +218,7 @@ export const useAttendancesStore = defineStore('attendances', () => {
     attendancesBySession,
     attendancesByStudent,
     hasAttended,
+    getAttendanceRecord,
     fetchAttendances,
     markAttendance,
     updateAttendanceStatus,
