@@ -57,7 +57,13 @@ async function fetchProfile() {
    * stored role after sign-in — a mismatch is treated as invalid
    * credentials rather than silently trusting the dropdown.
    */
-  async function login({ loginId, password, selectedRole }) {
+  /**
+   * loginId can be either the full @southshore.edu.gh email or the
+   * user's Student/Staff ID number. Role is not selected by the user —
+   * it's read from the profile after sign-in, and the caller (e.g. the
+   * login form) is responsible for routing based on `profile.role`.
+   */
+  async function login({ loginId, password }) {
     isLoading.value = true;
     error.value = '';
 
@@ -95,13 +101,6 @@ async function fetchProfile() {
       user.value = data.user;
       const loadedProfile = await fetchProfile();
 
-      if (selectedRole && loadedProfile?.role !== selectedRole) {
-        await supabase.auth.signOut();
-        user.value = null;
-        profile.value = null;
-        throw new Error(`No ${selectedRole} account was found for those credentials`);
-      }
-
       return loadedProfile;
     } catch (err) {
       error.value = err.message || 'Failed to login. Please check your credentials.';
@@ -133,10 +132,11 @@ async function register(form) {
       password: form.password,
       options: {
         data: {
-          full_name: form.fullName,
-          role: form.role === 'staff' ? 'Lecturer' : 'Student',
-          id_number: form.idNumber,
-          program_id: form.programId,   // ✅ FK now sent instead of a name string
+          full_name:  form.fullName,
+          role:       form.role === 'staff' ? 'Lecturer' : 'Student',
+          id_number:  form.idNumber,
+          program_id: form.programId,
+          mode:       form.mode || null,
         },
       },
     });

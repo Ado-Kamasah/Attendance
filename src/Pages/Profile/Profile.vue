@@ -46,6 +46,10 @@
             <span class="meta-label">Program</span>
             <span class="meta-value">{{ profile.program }}</span>
           </div>
+          <div class="meta-item" v-if="profile?.mode">
+            <span class="meta-label">Mode</span>
+            <span class="meta-value mode-chip" :class="'mode-' + (profile.mode || '').toLowerCase()">{{ profile.mode }}</span>
+          </div>
           <div class="meta-item">
             <span class="meta-label">Member Since</span>
             <span class="meta-value">{{ joinDate }}</span>
@@ -75,6 +79,10 @@
             <div class="info-item" v-if="profile?.program">
               <label>Programme</label>
               <span>{{ profile.program }}</span>
+            </div>
+            <div class="info-item">
+              <label>Study Mode</label>
+              <span class="mode-chip" :class="'mode-' + (profile?.mode || '').toLowerCase()">{{ profile?.mode || '—' }}</span>
             </div>
             <div class="info-item">
               <label>User ID / Index</label>
@@ -144,6 +152,33 @@
               <label for="edit-program">Programme</label>
               <input id="edit-program" type="text" v-model="editForm.program" placeholder="e.g. Computer Science" />
             </div>
+            <div class="form-group full">
+              <label>Study Mode</label>
+              <div class="mode-toggle-group" id="edit-mode-group">
+                <button
+                  type="button"
+                  class="mode-toggle-btn"
+                  :class="{ 'mode-active-regular': editForm.mode === 'Regular' }"
+                  @click="editForm.mode = 'Regular'"
+                  id="mode-regular-btn"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Regular
+                  <span class="mode-sub">Mon – Fri</span>
+                </button>
+                <button
+                  type="button"
+                  class="mode-toggle-btn"
+                  :class="{ 'mode-active-weekend': editForm.mode === 'Weekend' }"
+                  @click="editForm.mode = 'Weekend'"
+                  id="mode-weekend-btn"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Weekend
+                  <span class="mode-sub">Sat – Sun</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div v-if="editError" class="inline-error">{{ editError }}</div>
@@ -185,7 +220,7 @@ const editError = ref('');
 const pwError = ref('');
 
 // ── Forms ─────────────────────────────────────────────
-const editForm = ref({ name: '', program: '' });
+const editForm = ref({ name: '', program: '', mode: '' });
 const pwForm = ref({ newPassword: '', confirmPassword: '' });
 
 // ── Computed ──────────────────────────────────────────
@@ -214,8 +249,9 @@ function clearAlerts() {
 }
 
 function startEdit() {
-  editForm.value.name = profile.value?.name || '';
+  editForm.value.name    = profile.value?.name    || '';
   editForm.value.program = profile.value?.program || '';
+  editForm.value.mode    = profile.value?.mode    || '';
   editError.value = '';
   isEditing.value = true;
 }
@@ -238,6 +274,9 @@ async function saveProfile() {
     if (roleLower.value === 'student' && editForm.value.program) {
       updates.program = editForm.value.program.trim();
     }
+    if (editForm.value.mode) {
+      updates.mode = editForm.value.mode;
+    }
     const { error } = await supabase
       .from('users')
       .update(updates)
@@ -247,8 +286,8 @@ async function saveProfile() {
     isEditing.value = false;
     auditLogsStore.logAction({
       action: 'profile_updated',
-      details: `Updated profile name to "${updates.name}"${updates.program ? `, program to "${updates.program}"` : ''}`,
-      userId: profile.value.id,
+      details: `Updated profile name to "${updates.name}"${updates.program ? `, program to "${updates.program}"` : ''}${updates.mode ? `, mode to "${updates.mode}"` : ''}`,
+      userId:   profile.value.id,
       userRole: profile.value.role,
       userName: profile.value.name,
     });
@@ -436,6 +475,27 @@ onMounted(async () => {
 
 .spin { animation: spin 0.8s linear infinite; width: 16px; height: 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Mode chip (view) */
+.mode-chip { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.78rem !important; font-weight: 700 !important; }
+.mode-regular { background: #dbeafe; color: #1e40af; }
+.mode-weekend { background: #fef9c3; color: #a16207; }
+
+/* Mode toggle (edit) */
+.mode-toggle-group { display: flex; gap: 0.75rem; }
+.mode-toggle-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+  padding: 0.85rem 1rem; border-radius: 12px; border: 2px solid #e2e8f0;
+  background: #f8fafc; color: #475569; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.mode-toggle-btn svg { width: 20px; height: 20px; }
+.mode-toggle-btn:hover { border-color: #94a3b8; background: #fff; }
+.mode-sub { font-size: 0.7rem; font-weight: 500; color: #94a3b8; }
+.mode-active-regular { border-color: #3b82f6 !important; background: #eff6ff !important; color: #1e40af !important; }
+.mode-active-regular .mode-sub { color: #3b82f6; }
+.mode-active-weekend { border-color: #f59e0b !important; background: #fefce8 !important; color: #a16207 !important; }
+.mode-active-weekend .mode-sub { color: #f59e0b; }
 
 /* Responsive */
 @media (max-width: 900px) {

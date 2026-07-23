@@ -102,6 +102,36 @@
               </div>
             </div>
 
+            <!-- Study Mode -->
+            <div class="input-group">
+              <label>Study Mode <span class="req">*</span></label>
+              <div class="mode-toggle-group">
+                <button
+                  type="button"
+                  class="mode-btn"
+                  :class="{ 'mode-btn-active-regular': form.mode === 'Regular' }"
+                  @click="form.mode = 'Regular'"
+                  id="reg-mode-regular"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span class="mode-btn-label">Regular</span>
+                  <span class="mode-btn-sub">Mon – Fri</span>
+                </button>
+                <button
+                  type="button"
+                  class="mode-btn"
+                  :class="{ 'mode-btn-active-weekend': form.mode === 'Weekend' }"
+                  @click="form.mode = 'Weekend'"
+                  id="reg-mode-weekend"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span class="mode-btn-label">Weekend</span>
+                  <span class="mode-btn-sub">Sat – Sun</span>
+                </button>
+              </div>
+              <p v-if="modeError" class="field-hint field-hint-error">{{ modeError }}</p>
+            </div>
+
             <!-- Password -->
             <div class="input-group">
               <label for="password">Password</label>
@@ -218,9 +248,12 @@ const form = reactive({
   email: '',
   role: 'student',
   idNumber: '',
-  programId: '',   // FK -> programmes.id
-  password: ''
+  programId: '',
+  mode: '',
+  password: '',
 });
+
+const modeError = ref('');
 
 const emit = defineEmits(['register-success', 'switch-to-login']);
 
@@ -238,6 +271,12 @@ const validateEmailDomain = () => {
 const handleRegister = async () => {
   validateEmailDomain();
   if (emailDomainError.value) return;
+
+  modeError.value = '';
+  if (!form.mode) {
+    modeError.value = 'Please select a study mode.';
+    return;
+  }
 
   isLoading.value = true;
   errorMsg.value = '';
@@ -536,6 +575,28 @@ const handleRegister = async () => {
 .login-prompt a:hover {
   text-decoration: underline;
 }
+
+/* Mode toggle */
+.mode-toggle-group { display: flex; gap: 0.75rem; }
+.mode-btn {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  border: 1.5px solid #cbd5e1; border-radius: 12px;
+  background: #fff; color: #475569;
+  font-size: 0.85rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: all 0.2s;
+}
+.mode-btn svg { width: 18px; height: 18px; }
+.mode-btn:hover { border-color: #94a3b8; background: #f8fafc; }
+.mode-btn-label { font-size: 0.9rem; font-weight: 600; }
+.mode-btn-sub { font-size: 0.72rem; font-weight: 400; color: #94a3b8; }
+.mode-btn-active-regular { border-color: #3b82f6 !important; background: #eff6ff !important; color: #1e40af !important; }
+.mode-btn-active-regular .mode-btn-sub { color: #3b82f6; }
+.mode-btn-active-weekend { border-color: #f59e0b !important; background: #fefce8 !important; color: #a16207 !important; }
+.mode-btn-active-weekend .mode-btn-sub { color: #f59e0b; }
+.req { color: #ef4444; }
+.field-hint-error { color: #ef4444 !important; }
 
 
 /* RIGHT SIDE: Visuals */
