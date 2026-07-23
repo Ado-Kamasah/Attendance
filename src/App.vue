@@ -15,6 +15,8 @@ import SemesterSetup from './Pages/Admin/SemesterSetup.vue';
 import Faculties from './Pages/Admin/Faculties.vue';
 import Analytics from './Pages/Admin/Analytics.vue';
 import SessionAnalytics from './Pages/Admin/SessionAnalytics.vue';
+import EvaluationAdmin  from './Pages/Admin/EvaluationAdmin.vue';
+import EvaluationForm   from './Pages/Student/EvaluationForm.vue';
 import AdminSidebar from './USERS_ROLES/admin.vue';
 import LecturerSidebar from './USERS_ROLES/lecturers.vue';
 import StudentSidebar from './USERS_ROLES/students.vue';
@@ -142,6 +144,8 @@ const handleRegisterSuccess = () => {
         <Faculties v-else-if="currentRoute === '/faculties'" />
         <Analytics v-else-if="currentRoute === '/analytics'" />
         <SessionAnalytics v-else-if="currentRoute === '/session-analytics'" />
+        <EvaluationAdmin  v-else-if="currentRoute === '/evaluation-admin'" />
+        <EvaluationForm   v-else-if="currentRoute === '/evaluation'" />
         <Profile v-else-if="currentRoute === '/profile'" />
         <Notifications v-else-if="currentRoute === '/notifications'" />
         <div v-else class="content-placeholder">
