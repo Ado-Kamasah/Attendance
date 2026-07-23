@@ -99,20 +99,20 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore }        from '@/stores/authstore';
 import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useCoursesStore }     from '@/stores/courses';
-import { useSchedulesStore }   from '@/stores/schedules';
+import { useSessionsStore }    from '@/stores/sessions';   // ← was useSchedulesStore
 import { useEvaluationStore, QUESTIONS, OPTIONS } from '@/stores/evaluations';
 import { supabase }            from '@/stores/supabase';
 
-const authStore    = useAuthStore();
-const enrollStore  = useEnrollmentsStore();
-const courseStore  = useCoursesStore();
-const schedStore   = useSchedulesStore();
-const evalStore    = useEvaluationStore();
+const authStore     = useAuthStore();
+const enrollStore   = useEnrollmentsStore();
+const courseStore   = useCoursesStore();
+const sessionsStore = useSessionsStore();          // ← was schedStore
+const evalStore     = useEvaluationStore();
 
 const { profile }     = storeToRefs(authStore);
 const { enrollments } = storeToRefs(enrollStore);
 const { courses }     = storeToRefs(courseStore);
-const { schedules }   = storeToRefs(schedStore);
+const { sessions }    = storeToRefs(sessionsStore); // ← was { schedules }
 
 const selectedEnrollment = ref('');
 const responses          = reactive({});
@@ -120,7 +120,6 @@ const comments           = ref('');
 const submitted          = ref(false);
 const formError          = ref('');
 
-// lecturer name cache
 const lecturerMap = ref({});
 
 onMounted(async () => {
@@ -128,12 +127,12 @@ onMounted(async () => {
   await Promise.all([
     enrollStore.fetchEnrollments({ studentId: uid }),
     courseStore.fetchCourses(),
-    schedStore.fetchSchedules(),
+    sessionsStore.fetchSessions(),                 // ← was schedStore.fetchSchedules()
     evalStore.fetchSettings(),
     evalStore.fetchMyEvaluations(uid),
   ]);
-  // load lecturer names
-  const lecturerIds = [...new Set(schedules.value.map(s => s.lecturerId).filter(Boolean))];
+  // load lecturer names from actual session lecturer_id (real FK to users)
+  const lecturerIds = [...new Set(sessions.value.map(s => s.lecturerId).filter(Boolean))];
   if (lecturerIds.length) {
     const { data } = await supabase.from('users').select('id, name').in('id', lecturerIds);
     (data ?? []).forEach(u => { lecturerMap.value[u.id] = u.name; });
@@ -141,20 +140,21 @@ onMounted(async () => {
 });
 
 // build enrollment options: one per enrolled course that has a lecturer assigned
+// via a real session (schedules.lecturer is just free text, not a usable FK)
 const eligibleEnrollments = computed(() => {
   const myEnrollments = enrollments.value.filter(e => e.studentId === profile.value?.id);
   const result = [];
   myEnrollments.forEach(enr => {
-    const course    = courseStore.getCourseById(enr.courseId);
-    const schedule  = schedules.value.find(s => s.courseId === enr.courseId && s.lecturerId);
-    if (!course || !schedule?.lecturerId) return;
+    const course  = courseStore.getCourseById(enr.courseId);
+    const session = sessions.value.find(s => s.courseId === enr.courseId && s.lecturerId);
+    if (!course || !session?.lecturerId) return;
     result.push({
-      key:          `${enr.courseId}::${schedule.lecturerId}`,
+      key:          `${enr.courseId}::${session.lecturerId}`,
       courseId:     enr.courseId,
-      lecturerId:   schedule.lecturerId,
+      lecturerId:   session.lecturerId,
       courseCode:   course.code,
       courseName:   course.name,
-      lecturerName: lecturerMap.value[schedule.lecturerId] ?? 'Lecturer',
+      lecturerName: lecturerMap.value[session.lecturerId] ?? 'Lecturer',
     });
   });
   return result;

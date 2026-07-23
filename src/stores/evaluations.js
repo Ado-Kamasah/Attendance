@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { supabase } from './supabase';
-import { useNotivue } from 'notivue';
-
+import { push } from 'notivue';
+ 
 const EVAL_TABLE     = 'evaluations';
 const SETTINGS_TABLE = 'evaluation_settings';
 const SEMESTER_KEY   = 'Current'; // change to match your semester system
@@ -40,7 +40,6 @@ export const SCORE_MAP = {
 };
 
 export const useEvaluationStore = defineStore('evaluations', () => {
-  const push = useNotivue();
 
   const evaluations   = ref([]);
   const settings      = ref({ isOpen: false, semester: SEMESTER_KEY, id: null });
