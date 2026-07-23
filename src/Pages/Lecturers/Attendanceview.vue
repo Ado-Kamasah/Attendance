@@ -472,6 +472,7 @@ const startLiveSession = async () => {
       maxStudents: selectedStudents.value.length,
     };
 
+<<<<<<< HEAD
     // Seed an attendance row for every enrolled student right when the session
     // opens: selected students start 'pending' until they check in with the
     // PIN; unselected students (not present in class) are marked 'absent'
@@ -490,6 +491,8 @@ const startLiveSession = async () => {
       )
     );
 
+=======
+>>>>>>> 88a32cde996cd7ac78e25fcd801cea327784fa9c
     auditLogsStore.logAction({
       action: 'session_started',
       details: `Started attendance session for ${courseCode.value} (PIN: ${created.pin}, ${selectedStudents.value.length} students)`,
@@ -514,6 +517,7 @@ const startLiveSession = async () => {
 
 const stopLiveSession = async () => {
   clearInterval(timerInterval); timerInterval = null;
+<<<<<<< HEAD
   const sessionId = liveAttendanceSession.value.id;
   const courseCode_ = courseCode.value;
 
@@ -536,6 +540,14 @@ const stopLiveSession = async () => {
       auditLogsStore.logAction({
         action: 'session_ended',
         details: `Ended session for ${courseCode_} — ${checkedInStudents.value.length} present, ${pendingRecords.length} auto-marked absent`,
+=======
+  try {
+    if (liveAttendanceSession.value.id) {
+      await sessionsStore.closeSession(liveAttendanceSession.value.id);
+      auditLogsStore.logAction({
+        action: 'session_ended',
+        details: `Ended attendance session for ${courseCode.value} (${checkedInStudents.value.length} checked in)`,
+>>>>>>> 88a32cde996cd7ac78e25fcd801cea327784fa9c
         userId: profile.value?.id,
         userRole: profile.value?.role,
         userName: profile.value?.name,
