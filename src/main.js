@@ -1,4 +1,4 @@
-import './assets/base.css'
+/* Tailwind v4 + all design tokens are in main.css */
 import './assets/main.css'
 
 import { createApp } from 'vue'
