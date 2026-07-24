@@ -57,7 +57,7 @@ export const useEvaluationStore = defineStore('evaluations', () => {
       if (filters.courseId)   query = query.eq('course_id',   filters.courseId);
       if (filters.semester)   query = query.eq('semester',    filters.semester);
 
-      const { data, err } = await query;
+      const { data, error: err } = await query;   // ← fixed: was { data, err } — error was never caught
       if (err) throw err;
       evaluations.value = data ?? [];
     } catch (e) {
@@ -162,7 +162,9 @@ export const useEvaluationStore = defineStore('evaluations', () => {
     evaluations.value.forEach(ev => {
       const key = ev.lecturer_id;
       if (!grouped[key]) grouped[key] = { lecturerId: key, responses: [] };
-      grouped[key].responses.push(ev.responses);
+      // Guard: responses may arrive as a JSON string on some Supabase configs
+      const r = typeof ev.responses === 'string' ? JSON.parse(ev.responses) : (ev.responses ?? {});
+      grouped[key].responses.push(r);
     });
 
     return Object.values(grouped).map(({ lecturerId, responses }) => {
