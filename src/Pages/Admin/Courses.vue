@@ -165,15 +165,16 @@
               <input type="number" v-model.number="newCourse.credits" placeholder="e.g. 3" required min="1"
                 class="form-control" />
             </div>
-            <!-- Faculty / Program -->
-            <div class="form-group">
-              <label for="programme">Faculty / Program</label>
-                <select id="programme" v-model="newCourse.program" required class="form-control">
-                  <option value="" disabled>Select your faculty/program</option>
-                  <option  v-for="programme in programmes" :key="programme.id" :value="programme.name">{{ programme.name
-                    }}</option>
-                </select>
-            </div>
+      <!-- Faculty / Program select -->
+<div class="form-group">
+  <label for="programme">Faculty / Program</label>
+  <select id="programme" v-model="newCourse.programId" required class="form-control">
+    <option value="" disabled>Select your faculty/program</option>
+    <option v-for="programme in programmes" :key="programme.id" :value="programme.id">
+      {{ programme.name }}
+    </option>
+  </select>
+</div>
             <div class="form-group">
               <label>Semester</label>
               <select v-model="newCourse.semester" required class="form-control">
@@ -345,15 +346,15 @@ const statusFilter = ref('all');
 const isModalOpen = ref(false);
 const isSavingCourse = ref(false);
 const editingCourseId = ref(null);
+// newCourse state
 const newCourse = ref({
   code: '',
   name: '',
   credits: 3,
-  program: '',
+  programId: '',        // was: program: ''
   semester: 'Semester 1',
   level: '100'
 });
-
 // Assign Lecturer State
 const isAssignModalOpen = ref(false);
 const assigningCourse = ref(null);
@@ -436,25 +437,26 @@ const coursesWithSchedule = computed(() =>
   }))
 );
 
+// openModal
 const openModal = () => {
   editingCourseId.value = null;
-  newCourse.value = { code: '', name: '', credits: 3, program: '', semester: 'Semester 1', level: '100' };
+  newCourse.value = { code: '', name: '', credits: 3, programId: '', semester: 'Semester 1', level: '100' };
   isModalOpen.value = true;
 };
 
+// editCourse
 const editCourse = (course) => {
   editingCourseId.value = course.id;
   newCourse.value = {
     code: course.code,
     name: course.name,
     credits: course.credits,
-    program: course.program,   // was: course.programme
+    programId: course.programId,   // matches mapCourse() output
     semester: course.semester || 'Semester 1',
     level: course.level
   };
   isModalOpen.value = true;
 };
-
 
 const closeModal = () => {
   isModalOpen.value = false;
