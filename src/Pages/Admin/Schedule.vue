@@ -195,7 +195,7 @@ import { supabase } from '@/stores/supabase';
 const levels = ['100', '200', '300', '400'];
 const modes = ['Regular', 'Weekend'];
 const regularDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const weekendDays = ['Friday', 'Saturday', 'Sunday'];
+const weekendDays = ['Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 // Auto-detect today's day name
 const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' }); // e.g. 'Wednesday'
