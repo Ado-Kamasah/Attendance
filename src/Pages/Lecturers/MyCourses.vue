@@ -57,6 +57,10 @@
                <svg viewBox="0 0 24 24" fill="none" class="icon" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                <span>{{ course.venue }}</span>
              </div>
+             <div class="info-row">
+               <svg viewBox="0 0 24 24" fill="none" class="icon" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+               <span>{{ course.mode }}</span>
+             </div>
           </div>
 
           <div class="attendance-summary">
@@ -255,6 +259,7 @@ const lecturerCourses = computed(() => {
         code: course?.code ?? 'Unknown',
         name: course?.name ?? 'Unknown Course',
         semester: course?.semester || 'Semester 1',
+        mode: s.mode || 'Unknown',
         studentsCount: enrollmentsStore.enrollmentsByCourse(s.courseId).length,
         day: s.day,
         time: `${s.startTime} - ${s.endTime}`,
@@ -319,12 +324,12 @@ const saveEdit = async () => {
   }
 };
 
-// --- Attendance / class list navigation ---
 const goToAttendance = (course) => {
   localStorage.setItem('activeCourseId', course.id);
   localStorage.setItem('activeCourseCode', course.code);
   localStorage.setItem('activeCourseName', course.name);
   localStorage.setItem('activeCourseSemester', course.semester);
+  localStorage.setItem('activeCourseMode', course.mode);
   emit('navigate', '/attendance-view');
 };
 
@@ -347,7 +352,8 @@ const openClassList = async (course) => {
           id,
           name,
           id_number,
-          program_id
+          program_id,
+          mode
         )
       `)
       .eq('course_id', course.id);
@@ -357,6 +363,7 @@ const openClassList = async (course) => {
     studentsList.value = (data ?? [])
       .map((row) => row.users)
       .filter(Boolean)
+      .filter((u) => u.mode === course.mode)
       .map((u) => ({
         id: u.id,
         name: u.name,
@@ -372,12 +379,14 @@ const openClassList = async (course) => {
   }
 };
 
-
 const closeClassList = () => {
   showingClassList.value = false;
   activeCourse.value = null;
   studentsList.value = [];
 };
+
+
+
 </script>
 
 <style scoped>

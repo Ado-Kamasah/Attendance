@@ -179,6 +179,7 @@ const maskedEmail = computed(() => {
   return `${visible}${'*'.repeat(Math.max(user.length - visible.length, 3))}@${domain}`;
 });
 
+
 onMounted(async () => {
   isLoading.value = true;
   try {
@@ -370,21 +371,26 @@ const verifyOtp = async () => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Invalid code.');
 
-    if (attendancesStore.hasAttended(sessionId, studentId)) {
+    // The lecturer pre-seeds a 'pending' row for every selected student when
+    // the session starts. Flip that row to 'present' instead of inserting a
+    // new one. If no row exists (e.g. a walk-in the lecturer didn't select),
+    // fall back to creating one directly.
+    const existing = attendancesStore.getAttendanceRecord(sessionId, studentId);
+
+    if (existing?.status === 'present') {
       throw new Error('Attendance already recorded for this session.');
     }
 
-    await attendancesStore.markAttendance({
-      sessionId,
-      studentId,
-      status: 'present',
-    });
+    if (existing) {
+      await attendancesStore.updateAttendanceStatus(existing.id, 'present');
+    } else {
+      await attendancesStore.markAttendance({ sessionId, studentId, status: 'present' });
+    }
 
     const now = new Date();
     markedCourseName.value = `${activeClass.value.code} — ${activeClass.value.name}`;
     markedAtTime.value = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-    // ✔ Immediately cache the course for this session so Recent Sessions shows it right away
     sessionCourseMap.value = {
       ...sessionCourseMap.value,
       [sessionId]: { code: activeClass.value.code, name: activeClass.value.name },
@@ -408,7 +414,6 @@ const verifyOtp = async () => {
     otpVerifying.value = false;
   }
 };
-
 const resetState = () => {
   attendanceMarked.value = false;
   otpCode.value = ['', '', '', '', '', ''];

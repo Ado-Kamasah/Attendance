@@ -54,6 +54,13 @@
               </svg>
               {{ course.schedule || 'Schedule pending' }}
             </div>
+            <div class="schedule-info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              {{ course.venue || 'Venue pending' }} {{ course.mode || 'Mode pending' }}
+            </div>
 
             <div class="attendance-tracker">
               <div class="tracker-labels">
@@ -137,9 +144,9 @@ onUnmounted(() => {
   attendancesStore.unsubscribeFromAttendances();
 });
 
-/** First scheduled slot for a course, used for lecturer + a display string. */
-function scheduleForCourse(courseId) {
-  return schedules.value.find((s) => s.courseId === courseId) ?? null;
+/** The schedule for this course matching the student's own mode. */
+function scheduleForCourse(courseId, mode) {
+  return schedules.value.find((s) => s.courseId === courseId && s.mode === mode) ?? null;
 }
 
 /** Present-count / total-sessions for this student on this course. */
@@ -163,7 +170,7 @@ const myCourses = computed(() => {
     .filter((e) => e.studentId === profile.value?.id)
     .map((e, index) => {
       const course = coursesStore.getCourseById(e.courseId);
-      const schedule = scheduleForCourse(e.courseId);
+      const schedule = scheduleForCourse(e.courseId, profile.value?.mode);
 
       return {
         id: e.courseId,
@@ -174,11 +181,15 @@ const myCourses = computed(() => {
         schedule: schedule
           ? `${schedule.day} • ${schedule.startTime} - ${schedule.endTime}`
           : 'Schedule pending',
+        venue: schedule?.venue ?? 'Venue pending',
+        mode: schedule?.mode ?? 'Mode pending',
         attendance: attendanceForCourse(e.courseId),
         color: palette[index % palette.length],
       };
-    });
+    })
+    .filter((c) => c.mode === profile.value?.mode);
 });
+
 
 const getInitials = (name) => {
   if (!name) return 'UN';
