@@ -48,7 +48,7 @@ export const useEvaluationStore = defineStore('evaluations', () => {
   const error         = ref('');
 
   // ── Fetch all evaluations (admin) ─────────────────────────────────────────
-  async function fetchEvaluations(filters = {}) {
+async function fetchEvaluations(filters = {}) {
     isLoading.value = true;
     error.value = '';
     try {
@@ -57,7 +57,7 @@ export const useEvaluationStore = defineStore('evaluations', () => {
       if (filters.courseId)   query = query.eq('course_id',   filters.courseId);
       if (filters.semester)   query = query.eq('semester',    filters.semester);
 
-      const { data, err } = await query;
+      const { data, error: err } = await query;   // ✅ was `{ data, err }`
       if (err) throw err;
       evaluations.value = data ?? [];
     } catch (e) {
@@ -67,7 +67,7 @@ export const useEvaluationStore = defineStore('evaluations', () => {
       isLoading.value = false;
     }
   }
-
+  
   // ── Fetch evaluations for a specific student ──────────────────────────────
   async function fetchMyEvaluations(studentId) {
     isLoading.value = true;
