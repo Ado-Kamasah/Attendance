@@ -57,11 +57,7 @@ async function fetchEvaluations(filters = {}) {
       if (filters.courseId)   query = query.eq('course_id',   filters.courseId);
       if (filters.semester)   query = query.eq('semester',    filters.semester);
 
-<<<<<<< HEAD
-      const { data, error: err } = await query;   // ← fixed: was { data, err } — error was never caught
-=======
       const { data, error: err } = await query;   // ✅ was `{ data, err }`
->>>>>>> 047d452a3051ca823fccfdbf39ccfff5bc0e85e3
       if (err) throw err;
       evaluations.value = data ?? [];
     } catch (e) {
