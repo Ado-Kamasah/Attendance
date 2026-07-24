@@ -1,0 +1,19 @@
+@import "tailwindcss";
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+@theme {
+    /* 🌞 Light Mode */
+    --color-primary: #002366; /* DomionWine */
+    --color-secondary: #939597; /* DomionYellow */
+
+    /* 🎨 Fonts */
+    --font-primary: 'Inter', sans-serif;
+    --font-secondary: 'Audiowide', cursive;
+   
+}
+ @font-face {
+  font-family: 'Audiowide';
+  src: url('@/assets/fonts/Audiowide.ttf') format('truetype');
+  font-weight: normal;
+}
