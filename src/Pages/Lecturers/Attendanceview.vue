@@ -787,13 +787,10 @@ const stopLiveSession = async () => {
   const sessionId = liveAttendanceSession.value.id;
   const courseCode_ = courseCode.value;
 
-<<<<<<< HEAD
-=======
   // Snapshot stats BEFORE clearing state
   const presentList  = [...checkedInStudents.value];
   const totalExpected = liveAttendanceSession.value.maxStudents ?? enrolledStudents.value.length;
 
->>>>>>> 2cfd134b0baaf2f2318081bc1881380530f45a1a
   try {
     if (sessionId) {
       await sessionsStore.closeSession(sessionId);
@@ -812,11 +809,7 @@ const stopLiveSession = async () => {
 
       auditLogsStore.logAction({
         action: 'session_ended',
-<<<<<<< HEAD
-        details: `Ended session for ${courseCode_} — ${checkedInStudents.value.length} present, ${pendingRecords.length} auto-marked absent`,
-=======
         details: `Ended session for ${courseCode_} — ${presentList.length} present, ${pendingRecords.length} auto-marked absent`,
->>>>>>> 2cfd134b0baaf2f2318081bc1881380530f45a1a
         userId: profile.value?.id,
         userRole: profile.value?.role,
         userName: profile.value?.name,
