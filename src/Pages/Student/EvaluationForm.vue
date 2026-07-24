@@ -17,7 +17,15 @@
         </div>
         <div class="course-select-wrap">
           <label class="sel-label" for="ef-course-select">Select Course / Lecturer</label>
-          <select id="ef-course-select" v-model="selectedEnrollment" class="ef-select">
+          <!-- Loading state -->
+          <div v-if="isLoadingCourses" class="ef-loading">Loading your courses…</div>
+          <!-- No courses found -->
+          <div v-else-if="eligibleEnrollments.length === 0" class="no-courses-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            No courses with assigned lecturers found. Make sure you are enrolled and a lecturer is assigned to your schedule.
+          </div>
+          <!-- Dropdown -->
+          <select v-else id="ef-course-select" v-model="selectedEnrollment" class="ef-select">
             <option value="">— Choose a course —</option>
             <option v-for="e in eligibleEnrollments" :key="e.key" :value="e.key">
               {{ e.courseCode }} — {{ e.courseName }} ({{ e.lecturerName }})
@@ -99,20 +107,19 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore }        from '@/stores/authstore';
 import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useCoursesStore }     from '@/stores/courses';
-import { useSessionsStore }    from '@/stores/sessions';   // ← was useSchedulesStore
+import { useSchedulesStore }   from '@/stores/schedules';
 import { useEvaluationStore, QUESTIONS, OPTIONS } from '@/stores/evaluations';
 import { supabase }            from '@/stores/supabase';
 
-const authStore     = useAuthStore();
-const enrollStore   = useEnrollmentsStore();
-const courseStore   = useCoursesStore();
-const sessionsStore = useSessionsStore();          // ← was schedStore
-const evalStore     = useEvaluationStore();
+const authStore   = useAuthStore();
+const enrollStore = useEnrollmentsStore();
+const courseStore = useCoursesStore();
+const schedStore  = useSchedulesStore();
+const evalStore   = useEvaluationStore();
 
 const { profile }     = storeToRefs(authStore);
 const { enrollments } = storeToRefs(enrollStore);
-const { courses }     = storeToRefs(courseStore);
-const { sessions }    = storeToRefs(sessionsStore); // ← was { schedules }
+const { schedules }   = storeToRefs(schedStore);
 
 const selectedEnrollment = ref('');
 const responses          = reactive({});
@@ -120,43 +127,93 @@ const comments           = ref('');
 const submitted          = ref(false);
 const formError          = ref('');
 
+// name → UUID map, populated after fetching schedules
 const lecturerMap = ref({});
+// loading state for the dropdown
+const isLoadingCourses = ref(true);
 
 onMounted(async () => {
   const uid = profile.value?.id;
-  await Promise.all([
-    enrollStore.fetchEnrollments({ studentId: uid }),
-    courseStore.fetchCourses(),
-    sessionsStore.fetchSessions(),                 // ← was schedStore.fetchSchedules()
-    evalStore.fetchSettings(),
-    evalStore.fetchMyEvaluations(uid),
-  ]);
-  // load lecturer names from actual session lecturer_id (real FK to users)
-  const lecturerIds = [...new Set(sessions.value.map(s => s.lecturerId).filter(Boolean))];
-  if (lecturerIds.length) {
-    const { data } = await supabase.from('users').select('id, name').in('id', lecturerIds);
-    (data ?? []).forEach(u => { lecturerMap.value[u.id] = u.name; });
+  isLoadingCourses.value = true;
+  try {
+    await Promise.all([
+      enrollStore.fetchEnrollments({ studentId: uid }),
+      courseStore.fetchCourses(),
+      schedStore.fetchSchedules(),
+      evalStore.fetchSettings(),
+      evalStore.fetchMyEvaluations(uid),
+    ]);
+
+    // Resolve lecturer names → UUIDs via Supabase
+    // schedules.lecturer is stored as a plain text name (e.g. "John Doe")
+    const names = [...new Set(schedules.value.map(s => s.lecturer).filter(Boolean))];
+    if (names.length) {
+      const { data } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('role', 'Lecturer');
+      // Build a case-insensitive map: normalized name → id
+      (data ?? []).forEach(u => {
+        lecturerMap.value[u.name.trim().toLowerCase()] = { id: u.id, name: u.name };
+      });
+    }
+  } catch (e) {
+    console.error('[EvaluationForm] mount error:', e);
+  } finally {
+    isLoadingCourses.value = false;
   }
 });
 
-// build enrollment options: one per enrolled course that has a lecturer assigned
-// via a real session (schedules.lecturer is just free text, not a usable FK)
+// Build course options for the dropdown.
+// Shows all enrolled courses that have a schedule with a lecturer assigned.
+// Mode filtering is soft — if the student has no mode set, all schedules are shown.
 const eligibleEnrollments = computed(() => {
+  if (isLoadingCourses.value) return [];
   const myEnrollments = enrollments.value.filter(e => e.studentId === profile.value?.id);
+  const studentMode   = profile.value?.mode?.trim();   // 'Regular' | 'Weekend' | undefined
   const result = [];
+  const seen = new Set();
+
   myEnrollments.forEach(enr => {
-    const course  = courseStore.getCourseById(enr.courseId);
-    const session = sessions.value.find(s => s.courseId === enr.courseId && s.lecturerId);
-    if (!course || !session?.lecturerId) return;
+    const course = courseStore.getCourseById(enr.courseId);
+    if (!course) return;
+
+    // Find the schedule matching this student's mode; fall back to any schedule with a lecturer
+    const schedule =
+      schedules.value.find(
+        s => s.courseId === enr.courseId &&
+             s.mode?.trim() === studentMode &&
+             s.lecturer?.trim()
+      ) ??
+      schedules.value.find(
+        s => s.courseId === enr.courseId && s.lecturer?.trim()
+      );
+
+    if (!schedule?.lecturer) return;
+
+    // Look up lecturer UUID by name (case-insensitive)
+    const match = lecturerMap.value[schedule.lecturer.trim().toLowerCase()];
+    const lecturerId   = match?.id   ?? null;
+    const lecturerName = match?.name ?? schedule.lecturer;
+
+    // We need a stable key — use courseId::lecturerName if UUID not resolved yet
+    const key = lecturerId
+      ? `${enr.courseId}::${lecturerId}`
+      : `${enr.courseId}::${schedule.lecturer}`;
+
+    if (seen.has(key)) return;
+    seen.add(key);
+
     result.push({
-      key:          `${enr.courseId}::${session.lecturerId}`,
+      key,
       courseId:     enr.courseId,
-      lecturerId:   session.lecturerId,
+      lecturerId,          // may be null if lookup failed — we catch this at submit
       courseCode:   course.code,
       courseName:   course.name,
-      lecturerName: lecturerMap.value[session.lecturerId] ?? 'Lecturer',
+      lecturerName,
     });
   });
+
   return result;
 });
 
@@ -176,14 +233,22 @@ const alreadySubmitted = computed(() => {
 async function handleSubmit() {
   submitted.value = true;
   formError.value = '';
+
+  const enr = currentEnrollment.value;
+  if (!enr) return;
+
+  if (!enr.lecturerId) {
+    formError.value = 'Could not identify the lecturer for this course. Please contact your administrator.';
+    return;
+  }
+
   const missing = QUESTIONS.filter(q => !responses[q.id]);
   if (missing.length) {
     formError.value = `Please answer all ${missing.length} unanswered question(s) before submitting.`;
     document.querySelector('.q-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
-  const enr = currentEnrollment.value;
-  if (!enr) return;
+
   try {
     await evalStore.submitEvaluation({
       studentId:  profile.value.id,
@@ -223,6 +288,9 @@ async function handleSubmit() {
 .sel-label { font-size: .78rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
 .ef-select { padding: .55rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: .9rem; color: #334155; background: #fff; min-width: 320px; outline: none; cursor: pointer; }
 .ef-select:focus { border-color: #6366f1; }
+.ef-loading { font-size: .9rem; color: #64748b; padding: .5rem 0; }
+.no-courses-hint { display: flex; align-items: flex-start; gap: .6rem; background: #fef9c3; border: 1px solid #fde68a; border-radius: 10px; padding: .75rem 1rem; font-size: .82rem; color: #92400e; max-width: 420px; }
+.no-courses-hint svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; color: #a16207; }
 
 /* Submitted banner */
 .submitted-banner {

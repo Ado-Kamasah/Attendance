@@ -179,6 +179,7 @@ const maskedEmail = computed(() => {
   return `${visible}${'*'.repeat(Math.max(user.length - visible.length, 3))}@${domain}`;
 });
 
+
 onMounted(async () => {
   isLoading.value = true;
   try {
@@ -413,7 +414,6 @@ const verifyOtp = async () => {
     otpVerifying.value = false;
   }
 };
-
 const resetState = () => {
   attendanceMarked.value = false;
   otpCode.value = ['', '', '', '', '', ''];

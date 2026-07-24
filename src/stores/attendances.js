@@ -209,6 +209,11 @@ export const useAttendancesStore = defineStore('attendances', () => {
     realtimeChannel = null;
   }
 
+  /** Locally purge all attendance records for a deleted session. */
+  function removeBySessionId(sessionId) {
+    attendances.value = attendances.value.filter((a) => a.sessionId !== sessionId);
+  }
+
   return {
     attendances,
     isLoading,
@@ -223,6 +228,7 @@ export const useAttendancesStore = defineStore('attendances', () => {
     markAttendance,
     updateAttendanceStatus,
     deleteAttendance,
+    removeBySessionId,
     subscribeToAttendances,
     unsubscribeFromAttendances,
   };

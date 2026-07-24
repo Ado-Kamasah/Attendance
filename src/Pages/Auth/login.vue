@@ -28,7 +28,7 @@
               </svg>
             </div>
             <div class="input-content">
-              <label for="loginId">{{ role === 'Admin' ? 'Email Address' : 'ID / Email' }}</label>
+              <label for="loginId">ID / Email</label>
               <input 
                 type="text" 
                 id="loginId" 
@@ -68,25 +68,6 @@
                 <line x1="1" y1="1" x2="23" y2="23"></line>
               </svg>
             </button>
-          </div>
-
-          <div class="input-container" :class="{ 'focused': isRoleFocused || role }">
-            <div class="icon-wrapper">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </div>
-            <div class="input-content">
-              <label for="role">Select Role</label>
-              <select id="role" v-model="role" @focus="isRoleFocused = true" @blur="isRoleFocused = false" required>
-                <option value="Admin">Administrator</option>
-                <option value="Lecturer">Lecturer</option>
-                <option value="Student">Student</option>
-              </select>
-            </div>
           </div>
 
           <div class="form-options">
@@ -244,13 +225,22 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authstore';
 
 const authStore = useAuthStore();
+const router = useRouter();
+
+// Where each detected role lands after a successful login.
+// Adjust these paths to match your actual route names/paths.
+const ROLE_DASHBOARDS = {
+  Admin: '/admin/dashboard',
+  Lecturer: '/lecturer/dashboard',
+  Student: '/student/dashboard',
+};
 
 const loginId = ref('');
 const password = ref('');
-const role = ref('Admin');
 const showPassword = ref(false);
 const rememberMe = ref(false);
 const isLoading = ref(false);
@@ -261,12 +251,11 @@ const unconfirmedEmail = ref('');
 
 const isEmailFocused = ref(false);
 const isPasswordFocused = ref(false);
-const isRoleFocused = ref(false);
 
 const emit = defineEmits(['login-success', 'switch-to-register']);
 
 const handleLogin = async () => {
-  if (!loginId.value || !password.value || !role.value) return;
+  if (!loginId.value || !password.value) return;
 
   isLoading.value = true;
   errorMsg.value = '';
@@ -277,7 +266,6 @@ const handleLogin = async () => {
     const profile = await authStore.login({
       loginId: loginId.value.trim(),
       password: password.value,
-      selectedRole: role.value,
     });
 
     emit('login-success', {
@@ -285,6 +273,10 @@ const handleLogin = async () => {
       role: profile.role,
       user: profile,
     });
+
+    // Role comes from the profile row, not user input — route accordingly.
+    const destination = ROLE_DASHBOARDS[profile.role] || '/';
+    router.push(destination);
   } catch (err) {
     console.error('Login error:', err);
     errorMsg.value = err.message || 'Failed to login. Please check your credentials.';

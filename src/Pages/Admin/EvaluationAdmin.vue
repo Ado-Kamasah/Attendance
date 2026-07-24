@@ -32,6 +32,10 @@
         <div><p class="kpi-lbl">Lecturers Evaluated</p><h3 class="kpi-val">{{ uniqueLecturers }}</h3></div>
       </div>
       <div class="kpi-tile">
+        <div class="kpi-ico kpi-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div><p class="kpi-lbl">Courses Evaluated</p><h3 class="kpi-val">{{ uniqueCourses }}</h3></div>
+      </div>
+      <div class="kpi-tile">
         <div class="kpi-ico kpi-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
         <div><p class="kpi-lbl">Avg Overall Rating</p><h3 class="kpi-val">{{ avgOverallRating }}%</h3></div>
       </div>
@@ -47,9 +51,13 @@
         <option value="">All Lecturers</option>
         <option v-for="(name, id) in lecturerNames" :key="id" :value="id">{{ name }}</option>
       </select>
+      <select v-model="filterCourse" class="fsel" id="ea-course-filter">
+        <option value="">All Courses</option>
+        <option v-for="c in evaluatedCourses" :key="c.id" :value="c.id">{{ c.label }}</option>
+      </select>
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input v-model="searchQ" type="text" placeholder="Search lecturer…" class="search-in" id="ea-search"/>
+        <input v-model="searchQ" type="text" placeholder="Search lecturer or course…" class="search-in" id="ea-search"/>
       </div>
     </div>
 
@@ -59,7 +67,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <p>No evaluation responses found.</p>
     </div>
-
+<!-- Error state -->
+    <div v-if="evalStore.error && !evalStore.isLoading" class="empty-state" style="border-color:#fecaca;background:#fef2f2;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p style="color:#ef4444;">{{ evalStore.error }}</p>
+    </div>
     <div v-else class="analysis-grid">
       <div v-for="lec in filteredAnalysis" :key="lec.lecturerId" class="lec-card">
         <!-- Card header -->
@@ -68,6 +80,10 @@
           <div class="lec-info">
             <h2 class="lec-name">{{ lecturerNames[lec.lecturerId] ?? 'Unknown Lecturer' }}</h2>
             <p class="lec-meta">{{ lec.totalResponses }} response{{ lec.totalResponses !== 1 ? 's' : '' }}</p>
+            <!-- Course tags -->
+            <div class="course-tags" v-if="lec.courses && lec.courses.length">
+              <span v-for="c in lec.courses" :key="c.id" class="course-tag">{{ c.label }}</span>
+            </div>
           </div>
           <div class="lec-retention">
             <span class="retention-val" :class="retentionClass(lec.retainedPct)">{{ lec.retainedPct }}%</span>
@@ -128,16 +144,26 @@ const evalStore = useEvaluationStore();
 const { profile } = storeToRefs(authStore);
 
 const filterLecturer = ref('');
+const filterCourse   = ref('');
 const searchQ        = ref('');
 const lecturerNames  = ref({});
+const courseNames    = ref({});
 
 onMounted(async () => {
   await Promise.all([evalStore.fetchEvaluations(), evalStore.fetchSettings()]);
-  // load lecturer names for all lecturers in evaluations
-  const ids = [...new Set(evalStore.evaluations.map(e => e.lecturer_id).filter(Boolean))];
-  if (ids.length) {
-    const { data } = await supabase.from('users').select('id, name').in('id', ids);
+
+  // Load lecturer names
+  const lecturerIds = [...new Set(evalStore.evaluations.map(e => e.lecturer_id).filter(Boolean))];
+  if (lecturerIds.length) {
+    const { data } = await supabase.from('users').select('id, name').in('id', lecturerIds);
     (data ?? []).forEach(u => { lecturerNames.value[u.id] = u.name; });
+  }
+
+  // Load course names
+  const courseIds = [...new Set(evalStore.evaluations.map(e => e.course_id).filter(Boolean))];
+  if (courseIds.length) {
+    const { data } = await supabase.from('courses').select('id, code, name').in('id', courseIds);
+    (data ?? []).forEach(c => { courseNames.value[c.id] = `${c.code} — ${c.name}`; });
   }
 });
 
@@ -146,17 +172,42 @@ async function handleToggle() {
 }
 
 // ── Aggregated analysis ────────────────────────────────────────────────────
+// Extends the store's analysisByLecturer with course info for display
+const enrichedAnalysis = computed(() => {
+  return evalStore.analysisByLecturer.map(lec => {
+    // Find all distinct courses this lecturer was evaluated for
+    const courses = [...new Set(
+      evalStore.evaluations
+        .filter(e => e.lecturer_id === lec.lecturerId && e.course_id)
+        .map(e => e.course_id)
+    )].map(id => ({ id, label: courseNames.value[id] ?? id }));
+    return { ...lec, courses };
+  });
+});
+
 const filteredAnalysis = computed(() => {
-  let list = evalStore.analysisByLecturer;
+  let list = enrichedAnalysis.value;
   if (filterLecturer.value) list = list.filter(l => l.lecturerId === filterLecturer.value);
+  if (filterCourse.value)   list = list.filter(l => l.courses.some(c => c.id === filterCourse.value));
   if (searchQ.value.trim()) {
     const q = searchQ.value.toLowerCase();
-    list = list.filter(l => (lecturerNames.value[l.lecturerId] ?? '').toLowerCase().includes(q));
+    list = list.filter(l =>
+      (lecturerNames.value[l.lecturerId] ?? '').toLowerCase().includes(q) ||
+      l.courses.some(c => c.label.toLowerCase().includes(q))
+    );
   }
   return list;
 });
 
 const uniqueLecturers = computed(() => new Set(evalStore.evaluations.map(e => e.lecturer_id)).size);
+const uniqueCourses   = computed(() => new Set(evalStore.evaluations.map(e => e.course_id)).size);
+
+// For the course filter dropdown — all courses that have been evaluated
+const evaluatedCourses = computed(() =>
+  [...new Set(evalStore.evaluations.map(e => e.course_id).filter(Boolean))]
+    .map(id => ({ id, label: courseNames.value[id] ?? id }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+);
 
 const avgOverallRating = computed(() => {
   if (!filteredAnalysis.value.length) return 0;
@@ -228,6 +279,7 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
 .kpi-val  { margin: 0; font-size: 1.9rem; font-weight: 700; color: #0f172a; letter-spacing: -.03em; }
 .kpi-indigo { background: #e0e7ff; color: #4338ca; }
 .kpi-green  { background: #dcfce7; color: #15803d; }
+.kpi-purple { background: #f3e8ff; color: #7c3aed; }
 .kpi-amber  { background: #fef9c3; color: #a16207; }
 .kpi-sky    { background: #e0f2fe; color: #0369a1; }
 
@@ -261,6 +313,10 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
 .ret-warn { color: #f59e0b; }
 .ret-bad  { color: #ef4444; }
 .retention-lbl { font-size: .68rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+
+/* Course tags on lecturer cards */
+.course-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
+.course-tag  { display: inline-block; background: #ede9fe; color: #6d28d9; font-size: .7rem; font-weight: 700; padding: .15rem .5rem; border-radius: 999px; letter-spacing: .02em; }
 
 /* Question breakdown */
 .q-breakdown { display: flex; flex-direction: column; divide-y: 1px solid #f1f5f9; }
