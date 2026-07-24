@@ -1,9 +1,10 @@
 <template>
-  <div class="dashboard-container">
-    <div class="dashboard-header">
-      <h1 class="page-title">Dashboard Overview</h1>
-      <div class="date-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <div class="flex flex-col gap-8 w-full">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <h1 class="m-0 text-[1.75rem] sm:text-[1.75rem] font-bold text-slate-900 tracking-tight">Dashboard Overview</h1>
+      <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full text-[0.875rem] font-medium text-slate-500 shadow-sm border border-slate-200 self-start sm:self-auto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-indigo-500">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
           <line x1="16" y1="2" x2="16" y2="6"></line>
           <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -13,73 +14,111 @@
       </div>
     </div>
 
-    <!-- Key Metrics Grid -->
-    <div class="metrics-grid">
-      <div class="metric-card" v-for="metric in metrics" :key="metric.title">
-        <div class="metric-icon-wrap" :style="{ backgroundColor: metric.bgColor, color: metric.color }">
-          <div class="metric-icon" v-html="metric.icon"></div>
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div
+        v-for="metric in metrics"
+        :key="metric.title"
+        class="bg-white rounded-2xl p-6 flex items-start gap-4 shadow-sm border border-slate-200/80 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      >
+        <div
+          class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+          :style="{ backgroundColor: metric.bgColor, color: metric.color }"
+        >
+          <div class="w-6 h-6 flex [&_svg]:w-full [&_svg]:h-full" v-html="metric.icon"></div>
         </div>
-        <div class="metric-content">
-          <p class="metric-title">{{ metric.title }}</p>
-          <h3 class="metric-value">{{ metric.value }}</h3>
-          <p class="metric-trend" :class="metric.trend > 0 ? 'positive' : 'negative'">
-            <svg v-if="metric.trend > 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
-            <span>{{ Math.abs(metric.trend) }}% from last week</span>
+        <div class="flex-1">
+          <p class="m-0 mb-2 text-[0.875rem] text-slate-500 font-medium">{{ metric.title }}</p>
+          <h3 class="m-0 mb-2 text-[1.75rem] font-bold text-slate-900 tracking-tight">{{ metric.value }}</h3>
+          <p
+            class="flex items-center gap-1 m-0 text-[0.75rem] font-semibold"
+            :class="metric.trend > 0 ? 'text-emerald-500' : 'text-red-500'"
+          >
+            <svg v-if="metric.trend > 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+            <span class="text-slate-400 font-medium ml-1">{{ Math.abs(metric.trend) }}% from last week</span>
           </p>
         </div>
       </div>
     </div>
 
-    <div class="dashboard-content-split">
-      <!-- Left Column: Ongoing / Upcoming Schedules -->
-      <div class="schedule-panel">
-        <div class="panel-header">
-          <h2>Today's Schedule</h2>
-          <button class="view-all-btn" @click="$emit('navigate', '/schedule')">View All</button>
+    <!-- Content Split -->
+    <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+      <!-- Schedule Panel -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="m-0 text-[1.25rem] font-semibold text-slate-900 tracking-tight">Today's Schedule</h2>
+          <button
+            class="bg-transparent border-none text-indigo-500 text-[0.875rem] font-semibold cursor-pointer p-0 transition-colors duration-200 hover:text-indigo-700 hover:underline"
+            @click="$emit('navigate', '/schedule')"
+          >View All</button>
         </div>
-        
-        <div class="schedule-list">
-          <div class="schedule-item" v-for="course in todaySchedule" :key="course.id">
-            <div class="time-block">
-              <span class="time-start">{{ course.startTime }}</span>
-              <span class="time-end">{{ course.endTime }}</span>
+        <div class="flex flex-col gap-3">
+          <div
+            v-for="course in todaySchedule"
+            :key="course.id"
+            class="flex items-center gap-6 p-4 rounded-xl bg-slate-50 border border-transparent transition-all duration-200 hover:bg-white hover:border-slate-200 hover:shadow-sm max-sm:flex-col max-sm:items-stretch max-sm:gap-3 max-sm:p-5"
+          >
+            <div class="flex flex-col min-w-[80px] items-end border-r-2 border-slate-200 pr-6 max-sm:flex-row max-sm:items-center max-sm:gap-2 max-sm:border-r-0 max-sm:border-b-2 max-sm:pr-0 max-sm:pb-3">
+              <span class="font-semibold text-slate-900 text-[0.95rem]">{{ course.startTime }}</span>
+              <span class="text-[0.8rem] text-slate-400 mt-1 max-sm:mt-0">{{ course.endTime }}</span>
             </div>
-            <div class="course-info">
-              <h4>{{ course.name }}</h4>
-              <p>{{ course.lecturer }} • {{ course.room }}</p>
+            <div class="flex-1">
+              <h4 class="m-0 mb-1.5 text-base font-semibold text-slate-800">{{ course.name }}</h4>
+              <p class="m-0 text-[0.85rem] text-slate-500">{{ course.lecturer }} • {{ course.room }}</p>
             </div>
-            <div class="status-badge" :class="course.status">
-              {{ course.statusText }}
-            </div>
+            <div
+              class="px-3 py-1.5 rounded-full text-[0.75rem] font-semibold uppercase tracking-[0.05em] max-sm:self-start max-sm:mt-2"
+              :class="{
+                'bg-emerald-100 text-emerald-800': course.status === 'completed',
+                'bg-indigo-100 text-indigo-800 relative before:content-[\'\'] before:inline-block before:w-1.5 before:h-1.5 before:bg-indigo-600 before:rounded-full before:mr-1.5 before:mb-px before:animate-pulse': course.status === 'ongoing',
+                'bg-slate-100 text-slate-500': course.status === 'upcoming'
+              }"
+            >{{ course.statusText }}</div>
           </div>
-          
-          <div v-if="todaySchedule.length === 0" class="empty-schedule-msg" style="padding: 2rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">
+          <div v-if="todaySchedule.length === 0" class="py-8 text-center text-slate-400 text-[0.9rem]">
             You have no courses scheduled for today.
           </div>
         </div>
       </div>
 
-      <div class="side-panel">
-        <div class="attendance-summary audit-panel">
-          <div class="panel-header">
-            <h2>Live Audit Logs</h2>
+      <!-- Side Panel -->
+      <div class="flex flex-col gap-6">
+        <!-- Audit Logs -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="m-0 text-[1.25rem] font-semibold text-slate-900 tracking-tight">Live Audit Logs</h2>
           </div>
-          <div class="audit-content">
-            <div class="audit-item" v-for="log in systemAuditLogs.slice(0, 5)" :key="log.id">
-              <div class="audit-header">
-                <span class="audit-action">{{ log.action }}</span>
-                <span class="audit-time">{{ log.timestamp }}</span>
+          <div class="flex flex-col gap-4 mb-4">
+            <div
+              v-for="log in systemAuditLogs.slice(0, 5)"
+              :key="log.id"
+              class="bg-slate-50 p-4 rounded-[10px] border-l-[3px] border-indigo-500"
+            >
+              <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-[0.9rem] text-slate-900">{{ log.action }}</span>
+                <span class="text-[0.75rem] text-slate-400">{{ log.timestamp }}</span>
               </div>
-              <p class="audit-details">{{ log.details }}</p>
-              <div class="audit-user">
-                <span class="user-role" :class="log.role.toLowerCase()">{{ log.role }}</span>
-                <span class="user-name">{{ log.user }}</span>
+              <p class="m-0 mb-2 text-[0.85rem] text-slate-600 leading-snug">{{ log.details }}</p>
+              <div class="flex items-center gap-2">
+                <span
+                  class="text-[0.65rem] uppercase font-bold px-1.5 py-0.5 rounded"
+                  :class="{
+                    'bg-slate-100 text-slate-500': log.role.toLowerCase() === 'system',
+                    'bg-indigo-100 text-indigo-700': log.role.toLowerCase() === 'lecturer',
+                    'bg-emerald-100 text-emerald-700': log.role.toLowerCase() === 'student',
+                    'bg-slate-100 text-slate-500': !['system','lecturer','student'].includes(log.role.toLowerCase()),
+                  }"
+                >{{ log.role }}</span>
+                <span class="text-[0.8rem] text-slate-500 font-medium">{{ log.user }}</span>
               </div>
             </div>
-            <div v-if="systemAuditLogs.length === 0" class="empty-msg">No audit logs available.</div>
+            <div v-if="systemAuditLogs.length === 0" class="text-slate-400 text-[0.85rem] text-center py-4">No audit logs available.</div>
           </div>
-          <button class="view-all-btn full-width" @click="alert('Full Audit Trail functionality coming soon')">View Full Audit Trail</button>
+          <button
+            class="w-full py-3 px-4 bg-slate-50 border-none rounded-lg text-indigo-500 text-[0.875rem] font-semibold cursor-pointer transition-colors duration-200 mt-auto hover:bg-slate-100 hover:no-underline"
+            @click="alert('Full Audit Trail functionality coming soon')"
+          >View Full Audit Trail</button>
         </div>
       </div>
     </div>
@@ -144,8 +183,6 @@ const currentDate = new Date().toLocaleDateString('en-US', {
 
 const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
-// --- Derived stats (replacing the old /admin/dashboard-stats endpoint) ---
-
 const totalStudents = computed(() => {
   const uniqueStudentIds = new Set(enrollments.value.map((e) => e.studentId));
   return uniqueStudentIds.size;
@@ -196,7 +233,6 @@ const metrics = computed(() => [
   }
 ]);
 
-// --- Today's schedule (attach course info via coursesStore, same pattern as Schedule.vue) ---
 const todaySchedule = computed(() => {
   return schedules.value
     .filter((s) => s.day === currentDayName)
@@ -213,7 +249,6 @@ const todaySchedule = computed(() => {
     });
 });
 
-// --- Audit logs reshaped to match the template's expected field names ---
 const systemAuditLogs = computed(() =>
   logs.value.map((l) => ({
     id: l.id,
@@ -232,454 +267,3 @@ const systemAuditLogs = computed(() =>
   }))
 );
 </script>
-
-<style scoped>
-.dashboard-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.date-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #ffffff;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #64748b;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
-}
-
-.date-badge svg {
-  width: 16px;
-  height: 16px;
-  color: #6366f1;
-}
-
-/* Key Metrics */
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: 1.5rem;
-}
-
-.metric-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 1.5rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-}
-
-.metric-icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.metric-icon {
-  width: 24px;
-  height: 24px;
-  display: flex;
-}
-
-.metric-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.metric-content {
-  flex: 1;
-}
-
-.metric-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.metric-value {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.metric-trend {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.metric-trend svg {
-  width: 14px;
-  height: 14px;
-}
-
-.metric-trend.positive {
-  color: #10b981;
-}
-
-.metric-trend.negative {
-  color: #ef4444;
-}
-
-.metric-trend span {
-  color: #94a3b8;
-  font-weight: 500;
-  margin-left: 0.25rem;
-}
-
-/* Content Split */
-.dashboard-content-split {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
-}
-
-@media (max-width: 1024px) {
-  .dashboard-content-split {
-    grid-template-columns: 1fr;
-  }
-}
-
-.schedule-panel,
-.attendance-summary {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.side-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.panel-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #0f172a;
-  letter-spacing: -0.015em;
-}
-
-.view-all-btn {
-  background: none;
-  border: none;
-  color: #6366f1;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.2s;
-}
-
-.view-all-btn:hover {
-  color: #4f46e5;
-  text-decoration: underline;
-}
-
-/* Schedule List */
-.schedule-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.schedule-item {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1rem;
-  border-radius: 12px;
-  background-color: #f8fafc;
-  border: 1px solid transparent;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.schedule-item:hover {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-.time-block {
-  display: flex;
-  flex-direction: column;
-  min-width: 80px;
-  align-items: flex-end;
-  border-right: 2px solid #e2e8f0;
-  padding-right: 1.5rem;
-}
-
-.time-start {
-  font-weight: 600;
-  color: #0f172a;
-  font-size: 0.95rem;
-}
-
-.time-end {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  margin-top: 0.25rem;
-}
-
-.course-info {
-  flex: 1;
-}
-
-.course-info h4 {
-  margin: 0 0 0.35rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.course-info p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #64748b;
-}
-
-.status-badge {
-  padding: 0.35rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.status-badge.completed {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.status-badge.ongoing {
-  background-color: #e0e7ff;
-  color: #3730a3;
-  position: relative;
-}
-
-.status-badge.ongoing::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  background-color: #4f46e5;
-  border-radius: 50%;
-  margin-right: 6px;
-  margin-bottom: 1px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(79, 70, 229, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
-}
-
-.status-badge.upcoming {
-  background-color: #f1f5f9;
-  color: #475569;
-}
-
-
-/* Live Audit Logs */
-.audit-panel {
-  display: flex;
-  flex-direction: column;
-}
-
-.audit-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.audit-item {
-  background-color: #f8fafc;
-  padding: 1rem;
-  border-radius: 10px;
-  border-left: 3px solid #6366f1;
-}
-
-.audit-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.25rem;
-}
-
-.audit-action {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #0f172a;
-}
-
-.audit-time {
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
-
-.audit-details {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.85rem;
-  color: #475569;
-  line-height: 1.4;
-}
-
-.audit-user {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.user-role {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  font-weight: 700;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-}
-
-.user-role.system {
-  background-color: #f1f5f9;
-  color: #64748b;
-}
-
-.user-role.lecturer {
-  background-color: #e0e7ff;
-  color: #4338ca;
-}
-
-.user-role.student {
-  background-color: #dcfce7;
-  color: #15803d;
-}
-
-.user-name {
-  font-size: 0.8rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.empty-msg {
-  color: #94a3b8;
-  font-size: 0.85rem;
-  text-align: center;
-  padding: 1rem 0;
-}
-
-.full-width {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  margin-top: auto;
-}
-
-.full-width:hover {
-  background-color: #f1f5f9;
-  text-decoration: none;
-}
-
-/* Dashboard Responsiveness */
-@media (max-width: 768px) {
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .page-title {
-    font-size: 1.5rem;
-  }
-  
-  .schedule-item {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-    padding: 1.25rem;
-  }
-  
-  .time-block {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-    border-right: none;
-    border-bottom: 2px solid #e2e8f0;
-    padding-right: 0;
-    padding-bottom: 0.75rem;
-  }
-  
-  .time-end {
-    margin-top: 0;
-  }
-  
-  .status-badge {
-    align-self: flex-start;
-    margin-top: 0.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .metrics-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .time-block {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-}
-</style>

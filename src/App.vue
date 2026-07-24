@@ -95,40 +95,44 @@ const handleRegisterSuccess = () => {
 </script>
 
 <template>
-  <div v-if="!isReady" class="app-loading">
-    <!-- spinner / splash -->
+  <!-- Loading splash -->
+  <div v-if="!isReady" class="fixed inset-0 flex items-center justify-center bg-slate-50">
+    <div class="w-9 h-9 rounded-full border-4 border-slate-200 border-t-[#002366] animate-spin"></div>
   </div>
+
+  <!-- Auth views -->
   <div v-else-if="!isAuthenticated">
     <Login v-if="activeAuthView === 'login'" @login-success="handleLoginSuccess"
            @switch-to-register="activeAuthView = 'register'" />
-           
-    <Register v-else 
-              @register-success="handleRegisterSuccess" 
+    <Register v-else
+              @register-success="handleRegisterSuccess"
               @switch-to-login="activeAuthView = 'login'" />
   </div>
 
-  <div v-else class="app-layout">
-    <AdminSidebar 
+  <!-- Authenticated app shell -->
+  <div v-else class="flex h-screen w-full overflow-hidden">
+    <AdminSidebar
       v-if="userRole === 'Admin'"
-      @navigate="handleNavigationEvent" 
+      @navigate="handleNavigationEvent"
       :is-mobile-open="isMobileSidebarOpen"
       @close-mobile="isMobileSidebarOpen = false"
     />
-    <LecturerSidebar 
+    <LecturerSidebar
       v-else-if="userRole === 'Lecturer'"
-      @navigate="handleNavigationEvent" 
+      @navigate="handleNavigationEvent"
       :is-mobile-open="isMobileSidebarOpen"
       @close-mobile="isMobileSidebarOpen = false"
     />
-    <StudentSidebar 
+    <StudentSidebar
       v-else-if="userRole === 'Student'"
-      @navigate="handleNavigationEvent" 
+      @navigate="handleNavigationEvent"
       :is-mobile-open="isMobileSidebarOpen"
       @close-mobile="isMobileSidebarOpen = false"
     />
-    <div class="main-wrapper">
+
+    <div class="flex flex-col flex-1 min-w-0 overflow-x-hidden">
       <Navbar @toggle-mobile-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen" @logout="handleLogout" @navigate="handleNavigationEvent" />
-      <main class="main-content">
+      <main class="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden min-w-0">
         <Dashboard v-if="currentRoute === '/'" />
         <StudentDashboard v-else-if="currentRoute === '/student-dashboard'" @navigate="handleNavigationEvent" />
         <LecturerDashboard v-else-if="currentRoute === '/lecturer-dashboard'" @navigate="handleNavigationEvent" />
@@ -148,8 +152,8 @@ const handleRegisterSuccess = () => {
         <EvaluationForm   v-else-if="currentRoute === '/evaluation'" />
         <Profile v-else-if="currentRoute === '/profile'" />
         <Notifications v-else-if="currentRoute === '/notifications'" />
-        <div v-else class="content-placeholder">
-          <h2>Page not implemented yet</h2>
+        <div v-else class="bg-white p-8 rounded-[12px] shadow-md text-slate-700">
+          <h2 class="mt-0 text-slate-900">Page not implemented yet</h2>
           <p>Navigated to {{ currentRoute }}</p>
         </div>
       </main>
@@ -165,49 +169,6 @@ html, body, #app {
   height: 100%;
   width: 100%;
   font-family: 'Inter', sans-serif;
-  background-color: #f1f5f9; /* Light background for the main content area */
-}
-
-/* Base structural layout for the entire app */
-.app-layout {
-  display: flex;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
-}
-
-.main-wrapper {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  overflow-x: hidden;
-}
-
-.main-content {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-width: 0;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding: 1rem;
-  }
-}
-
-.content-placeholder {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  color: #334155;
-}
-
-.content-placeholder h2 {
-  margin-top: 0;
-  color: #0f172a;
+  background-color: #f1f5f9;
 }
 </style>
