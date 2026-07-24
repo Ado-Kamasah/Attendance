@@ -67,7 +67,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <p>No evaluation responses found.</p>
     </div>
-
+<!-- Error state -->
+    <div v-if="evalStore.error && !evalStore.isLoading" class="empty-state" style="border-color:#fecaca;background:#fef2f2;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p style="color:#ef4444;">{{ evalStore.error }}</p>
+    </div>
     <div v-else class="analysis-grid">
       <div v-for="lec in filteredAnalysis" :key="lec.lecturerId" class="lec-card">
         <!-- Card header -->
