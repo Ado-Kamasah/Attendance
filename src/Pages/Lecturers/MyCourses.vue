@@ -194,6 +194,9 @@ const { attendances } = storeToRefs(attendancesStore);
 
 const lecturerName = computed(() => profile.value?.name ?? '');
 
+// studentId -> mode, used to scope enrollment counts to the right section
+const studentModeById = ref({});
+
 // A rotating palette so cards don't all render the same color.
 const palette = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6'];
 
@@ -205,8 +208,7 @@ onMounted(async () => {
       enrollmentsStore.fetchEnrollments(),
       sessionsStore.fetchSessions(),
       attendancesStore.fetchAttendances(),
-      programmesStore.fetchProgrammes(),   // ✅ new
-
+      programmesStore.fetchProgrammes(),
     ]);
 
     schedulesStore.subscribeToSchedules();
@@ -214,27 +216,37 @@ onMounted(async () => {
     enrollmentsStore.subscribeToEnrollments();
     sessionsStore.subscribeToSessions();
     attendancesStore.subscribeToAttendances();
-    programmesStore.subscribeToProgrammes();   // ✅ new
+    programmesStore.subscribeToProgrammes();
+
+    // Load student modes once so course cards can show a mode-scoped count.
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, mode')
+      .eq('role', 'Student');
+
+    if (error) throw error;
+
+    studentModeById.value = Object.fromEntries(
+      (data ?? []).map((u) => [u.id, u.mode])
+    );
   } catch (error) {
     console.error('Error fetching lecturer courses:', error);
   }
-});
-
-onUnmounted(() => {
-  schedulesStore.unsubscribeFromSchedules();
-  coursesStore.unsubscribeFromCourses();
-  enrollmentsStore.unsubscribeFromEnrollments();
-  sessionsStore.unsubscribeFromSessions();
-  attendancesStore.unsubscribeFromAttendances();
 });
 
 /**
  * Attendance rate for one course: present / total across sessions
  * belonging to that course.
  */
-function avgAttendanceForCourse(courseId) {
+/**
+ * Attendance rate for one course+mode: present / total across sessions
+ * belonging to that course's specific section (Regular vs Weekend).
+ */
+function avgAttendanceForCourse(courseId, mode) {
   const sessionIds = new Set(
-    sessions.value.filter((s) => s.courseId === courseId).map((s) => s.id)
+    sessions.value
+      .filter((s) => s.courseId === courseId && s.mode === mode)
+      .map((s) => s.id)
   );
   if (sessionIds.size === 0) return 0;
 
@@ -245,28 +257,32 @@ function avgAttendanceForCourse(courseId) {
   return Math.round((present / relevant.length) * 100);
 }
 
-// One card per scheduled class this lecturer teaches (a lecturer could
-// teach the same course in two different slots, so we key by schedule id,
-// not course id).
+function studentsCountForSchedule(courseId, mode) {
+  return enrollmentsStore
+    .enrollmentsByCourse(courseId)
+    .filter((e) => studentModeById.value[e.studentId] === mode)
+    .length;
+}
+
 const lecturerCourses = computed(() => {
   return schedules.value
     .filter((s) => s.lecturer === lecturerName.value)
     .map((s, index) => {
       const course = coursesStore.getCourseById(s.courseId);
       return {
-        scheduleId: s.id,          // used for reschedule
-        id: s.courseId,            // used for attendance / class list (matches original behavior)
+        scheduleId: s.id,
+        id: s.courseId,
         code: course?.code ?? 'Unknown',
         name: course?.name ?? 'Unknown Course',
         semester: course?.semester || 'Semester 1',
         mode: s.mode || 'Unknown',
-        studentsCount: enrollmentsStore.enrollmentsByCourse(s.courseId).length,
+        studentsCount: studentsCountForSchedule(s.courseId, s.mode),
         day: s.day,
         time: `${s.startTime} - ${s.endTime}`,
         startTime: s.startTime,
         endTime: s.endTime,
         venue: s.venue,
-        avgAttendance: avgAttendanceForCourse(s.courseId),
+avgAttendance: avgAttendanceForCourse(s.courseId, s.mode),
         color: palette[index % palette.length],
       };
     });
