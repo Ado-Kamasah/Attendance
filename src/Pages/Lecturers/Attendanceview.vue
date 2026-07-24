@@ -651,6 +651,7 @@ const startLiveSession = async () => {
     const created = await sessionsStore.createSession({
       courseId: courseId.value,
       lecturerId: profile.value?.id,
+      mode: courseMode.value,
       maxStudents: selectedStudents.value.length,
       isActive: true,
     });

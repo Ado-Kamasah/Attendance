@@ -10,6 +10,7 @@ function mapSession(row) {
     id: row.id,
     courseId: row.course_id,
     lecturerId: row.lecturer_id,
+    mode: row.mode ?? null,
     date: row.date,
     pin: row.pin,
     maxStudents: row.max_students,
@@ -23,6 +24,7 @@ function toRow(session) {
   const row = {};
   if (session.courseId !== undefined) row.course_id = session.courseId;
   if (session.lecturerId !== undefined) row.lecturer_id = session.lecturerId;
+  if (session.mode !== undefined) row.mode = session.mode;
   if (session.date !== undefined) row.date = session.date;
   if (session.pin !== undefined) row.pin = session.pin;
   if (session.maxStudents !== undefined) row.max_students = session.maxStudents;

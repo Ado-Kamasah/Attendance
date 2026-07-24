@@ -235,12 +235,9 @@ onMounted(async () => {
 });
 
 /**
- * Attendance rate for one course: present / total across sessions
- * belonging to that course.
- */
-/**
  * Attendance rate for one course+mode: present / total across sessions
  * belonging to that course's specific section (Regular vs Weekend).
+ * Requires the sessions table to have a mode column — added via migration.
  */
 function avgAttendanceForCourse(courseId, mode) {
   const sessionIds = new Set(
@@ -282,7 +279,7 @@ const lecturerCourses = computed(() => {
         startTime: s.startTime,
         endTime: s.endTime,
         venue: s.venue,
-avgAttendance: avgAttendanceForCourse(s.courseId, s.mode),
+        avgAttendance: avgAttendanceForCourse(s.courseId, s.mode),
         color: palette[index % palette.length],
       };
     });
