@@ -28,7 +28,7 @@
           <label>Course</label>
           <select v-model="filters.courseId">
             <option value="">All courses</option>
-            <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} â€” {{ c.name }}</option>
+            <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} - {{ c.name }}</option>
           </select>
         </div>
 
@@ -165,7 +165,7 @@
                   <tr class="session-group-row">
                     <td colspan="6" class="session-group-cell">
                       <span class="sg-pin">PIN {{ group.pin }}</span>
-                      <span class="sg-course">{{ group.courseCode }} â€” {{ group.courseName }}</span>
+                      <span class="sg-course">{{ group.courseCode }} ~ {{ group.courseName }}</span>
                       <span class="sg-date">{{ group.dateStr }}</span>
                       <span class="sg-count">{{ group.rows.length }} student{{ group.rows.length !== 1 ? 's' : '' }}</span>
                     </td>
@@ -194,7 +194,7 @@
                         <span class="student-name">{{ row.studentName }}</span>
                       </div>
                     </td>
-                    <td>{{ row.courseCode }} â€” {{ row.courseName }}</td>
+                    <td>{{ row.courseCode }} ~ {{ row.courseName }}</td>
                     <td><span class="pin-chip">{{ row.pin }}</span></td>
                     <td>{{ row.dateStr }}</td>
                     <td>{{ row.timeStr }}</td>
