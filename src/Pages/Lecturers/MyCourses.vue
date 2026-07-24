@@ -80,6 +80,14 @@
             <button class="action-btn outline-btn" @click="openClassList(course)">
               View Class List
             </button>
+            <button class="action-btn delete-btn" @click="confirmDelete(course)" title="Remove this section">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -115,6 +123,37 @@
         <div class="modal-actions">
           <button class="action-btn outline-btn" @click="cancelEdit">Cancel</button>
           <button class="action-btn primary-btn" @click="saveEdit">Save Schedule</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Section Confirmation Modal -->
+    <div v-if="deletingCourse" class="modal-overlay" @click.self="deletingCourse = null">
+      <div class="modal-content delete-modal">
+        <div class="delete-modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </div>
+        <h2>Remove Section?</h2>
+        <p>You are about to remove the <strong>{{ deletingCourse.mode }}</strong> section of:</p>
+        <div class="delete-course-info">
+          <span class="delete-course-code">{{ deletingCourse.code }}</span>
+          <span class="delete-course-name">{{ deletingCourse.name }}</span>
+          <span class="delete-course-meta">{{ deletingCourse.day }} • {{ deletingCourse.time }}</span>
+        </div>
+        <p class="delete-warning">This removes your schedule assignment. The course itself remains in the system.</p>
+        <div class="modal-actions">
+          <button class="action-btn outline-btn" @click="deletingCourse = null" :disabled="isDeleting">Cancel</button>
+          <button class="action-btn danger-confirm-btn" @click="deleteSection" :disabled="isDeleting">
+            <svg v-if="isDeleting" class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/>
+            </svg>
+            {{ isDeleting ? 'Removing…' : 'Yes, Remove Section' }}
+          </button>
         </div>
       </div>
     </div>
@@ -284,6 +323,25 @@ const lecturerCourses = computed(() => {
       };
     });
 });
+
+// --- Delete section ---
+const deletingCourse = ref(null);
+const isDeleting = ref(false);
+
+const confirmDelete = (course) => {
+  deletingCourse.value = course;
+};
+
+const deleteSection = async () => {
+  if (!deletingCourse.value) return;
+  isDeleting.value = true;
+  try {
+    await schedulesStore.deleteSchedule(deletingCourse.value.scheduleId);
+    deletingCourse.value = null;
+  } catch { /* store handles toast */ } finally {
+    isDeleting.value = false;
+  }
+};
 
 // --- Reschedule modal ---
 const editingCourse = ref(null);
@@ -870,4 +928,63 @@ const closeClassList = () => {
   font-weight: 700;
   font-size: 0.9rem;
 }
+
+/* Delete button on card */
+.delete-btn {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #fecaca;
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all .2s;
+}
+.delete-btn:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+.delete-btn svg { width: 16px; height: 16px; }
+
+/* Delete confirm modal */
+.delete-modal {
+  max-width: 420px;
+  text-align: center;
+  padding: 2rem;
+}
+.delete-modal-icon {
+  width: 56px; height: 56px;
+  background: #fee2e2;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem;
+  color: #ef4444;
+}
+.delete-modal-icon svg { width: 26px; height: 26px; }
+.delete-modal h2 { margin: 0 0 .5rem; font-size: 1.2rem; color: #0f172a; }
+.delete-modal p  { margin: 0 0 1rem; font-size: .9rem; color: #64748b; }
+
+.delete-course-info {
+  display: flex; flex-direction: column; gap: .25rem;
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: .9rem 1.1rem; margin: 0 0 1rem; text-align: left;
+}
+.delete-course-code { font-size: .75rem; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: .05em; }
+.delete-course-name { font-size: .95rem; font-weight: 600; color: #0f172a; }
+.delete-course-meta { font-size: .8rem; color: #64748b; }
+.delete-warning { font-size: .8rem; color: #f59e0b !important; margin-bottom: 1.5rem !important; }
+
+.danger-confirm-btn {
+  background: #ef4444; color: #fff; border: none;
+  padding: .6rem 1.4rem; border-radius: 8px; font-size: .9rem; font-weight: 700;
+  cursor: pointer; display: inline-flex; align-items: center; gap: .5rem;
+  transition: background .2s;
+}
+.danger-confirm-btn:hover:not(:disabled) { background: #dc2626; }
+.danger-confirm-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.spin-icon { width: 16px; height: 16px; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

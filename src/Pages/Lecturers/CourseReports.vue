@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="reports-container">
     <div class="page-header">
       <div>
@@ -18,7 +18,7 @@
     <!-- Loading -->
     <div v-if="isLoading" class="loading-state page-loading">
       <div class="spinner"></div>
-      <p>Loading attendance data…</p>
+      <p>Loading attendance dataâ€¦</p>
     </div>
 
     <template v-else>
@@ -28,7 +28,7 @@
           <label>Course</label>
           <select v-model="filters.courseId">
             <option value="">All courses</option>
-            <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} — {{ c.name }}</option>
+            <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} â€” {{ c.name }}</option>
           </select>
         </div>
 
@@ -133,15 +133,18 @@
           </div>
         </div>
 
-        <!-- History table -->
+        <!-- History grouped by session -->
         <div class="history-card">
           <div class="history-header">
-            <h2>Attendance History</h2>
+            <div>
+              <h2>Attendance History</h2>
+              <p class="history-sub">{{ filteredSessions.length }} session{{ filteredSessions.length !== 1 ? 's' : '' }} Â· {{ historyRows.length }} record{{ historyRows.length !== 1 ? 's' : '' }}</p>
+            </div>
             <span class="count-pill">{{ historyRows.length }} record{{ historyRows.length === 1 ? '' : 's' }}</span>
           </div>
 
-          <div v-if="historyRows.length === 0" class="empty-students">
-            <p>No individual attendance records match the current filters.</p>
+          <div v-if="sessionGroups.length === 0" class="empty-students">
+            <p>No attendance records match the current filters.</p>
           </div>
           <div v-else class="students-table-wrapper">
             <table class="students-table">
@@ -149,30 +152,60 @@
                 <tr>
                   <th>Student</th>
                   <th>Course</th>
-                  <th>Session Code</th>
+                  <th>Session PIN</th>
                   <th>Date</th>
                   <th>Time</th>
                   <th>Status</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="row in historyRows" :key="row.id">
-                  <td>
-                    <div class="student-cell">
-                      <div class="student-avatar">{{ row.studentName.charAt(0) }}</div>
-                      <span class="student-name">{{ row.studentName }}</span>
-                    </div>
-                  </td>
-                  <td>{{ row.courseCode }} — {{ row.courseName }}</td>
-                  <td><span class="pin-chip">{{ row.pin }}</span></td>
-                  <td>{{ row.dateStr }}</td>
-                  <td>{{ row.timeStr }}</td>
-                  <td>
-                    <span class="attendance-badge" :class="row.status === 'present' ? 'excellent' : 'poor'">
-                      {{ row.status === 'present' ? 'Present' : 'Absent' }}
-                    </span>
-                  </td>
-                </tr>
+                <template v-for="group in sessionGroups" :key="group.sessionId">
+                  <!-- Session group header row -->
+                  <tr class="session-group-row">
+                    <td colspan="6" class="session-group-cell">
+                      <span class="sg-pin">PIN {{ group.pin }}</span>
+                      <span class="sg-course">{{ group.courseCode }} â€” {{ group.courseName }}</span>
+                      <span class="sg-date">{{ group.dateStr }}</span>
+                      <span class="sg-count">{{ group.rows.length }} student{{ group.rows.length !== 1 ? 's' : '' }}</span>
+                    </td>
+                    <td class="session-delete-cell">
+                      <button
+                        class="session-delete-btn"
+                        @click="confirmDeleteSession(group)"
+                        :disabled="deletingSessionId === group.sessionId"
+                        title="Delete this session"
+                      >
+                        <svg v-if="deletingSessionId === group.sessionId" class="spin-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
+                        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                          <path d="M10 11v6M14 11v6"/>
+                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                  <!-- Attendance rows for this session -->
+                  <tr v-for="row in group.rows" :key="row.id" class="attendance-row">
+                    <td>
+                      <div class="student-cell">
+                        <div class="student-avatar">{{ row.studentName.charAt(0) }}</div>
+                        <span class="student-name">{{ row.studentName }}</span>
+                      </div>
+                    </td>
+                    <td>{{ row.courseCode }} â€” {{ row.courseName }}</td>
+                    <td><span class="pin-chip">{{ row.pin }}</span></td>
+                    <td>{{ row.dateStr }}</td>
+                    <td>{{ row.timeStr }}</td>
+                    <td>
+                      <span class="attendance-badge" :class="row.status === 'present' ? 'excellent' : 'poor'">
+                        {{ row.status === 'present' ? 'Present' : 'Absent' }}
+                      </span>
+                    </td>
+                    <td></td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
@@ -229,8 +262,36 @@
       </div>
     </div>
   </div>
-</template>
 
+  <!-- Delete session confirm modal -->
+  <div class="modal-backdrop" v-if="sessionToDelete" @click.self="sessionToDelete = null">
+    <div class="modal-card delete-session-modal">
+      <div class="ds-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+      </div>
+      <h2>Delete Session?</h2>
+      <p>This will permanently delete the session and all <strong>{{ sessionToDelete.rows.length }}</strong> attendance record{{ sessionToDelete.rows.length !== 1 ? 's' : '' }} for:</p>
+      <div class="ds-info">
+        <span class="pin-chip">PIN {{ sessionToDelete.pin }}</span>
+        <span class="ds-course">{{ sessionToDelete.courseCode }} â€” {{ sessionToDelete.courseName }}</span>
+        <span class="ds-date">{{ sessionToDelete.dateStr }}</span>
+      </div>
+      <p class="ds-warn">This action cannot be undone.</p>
+      <div class="ds-actions">
+        <button class="btn-cancel" @click="sessionToDelete = null" :disabled="!!deletingSessionId">Cancel</button>
+        <button class="btn-delete-confirm" @click="deleteSessionById" :disabled="!!deletingSessionId">
+          <svg v-if="deletingSessionId" class="spin-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
+          {{ deletingSessionId ? 'Deletingâ€¦' : 'Delete Session' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -292,7 +353,7 @@ onMounted(async () => {
     ]);
 
     // Students aren't covered by a dedicated Pinia store elsewhere in the
-    // app (AttendanceManagement.vue queries `users` directly too) — pull
+    // app (AttendanceManagement.vue queries `users` directly too) â€” pull
     // everyone enrolled in this lecturer's courses in one batch.
     const lecturerCourseIds = new Set(
       sessions.value.filter((s) => s.lecturerId === profile.value?.id).map((s) => s.courseId)
@@ -331,7 +392,7 @@ onMounted(async () => {
 });
 
 // Courses this lecturer actually teaches, inferred from schedules
-// (schedules.lecturer is a free-text name in the schema shown elsewhere —
+// (schedules.lecturer is a free-text name in the schema shown elsewhere â€”
 // fall back to "all courses" if that linkage can't be made reliably).
 const coursesForLecturer = computed(() => {
   const lecturerName = profile.value?.name;
@@ -367,7 +428,7 @@ const inDateRange = (dateStr, from, to) => {
   return true;
 };
 
-// Sessions after course/level/semester/date/pin filters — student filter is
+// Sessions after course/level/semester/date/pin filters â€” student filter is
 // applied later, at the attendance-row level, since "student" narrows
 // PEOPLE within a session rather than which sessions existed.
 const filteredSessions = computed(() => {
@@ -389,7 +450,7 @@ const filteredSessions = computed(() => {
 
 const filteredSessionIds = computed(() => new Set(filteredSessions.value.map((s) => s.id)));
 
-// Individual attendance rows for the history table — every present record
+// Individual attendance rows for the history table â€” every present record
 // whose session survived the filters above, further narrowed by student.
 const historyRows = computed(() => {
   const f = filters.value;
@@ -404,12 +465,13 @@ const historyRows = computed(() => {
 
       return {
         id: a.id,
+        sessionId: a.sessionId,
         studentName: student?.name ?? 'Unknown student',
-        courseCode: course?.code ?? '—',
+        courseCode: course?.code ?? 'â€”',
         courseName: course?.name ?? 'Unknown course',
-        pin: session?.pin ?? '—',
-        dateStr: ts ? ts.toLocaleDateString() : '—',
-        timeStr: ts ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—',
+        pin: session?.pin ?? 'â€”',
+        dateStr: ts ? ts.toLocaleDateString() : 'â€”',
+        timeStr: ts ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'â€”',
         status: a.status,
         rawTimestamp: a.timestamp,
       };
@@ -537,6 +599,55 @@ const getAttendanceClass = (rate) => {
 const exportReport = () => {
   alert('Report export feature will be implemented soon.');
 };
+
+// â”€â”€ Delete session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const sessionToDelete  = ref(null);   // the group object from sessionGroups
+const deletingSessionId = ref(null);  // session id being deleted
+
+const confirmDeleteSession = (group) => {
+  sessionToDelete.value = group;
+};
+
+const deleteSessionById = async () => {
+  if (!sessionToDelete.value) return;
+  const sid = sessionToDelete.value.sessionId;
+  deletingSessionId.value = sid;
+  try {
+    // Delete all attendance records for this session first, then the session
+    const { error: aErr } = await supabase.from('attendances').delete().eq('session_id', sid);
+    if (aErr) throw aErr;
+    await sessionsStore.deleteSession(sid);
+    // Reactively remove from local attendances store state
+    attendancesStore.removeBySessionId?.(sid);
+    sessionToDelete.value = null;
+  } catch (e) {
+    console.error('Failed to delete session:', e);
+  } finally {
+    deletingSessionId.value = null;
+  }
+};
+
+// â”€â”€ Session groups for the history table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const sessionGroups = computed(() => {
+  const bySession = new Map();
+  for (const row of historyRows.value) {
+    const session = sessionsStore.getSessionById(row.sessionId ?? row.id);
+    const sid = row.sessionId ?? session?.id;
+    if (!sid) continue;
+    if (!bySession.has(sid)) {
+      bySession.set(sid, {
+        sessionId: sid,
+        pin: row.pin,
+        courseCode: row.courseCode,
+        courseName: row.courseName,
+        dateStr: row.dateStr,
+        rows: [],
+      });
+    }
+    bySession.get(sid).rows.push(row);
+  }
+  return [...bySession.values()].sort((a, b) => b.rows[0]?.rawTimestamp?.localeCompare(a.rows[0]?.rawTimestamp ?? '') ?? 0);
+});
 </script>
 
 <style scoped>
@@ -1013,4 +1124,41 @@ const exportReport = () => {
   .filters-bar { flex-direction: column; align-items: stretch; }
   .filter-field { min-width: 0; }
 }
+
+/* History subtitle */
+.history-sub { margin: 2px 0 0; font-size: .8rem; color: #94a3b8; }
+
+/* Session group header band */
+.session-group-row > td { background: #f8fafc; border-top: 2px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: .6rem 1rem !important; }
+.session-group-cell { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.sg-pin { background: #e0e7ff; color: #4338ca; font-size: .72rem; font-weight: 800; padding: .2rem .55rem; border-radius: 6px; letter-spacing: .06em; }
+.sg-course { font-weight: 600; color: #1e293b; font-size: .88rem; }
+.sg-date { color: #64748b; font-size: .8rem; }
+.sg-count { margin-left: auto; color: #94a3b8; font-size: .75rem; font-weight: 600; }
+
+.attendance-row > td:first-child { padding-left: 1.5rem; }
+
+.session-delete-cell { text-align: right; padding: .4rem .8rem !important; }
+.session-delete-btn { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid #fecaca; border-radius: 7px; background: #fff5f5; color: #ef4444; cursor: pointer; transition: all .18s; }
+.session-delete-btn:hover:not(:disabled) { background: #ef4444; color: #fff; border-color: #ef4444; }
+.session-delete-btn:disabled { opacity: .5; cursor: not-allowed; }
+.session-delete-btn svg { width: 14px; height: 14px; }
+.spin-sm { animation: spinSm .7s linear infinite; }
+@keyframes spinSm { to { transform: rotate(360deg); } }
+
+.delete-session-modal { max-width: 400px; text-align: center; padding: 2rem; }
+.ds-icon { width: 52px; height: 52px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+.ds-icon svg { width: 24px; height: 24px; }
+.delete-session-modal h2 { margin: 0 0 .5rem; font-size: 1.1rem; color: #0f172a; }
+.delete-session-modal > p { margin: 0 0 1rem; font-size: .88rem; color: #64748b; }
+.ds-info { display: flex; flex-direction: column; gap: .3rem; align-items: flex-start; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: .85rem 1rem; margin: 0 0 .8rem; }
+.ds-course { font-weight: 600; color: #1e293b; font-size: .92rem; }
+.ds-date { font-size: .78rem; color: #64748b; }
+.ds-warn { font-size: .78rem; color: #f59e0b !important; margin-bottom: 1.25rem !important; }
+.ds-actions { display: flex; gap: .75rem; justify-content: center; }
+.btn-cancel { padding: .6rem 1.2rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 600; cursor: pointer; }
+.btn-cancel:hover:not(:disabled) { background: #f1f5f9; }
+.btn-cancel:disabled, .btn-delete-confirm:disabled { opacity: .6; cursor: not-allowed; }
+.btn-delete-confirm { padding: .6rem 1.4rem; border-radius: 8px; border: none; background: #ef4444; color: #fff; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem; }
+.btn-delete-confirm:hover:not(:disabled) { background: #dc2626; }
 </style>

@@ -394,6 +394,83 @@
         </div>
       </div>
     </div>
+
+    <!-- ── Session End Pop Report ─────────────────────────────────────── -->
+    <Teleport to="body">
+      <div v-if="sessionReport" class="sr-overlay" @click.self="sessionReport = null">
+        <div class="sr-modal">
+          <!-- Header -->
+          <div class="sr-header">
+            <div class="sr-header-left">
+              <div class="sr-check-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div>
+                <h2 class="sr-title">Session Complete</h2>
+                <p class="sr-subtitle">{{ sessionReport.courseCode }} · {{ sessionReport.courseMode }} · Ended {{ sessionReport.endedAt }}</p>
+              </div>
+            </div>
+            <button class="sr-close" @click="sessionReport = null">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <!-- KPI tiles -->
+          <div class="sr-kpis">
+            <!-- Rate circle -->
+            <div class="sr-rate-wrap">
+              <svg class="sr-ring" viewBox="0 0 120 120">
+                <circle class="sr-ring-track" cx="60" cy="60" r="50"/>
+                <circle
+                  class="sr-ring-fill"
+                  cx="60" cy="60" r="50"
+                  :style="{
+                    strokeDasharray: `${2 * Math.PI * 50}`,
+                    strokeDashoffset: `${2 * Math.PI * 50 * (1 - sessionReport.rate / 100)}`,
+                    stroke: sessionReport.rate >= 70 ? '#10b981' : sessionReport.rate >= 45 ? '#f59e0b' : '#ef4444'
+                  }"
+                />
+              </svg>
+              <div class="sr-ring-center">
+                <span class="sr-rate-num" :style="{ color: sessionReport.rate >= 70 ? '#10b981' : sessionReport.rate >= 45 ? '#f59e0b' : '#ef4444' }">{{ sessionReport.rate }}%</span>
+                <span class="sr-rate-lbl">Rate</span>
+              </div>
+            </div>
+
+            <div class="sr-tiles">
+              <div class="sr-tile sr-tile-green">
+                <span class="sr-tile-num">{{ sessionReport.present }}</span>
+                <span class="sr-tile-lbl">Present</span>
+              </div>
+              <div class="sr-tile sr-tile-red">
+                <span class="sr-tile-num">{{ sessionReport.absent }}</span>
+                <span class="sr-tile-lbl">Absent</span>
+              </div>
+              <div class="sr-tile sr-tile-gray">
+                <span class="sr-tile-num">{{ sessionReport.total }}</span>
+                <span class="sr-tile-lbl">Expected</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Present students list -->
+          <div class="sr-list-wrap" v-if="sessionReport.presentStudents.length > 0">
+            <p class="sr-list-title">Students Present</p>
+            <div class="sr-list">
+              <div v-for="(s, i) in sessionReport.presentStudents" :key="s.studentId" class="sr-student">
+                <span class="sr-num">{{ i + 1 }}</span>
+                <div class="sr-avatar">{{ s.name.charAt(0) }}</div>
+                <span class="sr-name">{{ s.name }}</span>
+                <span class="sr-time">{{ formatTime(s.timestamp) }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="sr-no-present">No students checked in this session.</div>
+
+          <button class="sr-done-btn" @click="sessionReport = null">Done</button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 <script setup>
@@ -710,6 +787,10 @@ const stopLiveSession = async () => {
   const sessionId = liveAttendanceSession.value.id;
   const courseCode_ = courseCode.value;
 
+  // Snapshot stats BEFORE clearing state
+  const presentList  = [...checkedInStudents.value];
+  const totalExpected = liveAttendanceSession.value.maxStudents ?? enrolledStudents.value.length;
+
   try {
     if (sessionId) {
       await sessionsStore.closeSession(sessionId);
@@ -728,11 +809,25 @@ const stopLiveSession = async () => {
 
       auditLogsStore.logAction({
         action: 'session_ended',
-        details: `Ended session for ${courseCode_} — ${checkedInStudents.value.length} present, ${pendingRecords.length} auto-marked absent`,
+        details: `Ended session for ${courseCode_} — ${presentList.length} present, ${pendingRecords.length} auto-marked absent`,
         userId: profile.value?.id,
         userRole: profile.value?.role,
         userName: profile.value?.name,
       });
+
+      // Show pop report
+      const absentCount = totalExpected - presentList.length;
+      const rate = totalExpected > 0 ? Math.round((presentList.length / totalExpected) * 100) : 0;
+      sessionReport.value = {
+        courseCode: courseCode_,
+        courseMode: courseMode.value,
+        present:    presentList.length,
+        absent:     absentCount < 0 ? 0 : absentCount,
+        total:      totalExpected,
+        rate,
+        presentStudents: presentList,
+        endedAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      };
     }
   } catch (e) {
     console.error(e);
@@ -744,10 +839,13 @@ const stopLiveSession = async () => {
 
 const extendTimer = (secs) => { if (liveAttendanceSession.value.isActive) timeLeft.value += secs; };
 
-// studentId -> { status: 'idle'|'sending'|'sent'|'failed', message }
+// sessionId -> { status: 'idle'|'sending'|'sent'|'failed', message }
 const otpDispatch = ref({});
 const isDispatchingOtp = ref(false);
 const otpBannerMessage = ref('');
+
+// Session end summary report
+const sessionReport = ref(null);
 
 onUnmounted(() => {
   clearInterval(timerInterval);
@@ -1597,4 +1695,99 @@ onUnmounted(() => {
     font-size: 1.4rem;
   }
 }
+
+/* ── Session Report Pop Modal ─────────────────────────────────────────── */
+:global(.sr-overlay) {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(15,23,42,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+  animation: srFadeIn .2s ease;
+}
+@keyframes srFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+:global(.sr-modal) {
+  background: #fff; border-radius: 20px; width: 100%; max-width: 480px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.18); overflow: hidden;
+  animation: srSlideUp .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes srSlideUp { from { transform: translateY(24px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+:global(.sr-header) {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9;
+}
+:global(.sr-header-left) { display: flex; align-items: center; gap: .9rem; }
+:global(.sr-check-icon) {
+  width: 42px; height: 42px; border-radius: 12px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
+}
+:global(.sr-check-icon svg) { width: 20px; height: 20px; }
+:global(.sr-title)    { margin: 0 0 2px; font-size: 1.05rem; font-weight: 700; color: #0f172a; }
+:global(.sr-subtitle) { margin: 0; font-size: .78rem; color: #64748b; }
+:global(.sr-close) {
+  background: none; border: none; cursor: pointer; color: #94a3b8; padding: 4px;
+  border-radius: 6px; display: flex; align-items: center; transition: color .15s;
+}
+:global(.sr-close:hover) { color: #0f172a; }
+:global(.sr-close svg) { width: 18px; height: 18px; }
+
+/* KPIs row */
+:global(.sr-kpis) {
+  display: flex; align-items: center; gap: 1.25rem;
+  padding: 1.25rem 1.5rem; background: #f8fafc;
+}
+:global(.sr-rate-wrap) { position: relative; flex-shrink: 0; width: 90px; height: 90px; }
+:global(.sr-ring) { width: 90px; height: 90px; transform: rotate(-90deg); }
+:global(.sr-ring-track) { fill: none; stroke: #e2e8f0; stroke-width: 10; }
+:global(.sr-ring-fill)  { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset .6s ease; }
+:global(.sr-ring-center) {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+:global(.sr-rate-num) { font-size: 1.2rem; font-weight: 800; line-height: 1; }
+:global(.sr-rate-lbl) { font-size: .6rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; }
+
+:global(.sr-tiles) { flex: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: .6rem; }
+:global(.sr-tile) {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 12px; padding: .75rem .5rem; gap: 2px;
+}
+:global(.sr-tile-green) { background: #dcfce7; }
+:global(.sr-tile-red)   { background: #fee2e2; }
+:global(.sr-tile-gray)  { background: #f1f5f9; }
+:global(.sr-tile-num)   { font-size: 1.5rem; font-weight: 800; color: #0f172a; line-height: 1; }
+:global(.sr-tile-lbl)   { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #64748b; }
+:global(.sr-tile-green .sr-tile-num) { color: #15803d; }
+:global(.sr-tile-red   .sr-tile-num) { color: #b91c1c; }
+
+/* Student list */
+:global(.sr-list-wrap) { padding: 1rem 1.5rem 0; }
+:global(.sr-list-title) { margin: 0 0 .6rem; font-size: .75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; }
+:global(.sr-list) { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: .3rem; }
+:global(.sr-student) {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .5rem .6rem; border-radius: 8px; background: #f8fafc;
+  font-size: .85rem;
+}
+:global(.sr-num)    { font-size: .7rem; color: #94a3b8; font-weight: 600; width: 18px; text-align: right; }
+:global(.sr-avatar) {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff;
+  font-size: .8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+:global(.sr-name) { flex: 1; font-weight: 600; color: #1e293b; }
+:global(.sr-time) { font-size: .72rem; color: #94a3b8; }
+
+:global(.sr-no-present) {
+  padding: 1rem 1.5rem; font-size: .85rem; color: #94a3b8; font-style: italic;
+}
+
+:global(.sr-done-btn) {
+  display: block; width: calc(100% - 3rem); margin: 1.25rem 1.5rem;
+  background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff;
+  border: none; padding: .8rem; border-radius: 10px; font-size: .95rem; font-weight: 700;
+  cursor: pointer; transition: opacity .2s;
+}
+:global(.sr-done-btn:hover) { opacity: .9; }
 </style>
