@@ -482,6 +482,8 @@ function rateColor(rate) {
   flex-direction: column;
   gap: 2rem;
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* ── Header ─────────────────────────────────────────── */
@@ -553,6 +555,7 @@ function rateColor(rate) {
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
   border: 1px solid rgba(226,232,240,0.8);
   transition: transform 0.2s, box-shadow 0.2s;
+  min-width: 0;
 }
 
 .kpi-card:hover {
@@ -580,11 +583,18 @@ function rateColor(rate) {
 .kpi-amber .kpi-icon { background: rgba(245,158,11,0.1); color: #f59e0b; }
 .kpi-red .kpi-icon   { background: rgba(239,68,68,0.1);  color: #ef4444; }
 
+.kpi-body {
+  min-width: 0;
+}
+
 .kpi-label {
   margin: 0 0 0.25rem;
   font-size: 0.8rem;
   color: #64748b;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-value {
@@ -602,6 +612,7 @@ function rateColor(rate) {
   padding: 1.5rem;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
   border: 1px solid rgba(226,232,240,0.8);
+  min-width: 0;
 }
 
 .panel-header {
@@ -645,11 +656,13 @@ function rateColor(rate) {
   font-size: 0.875rem;
   color: #334155;
   min-width: 220px;
+  width: 100%;
 }
 
 /* ── Table ──────────────────────────────────────────── */
 .table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
@@ -668,6 +681,7 @@ function rateColor(rate) {
   letter-spacing: 0.05em;
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .data-table th:first-child { border-radius: 8px 0 0 8px; }
@@ -706,6 +720,7 @@ function rateColor(rate) {
   border-radius: 9999px;
   font-size: 0.78rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 .rate-badge.rate-good { background: #dcfce7; color: #15803d; }
 .rate-badge.rate-warn { background: #fef9c3; color: #a16207; }
@@ -733,6 +748,7 @@ function rateColor(rate) {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
+  white-space: nowrap;
 }
 .status-pill.present { background: #dcfce7; color: #15803d; }
 .status-pill.absent  { background: #fee2e2; color: #b91c1c; }
@@ -744,6 +760,7 @@ function rateColor(rate) {
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
 .page-btn {
@@ -756,20 +773,173 @@ function rateColor(rate) {
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 .page-btn:hover:not(:disabled) { background: #6366f1; color: #fff; border-color: #6366f1; }
 .page-btn:disabled { opacity: 0.35; cursor: default; }
 .page-info { font-size: 0.875rem; color: #64748b; }
 
-/* ── Responsive ─────────────────────────────────────── */
-@media (max-width: 768px) {
-  .analytics-header { flex-direction: column; }
-  .kpi-grid { grid-template-columns: 1fr 1fr; }
-  .search-input { min-width: 140px; }
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   S  : ≤ 375px   (small phones)
+   M  : 376–480px (large phones)
+   L  : 481–767px (phablets / small tablets, portrait)
+   Tab: 768–1023px (tablets)
+   Lap: 1024–1279px (small laptops)
+   ══════════════════════════════════════════════════════ */
+
+/* ── Small laptops / narrow desktop (≤1279px): tighten grid a touch ── */
+@media (max-width: 1279px) {
+  .kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
 }
 
+/* ── Tablets (≤1023px) ── */
+@media (max-width: 1023px) {
+  .analytics-container { gap: 1.5rem; }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .panel { padding: 1.25rem; }
+
+  .search-input { min-width: 160px; }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .panel-header {
+    align-items: stretch;
+  }
+}
+
+/* ── Large phones / small tablets, portrait (≤767px) ── */
+@media (max-width: 767px) {
+  .analytics-container { gap: 1.25rem; }
+
+  .analytics-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-title { font-size: 1.4rem; }
+  .page-subtitle { font-size: 0.85rem; }
+
+  .header-actions {
+    width: 100%;
+  }
+  .header-actions .filter-select {
+    flex: 1 1 45%;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .kpi-card {
+    padding: 1rem;
+    border-radius: 12px;
+    gap: 0.75rem;
+  }
+
+  .kpi-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+  .kpi-icon svg { width: 18px; height: 18px; }
+
+  .kpi-label { font-size: 0.72rem; }
+  .kpi-value { font-size: 1.3rem; }
+
+  .panel {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .panel-header h2 { font-size: 1rem; }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .filter-group .filter-select,
+  .filter-group .search-box {
+    width: 100%;
+  }
+
+  .search-box { width: 100%; }
+  .search-input { min-width: 0; }
+
+  .data-table { font-size: 0.8rem; }
+  .data-table th,
+  .data-table td { padding: 0.6rem 0.65rem; }
+
+  .bar-cell { min-width: 90px; }
+
+  .pagination {
+    justify-content: space-between;
+  }
+}
+
+/* ── Large phones (≤480px) ── */
 @media (max-width: 480px) {
-  .kpi-grid { grid-template-columns: 1fr; }
-  .panel-header { flex-direction: column; align-items: flex-start; }
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .kpi-card {
+    padding: 0.9rem 1rem;
+  }
+
+  .header-actions {
+    flex-direction: column;
+  }
+  .header-actions .filter-select {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .data-table { font-size: 0.76rem; }
+  .data-table th { font-size: 0.68rem; }
+
+  .rate-badge,
+  .status-pill { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
+
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .page-btn { width: 100%; }
+}
+
+/* ── Small phones (≤375px) ── */
+@media (max-width: 375px) {
+  .page-title { font-size: 1.2rem; }
+
+  .kpi-value { font-size: 1.15rem; }
+  .kpi-icon { width: 32px; height: 32px; }
+  .kpi-icon svg { width: 16px; height: 16px; }
+
+  .panel { padding: 0.85rem; }
+
+  .data-table th,
+  .data-table td { padding: 0.5rem; }
+
+  .mono { font-size: 0.72rem; }
 }
 </style>

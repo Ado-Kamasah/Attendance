@@ -245,6 +245,8 @@ const systemAuditLogs = computed(() =>
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .page-title {
@@ -267,12 +269,14 @@ const systemAuditLogs = computed(() =>
   color: #64748b;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .date-badge svg {
   width: 16px;
   height: 16px;
   color: #6366f1;
+  flex-shrink: 0;
 }
 
 /* Key Metrics */
@@ -292,6 +296,7 @@ const systemAuditLogs = computed(() =>
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(226, 232, 240, 0.8);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0;
 }
 
 .metric-card:hover {
@@ -322,6 +327,7 @@ const systemAuditLogs = computed(() =>
 
 .metric-content {
   flex: 1;
+  min-width: 0;
 }
 
 .metric-title {
@@ -337,6 +343,9 @@ const systemAuditLogs = computed(() =>
   font-weight: 700;
   color: #0f172a;
   letter-spacing: -0.025em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .metric-trend {
@@ -346,11 +355,13 @@ const systemAuditLogs = computed(() =>
   margin: 0;
   font-size: 0.75rem;
   font-weight: 600;
+  flex-wrap: wrap;
 }
 
 .metric-trend svg {
   width: 14px;
   height: 14px;
+  flex-shrink: 0;
 }
 
 .metric-trend.positive {
@@ -374,12 +385,6 @@ const systemAuditLogs = computed(() =>
   gap: 1.5rem;
 }
 
-@media (max-width: 1024px) {
-  .dashboard-content-split {
-    grid-template-columns: 1fr;
-  }
-}
-
 .schedule-panel,
 .attendance-summary {
   background-color: #ffffff;
@@ -387,6 +392,7 @@ const systemAuditLogs = computed(() =>
   padding: 1.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(226, 232, 240, 0.8);
+  min-width: 0;
 }
 
 .side-panel {
@@ -400,6 +406,8 @@ const systemAuditLogs = computed(() =>
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .panel-header h2 {
@@ -419,6 +427,7 @@ const systemAuditLogs = computed(() =>
   cursor: pointer;
   padding: 0;
   transition: color 0.2s;
+  white-space: nowrap;
 }
 
 .view-all-btn:hover {
@@ -457,6 +466,7 @@ const systemAuditLogs = computed(() =>
   align-items: flex-end;
   border-right: 2px solid #e2e8f0;
   padding-right: 1.5rem;
+  flex-shrink: 0;
 }
 
 .time-start {
@@ -473,6 +483,7 @@ const systemAuditLogs = computed(() =>
 
 .course-info {
   flex: 1;
+  min-width: 0;
 }
 
 .course-info h4 {
@@ -480,12 +491,18 @@ const systemAuditLogs = computed(() =>
   font-size: 1rem;
   font-weight: 600;
   color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .course-info p {
   margin: 0;
   font-size: 0.85rem;
   color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-badge {
@@ -495,6 +512,8 @@ const systemAuditLogs = computed(() =>
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .status-badge.completed {
@@ -550,6 +569,7 @@ const systemAuditLogs = computed(() =>
   padding: 1rem;
   border-radius: 10px;
   border-left: 3px solid #6366f1;
+  min-width: 0;
 }
 
 .audit-header {
@@ -557,6 +577,8 @@ const systemAuditLogs = computed(() =>
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.25rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .audit-action {
@@ -568,6 +590,7 @@ const systemAuditLogs = computed(() =>
 .audit-time {
   font-size: 0.75rem;
   color: #94a3b8;
+  white-space: nowrap;
 }
 
 .audit-details {
@@ -575,12 +598,14 @@ const systemAuditLogs = computed(() =>
   font-size: 0.85rem;
   color: #475569;
   line-height: 1.4;
+  word-break: break-word;
 }
 
 .audit-user {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .user-role {
@@ -589,6 +614,7 @@ const systemAuditLogs = computed(() =>
   font-weight: 700;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
 .user-role.system {
@@ -610,6 +636,9 @@ const systemAuditLogs = computed(() =>
   font-size: 0.8rem;
   color: #64748b;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .empty-msg {
@@ -632,25 +661,60 @@ const systemAuditLogs = computed(() =>
   text-decoration: none;
 }
 
-/* Dashboard Responsiveness */
+/* ================================
+   RESPONSIVE BREAKPOINTS
+   Small laptop (≤1200px) → Tablet (≤1024px) → Tablet/large phone (≤768px)
+   → Mobile L (≤480px) → Mobile M (≤414px) → Mobile S (≤360px)
+   ================================ */
+
+@media (max-width: 1200px) {
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-content-split {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
+  .dashboard-container {
+    gap: 1.5rem;
+  }
+
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
+    gap: 0.75rem;
   }
-  
+
   .page-title {
     font-size: 1.5rem;
   }
-  
+
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 1rem;
+  }
+
+  .metric-card {
+    padding: 1.25rem;
+  }
+
+  .schedule-panel,
+  .attendance-summary {
+    padding: 1.25rem;
+  }
+
   .schedule-item {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
     padding: 1.25rem;
   }
-  
+
   .time-block {
     flex-direction: row;
     align-items: center;
@@ -660,26 +724,138 @@ const systemAuditLogs = computed(() =>
     padding-right: 0;
     padding-bottom: 0.75rem;
   }
-  
+
   .time-end {
     margin-top: 0;
   }
-  
+
   .status-badge {
     align-self: flex-start;
     margin-top: 0.5rem;
   }
 }
 
+/* Mobile L (large phones, ~425-480px) */
 @media (max-width: 480px) {
+  .page-title {
+    font-size: 1.3rem;
+  }
+
+  .date-badge {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.85rem;
+  }
+
   .metrics-grid {
     grid-template-columns: 1fr;
   }
-  
+
+  .metric-icon-wrap {
+    width: 42px;
+    height: 42px;
+  }
+
+  .metric-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .metric-value {
+    font-size: 1.5rem;
+  }
+
+  .panel-header h2 {
+    font-size: 1.1rem;
+  }
+
   .time-block {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
+  }
+
+  .audit-item {
+    padding: 0.85rem;
+  }
+}
+
+/* Mobile M (e.g. iPhone SE/12/13, ~375-414px) */
+@media (max-width: 414px) {
+  .metric-card {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .schedule-panel,
+  .attendance-summary {
+    padding: 1rem;
+  }
+
+  .schedule-item {
+    padding: 1rem;
+  }
+
+  .audit-item {
+    padding: 0.75rem;
+  }
+
+  .audit-action {
+    font-size: 0.85rem;
+  }
+
+  .audit-details {
+    font-size: 0.8rem;
+  }
+
+  .full-width {
+    padding: 0.65rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile S (small phones, ≤360px) */
+@media (max-width: 360px) {
+  .page-title {
+    font-size: 1.15rem;
+  }
+
+  .date-badge span {
+    font-size: 0.75rem;
+  }
+
+  .metric-icon-wrap {
+    width: 38px;
+    height: 38px;
+  }
+
+  .metric-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .metric-value {
+    font-size: 1.3rem;
+  }
+
+  .metric-title {
+    font-size: 0.8rem;
+  }
+
+  .metric-trend {
+    font-size: 0.68rem;
+  }
+
+  .course-info h4 {
+    font-size: 0.9rem;
+  }
+
+  .status-badge {
+    font-size: 0.68rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .user-role {
+    font-size: 0.6rem;
   }
 }
 </style>

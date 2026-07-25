@@ -320,6 +320,8 @@ const deleteSemester = async (id) => {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -355,16 +357,11 @@ const deleteSemester = async (id) => {
   align-items: start;
 }
 
-@media (max-width: 992px) {
-  .setup-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
 .setup-column, .info-column {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
 }
 
 /* Cards */
@@ -415,6 +412,7 @@ const deleteSemester = async (id) => {
 
 .form-row .form-group {
   flex: 1;
+  min-width: 0;
 }
 
 .form-group {
@@ -506,6 +504,7 @@ const deleteSemester = async (id) => {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .custom-checkbox input:checked ~ .checkmark {
@@ -566,6 +565,7 @@ const deleteSemester = async (id) => {
 .btn-primary svg {
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 .btn-primary:disabled {
@@ -755,12 +755,14 @@ const deleteSemester = async (id) => {
 
 .history-details {
   flex: 1;
+  min-width: 0;
 }
 
 .history-title {
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
 }
 
 .history-year {
@@ -779,21 +781,11 @@ const deleteSemester = async (id) => {
   gap: 8px;
   opacity: 0;
   transition: opacity 0.2s;
+  flex-shrink: 0;
 }
 
 .history-item:hover .history-actions {
   opacity: 1;
-}
-
-@media (max-width: 768px) {
-  .history-actions {
-    opacity: 1;
-  }
-}
-
-.history-actions {
-  display: flex;
-  gap: 8px;
 }
 
 .btn-activate {
@@ -806,6 +798,7 @@ const deleteSemester = async (id) => {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .btn-activate:hover {
@@ -824,6 +817,7 @@ const deleteSemester = async (id) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .btn-icon.edit:hover {
@@ -846,5 +840,144 @@ const deleteSemester = async (id) => {
   text-align: center;
   color: #94a3b8;
   font-size: 0.95rem;
+}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   S  : ≤ 375px   (small phones)
+   M  : 376–480px (large phones)
+   L  : 481–767px (phablets / small tablets, portrait)
+   Tab: 768–991px (tablets)
+   Lap: 992–1199px (small laptops)
+   ══════════════════════════════════════════════════════ */
+
+/* ── Small laptops (≤1199px): trim outer padding a touch ── */
+@media (max-width: 1199px) {
+  .page-header { padding: 22px 28px; }
+  .card-header { padding: 22px 28px 14px; }
+  .setup-form { padding: 0 28px 28px; }
+}
+
+/* ── Tablets (≤991px): stack the two-column layout ── */
+@media (max-width: 991px) {
+  .setup-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* ── Large phones / small tablets, portrait (≤767px) ── */
+@media (max-width: 767px) {
+  .setup-container { gap: 18px; }
+
+  .page-header {
+    padding: 18px 20px;
+    border-radius: 12px;
+  }
+  .page-title { font-size: 1.4rem; margin-bottom: 4px; }
+  .page-subtitle { font-size: 0.9rem; }
+
+  .setup-column, .info-column { gap: 18px; }
+
+  .card { border-radius: 12px; }
+
+  .card-header { padding: 18px 20px 12px; }
+  .card-header h2 { font-size: 1.1rem; }
+  .card-header p { font-size: 0.85rem; }
+
+  .setup-form { padding: 0 20px 20px; }
+  .form-grid { gap: 16px; }
+
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-control { padding: 11px 14px; font-size: 0.9rem; }
+  .pl-10 { padding-left: 40px !important; }
+
+  .checkbox-group { padding: 14px; }
+  .checkbox-hint { margin-left: 34px; }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 18px;
+  }
+  .btn-primary, .btn-ghost {
+    width: 100%;
+    padding: 12px 20px;
+  }
+
+  .active-status-card { padding: 22px 20px; }
+  .active-year { font-size: 2rem; }
+  .active-term { font-size: 1.05rem; margin-bottom: 18px; }
+
+  .history-item {
+    padding: 14px 16px;
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  .history-actions {
+    opacity: 1;
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 56px;
+  }
+
+  .empty-history { padding: 24px; font-size: 0.9rem; }
+}
+
+/* ── Large phones (≤480px) ── */
+@media (max-width: 480px) {
+  .page-title { font-size: 1.2rem; }
+
+  .active-year { font-size: 1.6rem; }
+  .active-term { font-size: 0.95rem; }
+
+  .history-icon {
+    width: 34px;
+    height: 34px;
+    margin-right: 12px;
+  }
+  .history-icon svg { width: 16px; height: 16px; }
+
+  .history-title { font-size: 0.9rem; }
+  .history-dates { font-size: 0.78rem; }
+
+  .history-actions {
+    margin-left: 46px;
+    flex-wrap: wrap;
+  }
+
+  .btn-activate { font-size: 0.75rem; padding: 4px 8px; }
+  .btn-icon svg { width: 15px; height: 15px; }
+
+  .checkbox-text { font-size: 0.88rem; }
+  .checkbox-hint { font-size: 0.75rem; margin-left: 0; }
+}
+
+/* ── Small phones (≤375px) ── */
+@media (max-width: 375px) {
+  .page-header { padding: 16px; }
+  .card-header { padding: 16px 16px 10px; }
+  .setup-form { padding: 0 16px 16px; }
+
+  .form-control { padding: 10px 12px; font-size: 0.85rem; }
+  .pl-10 { padding-left: 36px !important; }
+  .input-icon { left: 12px; width: 16px; height: 16px; }
+
+  .active-status-card { padding: 18px 16px; }
+  .active-year { font-size: 1.4rem; }
+
+  .history-item { padding: 12px; }
+  .history-actions { margin-left: 0; }
 }
 </style>

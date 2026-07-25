@@ -584,6 +584,8 @@ const clearFilters = () => {
   flex-direction: column;
   gap: 1.5rem;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -621,6 +623,8 @@ const clearFilters = () => {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .primary-btn:hover {
@@ -632,6 +636,7 @@ const clearFilters = () => {
 .primary-btn svg {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
 }
 
 /* Controls (Filters & Search) */
@@ -645,6 +650,7 @@ const clearFilters = () => {
   border-radius: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(226, 232, 240, 0.8);
+  flex-wrap: wrap;
 }
 
 .search-box {
@@ -674,6 +680,7 @@ const clearFilters = () => {
   transition: all 0.2s ease;
   font-family: inherit;
   font-size: 0.9rem;
+  box-sizing: border-box;
 }
 
 .search-box input:focus {
@@ -716,6 +723,7 @@ const clearFilters = () => {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(226, 232, 240, 0.8);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
@@ -734,6 +742,7 @@ const clearFilters = () => {
   letter-spacing: 0.05em;
   background-color: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .data-table td {
@@ -767,6 +776,7 @@ const clearFilters = () => {
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .lecturer-info {
@@ -781,6 +791,7 @@ const clearFilters = () => {
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 .schedule-cell {
@@ -793,6 +804,7 @@ const clearFilters = () => {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.025em;
+  white-space: nowrap;
 }
 
 .status-badge.active {
@@ -896,6 +908,8 @@ const clearFilters = () => {
   justify-content: space-between;
   align-items: center;
   padding: 0 0.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .pagination-info {
@@ -938,45 +952,6 @@ const clearFilters = () => {
   background-color: #f8fafc;
 }
 
-/* Page Responsiveness */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1.25rem;
-  }
-
-  .table-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search-box {
-    max-width: 100%;
-  }
-
-  .filters {
-    flex-wrap: wrap;
-  }
-
-  .filter-select {
-    flex: 1;
-    min-width: 140px;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .pagination {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-}
-
 /* Modal */
 .modal-backdrop {
   position: fixed;
@@ -998,8 +973,9 @@ const clearFilters = () => {
   border-radius: 20px;
   width: 100%;
   max-width: 500px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
   animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1021,6 +997,10 @@ const clearFilters = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
 }
 
 .modal-header h2 {
@@ -1041,6 +1021,7 @@ const clearFilters = () => {
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
@@ -1067,6 +1048,7 @@ const clearFilters = () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .form-group label {
@@ -1082,6 +1064,8 @@ const clearFilters = () => {
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-control:focus {
@@ -1192,5 +1176,103 @@ const clearFilters = () => {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none !important;
+}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   S  : ≤ 375px   (small phones)
+   M  : 376–480px (large phones)
+   L  : 481–767px (phablets / small tablets, portrait)
+   Tab: 768–991px (tablets)
+   Lap: 992–1199px (small laptops)
+   ══════════════════════════════════════════════════════ */
+
+/* ── Small laptops (≤1199px) ── */
+@media (max-width: 1199px) {
+  .table-controls { padding: 1rem 1.25rem; }
+  .data-table th, .data-table td { padding: 1rem 1.1rem; }
+}
+
+/* ── Tablets (≤991px) ── */
+@media (max-width: 991px) {
+  .table-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-box { max-width: 100%; }
+  .filters { flex-wrap: wrap; }
+  .filter-select { flex: 1; min-width: 140px; }
+}
+
+/* ── Large phones / small tablets, portrait (≤767px) ── */
+@media (max-width: 767px) {
+  .courses-container { gap: 1.25rem; }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .page-title { font-size: 1.4rem; }
+  .page-subtitle { font-size: 0.85rem; }
+  .primary-btn { justify-content: center; width: 100%; }
+
+  .table-controls {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .data-table th, .data-table td { padding: 0.85rem 1rem; font-size: 0.85rem; }
+
+  .actions-col { width: auto; }
+
+  .pagination { justify-content: center; text-align: center; }
+  .page-controls { flex-wrap: wrap; justify-content: center; }
+
+  .modal-backdrop { padding: 0; align-items: flex-end; }
+  .modal-card {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+  }
+  .modal-header { padding: 16px 20px; }
+  .modal-header h2 { font-size: 1.1rem; }
+  .modal-body { padding: 20px; }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  .form-actions .clear-btn,
+  .form-actions .primary-btn {
+    width: 100%;
+  }
+}
+
+/* ── Large phones (≤480px) ── */
+@media (max-width: 480px) {
+  .page-title { font-size: 1.2rem; }
+
+  .data-table th, .data-table td { padding: 0.7rem 0.75rem; font-size: 0.8rem; }
+  .sm-avatar { width: 24px; height: 24px; }
+
+  .level-badge, .status-badge { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
+
+  .icon-action-btn { padding: 0.4rem; }
+  .icon-action-btn svg { width: 16px; height: 16px; }
+
+  .page-btn { padding: 0.4rem 0.65rem; font-size: 0.78rem; }
+}
+
+/* ── Small phones (≤375px) ── */
+@media (max-width: 375px) {
+  .table-controls { padding: 0.85rem; }
+  .modal-header { padding: 14px 16px; }
+  .modal-body { padding: 16px; }
+  .data-table th, .data-table td { padding: 0.6rem; }
 }
 </style>

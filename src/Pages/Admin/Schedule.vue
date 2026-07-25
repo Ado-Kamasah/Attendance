@@ -466,6 +466,8 @@ const deleteClass = async (id) => {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -508,6 +510,8 @@ const deleteClass = async (id) => {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-primary:hover {
@@ -518,6 +522,7 @@ const deleteClass = async (id) => {
 .btn-primary .icon {
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 .btn-outline {
@@ -561,12 +566,14 @@ const deleteClass = async (id) => {
   padding: 20px 32px;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  flex-wrap: wrap;
 }
 
 .filter-section {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .filter-label {
@@ -575,6 +582,7 @@ const deleteClass = async (id) => {
   text-transform: uppercase;
   color: #94a3b8;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .pill-group {
@@ -583,6 +591,7 @@ const deleteClass = async (id) => {
   padding: 4px;
   border-radius: 10px;
   border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
 }
 
 .filter-pill {
@@ -595,6 +604,7 @@ const deleteClass = async (id) => {
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .filter-pill:hover {
@@ -612,25 +622,6 @@ const deleteClass = async (id) => {
   display: flex;
   gap: 24px;
   align-items: flex-start;
-}
-
-@media (max-width: 768px) {
-  .schedule-layout {
-    flex-direction: column;
-  }
-  .filters-panel {
-    flex-direction: column;
-    gap: 16px;
-  }
-  .days-sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-    width: 100%;
-    padding-bottom: 8px;
-  }
-  .day-btn {
-    flex-shrink: 0;
-  }
 }
 
 /* Days Sidebar */
@@ -761,6 +752,7 @@ const deleteClass = async (id) => {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-width: 0;
 }
 
 .course-header {
@@ -768,6 +760,7 @@ const deleteClass = async (id) => {
   align-items: center;
   gap: 12px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .course-code {
@@ -778,6 +771,7 @@ const deleteClass = async (id) => {
   padding: 4px 8px;
   border-radius: 6px;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .course-title {
@@ -785,6 +779,7 @@ const deleteClass = async (id) => {
   font-size: 1.1rem;
   font-weight: 700;
   color: #1e293b;
+  overflow-wrap: anywhere;
 }
 
 .semester-tag {
@@ -795,6 +790,7 @@ const deleteClass = async (id) => {
   padding: 4px 8px;
   border-radius: 6px;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .meta-info {
@@ -803,6 +799,7 @@ const deleteClass = async (id) => {
   gap: 12px;
   color: #64748b;
   font-size: 0.9rem;
+  flex-wrap: wrap;
 }
 
 .meta-item {
@@ -815,6 +812,7 @@ const deleteClass = async (id) => {
   width: 16px;
   height: 16px;
   color: #94a3b8;
+  flex-shrink: 0;
 }
 
 .meta-separator {
@@ -827,6 +825,7 @@ const deleteClass = async (id) => {
   align-items: flex-start;
   opacity: 0;
   transition: opacity 0.2s;
+  flex-shrink: 0;
 }
 
 .class-card:hover .class-actions {
@@ -924,8 +923,9 @@ const deleteClass = async (id) => {
   border-radius: 20px;
   width: 100%;
   max-width: 600px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-  overflow: hidden;
   animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -940,6 +940,10 @@ const deleteClass = async (id) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
 }
 
 .modal-header h2 {
@@ -960,6 +964,7 @@ const deleteClass = async (id) => {
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
@@ -995,6 +1000,7 @@ const deleteClass = async (id) => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .form-group label {
@@ -1021,6 +1027,8 @@ const deleteClass = async (id) => {
   outline: none;
   transition: all 0.2s;
   background: #fff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-input:focus, .form-select:focus {
@@ -1050,6 +1058,7 @@ const deleteClass = async (id) => {
   padding: 8px 16px;
   border-radius: 10px;
   border: 1px solid #e2e8f0;
+  min-width: 0;
 }
 
 .time-label {
@@ -1057,6 +1066,7 @@ const deleteClass = async (id) => {
   font-weight: 500;
   color: #64748b;
   width: 40px;
+  flex-shrink: 0;
 }
 
 .time-field .form-input {
@@ -1064,6 +1074,7 @@ const deleteClass = async (id) => {
   border: none;
   background: transparent;
   padding: 4px 0;
+  min-width: 0;
 }
 
 .time-field .form-input:focus {
@@ -1082,5 +1093,181 @@ const deleteClass = async (id) => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   S  : ≤ 375px   (small phones)
+   M  : 376–480px (large phones)
+   L  : 481–767px (phablets / small tablets, portrait)
+   Tab: 768–991px (tablets)
+   Lap: 992–1199px (small laptops)
+   ══════════════════════════════════════════════════════ */
+
+/* ── Small laptops (≤1199px) ── */
+@media (max-width: 1199px) {
+  .page-header { padding: 22px 28px; }
+  .filters-panel { padding: 18px 28px; gap: 24px; }
+  .modal-body { padding: 28px; }
+}
+
+/* ── Tablets (≤991px) ── */
+@media (max-width: 991px) {
+  .schedule-layout {
+    flex-direction: column;
+  }
+  .filters-panel {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .days-sidebar {
+    flex-direction: row;
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 8px;
+  }
+  .day-btn {
+    flex-shrink: 0;
+  }
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Large phones / small tablets, portrait (≤767px) ── */
+@media (max-width: 767px) {
+  .schedule-container { gap: 18px; }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 18px 20px;
+    border-radius: 12px;
+  }
+  .page-title { font-size: 1.4rem; margin-bottom: 4px; }
+  .page-subtitle { font-size: 0.9rem; }
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+  }
+
+  .filters-panel {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .filter-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+  }
+  .pill-group {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .class-card {
+    flex-direction: column;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .class-time {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    min-width: 0;
+    width: 100%;
+  }
+  .class-divider {
+    width: 100%;
+    height: 1px;
+    margin: 14px 0;
+  }
+  .course-header {
+    gap: 8px;
+  }
+  .course-title { font-size: 1rem; }
+  .class-actions {
+    opacity: 1;
+    justify-content: flex-end;
+    width: 100%;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .empty-state { padding: 3rem 1.25rem; }
+  .empty-state h3 { font-size: 1.2rem; }
+
+  .modal-backdrop { padding: 0; align-items: flex-end; }
+  .modal-card {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+  }
+  .modal-header { padding: 18px 20px; }
+  .modal-header h2 { font-size: 1.2rem; }
+  .modal-body { padding: 20px; }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .col-span-2, .time-group {
+    grid-column: span 1;
+  }
+  .time-inputs {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+    margin-top: 24px;
+    padding-top: 18px;
+  }
+  .modal-footer .btn-ghost,
+  .modal-footer .btn-primary {
+    width: 100%;
+  }
+}
+
+/* ── Large phones (≤480px) ── */
+@media (max-width: 480px) {
+  .page-title { font-size: 1.2rem; }
+
+  .filter-label { font-size: 0.75rem; }
+  .filter-pill { padding: 7px 12px; font-size: 0.82rem; }
+
+  .day-btn { padding: 12px 16px; }
+  .day-btn .day-name { font-size: 0.9rem; }
+
+  .time-block { font-size: 0.95rem; }
+  .duration { font-size: 0.78rem; }
+
+  .course-code, .semester-tag { font-size: 0.68rem; padding: 3px 6px; }
+  .meta-info { font-size: 0.82rem; gap: 8px; }
+
+  .action-btn { width: 32px; height: 32px; }
+  .action-btn svg { width: 16px; height: 16px; }
+
+  .empty-icon-wrapper { width: 64px; height: 64px; }
+  .empty-icon { width: 32px; height: 32px; }
+}
+
+/* ── Small phones (≤375px) ── */
+@media (max-width: 375px) {
+  .page-header { padding: 16px; }
+  .filters-panel { padding: 14px; }
+  .modal-header { padding: 16px; }
+  .modal-body { padding: 16px; }
+
+  .class-card { padding: 14px; }
+
+  .form-input, .form-select { padding: 10px 12px; font-size: 0.9rem; }
+  .time-field { padding: 6px 12px; }
 }
 </style>
