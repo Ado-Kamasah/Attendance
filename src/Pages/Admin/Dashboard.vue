@@ -107,6 +107,11 @@ const { logs } = storeToRefs(auditLogsStore);
 const { enrollments } = storeToRefs(enrollmentsStore);
 const { attendances } = storeToRefs(attendancesStore);
 
+// Ticks every 30s so schedule statuses (upcoming/ongoing/completed) update live
+// without needing a page refresh.
+const now = ref(new Date());
+let clockInterval = null;
+
 onMounted(async () => {
   try {
     await Promise.all([
@@ -125,6 +130,10 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
   }
+
+  clockInterval = setInterval(() => {
+    now.value = new Date();
+  }, 30 * 1000);
 });
 
 onUnmounted(() => {
@@ -133,6 +142,8 @@ onUnmounted(() => {
   auditLogsStore.unsubscribeFromLogs();
   enrollmentsStore.unsubscribeFromEnrollments();
   attendancesStore.unsubscribeFromAttendances();
+
+  if (clockInterval) clearInterval(clockInterval);
 });
 
 const currentDate = new Date().toLocaleDateString('en-US', {
@@ -196,19 +207,46 @@ const metrics = computed(() => [
   }
 ]);
 
+// Converts a "HH:MM" (or "HH:MM:SS") string into minutes-since-midnight so it
+// can be compared against the current time.
+function parseTimeToMinutes(timeStr) {
+  if (!timeStr) return null;
+  const [h, m] = timeStr.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h * 60 + m;
+}
+
 // --- Today's schedule (attach course info via coursesStore, same pattern as Schedule.vue) ---
 const todaySchedule = computed(() => {
+  const nowMinutes = now.value.getHours() * 60 + now.value.getMinutes();
+
   return schedules.value
     .filter((s) => s.day === currentDayName)
     .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
     .map((s) => {
       const course = coursesStore.getCourseById(s.courseId);
+      const startMinutes = parseTimeToMinutes(s.startTime);
+      const endMinutes = parseTimeToMinutes(s.endTime);
+
+      let status = 'upcoming';
+      let statusText = 'Upcoming';
+
+      if (startMinutes !== null && endMinutes !== null) {
+        if (nowMinutes >= startMinutes && nowMinutes <= endMinutes) {
+          status = 'ongoing';
+          statusText = 'Ongoing';
+        } else if (nowMinutes > endMinutes) {
+          status = 'completed';
+          statusText = 'Completed';
+        }
+      }
+
       return {
         ...s,
         name: course?.name ?? 'Unknown Course',
         room: s.venue,
-        status: 'upcoming',
-        statusText: 'Upcoming'
+        status,
+        statusText
       };
     });
 });
@@ -232,7 +270,6 @@ const systemAuditLogs = computed(() =>
   }))
 );
 </script>
-
 <style scoped>
 .dashboard-container {
   display: flex;

@@ -44,11 +44,15 @@
               <span class="time-end">{{ cls.endTime }}</span>
             </div>
             
-            <div class="course-info">
+           <div class="course-info">
               <h4>{{ cls.name }} <span class="course-code">{{ cls.code }}</span></h4>
               <p>Venue: <strong>{{ cls.venue }}</strong> • {{ cls.students }} Students Registered</p>
             </div>
             
+            <div class="status-badge" :class="cls.status">
+              {{ cls.statusText }}
+            </div>
+
             <div class="action-block">
                <button class="mark-btn" @click="markAttendance(cls)">Mark Attendance</button>
             </div>
@@ -143,8 +147,9 @@
     </div>
   </div>
 </template>
+
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authstore';
 import { useSchedulesStore } from '@/stores/schedules';
@@ -178,6 +183,11 @@ const currentDate = new Date().toLocaleDateString('en-US', {
 
 const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
+// Ticks every 30s so schedule statuses (upcoming/ongoing/completed) update live
+// without needing a page refresh.
+const now = ref(new Date());
+let clockInterval = null;
+
 onMounted(async () => {
   try {
     await Promise.all([
@@ -196,6 +206,10 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
   }
+
+  clockInterval = setInterval(() => {
+    now.value = new Date();
+  }, 30 * 1000);
 });
 
 onUnmounted(() => {
@@ -204,6 +218,8 @@ onUnmounted(() => {
   enrollmentsStore.unsubscribeFromEnrollments();
   sessionsStore.unsubscribeFromSessions();
   attendancesStore.unsubscribeFromAttendances();
+
+  if (clockInterval) clearInterval(clockInterval);
 });
 
 const lecturerName = computed(() => profile.value?.name ?? '');
@@ -285,13 +301,40 @@ const metrics = computed(() => [
   }
 ]);
 
+// Converts a "HH:MM" (or "HH:MM:SS") string into minutes-since-midnight so it
+// can be compared against the current time.
+function parseTimeToMinutes(timeStr) {
+  if (!timeStr) return null;
+  const [h, m] = timeStr.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h * 60 + m;
+}
+
 // --- Today's schedule ---
 const todaySchedule = computed(() => {
+  const nowMinutes = now.value.getHours() * 60 + now.value.getMinutes();
+
   return schedules.value
     .filter((s) => s.lecturer === lecturerName.value && s.day === currentDayName)
     .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
     .map((s) => {
       const course = coursesStore.getCourseById(s.courseId);
+      const startMinutes = parseTimeToMinutes(s.startTime);
+      const endMinutes = parseTimeToMinutes(s.endTime);
+
+      let status = 'upcoming';
+      let statusText = 'Upcoming';
+
+      if (startMinutes !== null && endMinutes !== null) {
+        if (nowMinutes >= startMinutes && nowMinutes <= endMinutes) {
+          status = 'ongoing';
+          statusText = 'Ongoing';
+        } else if (nowMinutes > endMinutes) {
+          status = 'completed';
+          statusText = 'Completed';
+        }
+      }
+
       return {
         id: s.id,
         courseId: s.courseId,
@@ -301,6 +344,8 @@ const todaySchedule = computed(() => {
         endTime: s.endTime,
         venue: s.venue,
         students: enrollmentsStore.enrollmentsByCourse(s.courseId).length,
+        status,
+        statusText,
       };
     });
 });
@@ -312,6 +357,7 @@ const markAttendance = (cls) => {
   emit('navigate', '/attendance-view');
 };
 </script>
+
 
 <style scoped>
 .dashboard-container {
@@ -760,6 +806,58 @@ const markAttendance = (cls) => {
   color: #64748b;
   word-break: break-word;
 }
+
+.status-badge {
+  align-self: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin: 0 0.5rem;
+}
+
+.status-badge.completed {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.ongoing {
+  background-color: #e0e7ff;
+  color: #3730a3;
+  position: relative;
+}
+
+.status-badge.ongoing::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: #4f46e5;
+  border-radius: 50%;
+  margin-right: 6px;
+  margin-bottom: 1px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(79, 70, 229, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+}
+
+.status-badge.upcoming {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.status-badge {
+    align-self: flex-start;
+    margin: 0.5rem 0 0 0;
+  }
 
 /* ==========================================================================
    Responsive Breakpoints
