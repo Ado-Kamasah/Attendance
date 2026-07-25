@@ -294,6 +294,11 @@ onUnmounted(() => {
 .navbar-left {
   display: flex;
   align-items: center;
+  min-width: 0;
+}
+
+.greeting {
+  min-width: 0;
 }
 
 .greeting-text {
@@ -302,6 +307,9 @@ onUnmounted(() => {
   color: #0f172a;
   margin: 0 0 0.25rem 0;
   letter-spacing: -0.025em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .greeting-subtext {
@@ -319,6 +327,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .search-container {
@@ -367,6 +376,7 @@ onUnmounted(() => {
   gap: 0.75rem;
   border-left: 1px solid #e2e8f0;
   padding-left: 1.5rem;
+  flex-shrink: 0;
 }
 
 .icon-button {
@@ -382,6 +392,7 @@ onUnmounted(() => {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .icon-button:hover {
@@ -399,6 +410,7 @@ onUnmounted(() => {
   height: 24px;
   background-color: #e2e8f0;
   margin: 0 0.25rem;
+  flex-shrink: 0;
 }
 
 .logout-btn:hover {
@@ -441,9 +453,10 @@ onUnmounted(() => {
 
 .dropdown-panel {
   position: absolute;
-  top: Calc(100% + 14px);
+  top: calc(100% + 14px);
   right: -10px;
   width: 320px;
+  max-width: calc(100vw - 2rem);
   background-color: #ffffff;
   border-radius: 16px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
@@ -547,6 +560,11 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+.notif-content {
+  min-width: 0;
+  flex: 1;
+}
+
 .notif-action {
   margin: 0 0 2px 0;
   font-size: 0.8rem;
@@ -590,6 +608,7 @@ onUnmounted(() => {
   font-size: 0.9rem;
   color: #334155;
   font-weight: 500;
+  gap: 0.75rem;
 }
 
 .setting-select {
@@ -609,6 +628,7 @@ onUnmounted(() => {
   display: inline-block;
   width: 36px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 .switch input { 
@@ -687,6 +707,7 @@ input:checked + .slider:before {
   padding: 0.5rem;
   margin-right: 0.5rem;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .mobile-toggle-btn svg {
@@ -694,38 +715,115 @@ input:checked + .slider:before {
   height: 24px;
 }
 
-/* Responsiveness */
+/* ==========================================================================
+   Responsive Breakpoints
+   L  (large / laptop-desktop): < 1200px  — narrow the search box
+   M  (tablet):                 < 1024px  — hide search, keep greeting
+   S  (small tablet / large phone): < 768px — hamburger, hide greeting/search,
+      switch dropdowns to a viewport-anchored panel so they never overflow
+   XS (mobile):                 < 480px  — full-width dropdown sheet, tighter icons
+   ========================================================================== */
+
+/* L — Large screens / small laptops */
+@media (max-width: 1200px) {
+  .search-container { width: 220px; }
+}
+
+/* M — Tablets */
+@media (max-width: 1024px) {
+  .search-container { display: none; }
+  .navbar-right { gap: 1rem; }
+}
+
+/* S — Small tablets / large phones */
 @media (max-width: 768px) {
   .navbar {
     padding: 1rem;
     height: 70px;
   }
-  
+
   .mobile-toggle-btn {
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  
+
   .greeting-text {
     font-size: 1.1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     display: none; /* Hide greeting to save space on mobile */
   }
-  
+
   .greeting-subtext {
     display: none;
   }
-  
-  .search-container {
-    display: none; /* Hide search entirely on mobile for simplicity, or collapse it */
-  }
-  
+
   .action-buttons {
     border-left: none;
     padding-left: 0;
+    gap: 0.5rem;
+  }
+
+  /* Dropdown becomes viewport-anchored (fixed) so it can never run
+     off-screen, regardless of which icon triggered it. */
+  .dropdown-panel {
+    position: fixed;
+    top: 70px;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - 90px);
+    transform-origin: top center;
+  }
+
+  .panel-body {
+    max-height: calc(100vh - 220px);
+  }
+
+  .settings-panel {
+    width: auto;
+  }
+}
+
+/* XS — Mobile phones: full-bleed sheet, no side margins */
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0.75rem;
+    height: 64px;
+  }
+
+  .icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .icon-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .dropdown-panel {
+    top: 64px;
+    right: 0.5rem;
+    left: 0.5rem;
+    border-radius: 14px;
+    max-height: calc(100vh - 80px);
+  }
+
+  .panel-header {
+    padding: 0.85rem 1rem;
+  }
+
+  .notif-item {
+    padding: 0.65rem 1rem;
+  }
+
+  .panel-footer {
+    padding: 0.65rem 1rem;
+  }
+
+  .setting-row {
+    padding: 0.65rem 1rem;
   }
 }
 
