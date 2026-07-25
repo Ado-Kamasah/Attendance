@@ -337,11 +337,14 @@ const submitRegistration = async () => {
   font-size: 0.875rem;
   font-weight: 600;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .semester-badge svg {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
 }
 
 /* Base Layout */
@@ -349,6 +352,7 @@ const submitRegistration = async () => {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .available-courses-panel,
@@ -359,6 +363,7 @@ const submitRegistration = async () => {
   border: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .panel-header {
@@ -367,6 +372,8 @@ const submitRegistration = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .panel-header h2 {
@@ -380,6 +387,8 @@ const submitRegistration = async () => {
   display: flex;
   gap: 1rem;
   align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .filter-select {
@@ -398,6 +407,7 @@ const submitRegistration = async () => {
   background-size: 14px;
   transition: all 0.2s;
   font-family: inherit;
+  flex-shrink: 0;
 }
 
 .filter-select:focus {
@@ -409,6 +419,9 @@ const submitRegistration = async () => {
 .search-box {
   position: relative;
   width: 280px;
+  max-width: 100%;
+  flex: 1;
+  min-width: 160px;
 }
 
 .search-icon {
@@ -431,6 +444,7 @@ const submitRegistration = async () => {
   outline: none;
   font-family: inherit;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
 .search-box input:focus {
@@ -519,6 +533,7 @@ const submitRegistration = async () => {
   transition: all 0.2s;
   background-color: #ffffff;
   color: white;
+  flex-shrink: 0;
 }
 
 .checkbox-box.checked {
@@ -533,6 +548,7 @@ const submitRegistration = async () => {
 
 .course-details {
   flex: 1;
+  min-width: 0;
 }
 
 .course-head {
@@ -540,6 +556,8 @@ const submitRegistration = async () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.25rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .course-code {
@@ -552,6 +570,7 @@ const submitRegistration = async () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .semester-tag {
@@ -561,6 +580,7 @@ const submitRegistration = async () => {
   background-color: #e2e8f0;
   color: #475569;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .credit-badge {
@@ -570,18 +590,22 @@ const submitRegistration = async () => {
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .course-name {
   margin: 0 0 0.25rem 0;
   font-size: 1rem;
   color: #1e293b;
+  word-break: break-word;
 }
 
 .course-lecturer {
   margin: 0;
   font-size: 0.85rem;
   color: #64748b;
+  word-break: break-word;
 }
 
 /* Summary Panel */
@@ -665,12 +689,14 @@ const submitRegistration = async () => {
   font-size: 0.85rem;
   color: #1e293b;
   flex: 1;
+  word-break: break-word;
 }
 
 .sel-credits {
   font-size: 0.75rem;
   font-weight: 500;
   color: #64748b;
+  white-space: nowrap;
 }
 
 .remove-btn {
@@ -683,6 +709,7 @@ const submitRegistration = async () => {
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .remove-btn:hover {
@@ -724,28 +751,154 @@ const submitRegistration = async () => {
   box-shadow: none;
 }
 
-/* Responsiveness */
+/* ==========================================================================
+   Responsive Breakpoints
+   L  (large / laptop-desktop): < 1200px  — tighten gaps slightly
+   M  (tablet):                 < 1024px  — stack columns
+   S  (small tablet / large phone): < 768px — stack headers, full-width controls
+   XS (mobile):                 < 480px  — compact spacing, smaller type
+   ========================================================================== */
+
+/* L — Large screens / small laptops */
+@media (max-width: 1200px) {
+  .registration-content {
+    gap: 1.25rem;
+  }
+}
+
+/* M — Tablets: stack the two-column layout */
 @media (max-width: 1024px) {
   .registration-content {
     grid-template-columns: 1fr;
   }
+
+  .search-box {
+    width: auto;
+  }
 }
 
+/* S — Small tablets / large phones */
 @media (max-width: 768px) {
+  .registration-container {
+    gap: 1.5rem;
+  }
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
+  .semester-badge {
+    align-self: flex-start;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
   .panel-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+    padding: 1.25rem;
   }
-  
+
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
   .search-box {
     width: 100%;
+  }
+
+  .courses-list {
+    padding: 1.25rem;
+  }
+
+  .summary-content,
+  .panel-footer {
+    padding: 1.25rem;
+  }
+
+  .course-item {
+    padding: 0.85rem;
+    gap: 0.75rem;
+  }
+}
+
+/* XS — Mobile phones */
+@media (max-width: 480px) {
+  .registration-container {
+    gap: 1.25rem;
+  }
+
+  .page-title {
+    font-size: 1.3rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .semester-badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .panel-header {
+    padding: 1rem;
+  }
+
+  .panel-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .courses-list,
+  .summary-content,
+  .panel-footer {
+    padding: 1rem;
+  }
+
+  .course-item {
+    flex-wrap: wrap;
+  }
+
+  .course-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .credit-badge {
+    align-self: flex-start;
+  }
+
+  .course-name {
+    font-size: 0.95rem;
+  }
+
+  .course-lecturer {
+    font-size: 0.8rem;
+  }
+
+  .empty-state {
+    padding: 2.5rem 1rem;
+  }
+
+  .selected-items li {
+    flex-wrap: wrap;
+  }
+
+  .submit-btn {
+    padding: 0.75rem;
+    font-size: 0.9rem;
   }
 }
 </style>

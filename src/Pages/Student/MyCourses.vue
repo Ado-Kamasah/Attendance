@@ -236,6 +236,10 @@ const goToAttendance = (course) => {
   color: #64748b;
 }
 
+.header-controls {
+  flex-shrink: 0;
+}
+
 .term-select {
   padding: 0.65rem 2rem 0.65rem 1rem;
   border: 1px solid #e2e8f0;
@@ -252,6 +256,8 @@ const goToAttendance = (course) => {
   background-position: right 0.75rem center;
   background-size: 16px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .term-select:focus {
@@ -342,6 +348,7 @@ const goToAttendance = (course) => {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .course-card:hover {
@@ -359,6 +366,7 @@ const goToAttendance = (course) => {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
 }
 
 .card-header {
@@ -366,6 +374,8 @@ const goToAttendance = (course) => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .course-code {
@@ -382,6 +392,7 @@ const goToAttendance = (course) => {
   color: #475569;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
 .course-name {
@@ -390,6 +401,7 @@ const goToAttendance = (course) => {
   font-weight: 600;
   color: #0f172a;
   line-height: 1.3;
+  word-break: break-word;
 }
 
 .instructor-info {
@@ -397,6 +409,7 @@ const goToAttendance = (course) => {
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 1rem;
+  min-width: 0;
 }
 
 .avatar {
@@ -408,12 +421,14 @@ const goToAttendance = (course) => {
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .instructor-name {
   font-size: 0.9rem;
   color: #334155;
   font-weight: 500;
+  word-break: break-word;
 }
 
 .schedule-info {
@@ -425,11 +440,13 @@ const goToAttendance = (course) => {
   margin-bottom: 1.5rem;
   padding-bottom: 1.25rem;
   border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
 }
 
 .schedule-info svg {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
 }
 
 .attendance-tracker {
@@ -499,20 +516,124 @@ const goToAttendance = (course) => {
   filter: brightness(110%);
 }
 
-/* Responsiveness */
+/* ==========================================================================
+   Responsive Breakpoints
+   L  (large / laptop-desktop): < 1200px  — tighten grid gaps
+   M  (tablet):                 < 1024px  — narrow card minimum
+   S  (small tablet / large phone): < 768px — stack header, single-column grid
+   XS (mobile):                 < 480px  — compact card padding/type
+   ========================================================================== */
+
+/* L — Large screens / small laptops */
+@media (max-width: 1200px) {
+  .courses-grid {
+    gap: 1.25rem;
+  }
+}
+
+/* M — Tablets */
+@media (max-width: 1024px) {
+  .courses-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
+/* S — Small tablets / large phones */
 @media (max-width: 768px) {
+  .my-courses-container {
+    gap: 1.5rem;
+  }
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .header-controls {
+    width: 100%;
+  }
+
   .courses-grid {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
-  
+
   .term-select {
     width: 100%;
+  }
+
+  .empty-state {
+    padding: 4rem 1rem;
+  }
+}
+
+/* XS — Mobile phones */
+@media (max-width: 480px) {
+  .my-courses-container {
+    gap: 1.25rem;
+  }
+
+  .page-title {
+    font-size: 1.3rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .course-card-content {
+    padding: 1.15rem;
+  }
+
+  .course-name {
+    font-size: 1.05rem;
+  }
+
+  .card-header {
+    margin-bottom: 0.6rem;
+  }
+
+  .instructor-info {
+    margin-bottom: 0.85rem;
+  }
+
+  .schedule-info {
+    margin-bottom: 1.15rem;
+    padding-bottom: 1rem;
+    font-size: 0.8rem;
+  }
+
+  .attendance-tracker {
+    margin-bottom: 1.15rem;
+  }
+
+  .card-actions {
+    flex-direction: column;
+  }
+
+  .empty-state {
+    padding: 3rem 1rem;
+  }
+
+  .empty-icon-wrap {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+  }
+
+  .empty-icon-wrap svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .primary-btn {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
   }
 }
 </style>

@@ -284,9 +284,9 @@ async function handleSubmit() {
 .ef-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
 .ef-title   { margin: 0; font-size: 1.75rem; font-weight: 700; color: #0f172a; letter-spacing: -.025em; }
 .ef-subtitle { margin: .25rem 0 0; font-size: .9rem; color: #64748b; }
-.course-select-wrap { display: flex; flex-direction: column; gap: .35rem; }
+.course-select-wrap { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
 .sel-label { font-size: .78rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
-.ef-select { padding: .55rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: .9rem; color: #334155; background: #fff; min-width: 320px; outline: none; cursor: pointer; }
+.ef-select { padding: .55rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: .9rem; color: #334155; background: #fff; min-width: 320px; max-width: 100%; outline: none; cursor: pointer; box-sizing: border-box; }
 .ef-select:focus { border-color: #6366f1; }
 .ef-loading { font-size: .9rem; color: #64748b; padding: .5rem 0; }
 .no-courses-hint { display: flex; align-items: flex-start; gap: .6rem; background: #fef9c3; border: 1px solid #fde68a; border-radius: 10px; padding: .75rem 1rem; font-size: .82rem; color: #92400e; max-width: 420px; }
@@ -325,8 +325,8 @@ async function handleSubmit() {
   font-size: .78rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; margin-top: 2px;
 }
-.q-body { flex: 1; display: flex; flex-direction: column; gap: .75rem; }
-.q-text { margin: 0; font-size: .925rem; font-weight: 600; color: #1e293b; line-height: 1.4; }
+.q-body { flex: 1; display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
+.q-text { margin: 0; font-size: .925rem; font-weight: 600; color: #1e293b; line-height: 1.4; word-break: break-word; }
 
 /* Option chips */
 .q-options { display: flex; flex-wrap: wrap; gap: .5rem; }
@@ -365,5 +365,57 @@ async function handleSubmit() {
 .submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 .spin { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media(max-width:768px) { .ef-header { flex-direction: column; } .ef-select { min-width: 100%; } }
+
+/* ==========================================================================
+   Responsive Breakpoints
+   L  (large / laptop-desktop): < 1200px  — tighten spacing
+   M  (tablet):                 < 1024px  — select shrinks, cards tighten
+   S  (small tablet / large phone): < 768px — stack header, full-width select
+   XS (mobile):                 < 480px  — compact cards, stacked option chips
+   ========================================================================== */
+
+/* L — Large screens / small laptops */
+@media (max-width: 1200px) {
+  .ef-container { gap: 1.5rem; }
+}
+
+/* M — Tablets */
+@media (max-width: 1024px) {
+  .ef-select { min-width: 260px; }
+  .question-card { padding: 1.1rem 1.25rem; }
+}
+
+/* S — Small tablets / large phones */
+@media (max-width: 768px) {
+  .ef-container { gap: 1.25rem; }
+  .ef-header { flex-direction: column; align-items: stretch; }
+  .ef-title { font-size: 1.5rem; }
+  .course-select-wrap { width: 100%; }
+  .ef-select { min-width: 100%; }
+  .no-courses-hint { max-width: 100%; }
+  .question-card { flex-direction: row; padding: 1rem; }
+  .closed-banner { padding: 1.5rem; }
+  .pick-hint { padding: 3rem 1.5rem; }
+  .ef-footer { align-items: stretch; }
+  .submit-btn { justify-content: center; width: 100%; }
+  .form-error { align-self: stretch; }
+}
+
+/* XS — Mobile phones */
+@media (max-width: 480px) {
+  .ef-container { gap: 1rem; }
+  .ef-title { font-size: 1.3rem; }
+  .ef-subtitle { font-size: 0.85rem; }
+  .closed-banner { flex-direction: column; gap: 0.75rem; padding: 1.25rem; }
+  .closed-banner svg { width: 32px; height: 32px; }
+  .submitted-banner { flex-direction: column; text-align: center; gap: 0.6rem; padding: 1rem; }
+  .question-card { flex-direction: column; gap: 0.6rem; padding: 0.9rem; }
+  .q-number { width: 30px; height: 30px; font-size: 0.7rem; }
+  .q-text { font-size: 0.87rem; }
+  .opt-chip { padding: 0.4rem 0.75rem; font-size: 0.78rem; }
+  .opts-rating5 .opt-chip, .opts-frequency .opt-chip { min-width: 70px; }
+  .pick-hint { padding: 2.5rem 1rem; }
+  .pick-hint svg { width: 38px; height: 38px; }
+  .submit-btn { padding: 0.7rem 1.5rem; font-size: 0.88rem; }
+}
 </style>

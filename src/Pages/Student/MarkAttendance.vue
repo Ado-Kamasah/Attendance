@@ -454,21 +454,21 @@ const attendanceHistory = computed(() => {
 * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 
 .attendance-container { display:flex;flex-direction:column;gap:2rem;width:100%; }
-.page-header { display:flex;justify-content:space-between;align-items:center; }
+.page-header { display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap; }
 .page-title { margin:0;font-size:1.75rem;font-weight:700;color:#0f172a;letter-spacing:-0.025em; }
 .page-subtitle { margin:0.25rem 0 0;font-size:0.95rem;color:#64748b; }
-.live-badge { display:flex;align-items:center;gap:0.5rem;background:#f1f5f9;color:#334155;padding:0.5rem 1rem;border-radius:9999px;font-size:0.85rem;font-weight:600;border:1px solid #e2e8f0; }
-.pulse-dot { width:8px;height:8px;background:#10b981;border-radius:50%;animation:pulse 2s infinite; }
+.live-badge { display:flex;align-items:center;gap:0.5rem;background:#f1f5f9;color:#334155;padding:0.5rem 1rem;border-radius:9999px;font-size:0.85rem;font-weight:600;border:1px solid #e2e8f0;white-space:nowrap;flex-shrink:0; }
+.pulse-dot { width:8px;height:8px;background:#10b981;border-radius:50%;animation:pulse 2s infinite;flex-shrink:0; }
 @keyframes pulse { 0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(16,185,129,.7)} 70%{transform:scale(1);box-shadow:0 0 0 5px rgba(16,185,129,0)} 100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(16,185,129,0)} }
 
-.attendance-content { display:grid;grid-template-columns:3fr 2fr;gap:1.5rem; }
-.active-session-panel,.history-panel { background:#fff;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,.05);border:1px solid rgba(226,232,240,.8);display:flex;flex-direction:column; }
+.attendance-content { display:grid;grid-template-columns:3fr 2fr;gap:1.5rem;min-width:0; }
+.active-session-panel,.history-panel { background:#fff;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,.05);border:1px solid rgba(226,232,240,.8);display:flex;flex-direction:column;min-width:0; }
 .panel-header { padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center; }
 .panel-header h2 { margin:0;font-size:1.1rem;font-weight:700;color:#0f172a; }
 .refresh-btn { background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.2s; }
 .refresh-btn:hover { background:#f1f5f9;color:#475569; }
 .refresh-btn svg { width:16px;height:16px; }
-.session-body { padding:1.5rem;flex:1;display:flex;flex-direction:column; }
+.session-body { padding:1.5rem;flex:1;display:flex;flex-direction:column;min-width:0; }
 
 /* Loading */
 .loading-state { display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:1rem;color:#64748b; }
@@ -482,7 +482,7 @@ const attendanceHistory = computed(() => {
 .success-icon-wrap svg { width:36px;height:36px; }
 .success-state h3 { margin:0;font-size:1.4rem;font-weight:800;color:#0f172a; }
 .success-state p { margin:0;color:#64748b;font-size:0.95rem; }
-.marked-course-badge { background:#e0e7ff;color:#3730a3;padding:0.4rem 1rem;border-radius:8px;font-weight:700;font-size:0.9rem; }
+.marked-course-badge { background:#e0e7ff;color:#3730a3;padding:0.4rem 1rem;border-radius:8px;font-weight:700;font-size:0.9rem;max-width:100%;word-break:break-word; }
 .marked-time { font-size:0.8rem;color:#94a3b8; }
 
 /* No Session */
@@ -493,25 +493,25 @@ const attendanceHistory = computed(() => {
 .no-session-state p { color:#64748b;margin:0 0 1.5rem;max-width:280px;line-height:1.5;font-size:0.9rem; }
 
 /* In-session indicator */
-.active-class-ui { display:flex;flex-direction:column;gap:1.25rem; }
+.active-class-ui { display:flex;flex-direction:column;gap:1.25rem;min-width:0; }
 .in-session-indicator { display:flex;align-items:center;gap:8px; }
-.session-live-dot { width:10px;height:10px;background:#ef4444;border-radius:50%;animation:pulseRed 1.5s infinite; }
+.session-live-dot { width:10px;height:10px;background:#ef4444;border-radius:50%;animation:pulseRed 1.5s infinite;flex-shrink:0; }
 @keyframes pulseRed { 0%,100%{opacity:1}50%{opacity:0.25} }
 .session-live-text { font-size:0.75rem;font-weight:800;letter-spacing:0.1em;color:#ef4444;text-transform:uppercase; }
 
 /* Course Banner */
-.course-banner { background:linear-gradient(135deg,#4f46e5 0%,#6366f1 100%);border-radius:12px;padding:1.25rem;color:white; }
-.badge-row { display:flex;gap:0.5rem;margin-bottom:0.5rem; }
+.course-banner { background:linear-gradient(135deg,#4f46e5 0%,#6366f1 100%);border-radius:12px;padding:1.25rem;color:white;min-width:0; }
+.badge-row { display:flex;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap; }
 .course-code { background:rgba(255,255,255,.2);padding:.2rem .7rem;border-radius:6px;font-size:.78rem;font-weight:600; }
 .semester-badge-tag { background:rgba(0,0,0,.2);padding:.2rem .7rem;border-radius:6px;font-size:.78rem;font-weight:600; }
-.course-name { margin:0 0 0.4rem;font-size:1.15rem;font-weight:700; }
-.course-details { margin:0;font-size:.85rem;opacity:.85; }
+.course-name { margin:0 0 0.4rem;font-size:1.15rem;font-weight:700;word-break:break-word; }
+.course-details { margin:0;font-size:.85rem;opacity:.85;word-break:break-word; }
 
 /* Code Entry */
-.verification-box { background:#f8fafc;border-radius:12px;padding:1.5rem;text-align:center;border:1px solid #e2e8f0; }
+.verification-box { background:#f8fafc;border-radius:12px;padding:1.5rem;text-align:center;border:1px solid #e2e8f0;min-width:0; }
 .verification-box h4 { margin:0 0 .4rem;font-size:1.05rem;color:#0f172a; }
 .verification-box p { margin:0 0 1.25rem;color:#64748b;font-size:.9rem; }
-.code-inputs { display:flex;justify-content:center;gap:.6rem;margin-bottom:1.25rem; }
+.code-inputs { display:flex;justify-content:center;gap:.6rem;margin-bottom:1.25rem;flex-wrap:wrap; }
 .pin-box { width:52px;height:60px;font-size:1.6rem;font-weight:800;text-align:center;border-radius:10px;border:2px solid #cbd5e1;background:#fff;color:#0f172a;outline:none;transition:all .2s; }
 .pin-box:focus { border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1); }
 .pin-filled { border-color:#10b981;background:#ecfdf5;color:#065f46; }
@@ -531,18 +531,72 @@ const attendanceHistory = computed(() => {
 /* History */
 .sessions-list { padding:1rem;display:flex;flex-direction:column;gap:.75rem;flex:1;overflow-y:auto; }
 .empty-history { text-align:center;color:#94a3b8;font-size:.9rem;padding:2rem;font-style:italic; }
-.history-item { display:flex;align-items:center;gap:.75rem;padding:.9rem;background:#f8fafc;border-radius:10px;border:1px solid #f1f5f9; }
+.history-item { display:flex;align-items:center;gap:.75rem;padding:.9rem;background:#f8fafc;border-radius:10px;border:1px solid #f1f5f9;min-width:0; }
 .status-icon { width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
 .status-icon.present { background:#dcfce7;color:#10b981; }
 .status-icon.absent { background:#fee2e2;color:#ef4444; }
 .status-icon svg { width:16px;height:16px; }
-.history-details { flex:1; }
-.history-details h4 { margin:0 0 .2rem;font-size:.88rem;color:#1e293b;font-weight:600; }
+.history-details { flex:1;min-width:0; }
+.history-details h4 { margin:0 0 .2rem;font-size:.88rem;color:#1e293b;font-weight:600;word-break:break-word; }
 .history-details p { margin:0;font-size:.75rem;color:#64748b; }
-.history-status { font-size:.75rem;font-weight:700;text-transform:uppercase; }
+.history-status { font-size:.75rem;font-weight:700;text-transform:uppercase;flex-shrink:0; }
 .history-status.present { color:#10b981; }
 .history-status.absent { color:#ef4444; }
 
-@media(max-width:1024px) { .attendance-content { grid-template-columns:1fr; } }
-@media(max-width:768px) { .page-header { flex-direction:column;align-items:flex-start;gap:1rem; } .code-inputs { gap:.4rem; } .pin-box { width:44px;height:52px;font-size:1.3rem; } }
+/* ==========================================================================
+   Responsive Breakpoints
+   L  (large / laptop-desktop): < 1200px  — tighten gaps
+   M  (tablet):                 < 1024px  — stack columns
+   S  (small tablet / large phone): < 768px — stack header, shrink pins
+   XS (mobile):                 < 480px  — compact spacing, smaller pins/type
+   ========================================================================== */
+
+/* L — Large screens / small laptops */
+@media (max-width: 1200px) {
+  .attendance-content { gap: 1.25rem; }
+}
+
+/* M — Tablets: stack the two-column layout */
+@media (max-width: 1024px) {
+  .attendance-content { grid-template-columns: 1fr; }
+}
+
+/* S — Small tablets / large phones */
+@media (max-width: 768px) {
+  .attendance-container { gap: 1.5rem; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .page-title { font-size: 1.5rem; }
+  .panel-header { padding: 1rem 1.25rem; }
+  .session-body { padding: 1.25rem; }
+  .course-banner { padding: 1rem; }
+  .verification-box { padding: 1.25rem; }
+  .code-inputs { gap: .5rem; }
+  .pin-box { width: 44px; height: 52px; font-size: 1.3rem; }
+}
+
+/* XS — Mobile phones */
+@media (max-width: 480px) {
+  .attendance-container { gap: 1.25rem; }
+  .page-title { font-size: 1.3rem; }
+  .page-subtitle { font-size: 0.85rem; }
+  .live-badge { font-size: 0.78rem; padding: 0.4rem 0.85rem; }
+  .panel-header { padding: 1rem; }
+  .panel-header h2 { font-size: 1rem; }
+  .session-body { padding: 1rem; }
+  .course-banner { padding: 0.9rem; }
+  .course-name { font-size: 1.05rem; }
+  .verification-box { padding: 1rem; }
+  .verification-box h4 { font-size: 0.95rem; }
+  .code-inputs { gap: .35rem; }
+  .pin-box { width: 38px; height: 46px; font-size: 1.15rem; border-radius: 8px; }
+  .primary-btn { padding: .75rem 1.25rem; font-size: 0.9rem; }
+  .success-icon-wrap { width: 60px; height: 60px; }
+  .success-icon-wrap svg { width: 30px; height: 30px; }
+  .success-state h3 { font-size: 1.2rem; }
+  .icon-wrap-large { width: 52px; height: 52px; margin-bottom: 1rem; }
+  .icon-wrap-large svg { width: 26px; height: 26px; }
+  .no-session-state { padding: 2rem 1rem; }
+  .history-item { padding: 0.75rem; gap: 0.6rem; }
+  .sessions-list { padding: 0.75rem; }
+}
 </style>
