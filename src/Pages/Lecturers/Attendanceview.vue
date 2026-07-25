@@ -593,6 +593,78 @@ const checkedInStudents = computed(() => {
     .sort((x, y) => new Date(x.timestamp) - new Date(y.timestamp));
 });
 
+// Starts (or restarts) the 1s countdown interval driving `timeLeft`.
+// Shared by a fresh session start and a resumed session on mount so both
+// paths tick down and auto-end the same way.
+function startCountdownInterval() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (timeLeft.value > 0) {
+      timeLeft.value--;
+    } else {
+      stopLiveSession();
+    }
+  }, 1000);
+}
+
+// On mount, look for a session on THIS course that is still is_active = true
+// in the sessions table. The countdown isn't persisted server-side, so it's
+// derived from `created_at` + the currently configured duration:
+//   remaining = durationSecs - (now - created_at)
+// If that's already <= 0 the session outlived its window while nobody was
+// looking (e.g. the lecturer refreshed or navigated away) — write
+// is_active = false back to close it out rather than resurrecting a dead
+// countdown. Otherwise the live session panel resumes with the correct
+// remaining time and the countdown keeps ticking as normal.
+async function resumeActiveSessionIfAny() {
+  if (!courseId.value) return;
+
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('*')
+    .eq('course_id', courseId.value)
+    .eq('lecturer_id', profile.value?.id)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error('[AttendanceView] Failed to check for active session:', error);
+    return;
+  }
+
+  const existing = data?.[0];
+  if (!existing) return;
+
+  const elapsedSecs = Math.floor((Date.now() - new Date(existing.created_at).getTime()) / 1000);
+  const total = durationSecs.value; // best-known duration; not persisted server-side
+  const remaining = total - elapsedSecs;
+
+  if (remaining <= 0) {
+    // Expired while unattended — close it out server-side instead of
+    // reviving a countdown that's already run out.
+    try {
+      await supabase.from('sessions').update({ is_active: false }).eq('id', existing.id);
+    } catch (e) {
+      console.error('[AttendanceView] Failed to auto-close expired session:', e);
+    }
+    return;
+  }
+
+  // Still within its window — keep the session live and resume the UI
+  // with the correctly computed remaining countdown.
+  totalTime.value = total;
+  timeLeft.value = remaining;
+  liveAttendanceSession.value = {
+    id: existing.id,
+    isActive: true,
+    pin: existing.pin,
+    maxStudents: existing.max_students,
+  };
+
+  startCountdownInterval();
+}
+
 onMounted(async () => {
   if (courseId.value) {
     try {
@@ -622,6 +694,10 @@ onMounted(async () => {
       console.error(e);
     }
   }
+
+  // Resume a still-live session (is_active = true) for this course, or
+  // silently close one out server-side if its countdown already expired.
+  await resumeActiveSessionIfAny();
 
   try {
     if (liveAttendanceSession.value.id) {
@@ -768,11 +844,7 @@ const startLiveSession = async () => {
       userName: profile.value?.name,
     });
 
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-      if (timeLeft.value > 0) { timeLeft.value--; }
-      else { stopLiveSession(); }
-    }, 1000);
+    startCountdownInterval();
 
     dispatchOtpsToSelected(created.id, created.pin);
   } catch (e) {
