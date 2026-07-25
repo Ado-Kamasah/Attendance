@@ -325,6 +325,12 @@ const markAttendance = (cls) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.header-text {
+  min-width: 0;
 }
 
 .page-title {
@@ -353,12 +359,15 @@ const markAttendance = (cls) => {
   color: #475569;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .date-badge svg {
   width: 18px;
   height: 18px;
   color: #6366f1;
+  flex-shrink: 0;
 }
 
 /* Key Metrics */
@@ -378,6 +387,7 @@ const markAttendance = (cls) => {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(226, 232, 240, 0.8);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0;
 }
 
 .metric-card:hover {
@@ -408,6 +418,7 @@ const markAttendance = (cls) => {
 
 .metric-content {
   flex: 1;
+  min-width: 0;
 }
 
 .metric-title {
@@ -433,6 +444,7 @@ const markAttendance = (cls) => {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .schedule-panel,
@@ -443,12 +455,14 @@ const markAttendance = (cls) => {
   padding: 1.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(226, 232, 240, 0.8);
+  min-width: 0;
 }
 
 .side-panel {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .panel-header {
@@ -456,6 +470,8 @@ const markAttendance = (cls) => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .panel-header h2 {
@@ -475,6 +491,7 @@ const markAttendance = (cls) => {
   cursor: pointer;
   padding: 0;
   transition: color 0.2s;
+  white-space: nowrap;
 }
 
 .view-all-btn:hover {
@@ -512,6 +529,7 @@ const markAttendance = (cls) => {
   padding: 1.25rem;
   min-width: 140px;
   border-right: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 .time-start {
@@ -533,6 +551,7 @@ const markAttendance = (cls) => {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-width: 0;
 }
 
 .course-info h4 {
@@ -543,6 +562,7 @@ const markAttendance = (cls) => {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .course-code {
@@ -552,12 +572,14 @@ const markAttendance = (cls) => {
   padding: 2px 8px;
   border-radius: 6px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .course-info p {
   margin: 0;
   color: #475569;
   font-size: 0.9rem;
+  word-break: break-word;
 }
 
 .action-block {
@@ -565,6 +587,7 @@ const markAttendance = (cls) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .mark-btn {
@@ -693,6 +716,7 @@ const markAttendance = (cls) => {
   border-radius: 12px;
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
+  min-width: 0;
 }
 
 .empty-alert {
@@ -721,40 +745,63 @@ const markAttendance = (cls) => {
   height: 20px;
 }
 
+.alert-text { min-width: 0; }
+
 .alert-text p {
   margin: 0 0 0.35rem 0;
   font-weight: 700;
   font-size: 0.95rem;
   color: #1e293b;
+  word-break: break-word;
 }
 
 .alert-text span {
   font-size: 0.85rem;
   color: #64748b;
+  word-break: break-word;
 }
 
-/* Dashboard Responsiveness */
+/* ==========================================================================
+   Responsive Breakpoints
+   L  (large / laptop-desktop): < 1200px  — tighten grid gaps
+   M  (tablet):                 < 1024px  — stack the content split
+   S  (small tablet / large phone): < 768px — stack header, schedule item
+      switches to a stacked card layout
+   XS (mobile):                 < 480px  — compact metrics/panels, full-width
+      mark button, smaller icons
+   ========================================================================== */
+
+/* L — Large screens / small laptops */
+@media (max-width: 1200px) {
+  .metrics-grid { gap: 1.25rem; }
+  .dashboard-content-split { gap: 1.25rem; }
+}
+
+/* M — Tablets: stack the two-column content split */
 @media (max-width: 1024px) {
   .dashboard-content-split {
     grid-template-columns: 1fr;
   }
 }
 
+/* S — Small tablets / large phones */
 @media (max-width: 768px) {
+  .dashboard-container { gap: 1.5rem; }
+
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1.25rem;
   }
-  
+
   .page-title {
     font-size: 1.5rem;
   }
-  
+
   .schedule-item {
     flex-direction: column;
   }
-  
+
   .time-block {
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
@@ -762,18 +809,84 @@ const markAttendance = (cls) => {
     justify-content: flex-start;
     gap: 10px;
     align-items: center;
+    min-width: 0;
   }
-  
+
   .time-end {
     margin-top: 0;
   }
-  
+
   .action-block {
     padding-top: 0;
   }
-  
+
   .mark-btn {
     width: 100%;
+  }
+
+  .schedule-panel,
+  .action-panel,
+  .notifications-summary {
+    padding: 1.25rem;
+  }
+}
+
+/* XS — Mobile phones */
+@media (max-width: 480px) {
+  .dashboard-container { gap: 1.25rem; }
+
+  .page-title { font-size: 1.3rem; }
+  .page-subtitle { font-size: 0.85rem; }
+
+  .date-badge {
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .metrics-grid { gap: 0.85rem; }
+
+  .metric-card {
+    padding: 1.25rem 1.15rem;
+    gap: 1rem;
+  }
+
+  .metric-icon-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .metric-icon { width: 22px; height: 22px; }
+
+  .metric-value { font-size: 1.6rem; }
+
+  .schedule-panel,
+  .action-panel,
+  .notifications-summary {
+    padding: 1rem;
+  }
+
+  .panel-header h2 { font-size: 1.05rem; }
+
+  .time-block { padding: 0.85rem; }
+  .course-info { padding: 0.85rem; }
+  .action-block { padding: 0.85rem; }
+
+  .course-info h4 { font-size: 1rem; }
+
+  .action-btn {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .icon-wrap {
+    width: 38px;
+    height: 38px;
+  }
+  .icon-wrap svg { width: 18px; height: 18px; }
+
+  .alert-item {
+    padding: 1rem;
+    gap: 1rem;
   }
 }
 </style>

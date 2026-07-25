@@ -42,9 +42,9 @@
               {{ course.studentsCount }} Students
             </span>
           </div>
-          
+
           <h3 class="course-name">{{ course.name }}</h3>
-          
+
           <div class="schedule-info">
              <div class="info-row">
                <svg viewBox="0 0 24 24" fill="none" class="icon" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -98,7 +98,7 @@
       <div class="modal-content">
         <h2>Reschedule Class</h2>
         <p>Update the schedule for {{ editingCourse.code }} - {{ editingCourse.name }}</p>
-        
+
         <div class="form-group">
           <label>Day of Week</label>
           <select v-model="editForm.day" class="modern-input">
@@ -170,7 +170,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
-        
+
         <div v-if="isLoadingStudents" class="loading-state">
           Loading students...
         </div>
@@ -500,12 +500,14 @@ const closeClassList = () => {
   font-weight: 600;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .semester-badge svg {
   width: 16px;
   height: 16px;
   color: #6366f1;
+  flex-shrink: 0;
 }
 
 /* Empty State */
@@ -569,6 +571,7 @@ const closeClassList = () => {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .course-card:hover {
@@ -586,6 +589,7 @@ const closeClassList = () => {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
 }
 
 .card-header {
@@ -593,6 +597,8 @@ const closeClassList = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .course-code {
@@ -612,12 +618,14 @@ const closeClassList = () => {
   font-size: 0.8rem;
   font-weight: 600;
   color: #475569;
+  white-space: nowrap;
 }
 
 .student-count svg {
   width: 14px;
   height: 14px;
   color: #94a3b8;
+  flex-shrink: 0;
 }
 
 .course-name {
@@ -626,6 +634,7 @@ const closeClassList = () => {
   font-weight: 700;
   color: #0f172a;
   line-height: 1.3;
+  word-break: break-word;
 }
 
 .schedule-info {
@@ -642,12 +651,20 @@ const closeClassList = () => {
   color: #475569;
   font-size: 0.9rem;
   font-weight: 500;
+  min-width: 0;
+}
+
+.info-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .info-row .icon {
   width: 18px;
   height: 18px;
   color: #94a3b8;
+  flex-shrink: 0;
 }
 
 .attendance-summary {
@@ -693,6 +710,7 @@ const closeClassList = () => {
   display: flex;
   gap: 0.75rem;
   margin-top: auto;
+  flex-wrap: wrap;
 }
 
 .action-btn {
@@ -704,6 +722,7 @@ const closeClassList = () => {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: center;
+  min-width: 0;
 }
 
 .outline-btn {
@@ -745,6 +764,7 @@ const closeClassList = () => {
   border-radius: 4px;
   transition: all 0.2s;
   margin-left: auto;
+  flex-shrink: 0;
 }
 
 .icon-btn:hover {
@@ -770,6 +790,8 @@ const closeClassList = () => {
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .modal-content {
@@ -778,7 +800,10 @@ const closeClassList = () => {
   padding: 2rem;
   width: 90%;
   max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
 }
 
 .modal-content h2 {
@@ -818,6 +843,7 @@ const closeClassList = () => {
   transition: all 0.2s;
   font-family: inherit;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .modern-input:focus {
@@ -831,6 +857,7 @@ const closeClassList = () => {
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 2rem;
+  flex-wrap: wrap;
 }
 
 .primary-btn {
@@ -841,22 +868,6 @@ const closeClassList = () => {
 
 .primary-btn:hover {
   background-color: #059669;
-}
-
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .courses-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .card-actions {
-    flex-direction: column;
-  }
 }
 
 .class-list-modal {
@@ -871,6 +882,7 @@ const closeClassList = () => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 1.5rem;
+  gap: 0.75rem;
 }
 
 .loading-state, .empty-state-small {
@@ -882,12 +894,15 @@ const closeClassList = () => {
 
 .table-container {
   overflow-y: auto;
+  overflow-x: auto;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .students-table {
   width: 100%;
+  min-width: 420px;
   border-collapse: collapse;
 }
 
@@ -900,6 +915,7 @@ const closeClassList = () => {
   color: #64748b;
   text-transform: uppercase;
   border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .students-table td {
@@ -927,6 +943,7 @@ const closeClassList = () => {
   justify-content: center;
   font-weight: 700;
   font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 /* Delete button on card */
@@ -987,4 +1004,241 @@ const closeClassList = () => {
 
 .spin-icon { width: 16px; height: 16px; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ================================
+   RESPONSIVE BREAKPOINTS
+   Tablet (≤1024px) → Mobile L (≤480px) → Mobile M (≤414px) → Mobile S (≤360px)
+   ================================ */
+
+/* Tablet and small laptop */
+@media (max-width: 1024px) {
+  .courses-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+/* Tablet / large phones landscape */
+@media (max-width: 768px) {
+  .lecturer-courses-container {
+    gap: 1.5rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .courses-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .course-card-content {
+    padding: 1.25rem;
+  }
+
+  .card-actions {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+
+  .delete-btn {
+    width: 100%;
+    height: 42px;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+    width: 100%;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-actions .action-btn,
+  .modal-actions button {
+    width: 100%;
+  }
+}
+
+/* Mobile L (large phones, e.g. iPhone Plus/Max, ~425-480px) */
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.35rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .semester-badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .empty-state {
+    padding: 3rem 1rem;
+  }
+
+  .course-name {
+    font-size: 1.05rem;
+  }
+
+  .card-header {
+    align-items: flex-start;
+  }
+
+  .student-count {
+    font-size: 0.75rem;
+  }
+
+  .info-row {
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .modal-content {
+    padding: 1.25rem;
+    border-radius: 12px;
+  }
+
+  .modal-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .delete-modal {
+    padding: 1.5rem;
+  }
+
+  .class-list-modal {
+    max-height: 90vh;
+  }
+
+  .modal-header-row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .students-table th,
+  .students-table td {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .student-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Mobile M (e.g. iPhone SE/12/13, ~375-414px) */
+@media (max-width: 414px) {
+  .lecturer-courses-container {
+    gap: 1.25rem;
+  }
+
+  .course-card-content {
+    padding: 1rem;
+  }
+
+  .attendance-summary {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .schedule-info {
+    margin-bottom: 1.25rem;
+  }
+
+  .action-btn {
+    font-size: 0.85rem;
+    padding: 0.65rem;
+  }
+
+  .modal-content {
+    padding: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .modern-input {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .students-table {
+    min-width: 380px;
+  }
+}
+
+/* Mobile S (small phones, e.g. iPhone 5/SE 1st gen / Galaxy Fold, ≤360px) */
+@media (max-width: 360px) {
+  .page-title {
+    font-size: 1.2rem;
+  }
+
+  .semester-badge svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .course-code {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+  }
+
+  .course-name {
+    font-size: 0.95rem;
+  }
+
+  .info-row .icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .summary-label {
+    font-size: 0.7rem;
+  }
+
+  .summary-value {
+    font-size: 0.9rem;
+  }
+
+  .action-btn {
+    font-size: 0.8rem;
+    padding: 0.6rem;
+  }
+
+  .modal-content h2 {
+    font-size: 1.1rem;
+  }
+
+  .delete-course-code {
+    font-size: 0.7rem;
+  }
+
+  .delete-course-name {
+    font-size: 0.85rem;
+  }
+
+  .students-table {
+    min-width: 320px;
+  }
+
+  .student-cell span {
+    font-size: 0.85rem;
+  }
+}
 </style>
