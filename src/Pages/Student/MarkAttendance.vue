@@ -348,8 +348,35 @@ const onOtpBackspace = (idx, event) => {
   }
 };
 
+// Finalizes a successful check-in — shared by the normal success path and
+// the "duplicate request landed after we'd already succeeded" recovery path
+// below, so both end up in the exact same success state.
+function finalizeAttendanceMarked(sessionId) {
+  const now = new Date();
+  markedCourseName.value = `${activeClass.value.code} — ${activeClass.value.name}`;
+  markedAtTime.value = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  sessionCourseMap.value = {
+    ...sessionCourseMap.value,
+    [sessionId]: { code: activeClass.value.code, name: activeClass.value.name },
+  };
+
+  auditLogsStore.logAction({
+    action: 'attendance_marked',
+    details: `Marked present for ${markedCourseName.value} (dashboard code verified)`,
+    userId: profile.value?.id,
+    userRole: profile.value?.role,
+    userName: profile.value?.name,
+  });
+
+  attendanceMarked.value = true;
+  otpCode.value = ['', '', '', '', '', ''];
+}
+
 const verifyOtp = async () => {
-  if (!activeClass.value) return;
+  // Explicit re-entrancy guard — don't rely solely on the :disabled binding,
+  // since a fast double-tap can fire twice before Vue re-renders the button.
+  if (!activeClass.value || otpVerifying.value) return;
   const code = otpCode.value.join('');
   if (code.length < 6) {
     otpError.value = 'Enter the complete 6-digit code.';
@@ -359,17 +386,32 @@ const verifyOtp = async () => {
   otpVerifying.value = true;
   otpError.value = '';
 
-  try {
-    const sessionId = activeClass.value.id;
-    const studentId = profile.value?.id;
+  const sessionId = activeClass.value.id;
+  const studentId = profile.value?.id;
 
+  try {
     const res = await fetch(`${OTP_API_BASE}/api/otp/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, studentId, otp: code }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Invalid code.');
+
+    if (!res.ok) {
+      // The PIN is a single shared code for the whole session, so the OTP
+      // service flags it "already used" the moment ANY verify against it
+      // succeeds. If a duplicate/retried request (double-tap, flaky network,
+      // a stray resend) lands after THIS student's own attendance was
+      // already recorded, that's not really a failure for them — surfacing
+      // "code already used" here would be confusing and wrong. Check the
+      // local record first and treat it as success instead.
+      const already = attendancesStore.getAttendanceRecord(sessionId, studentId);
+      if (already?.status === 'present') {
+        finalizeAttendanceMarked(sessionId);
+        return;
+      }
+      throw new Error(data.message || 'Invalid code.');
+    }
 
     // The lecturer pre-seeds a 'pending' row for every selected student when
     // the session starts. Flip that row to 'present' instead of inserting a
@@ -378,7 +420,10 @@ const verifyOtp = async () => {
     const existing = attendancesStore.getAttendanceRecord(sessionId, studentId);
 
     if (existing?.status === 'present') {
-      throw new Error('Attendance already recorded for this session.');
+      // Already recorded present from an earlier successful call — nothing
+      // new to write, just show the same success state.
+      finalizeAttendanceMarked(sessionId);
+      return;
     }
 
     if (existing) {
@@ -387,25 +432,7 @@ const verifyOtp = async () => {
       await attendancesStore.markAttendance({ sessionId, studentId, status: 'present' });
     }
 
-    const now = new Date();
-    markedCourseName.value = `${activeClass.value.code} — ${activeClass.value.name}`;
-    markedAtTime.value = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-    sessionCourseMap.value = {
-      ...sessionCourseMap.value,
-      [sessionId]: { code: activeClass.value.code, name: activeClass.value.name },
-    };
-
-    auditLogsStore.logAction({
-      action: 'attendance_marked',
-      details: `Marked present for ${markedCourseName.value} (dashboard code verified)`,
-      userId: profile.value?.id,
-      userRole: profile.value?.role,
-      userName: profile.value?.name,
-    });
-
-    attendanceMarked.value = true;
-    otpCode.value = ['', '', '', '', '', ''];
+    finalizeAttendanceMarked(sessionId);
   } catch (e) {
     otpError.value = e.message || 'Verification failed. Please try again.';
     otpCode.value = ['', '', '', '', '', ''];
