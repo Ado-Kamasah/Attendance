@@ -18,7 +18,7 @@
     <!-- Loading -->
     <div v-if="isLoading" class="loading-state page-loading">
       <div class="spinner"></div>
-      <p>Loading attendance dataâ€¦</p>
+      <p>Loading attendance data…</p>
     </div>
 
     <template v-else>
@@ -138,7 +138,7 @@
           <div class="history-header">
             <div>
               <h2>Attendance History</h2>
-              <p class="history-sub">{{ filteredSessions.length }} session{{ filteredSessions.length !== 1 ? 's' : '' }} Â· {{ historyRows.length }} record{{ historyRows.length !== 1 ? 's' : '' }}</p>
+              <p class="history-sub">{{ filteredSessions.length }} session{{ filteredSessions.length !== 1 ? 's' : '' }} · {{ historyRows.length }} record{{ historyRows.length !== 1 ? 's' : '' }}</p>
             </div>
             <span class="count-pill">{{ historyRows.length }} record{{ historyRows.length === 1 ? '' : 's' }}</span>
           </div>
@@ -199,11 +199,44 @@
                     <td>{{ row.dateStr }}</td>
                     <td>{{ row.timeStr }}</td>
                     <td>
-                      <span class="attendance-badge" :class="row.status === 'present' ? 'excellent' : 'poor'">
-                        {{ row.status === 'present' ? 'Present' : 'Absent' }}
+                      <!-- Inline status editor — only reachable for pending/absent rows -->
+                      <div v-if="editingRowId === row.id" class="status-edit-wrap">
+                        <select
+                          class="status-edit-select"
+                          v-model="editingStatus"
+                          :disabled="savingRowId === row.id"
+                          @change="saveStatusEdit(row)"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="absent">Absent</option>
+                          <option value="present">Present</option>
+                        </select>
+                        <button
+                          class="status-edit-cancel"
+                          title="Cancel"
+                          :disabled="savingRowId === row.id"
+                          @click="cancelStatusEdit"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
+                      <span v-else class="attendance-badge" :class="badgeClass(row.status)">
+                        {{ statusLabel(row.status) }}
                       </span>
                     </td>
-                    <td></td>
+                    <td class="status-edit-cell">
+                      <!-- Editing is only offered for pending/absent rows — a confirmed
+                           'present' check-in (verified by OTP) stays locked here. -->
+                      <button
+                        v-if="editingRowId !== row.id && (row.status === 'pending' || row.status === 'absent')"
+                        class="status-edit-btn"
+                        title="Edit attendance status"
+                        :disabled="!!savingRowId"
+                        @click="startStatusEdit(row)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                    </td>
                   </tr>
                 </template>
               </tbody>
@@ -278,7 +311,7 @@
       <p>This will permanently delete the session and all <strong>{{ sessionToDelete.rows.length }}</strong> attendance record{{ sessionToDelete.rows.length !== 1 ? 's' : '' }} for:</p>
       <div class="ds-info">
         <span class="pin-chip">PIN {{ sessionToDelete.pin }}</span>
-        <span class="ds-course">{{ sessionToDelete.courseCode }} â€” {{ sessionToDelete.courseName }}</span>
+        <span class="ds-course">{{ sessionToDelete.courseCode }} — {{ sessionToDelete.courseName }}</span>
         <span class="ds-date">{{ sessionToDelete.dateStr }}</span>
       </div>
       <p class="ds-warn">This action cannot be undone.</p>
@@ -286,7 +319,7 @@
         <button class="btn-cancel" @click="sessionToDelete = null" :disabled="!!deletingSessionId">Cancel</button>
         <button class="btn-delete-confirm" @click="deleteSessionById" :disabled="!!deletingSessionId">
           <svg v-if="deletingSessionId" class="spin-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
-          {{ deletingSessionId ? 'Deletingâ€¦' : 'Delete Session' }}
+          {{ deletingSessionId ? 'Deleting…' : 'Delete Session' }}
         </button>
       </div>
     </div>
@@ -353,7 +386,7 @@ onMounted(async () => {
     ]);
 
     // Students aren't covered by a dedicated Pinia store elsewhere in the
-    // app (AttendanceManagement.vue queries `users` directly too) â€” pull
+    // app (AttendanceManagement.vue queries `users` directly too) — pull
     // everyone enrolled in this lecturer's courses in one batch.
     const lecturerCourseIds = new Set(
       sessions.value.filter((s) => s.lecturerId === profile.value?.id).map((s) => s.courseId)
@@ -392,7 +425,7 @@ onMounted(async () => {
 });
 
 // Courses this lecturer actually teaches, inferred from schedules
-// (schedules.lecturer is a free-text name in the schema shown elsewhere â€”
+// (schedules.lecturer is a free-text name in the schema shown elsewhere —
 // fall back to "all courses" if that linkage can't be made reliably).
 const coursesForLecturer = computed(() => {
   const lecturerName = profile.value?.name;
@@ -428,7 +461,7 @@ const inDateRange = (dateStr, from, to) => {
   return true;
 };
 
-// Sessions after course/level/semester/date/pin filters â€” student filter is
+// Sessions after course/level/semester/date/pin filters — student filter is
 // applied later, at the attendance-row level, since "student" narrows
 // PEOPLE within a session rather than which sessions existed.
 const filteredSessions = computed(() => {
@@ -450,7 +483,7 @@ const filteredSessions = computed(() => {
 
 const filteredSessionIds = computed(() => new Set(filteredSessions.value.map((s) => s.id)));
 
-// Individual attendance rows for the history table â€” every present record
+// Individual attendance rows for the history table — every present record
 // whose session survived the filters above, further narrowed by student.
 const historyRows = computed(() => {
   const f = filters.value;
@@ -467,11 +500,11 @@ const historyRows = computed(() => {
         id: a.id,
         sessionId: a.sessionId,
         studentName: student?.name ?? 'Unknown student',
-        courseCode: course?.code ?? 'â€”',
+        courseCode: course?.code ?? '—',
         courseName: course?.name ?? 'Unknown course',
-        pin: session?.pin ?? 'â€”',
-        dateStr: ts ? ts.toLocaleDateString() : 'â€”',
-        timeStr: ts ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'â€”',
+        pin: session?.pin ?? '—',
+        dateStr: ts ? ts.toLocaleDateString() : '—',
+        timeStr: ts ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—',
         status: a.status,
         rawTimestamp: a.timestamp,
       };
@@ -600,7 +633,7 @@ const exportReport = () => {
   alert('Report export feature will be implemented soon.');
 };
 
-// â”€â”€ Delete session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Delete session ───────────────────────────────────────────────────────────
 const sessionToDelete  = ref(null);   // the group object from sessionGroups
 const deletingSessionId = ref(null);  // session id being deleted
 
@@ -627,7 +660,60 @@ const deleteSessionById = async () => {
   }
 };
 
-// â”€â”€ Session groups for the history table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Attendance status labels/classes (present / pending / absent) ───────────
+const statusLabel = (status) => {
+  if (status === 'present') return 'Present';
+  if (status === 'pending') return 'Pending';
+  return 'Absent';
+};
+
+const badgeClass = (status) => {
+  if (status === 'present') return 'excellent';
+  if (status === 'pending') return 'pending';
+  return 'poor';
+};
+
+// ── Edit attendance status (history table) ──────────────────────────────────
+// Editing is only ever offered for rows whose CURRENT status is 'pending' or
+// 'absent' — a row already 'present' (confirmed via the student's own PIN
+// entry) stays locked and shows no edit control at all. This mirrors the
+// intent that a lecturer can correct a no-show/no-response, but shouldn't
+// casually overwrite a verified check-in from the table.
+const editingRowId = ref(null);
+const editingStatus = ref('');
+const savingRowId = ref(null);
+
+const startStatusEdit = (row) => {
+  if (savingRowId.value) return;
+  if (row.status !== 'pending' && row.status !== 'absent') return;
+  editingRowId.value = row.id;
+  editingStatus.value = row.status;
+};
+
+const cancelStatusEdit = () => {
+  if (savingRowId.value) return;
+  editingRowId.value = null;
+  editingStatus.value = '';
+};
+
+const saveStatusEdit = async (row) => {
+  if (editingStatus.value === row.status) {
+    cancelStatusEdit();
+    return;
+  }
+  savingRowId.value = row.id;
+  try {
+    await attendancesStore.updateAttendanceStatus(row.id, editingStatus.value);
+  } catch (e) {
+    console.error('Failed to update attendance status:', e);
+  } finally {
+    savingRowId.value = null;
+    editingRowId.value = null;
+    editingStatus.value = '';
+  }
+};
+
+// ── Session groups for the history table ────────────────────────────────────
 const sessionGroups = computed(() => {
   const bySession = new Map();
   for (const row of historyRows.value) {
@@ -1151,6 +1237,7 @@ const sessionGroups = computed(() => {
 .attendance-badge.excellent { background-color: #dcfce7; color: #166534; }
 .attendance-badge.good { background-color: #fef9c3; color: #854d0e; }
 .attendance-badge.poor { background-color: #fee2e2; color: #991b1b; }
+.attendance-badge.pending { background-color: #fef9c3; color: #a16207; }
 
 /* History subtitle */
 .history-sub { margin: 2px 0 0; font-size: .8rem; color: #94a3b8; }
@@ -1172,6 +1259,36 @@ const sessionGroups = computed(() => {
 .session-delete-btn svg { width: 14px; height: 14px; }
 .spin-sm { animation: spinSm .7s linear infinite; }
 @keyframes spinSm { to { transform: rotate(360deg); } }
+
+/* Inline attendance status editor */
+.status-edit-cell { text-align: right; padding: .4rem .6rem !important; white-space: nowrap; }
+.status-edit-btn {
+  width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 1.5px solid #c7d2fe; border-radius: 7px; background: #eef2ff; color: #4f46e5; cursor: pointer; transition: all .18s;
+}
+.status-edit-btn:hover:not(:disabled) { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+.status-edit-btn:disabled { opacity: .5; cursor: not-allowed; }
+.status-edit-btn svg { width: 13px; height: 13px; }
+
+.status-edit-wrap { display: flex; align-items: center; gap: .4rem; }
+.status-edit-select {
+  padding: .3rem .5rem;
+  border-radius: 6px;
+  border: 1.5px solid #cbd5e1;
+  font-size: .78rem;
+  color: #0f172a;
+  background: #fff;
+  cursor: pointer;
+}
+.status-edit-select:focus { outline: none; border-color: #6366f1; }
+.status-edit-select:disabled { opacity: .6; cursor: not-allowed; }
+.status-edit-cancel {
+  width: 22px; height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 6px; background: transparent; color: #94a3b8; cursor: pointer; transition: all .15s;
+}
+.status-edit-cancel:hover:not(:disabled) { background: #f1f5f9; color: #475569; }
+.status-edit-cancel:disabled { opacity: .5; cursor: not-allowed; }
+.status-edit-cancel svg { width: 13px; height: 13px; }
 
 .delete-session-modal { max-width: 400px; text-align: center; padding: 2rem; }
 .ds-icon { width: 52px; height: 52px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
@@ -1315,6 +1432,11 @@ const sessionGroups = computed(() => {
     width: 28px;
     height: 28px;
     font-size: 0.8rem;
+  }
+
+  .status-edit-select {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.4rem;
   }
 
   .modal-header h2 {
