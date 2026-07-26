@@ -36,7 +36,22 @@
           <div class="course-card-content">
             <div class="card-header">
               <span class="course-code">{{ course.code }}</span>
-              <span class="credits-badge">{{ course.credits }} Credits</span>
+              <div class="header-right">
+                <span class="credits-badge">{{ course.credits }} Credits</span>
+                <button
+                  class="delete-icon-btn"
+                  type="button"
+                  title="Unenroll from this course"
+                  aria-label="Unenroll from this course"
+                  :disabled="unenrollingId === course.enrollmentId"
+                  @click="unenrollCourse(course)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
             
             <h3 class="course-name">{{ course.name }}</h3>
@@ -174,6 +189,7 @@ const myCourses = computed(() => {
 
       return {
         id: e.courseId,
+        enrollmentId: e.id,
         code: course?.code ?? 'Unknown',
         name: course?.name ?? 'Unknown Course',
         credits: course?.credits ?? 0,
@@ -194,6 +210,36 @@ const myCourses = computed(() => {
 const getInitials = (name) => {
   if (!name) return 'UN';
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+};
+
+// Tracks which enrollment is mid-delete so its trash button can disable/spin
+// without blocking the other cards.
+const unenrollingId = ref(null);
+
+const unenrollCourse = async (course) => {
+  if (!course.enrollmentId || unenrollingId.value) return;
+
+  const confirmed = window.confirm(
+    `Unenroll from ${course.code} — ${course.name}? This can't be undone.`
+  );
+  if (!confirmed) return;
+
+  unenrollingId.value = course.enrollmentId;
+  try {
+    await enrollmentsStore.deleteEnrollment(course.enrollmentId);
+
+    auditLogsStore.logAction({
+      action: 'course_unenrolled',
+      details: `Unenrolled from ${course.code} — ${course.name}`,
+      userId: profile.value?.id,
+      userRole: profile.value?.role,
+      userName: profile.value?.name,
+    });
+  } catch (e) {
+    console.error('Failed to unenroll:', e);
+  } finally {
+    unenrollingId.value = null;
+  }
 };
 
 const goToAttendance = (course) => {
@@ -385,6 +431,12 @@ const goToAttendance = (course) => {
   letter-spacing: 0.05em;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .credits-badge {
   font-size: 0.75rem;
   font-weight: 600;
@@ -393,6 +445,38 @@ const goToAttendance = (course) => {
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
   white-space: nowrap;
+}
+
+.delete-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.delete-icon-btn svg {
+  width: 15px;
+  height: 15px;
+  pointer-events: none;
+}
+
+.delete-icon-btn:hover:not(:disabled) {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.delete-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .course-name {
