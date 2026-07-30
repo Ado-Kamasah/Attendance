@@ -31,6 +31,13 @@
               <option value="Semester 1">Semester 1</option>
               <option value="Semester 2">Semester 2</option>
             </select>
+            <select v-model="levelFilter" class="filter-select">
+              <option value="all">All Levels</option>
+              <option value="100">Level 100</option>
+              <option value="200">Level 200</option>
+              <option value="300">Level 300</option>
+              <option value="400">Level 400</option>
+            </select>
             <div class="search-box">
               <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -149,6 +156,7 @@ const { enrollments } = storeToRefs(enrollmentsStore);
 
 const searchQuery = ref('');
 const semesterFilter = ref('all');
+const levelFilter = ref('all');
 const maxCredits = 21;
 
 const selectedCourses = ref([]);
@@ -203,6 +211,10 @@ list = list.filter((course) => course.programId === profile.value?.programId);  
 
   if (semesterFilter.value !== 'all') {
     list = list.filter((course) => (course.semester || 'Semester 1') === semesterFilter.value);
+  }
+
+  if (levelFilter.value !== 'all') {
+    list = list.filter((course) => String(course.level) === levelFilter.value);
   }
 
   if (searchQuery.value) {
