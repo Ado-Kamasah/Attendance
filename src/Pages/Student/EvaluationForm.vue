@@ -1,5 +1,68 @@
 <template>
   <div class="ef-container">
+
+    <!-- ── Evaluation Notice Popup ─────────────────────────────────────── -->
+    <Teleport to="body">
+      <transition name="popup">
+        <div v-if="showPopup" class="ev-popup-overlay" @click.self="showPopup = false">
+          <div class="ev-popup">
+            <!-- Icon -->
+            <div class="ev-popup-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+            </div>
+
+            <!-- Title -->
+            <h2 class="ev-popup-title">Lecturer Evaluation</h2>
+            <p class="ev-popup-lead">Your opinion matters — please take a moment to evaluate your lecturer.</p>
+
+            <!-- Info pills -->
+            <div class="ev-popup-pills">
+              <div class="ev-pill ev-pill-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                100% Confidential
+              </div>
+              <div class="ev-pill ev-pill-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Takes ~3 minutes
+              </div>
+              <div class="ev-pill ev-pill-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                One submission per course
+              </div>
+            </div>
+
+            <!-- Instructions -->
+            <ul class="ev-popup-list">
+              <li>
+                <span class="ev-li-dot"></span>
+                Select the course and lecturer you want to evaluate from the dropdown.
+              </li>
+              <li>
+                <span class="ev-li-dot"></span>
+                Answer all questions honestly — your identity is never linked to your responses.
+              </li>
+              <li>
+                <span class="ev-li-dot"></span>
+                You can only submit <strong>once per course</strong>. Ensure your answers are final before submitting.
+              </li>
+              <li>
+                <span class="ev-li-dot"></span>
+                Your feedback directly helps improve teaching quality at Southshore University.
+              </li>
+            </ul>
+
+            <button class="ev-popup-btn" @click="showPopup = false" id="eval-popup-proceed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Got It, Proceed to Evaluation
+            </button>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+
     <!-- Closed banner -->
     <div v-if="!evalStore.settings.isOpen" class="closed-banner">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -111,6 +174,9 @@ import { useSchedulesStore }   from '@/stores/schedules';
 import { useEvaluationStore, QUESTIONS, OPTIONS } from '@/stores/evaluations';
 import { supabase }            from '@/stores/supabase';
 
+// ── Popup ────────────────────────────────────────────────────────────────────
+const showPopup = ref(false); // shown on mount every time the page is opened
+
 const authStore   = useAuthStore();
 const enrollStore = useEnrollmentsStore();
 const courseStore = useCoursesStore();
@@ -133,6 +199,9 @@ const lecturerMap = ref({});
 const isLoadingCourses = ref(true);
 
 onMounted(async () => {
+  // Show the notice popup immediately every time the page is visited
+  showPopup.value = true;
+
   const uid = profile.value?.id;
   isLoadingCourses.value = true;
   try {
@@ -269,6 +338,156 @@ async function handleSubmit() {
 <style scoped>
 * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 .ef-container { display: flex; flex-direction: column; gap: 1.75rem; width: 100%; }
+
+/* ── Evaluation Notice Popup ─────────────────────────────────────────────── */
+.ev-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.ev-popup {
+  background: #fff;
+  border-radius: 24px;
+  padding: 2.5rem 2.25rem 2rem;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.ev-popup-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(99,102,241,0.35);
+}
+.ev-popup-icon svg { width: 32px; height: 32px; color: #fff; }
+
+.ev-popup-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+}
+
+.ev-popup-lead {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.5;
+  max-width: 380px;
+}
+
+/* Info pills */
+.ev-popup-pills {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ev-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.ev-pill svg { width: 13px; height: 13px; flex-shrink: 0; }
+.ev-pill-blue   { background: #eff6ff; color: #1d4ed8; }
+.ev-pill-purple { background: #f5f3ff; color: #6d28d9; }
+.ev-pill-green  { background: #f0fdf4; color: #15803d; }
+
+/* Instructions list */
+.ev-popup-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+}
+
+.ev-popup-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.855rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.ev-li-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+/* CTA button */
+.ev-popup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  border: none;
+  padding: 0.85rem 2rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(99,102,241,0.35);
+  transition: all 0.2s;
+}
+.ev-popup-btn svg { width: 18px; height: 18px; }
+.ev-popup-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(99,102,241,0.45);
+}
+
+/* Transition */
+.popup-enter-active, .popup-leave-active { transition: all 0.25s ease; }
+.popup-enter-from, .popup-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+@media (max-width: 480px) {
+  .ev-popup { padding: 2rem 1.25rem 1.5rem; }
+  .ev-popup-title { font-size: 1.3rem; }
+  .ev-popup-pills { gap: 0.4rem; }
+  .ev-popup-btn { font-size: 0.88rem; padding: 0.75rem 1.25rem; }
+}
 
 /* Closed banner */
 .closed-banner {

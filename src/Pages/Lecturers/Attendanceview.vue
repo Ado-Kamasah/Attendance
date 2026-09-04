@@ -141,14 +141,14 @@
               </button>
             </div>
             <p class="share-hint">
-              Share this PIN with students present in class
+              Attendance confirmation has been sent to the selected students
             </p>
             <div
               v-if="Object.keys(otpDispatch).length"
               class="otp-status-block"
             >
               <div class="otp-status-header">
-                <span>Email Codes</span>
+                <span>Attendance Confirmations</span>
                 <span v-if="isDispatchingOtp" class="otp-sending-label"
                   >Sending…</span
                 >
@@ -190,10 +190,10 @@
           </div>
         </div>
 
-        <!-- Right: Live check-in list -->
+        <!-- Right: Marked present list -->
         <div class="checkin-panel card">
           <div class="card-header">
-            <h2>Live Check-ins</h2>
+            <h2>Marked Present</h2>
             <div class="checkin-header-right">
               <span
                 class="realtime-pill"
@@ -227,7 +227,7 @@
                 <span class="ci-name">{{ s.name }}</span
                 ><span class="ci-time">{{ formatTime(s.timestamp) }}</span>
               </div>
-              <span class="ci-badge">Present</span>
+              <span class="ci-badge">Present ✓</span>
             </div>
           </div>
           <div class="waiting-state" v-else>
@@ -235,7 +235,7 @@
               <span class="dot"></span><span class="dot"></span
               ><span class="dot"></span>
             </div>
-            <p>Waiting for students to check in…</p>
+            <p>No students marked present yet.</p>
           </div>
         </div>
       </div>
@@ -245,8 +245,9 @@
         <div class="card-header"><h2>Start Attendance Session</h2></div>
         <div class="setup-body">
           <p class="setup-hint">
-            Select students physically present, then start the session to
-            generate a secure PIN.
+            Select students physically present in class, then click Start.
+            Their attendance will be recorded immediately and they will receive
+            a confirmation notification.
           </p>
 
           <!-- Custom timer settings -->
@@ -717,7 +718,7 @@ const toggleSelectAll = () => {
     : enrolledStudents.value.map(s => s.id);
 };
 
-const dispatchOtpsToSelected = async (sessionId, otp) => {
+const dispatchOtpsToSelected = async (sessionId, confirmationCode) => {
   const targets = enrolledStudents.value.filter((s) => selectedStudents.value.includes(s.id));
 
   otpDispatch.value = Object.fromEntries(targets.map((s) => [s.id, { status: 'sending', message: '' }]));
@@ -730,7 +731,8 @@ const dispatchOtpsToSelected = async (sessionId, otp) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId,
-        otp,
+        otp: confirmationCode,
+        isConfirmation: true,   // flag so the email template shows confirmation wording
         students: targets
           .filter((s) => !!s.email)
           .map((s) => ({ studentId: s.id, email: s.email, name: s.name })),
@@ -752,13 +754,13 @@ const dispatchOtpsToSelected = async (sessionId, otp) => {
     }
     otpDispatch.value = next;
     otpBannerMessage.value = res.ok
-      ? `${data.sent}/${targets.length} codes emailed successfully`
-      : (data.message || 'Failed to send codes');
+      ? `${data.sent}/${targets.length} confirmations sent successfully`
+      : (data.message || 'Failed to send confirmations');
   } catch (e) {
     const next = {};
     for (const s of targets) next[s.id] = { status: 'failed', message: 'Network error' };
     otpDispatch.value = next;
-    otpBannerMessage.value = 'Could not reach the OTP server. Codes were not sent.';
+    otpBannerMessage.value = 'Could not reach the notification server.';
   } finally {
     isDispatchingOtp.value = false;
   }
@@ -818,10 +820,9 @@ const startLiveSession = async () => {
       maxStudents: selectedStudents.value.length,
     };
 
-    // Seed an attendance row for every enrolled student right when the session
-    // opens: selected students start 'pending' until they check in with the
-    // PIN; unselected students (not present in class) are marked 'absent'
-    // immediately. Silent so this doesn't fire a toast per student.
+    // Mark selected students as PRESENT immediately — the lecturer is doing
+    // the marking, so there is no waiting period.
+    // Unselected enrolled students are marked absent right away.
     const selectedIds = new Set(selectedStudents.value);
     await Promise.allSettled(
       enrolledStudents.value.map((s) =>
@@ -829,7 +830,7 @@ const startLiveSession = async () => {
           {
             sessionId: created.id,
             studentId: s.id,
-            status: selectedIds.has(s.id) ? 'pending' : 'absent',
+            status: selectedIds.has(s.id) ? 'present' : 'absent',
           },
           { silent: true }
         )
@@ -846,6 +847,7 @@ const startLiveSession = async () => {
 
     startCountdownInterval();
 
+    // Send attendance confirmation notifications to the marked-present students
     dispatchOtpsToSelected(created.id, created.pin);
   } catch (e) {
     startError.value = e.message || 'Failed to start session.';
@@ -867,21 +869,12 @@ const stopLiveSession = async () => {
     if (sessionId) {
       await sessionsStore.closeSession(sessionId);
 
-      // Any seed row still 'pending' means that student never checked in —
-      // flip it to 'absent'. Students already 'present' or 'absent' (the
-      // unselected ones) are left untouched.
-      const pendingRecords = attendances.value.filter(
-        (a) => a.sessionId === sessionId && a.status === 'pending'
-      );
-      if (pendingRecords.length > 0) {
-        await Promise.allSettled(
-          pendingRecords.map((r) => attendancesStore.updateAttendanceStatus(r.id, 'absent', { silent: true }))
-        );
-      }
+      // No pending rows exist in the new flow — lecturer marks directly.
+      // Simply close the session.
 
       auditLogsStore.logAction({
         action: 'session_ended',
-        details: `Ended session for ${courseCode_} — ${presentList.length} present, ${pendingRecords.length} auto-marked absent`,
+        details: `Ended session for ${courseCode_} — ${presentList.length} present out of ${totalExpected}`,
         userId: profile.value?.id,
         userRole: profile.value?.role,
         userName: profile.value?.name,

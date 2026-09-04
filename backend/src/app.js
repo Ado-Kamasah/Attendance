@@ -11,6 +11,10 @@ import attendanceRoutes from './routes/attendance.js';
 import facultyRoutes from './routes/facultyRoutes.js';
 import adminRoutes from './routes/admin.js';
 import semesterRoutes from './routes/semesters.js';
+import notificationRoutes from './routes/notifications.js';
+import classRepRoutes from './routes/classrep.js';
+import suggestionRoutes from './routes/suggestions.js';
+import financeRoutes from './routes/finance.js';
 const app = express();
 
 // Middlewares
@@ -32,6 +36,10 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/faculties', facultyRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/semesters', semesterRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/classrep', classRepRoutes);
+app.use('/api/suggestions', suggestionRoutes);
+app.use('/api/finance', financeRoutes);
 // 404 Route Not Found
 app.use((req, res) => {
   res.status(404).json({ message: `API route not found: ${req.method} ${req.originalUrl}` });

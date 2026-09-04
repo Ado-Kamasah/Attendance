@@ -129,6 +129,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Admin toast -->
+    <Teleport to="body">
+      <transition name="ea-toast">
+        <div v-if="toast" class="ea-toast-bar">{{ toast }}</div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
@@ -138,6 +145,7 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore }        from '@/stores/authstore';
 import { useEvaluationStore, QUESTIONS, SCORE_MAP } from '@/stores/evaluations';
 import { supabase }            from '@/stores/supabase';
+import api                     from '@/api.js';
 
 const authStore = useAuthStore();
 const evalStore = useEvaluationStore();
@@ -167,8 +175,22 @@ onMounted(async () => {
   }
 });
 
+const toast = ref('');
+
 async function handleToggle() {
+  const wasOpen = evalStore.settings.isOpen;
   await evalStore.toggleEvaluationAccess(profile.value?.id);
+
+  // Only broadcast when opening (not closing)
+  if (!wasOpen && evalStore.settings.isOpen) {
+    try {
+      const { data } = await api.post('/notifications/evaluation-open');
+      toast.value = `✅ Evaluations opened — ${data.count} student(s) notified`;
+    } catch (e) {
+      toast.value = '⚠️ Evaluations opened but student notifications could not be sent.';
+    }
+    setTimeout(() => (toast.value = ''), 4500);
+  }
 }
 
 // ── Aggregated analysis ────────────────────────────────────────────────────
@@ -270,6 +292,24 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
 .toggle-closed .toggle-btn { background: #10b981; color: #fff; }
 .toggle-closed .toggle-btn:hover { background: #059669; }
 
+/* Admin broadcast toast */
+.ea-toast-bar {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 0.85rem 1.4rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  z-index: 10000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  max-width: 380px;
+}
+.ea-toast-enter-active, .ea-toast-leave-active { transition: all 0.3s ease; }
+.ea-toast-enter-from, .ea-toast-leave-to { opacity: 0; transform: translateY(12px); }
+
 /* KPI row */
 .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1.25rem; }
 .kpi-tile { display: flex; align-items: center; gap: 1rem; background: #fff; border-radius: 16px; padding: 1.25rem 1.5rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,.04); min-width: 0; }
@@ -319,7 +359,7 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
 .course-tag  { display: inline-block; background: #ede9fe; color: #6d28d9; font-size: .7rem; font-weight: 700; padding: .15rem .5rem; border-radius: 999px; letter-spacing: .02em; }
 
 /* Question breakdown */
-.q-breakdown { display: flex; flex-direction: column; divide-y: 1px solid #f1f5f9; }
+.q-breakdown { display: flex; flex-direction: column; }
 .qs-row { display: flex; flex-direction: column; gap: .5rem; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc; }
 .qs-q  { font-size: .85rem; font-weight: 600; color: #334155; }
 .qs-bars { display: flex; flex-direction: column; gap: .3rem; }

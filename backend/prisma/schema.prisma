@@ -20,9 +20,13 @@ model User {
   updatedAt    DateTime     @updatedAt
 
   // Relations
-  enrollments  Enrollment[]
-  sessions     Session[]    @relation("LecturerSessions")
-  attendances  Attendance[]
+  enrollments           Enrollment[]
+  sessions              Session[]              @relation("LecturerSessions")
+  attendances           Attendance[]
+  studentNotifications  StudentNotification[]
+  classReps             ClassRep[]
+  lecturerAttendances   LecturerAttendance[]   @relation("ClassRepMarkings")
+  suggestions           Suggestion[]
 }
 
 model Course {
@@ -38,9 +42,12 @@ model Course {
   updatedAt   DateTime     @updatedAt
 
   // Relations
-  schedules   Schedule[]
-  enrollments Enrollment[]
-  sessions    Session[]
+  schedules             Schedule[]
+  enrollments           Enrollment[]
+  sessions              Session[]
+  studentNotifications  StudentNotification[]
+  classReps             ClassRep[]
+  lecturerAttendances   LecturerAttendance[]
 }
 
 model Schedule {
@@ -123,4 +130,61 @@ model AuditLog {
   userRole  String
   userName  String
   timestamp DateTime @default(now())
+}
+
+model StudentNotification {
+  id        String   @id @default(uuid())
+  studentId String
+  courseId  String
+  type      String   // 'warning_1' | 'warning_2' | 'ineligible' | 'eval_open'
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  student   User     @relation(fields: [studentId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+}
+
+// ── Class Representative ──────────────────────────────────────────────────────
+model ClassRep {
+  id        String   @id @default(uuid())
+  studentId String
+  courseId  String
+  assignedAt DateTime @default(now())
+
+  student   User     @relation(fields: [studentId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([courseId]) // One class rep per course
+}
+
+// ── Lecturer Attendance (marked by Class Rep) ─────────────────────────────────
+model LecturerAttendance {
+  id          String   @id @default(uuid())
+  courseId    String
+  markedById  String   // The class rep who marked it
+  date        String   // "YYYY-MM-DD"
+  time        String   // "HH:MM"
+  status      String   // 'present' | 'absent' | 'late'
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  course      Course   @relation(fields: [courseId], references: [id])
+  markedBy    User     @relation("ClassRepMarkings", fields: [markedById], references: [id])
+}
+
+// ── Suggestion Box ──────────────────────────────────────────────────────────────
+model Suggestion {
+  id          String   @id @default(uuid())
+  studentId   String
+  category    String   // 'complaint' | 'suggestion' | 'feedback' | 'other'
+  subject     String
+  message     String
+  isAnonymous Boolean  @default(false)
+  status      String   @default("unread") // 'unread' | 'reviewed' | 'resolved'
+  adminNote   String?  // Optional reply/note from admin or dean
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  student     User     @relation(fields: [studentId], references: [id])
 }

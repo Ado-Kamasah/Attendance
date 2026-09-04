@@ -234,9 +234,10 @@ const router = useRouter();
 // Where each detected role lands after a successful login.
 // Adjust these paths to match your actual route names/paths.
 const ROLE_DASHBOARDS = {
-  Admin: '/admin/dashboard',
-  Lecturer: '/lecturer/dashboard',
-  Student: '/student/dashboard',
+  ADMIN:    '/',
+  LECTURER: '/lecturer-dashboard',
+  STUDENT:  '/student-dashboard',
+  FINANCE:  '/finance-dashboard',
 };
 
 const loginId = ref('');

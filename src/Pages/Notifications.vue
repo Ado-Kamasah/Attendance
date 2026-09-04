@@ -56,6 +56,41 @@
       </div>
     </div>
 
+    <!-- Student Absence Warnings Section -->
+    <div v-if="isStudent && studentNotifStore.notifications.length > 0" class="absence-section">
+      <div class="absence-section-head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h2>My Notifications</h2>
+        <span class="absence-unread" v-if="studentNotifStore.unreadCount > 0">
+          {{ studentNotifStore.unreadCount }} unread
+        </span>
+        <button class="btn-mark-all" @click="studentNotifStore.markAllRead()" v-if="studentNotifStore.unreadCount > 0" style="margin-left:auto">
+          Mark all read
+        </button>
+      </div>
+
+      <div
+        v-for="n in studentNotifStore.notifications"
+        :key="n.id"
+        class="absence-card"
+        :class="[absenceTypeClass(n.type), { 'absence-read': n.isRead }]"
+        @click="studentNotifStore.markRead(n.id)"
+      >
+        <div class="absence-icon">{{ absenceIcon(n.type) }}</div>
+        <div class="absence-body">
+          <div class="absence-top">
+            <span class="absence-label" :class="absenceTypeClass(n.type)">
+              {{ absenceLabel(n.type) }}
+            </span>
+            <span class="absence-course">{{ n.courseCode }} – {{ n.courseName }}</span>
+            <span class="absence-time" style="margin-left:auto">{{ relativeTime(n.createdAt) }}</span>
+          </div>
+          <p class="absence-msg">{{ n.message }}</p>
+        </div>
+        <span v-if="!n.isRead" class="absence-unread-dot"></span>
+      </div>
+    </div>
+
     <!-- Loading -->
     <div v-if="isLoading" class="loading-state">
       <div class="spinner"></div>
@@ -126,9 +161,11 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { useAuthStore } from '@/stores/authstore';
+import { useStudentNotificationsStore } from '@/stores/studentNotifications';
 
 const auditStore = useAuditLogsStore();
 const authStore = useAuthStore();
+const studentNotifStore = useStudentNotificationsStore();
 
 const { logs, isLoading } = storeToRefs(auditStore);
 const { profile } = storeToRefs(authStore);
@@ -141,6 +178,7 @@ const pageSize = 3; // groups per page
 
 const isAdmin = computed(() => profile.value?.role === 'Admin');
 const isLecturer = computed(() => profile.value?.role === 'Lecturer');
+const isStudent = computed(() => profile.value?.role === 'Student');
 
 // Reset page when filters change
 watch([filterAction, filterRole, searchQuery], () => { page.value = 1; });
@@ -148,8 +186,32 @@ watch([filterAction, filterRole, searchQuery], () => { page.value = 1; });
 onMounted(async () => {
   await auditStore.fetchLogs();
   auditStore.subscribeToLogs();
+  // Also fetch student absence notifications
+  if (profile.value?.role === 'Student') {
+    await studentNotifStore.fetchNotifications();
+  }
 });
 onUnmounted(() => auditStore.unsubscribeFromLogs());
+
+// Absence notification helpers
+function absenceTypeClass(type) {
+  if (type === 'ineligible') return 'abs-ineligible';
+  if (type === 'warning_2')  return 'abs-warning-2';
+  if (type === 'eval_open')  return 'abs-eval-open';
+  return 'abs-warning-1';
+}
+function absenceLabel(type) {
+  if (type === 'ineligible') return '❌ Exam Ineligible';
+  if (type === 'warning_2')  return '🚨 Critical Warning';
+  if (type === 'eval_open')  return '📋 Evaluation Open';
+  return '⚠️ Warning';
+}
+function absenceIcon(type) {
+  if (type === 'ineligible') return '❌';
+  if (type === 'warning_2')  return '🚨';
+  if (type === 'eval_open')  return '📋';
+  return '⚠️';
+}
 
 const roleSubtitle = computed(() => {
   const role = profile.value?.role;
@@ -564,4 +626,106 @@ function friendlyDate(ts) {
   .page-header { flex-direction: column; }
   .log-card { flex-direction: column; }
 }
+
+/* ── Absence Warning Section (Student view) ───────────────────────────────── */
+.absence-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.absence-section-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+.absence-section-head svg { width: 20px; height: 20px; color: #f59e0b; flex-shrink: 0; }
+.absence-section-head h2 { margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; }
+
+.absence-unread {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+}
+
+.absence-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.absence-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+.absence-card.absence-read { opacity: 0.6; }
+
+.abs-warning-1  { background: #fffbeb; border-color: #fde68a; }
+.abs-warning-2  { background: #fff7ed; border-color: #fed7aa; }
+.abs-ineligible { background: #fff1f2; border-color: #fecdd3; }
+.abs-eval-open  { background: #eff6ff; border-color: #bfdbfe; cursor: pointer; }
+.abs-eval-open:hover { background: #dbeafe; }
+
+.absence-icon { font-size: 1.35rem; flex-shrink: 0; line-height: 1.5; }
+.absence-body { flex: 1; min-width: 0; }
+
+.absence-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+
+.absence-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.abs-warning-1.absence-label  { background: #fef9c3; color: #a16207; }
+.abs-warning-2.absence-label  { background: #ffedd5; color: #c2410c; }
+.abs-ineligible.absence-label { background: #fee2e2; color: #991b1b; }
+.abs-eval-open.absence-label  { background: #dbeafe; color: #1d4ed8; }
+
+.absence-course { font-size: 0.8rem; font-weight: 600; color: #334155; }
+.absence-time   { font-size: 0.75rem; color: #94a3b8; white-space: nowrap; }
+.absence-msg    { margin: 0; font-size: 0.87rem; color: #475569; line-height: 1.45; word-break: break-word; }
+
+.absence-unread-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.btn-mark-all {
+  background: none;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-mark-all:hover { background: #f1f5f9; color: #0f172a; }
+
 </style>

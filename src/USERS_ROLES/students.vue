@@ -51,6 +51,7 @@
           <div class="user-info" v-if="!isCollapsed">
             <p class="user-name">{{ userName }}</p>
             <p class="user-role">{{ userProgram }}</p>
+            <span v-if="isClassRep" class="cr-footer-badge">🎓 Class Rep</span>
           </div>
         </div>
       </div>
@@ -59,10 +60,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/authstore.js';
+import { useClassRepStore } from '../stores/classrep.js';
 
 const authStore = useAuthStore();
+const classRepStore = useClassRepStore();
 
 const props = defineProps({
   isMobileOpen: {
@@ -87,8 +90,16 @@ const navigate = (path) => {
 
 const userName = computed(() => authStore.profile?.name || 'Student');
 const userProgram = computed(() => authStore.profile?.program || 'Enrolled');
+const isClassRep = computed(() => classRepStore.isClassRep);
 
-const navGroups = [
+onMounted(async () => {
+  // Silently check if this student has any class rep roles
+  if (authStore.profile?.id) {
+    await classRepStore.fetchMyRoles();
+  }
+});
+
+const navGroups = computed(() => [
   {
     label: 'STUDENT PORTAL',
     items: [
@@ -107,20 +118,30 @@ const navGroups = [
         path: '/my-courses',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`
       },
-   
       {
         name: 'Lecturer Evaluation',
         path: '/evaluation',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`
       },
       {
+        name: 'Suggestion Box',
+        path: '/suggestion-box',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`
+      },
+      {
         name: 'My Profile',
         path: '/profile',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
-      }
+      },
+      // Conditionally show Class Rep dashboard
+      ...(isClassRep.value ? [{
+        name: 'Class Rep Panel',
+        path: '/classrep-dashboard',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`
+      }] : [])
     ]
   }
-];
+]);
 </script>
 
 <style scoped>
@@ -468,6 +489,21 @@ const navGroups = [
   margin: 0;
   font-size: 0.75rem;
   color: #94a3b8;
+  white-space: nowrap;
+}
+
+.cr-footer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 

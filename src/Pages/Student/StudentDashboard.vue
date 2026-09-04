@@ -121,6 +121,55 @@
       </div>
     </div>
 
+    <!-- Absence Warning Alerts -->
+    <div v-if="hasAbsenceAlerts" class="alerts-panel">
+      <div class="alerts-panel-head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h2>Notifications</h2>
+        <span class="alerts-count" v-if="notifUnreadCount > 0">{{ notifUnreadCount }} unread</span>
+        <button class="link-btn" @click="$emit('navigate', '/notifications')" style="margin-left:auto">View All →</button>
+      </div>
+
+      <!-- Evaluation Open notices -->
+      <div
+        v-for="n in evalOpenNotifications"
+        :key="n.id"
+        class="alert-card alert-eval-open"
+        :class="{ 'alert-read': n.isRead }"
+        @click="notifStore.markRead(n.id); $emit('navigate', '/evaluation')"
+      >
+        <div class="alert-icon">📋</div>
+        <div class="alert-body">
+          <p class="alert-title">Evaluations Now Open</p>
+          <p class="alert-msg">{{ n.message }}</p>
+          <span class="alert-time">{{ new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</span>
+        </div>
+        <span v-if="!n.isRead" class="unread-dot"></span>
+      </div>
+
+      <!-- Ineligible notices -->
+      <div v-for="n in ineligibleWarnings" :key="n.id" class="alert-card alert-ineligible" :class="{ 'alert-read': n.isRead }" @click="notifStore.markRead(n.id)">
+        <div class="alert-icon">❌</div>
+        <div class="alert-body">
+          <p class="alert-title">Exam Ineligibility – {{ n.courseCode }}</p>
+          <p class="alert-msg">{{ n.message }}</p>
+          <span class="alert-time">{{ new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</span>
+        </div>
+        <span v-if="!n.isRead" class="unread-dot"></span>
+      </div>
+
+      <!-- Warning notices -->
+      <div v-for="n in absenceWarnings" :key="n.id" class="alert-card" :class="[n.type === 'warning_2' ? 'alert-warning-2' : 'alert-warning-1', { 'alert-read': n.isRead }]" @click="notifStore.markRead(n.id)">
+        <div class="alert-icon">{{ n.type === 'warning_2' ? '🚨' : '⚠️' }}</div>
+        <div class="alert-body">
+          <p class="alert-title">{{ n.type === 'warning_2' ? 'Critical Warning' : 'Attendance Warning' }} – {{ n.courseCode }}</p>
+          <p class="alert-msg">{{ n.message }}</p>
+          <span class="alert-time">{{ new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}</span>
+        </div>
+        <span v-if="!n.isRead" class="unread-dot"></span>
+      </div>
+    </div>
+
     <!-- Quick Actions -->
     <div class="panel">
       <div class="panel-head"><h2>Quick Actions</h2></div>
@@ -143,11 +192,12 @@
           </div>
           <span>Register Course</span>
         </button>
-        <button class="action-tile" @click="$emit('navigate', '/notifications')">
+        <button class="action-tile notif-tile" @click="$emit('navigate', '/notifications')">
           <div class="action-icon" style="background:#fee2e2;color:#b91c1c">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </div>
           <span>Notifications</span>
+          <span v-if="notifUnreadCount > 0" class="notif-badge">{{ notifUnreadCount }}</span>
         </button>
       </div>
     </div>
@@ -163,6 +213,7 @@ import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useSchedulesStore } from '@/stores/schedules';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
+import { useStudentNotificationsStore } from '@/stores/studentNotifications';
 
 const emit = defineEmits(['navigate']);
 
@@ -172,6 +223,7 @@ const enrollStore   = useEnrollmentsStore();
 const schedStore    = useSchedulesStore();
 const sessStore     = useSessionsStore();
 const attStore      = useAttendancesStore();
+const notifStore    = useStudentNotificationsStore();
 
 const { profile }     = storeToRefs(authStore);
 const { courses }     = storeToRefs(coursesStore);
@@ -195,11 +247,19 @@ onMounted(async () => {
     schedStore.fetchSchedules(),
     sessStore.fetchSessions(),
     attStore.fetchAttendances({ studentId: uid }),
+    notifStore.fetchNotifications(),
   ]);
   sessStore.subscribeToSessions();
   attStore.subscribeToAttendances();
   isLoading.value = false;
 });
+
+// ── Absence warnings ──────────────────────────────────────────────────────────
+const absenceWarnings      = computed(() => notifStore.warningNotifications);
+const ineligibleWarnings   = computed(() => notifStore.ineligibleNotifications);
+const evalOpenNotifications = computed(() => notifStore.evalOpenNotifications);
+const hasAbsenceAlerts     = computed(() => notifStore.notifications.length > 0);
+const notifUnreadCount     = computed(() => notifStore.unreadCount);
 
 onUnmounted(() => {
   sessStore.unsubscribeFromSessions();
@@ -372,10 +432,94 @@ function rateColor(r) {
 
 /* Quick actions */
 .actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-.action-tile { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.25rem 0.75rem; cursor: pointer; transition: all 0.2s; font-size: 0.82rem; font-weight: 600; color: #334155; text-align: center; }
+.action-tile { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.25rem 0.75rem; cursor: pointer; transition: all 0.2s; font-size: 0.82rem; font-weight: 600; color: #334155; text-align: center; position: relative; }
 .action-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.07); background: #fff; }
 .action-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
 .action-icon svg { width: 20px; height: 20px; }
+
+/* Notification unread badge on action tile */
+.notif-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* ── Absence Warning Alerts ───────────────────────────────────────────────── */
+.alerts-panel {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.alerts-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.alerts-panel-head svg { width: 20px; height: 20px; color: #f59e0b; flex-shrink: 0; }
+.alerts-panel-head h2 { margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; }
+.alerts-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+}
+
+.alert-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.alert-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+.alert-card.alert-read { opacity: 0.6; }
+
+.alert-warning-1 { background: #fffbeb; border-color: #fde68a; }
+.alert-warning-2 { background: #fff7ed; border-color: #fed7aa; }
+.alert-ineligible { background: #fff1f2; border-color: #fecdd3; }
+.alert-eval-open { background: #eff6ff; border-color: #bfdbfe; cursor: pointer; }
+.alert-eval-open:hover { background: #dbeafe; }
+
+.alert-icon { font-size: 1.35rem; flex-shrink: 0; line-height: 1.4; }
+.alert-body { flex: 1; min-width: 0; }
+.alert-title { margin: 0 0 3px; font-size: 0.88rem; font-weight: 700; color: #1e293b; }
+.alert-msg   { margin: 0 0 4px; font-size: 0.82rem; color: #475569; line-height: 1.45; word-break: break-word; }
+.alert-time  { font-size: 0.72rem; color: #94a3b8; }
+
+.unread-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
 
 /* ==========================================================================
    Responsive Breakpoints
@@ -432,4 +576,18 @@ function rateColor(r) {
   .action-icon { width: 38px; height: 38px; }
   .action-icon svg { width: 18px; height: 18px; }
 }
+
+/* Utility */
+.link-btn {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+.link-btn:hover { color: #4f46e5; text-decoration: underline; }
 </style>

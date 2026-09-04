@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import { runAbsencesCheck as runAbsenceCheck } from './notificationController.js';
 
 /**
  * Generate a unique random PIN for the live session
@@ -257,6 +258,14 @@ export const endSession = async (req, res) => {
       where: { id: sessionId },
       data: { isActive: false }
     });
+
+    // Automatically check for absences and send warnings/emails after session closes
+    try {
+      const notifResults = await runAbsenceCheck(sessionId);
+      console.log(`Absence check after session ${sessionId}: ${notifResults.length} notifications sent.`);
+    } catch (notifErr) {
+      console.error('Absence check error after session end:', notifErr.message);
+    }
 
     res.status(200).json({ message: 'Live session closed successfully', session: updatedSession });
   } catch (error) {

@@ -17,9 +17,16 @@ import Analytics from './Pages/Admin/Analytics.vue';
 import SessionAnalytics from './Pages/Admin/SessionAnalytics.vue';
 import EvaluationAdmin  from './Pages/Admin/EvaluationAdmin.vue';
 import EvaluationForm   from './Pages/Student/EvaluationForm.vue';
+import ClassRepManagement from './Pages/Admin/ClassRepManagement.vue';
+import ClassRepDashboard  from './Pages/Student/ClassRepDashboard.vue';
+import SuggestionBox     from './Pages/Student/SuggestionBox.vue';
+import SuggestionsAdmin  from './Pages/Admin/SuggestionsAdmin.vue';
 import AdminSidebar from './USERS_ROLES/admin.vue';
 import LecturerSidebar from './USERS_ROLES/lecturers.vue';
 import StudentSidebar from './USERS_ROLES/students.vue';
+import FinanceSidebar from './USERS_ROLES/finance.vue';
+import FinanceDashboard from './Pages/Finance/FinanceDashboard.vue';
+import FinanceClaims from './Pages/Finance/FinanceClaims.vue';
 import LecturerDashboard from './Pages/Lecturers/lecturerDashboard.vue';
 import LecturerCourses from './Pages/Lecturers/MyCourses.vue';
 import AttendanceView from './Pages/Lecturers/Attendanceview.vue';
@@ -73,9 +80,10 @@ onUnmounted(() => {
 });
 
 const redirectForRole = (role) => {
-  if (role === 'Admin') handleNavigationEvent('/');
+  if (role === 'Admin')    handleNavigationEvent('/');
   else if (role === 'Lecturer') handleNavigationEvent('/lecturer-dashboard');
-  else if (role === 'Student') handleNavigationEvent('/student-dashboard');
+  else if (role === 'Student')  handleNavigationEvent('/student-dashboard');
+  else if (role === 'Finance')  handleNavigationEvent('/finance-dashboard');
 };
 
 const handleLoginSuccess = () => {
@@ -126,6 +134,12 @@ const handleRegisterSuccess = () => {
       :is-mobile-open="isMobileSidebarOpen"
       @close-mobile="isMobileSidebarOpen = false"
     />
+    <FinanceSidebar
+      v-else-if="userRole === 'Finance'"
+      @navigate="handleNavigationEvent"
+      :is-mobile-open="isMobileSidebarOpen"
+      @close-mobile="isMobileSidebarOpen = false"
+    />
     <div class="main-wrapper">
       <Navbar @toggle-mobile-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen" @logout="handleLogout" @navigate="handleNavigationEvent" />
       <main class="main-content">
@@ -146,6 +160,12 @@ const handleRegisterSuccess = () => {
         <SessionAnalytics v-else-if="currentRoute === '/session-analytics'" />
         <EvaluationAdmin  v-else-if="currentRoute === '/evaluation-admin'" />
         <EvaluationForm   v-else-if="currentRoute === '/evaluation'" />
+        <ClassRepManagement v-else-if="currentRoute === '/classrep-management'" />
+        <ClassRepDashboard  v-else-if="currentRoute === '/classrep-dashboard'" />
+        <SuggestionBox      v-else-if="currentRoute === '/suggestion-box'" />
+        <SuggestionsAdmin   v-else-if="currentRoute === '/suggestions-admin'" />
+        <FinanceDashboard   v-else-if="currentRoute === '/finance-dashboard'" @navigate="handleNavigationEvent" />
+        <FinanceClaims      v-else-if="currentRoute === '/finance-claims'" />
         <Profile v-else-if="currentRoute === '/profile'" />
         <Notifications v-else-if="currentRoute === '/notifications'" />
         <div v-else class="content-placeholder">

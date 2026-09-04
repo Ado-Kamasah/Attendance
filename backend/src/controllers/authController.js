@@ -24,6 +24,8 @@ export const register = async (req, res) => {
       prismaRole = 'LECTURER';
     } else if (lowerRole === 'admin') {
       prismaRole = 'ADMIN';
+    } else if (lowerRole === 'finance') {
+      prismaRole = 'FINANCE';
     } else {
       return res.status(400).json({ message: 'Invalid role provided' });
     }
