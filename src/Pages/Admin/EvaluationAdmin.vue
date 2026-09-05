@@ -25,23 +25,23 @@
     <div class="kpi-row">
       <div class="kpi-tile">
         <div class="kpi-ico kpi-indigo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <div><p class="kpi-lbl">Total Responses</p><h3 class="kpi-val">{{ evalStore.evaluations.length }}</h3></div>
+        <div class="kpi-body"><p class="kpi-lbl">Total Responses</p><h3 class="kpi-val">{{ evalStore.evaluations.length }}</h3></div>
       </div>
       <div class="kpi-tile">
         <div class="kpi-ico kpi-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-        <div><p class="kpi-lbl">Lecturers Evaluated</p><h3 class="kpi-val">{{ uniqueLecturers }}</h3></div>
+        <div class="kpi-body"><p class="kpi-lbl">Lecturers Evaluated</p><h3 class="kpi-val">{{ uniqueLecturers }}</h3></div>
       </div>
       <div class="kpi-tile">
         <div class="kpi-ico kpi-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-        <div><p class="kpi-lbl">Courses Evaluated</p><h3 class="kpi-val">{{ uniqueCourses }}</h3></div>
+        <div class="kpi-body"><p class="kpi-lbl">Courses Evaluated</p><h3 class="kpi-val">{{ uniqueCourses }}</h3></div>
       </div>
       <div class="kpi-tile">
         <div class="kpi-ico kpi-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-        <div><p class="kpi-lbl">Avg Overall Rating</p><h3 class="kpi-val">{{ avgOverallRating }}%</h3></div>
+        <div class="kpi-body"><p class="kpi-lbl">Avg Overall Rating</p><h3 class="kpi-val">{{ avgOverallRating }}%</h3></div>
       </div>
       <div class="kpi-tile">
         <div class="kpi-ico kpi-sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <div><p class="kpi-lbl">Retention Rate</p><h3 class="kpi-val">{{ avgRetentionRate }}%</h3></div>
+        <div class="kpi-body"><p class="kpi-lbl">Retention Rate</p><h3 class="kpi-val">{{ avgRetentionRate }}%</h3></div>
       </div>
     </div>
 
@@ -271,21 +271,21 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
 .ea-container { display: flex; flex-direction: column; gap: 1.75rem; width: 100%; max-width: 100%; overflow-x: hidden; }
 
 /* Header */
-.ea-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem; }
-.ea-title   { margin: 0; font-size: 1.75rem; font-weight: 700; color: #0f172a; letter-spacing: -.025em; }
-.ea-subtitle { margin: .25rem 0 0; font-size: .9rem; color: #64748b; }
+.ea-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem; width: 100%; }
+.ea-title   { margin: 0; font-size: 1.75rem; font-weight: 700; color: #0f172a; letter-spacing: -.025em; word-break: break-word; }
+.ea-subtitle { margin: .25rem 0 0; font-size: .9rem; color: #64748b; word-break: break-word; }
 
 /* Toggle card */
-.toggle-card { display: flex; align-items: center; gap: 1.25rem; padding: 1rem 1.25rem; border-radius: 14px; border: 1px solid; }
+.toggle-card { display: flex; align-items: center; gap: 1.25rem; padding: 1rem 1.25rem; border-radius: 14px; border: 1px solid; max-width: 100%; min-width: 0; }
 .toggle-open  { background: #f0fdf4; border-color: #bbf7d0; }
 .toggle-closed { background: #fef2f2; border-color: #fecaca; }
-.toggle-info { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.toggle-info { display: flex; align-items: center; gap: .75rem; min-width: 0; flex: 1; }
 .toggle-status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; animation: pulse 2s infinite; }
 .toggle-open  .toggle-status-dot { background: #10b981; }
 .toggle-closed .toggle-status-dot { background: #ef4444; }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
-.toggle-label { margin: 0 0 2px; font-size: .85rem; font-weight: 700; color: #0f172a; }
-.toggle-hint  { margin: 0; font-size: .75rem; color: #64748b; }
+.toggle-label { margin: 0 0 2px; font-size: .85rem; font-weight: 700; color: #0f172a; word-break: break-word; }
+.toggle-hint  { margin: 0; font-size: .75rem; color: #64748b; word-break: break-word; }
 .toggle-btn { padding: .5rem 1.1rem; border-radius: 8px; font-size: .85rem; font-weight: 700; cursor: pointer; border: none; transition: all .2s; white-space: nowrap; flex-shrink: 0; }
 .toggle-open  .toggle-btn { background: #ef4444; color: #fff; }
 .toggle-open  .toggle-btn:hover { background: #dc2626; }
@@ -305,18 +305,20 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
   font-weight: 600;
   z-index: 10000;
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-  max-width: 380px;
+  max-width: calc(100vw - 3rem);
+  word-break: break-word;
 }
 .ea-toast-enter-active, .ea-toast-leave-active { transition: all 0.3s ease; }
 .ea-toast-enter-from, .ea-toast-leave-to { opacity: 0; transform: translateY(12px); }
 
 /* KPI row */
-.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1.25rem; }
-.kpi-tile { display: flex; align-items: center; gap: 1rem; background: #fff; border-radius: 16px; padding: 1.25rem 1.5rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,.04); min-width: 0; }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1.25rem; width: 100%; }
+.kpi-tile { display: flex; align-items: center; gap: 1rem; background: #fff; border-radius: 16px; padding: 1.25rem 1.5rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,.04); min-width: 0; max-width: 100%; }
 .kpi-ico  { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .kpi-ico svg { width: 22px; height: 22px; }
-.kpi-lbl  { margin: 0 0 2px; font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kpi-val  { margin: 0; font-size: 1.9rem; font-weight: 700; color: #0f172a; letter-spacing: -.03em; }
+.kpi-body { min-width: 0; flex: 1; overflow: hidden; }
+.kpi-lbl  { margin: 0 0 2px; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #64748b; line-height: 1.25; word-break: break-word; overflow-wrap: break-word; }
+.kpi-val  { margin: 0; font-size: 1.9rem; font-weight: 700; color: #0f172a; letter-spacing: -.03em; word-break: break-word; }
 .kpi-indigo { background: #e0e7ff; color: #4338ca; }
 .kpi-green  { background: #dcfce7; color: #15803d; }
 .kpi-purple { background: #f3e8ff; color: #7c3aed; }
@@ -324,29 +326,29 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
 .kpi-sky    { background: #e0f2fe; color: #0369a1; }
 
 /* Filters */
-.filter-bar { display: flex; gap: .75rem; flex-wrap: wrap; }
-.fsel { padding: .45rem .75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .875rem; color: #334155; background: #fff; outline: none; cursor: pointer; }
+.filter-bar { display: flex; gap: .75rem; flex-wrap: wrap; width: 100%; }
+.fsel { padding: .45rem .75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .875rem; color: #334155; background: #fff; outline: none; cursor: pointer; max-width: 100%; min-width: 0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 .fsel:focus { border-color: #6366f1; }
-.search-wrap { display: flex; align-items: center; gap: .5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: .4rem .75rem; }
+.search-wrap { display: flex; align-items: center; gap: .5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: .4rem .75rem; min-width: 200px; max-width: 100%; flex: 1; }
 .search-wrap svg { width: 15px; height: 15px; color: #94a3b8; flex-shrink: 0; }
-.search-in { border: none; background: transparent; outline: none; font-size: .875rem; color: #334155; min-width: 180px; width: 100%; }
+.search-in { border: none; background: transparent; outline: none; font-size: .875rem; color: #334155; min-width: 0; width: 100%; }
 
 /* States */
-.loading-state, .empty-state { text-align: center; padding: 4rem; color: #94a3b8; font-size: .95rem; }
+.loading-state, .empty-state { text-align: center; padding: 4rem; color: #94a3b8; font-size: .95rem; word-break: break-word; }
 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; background: #f8fafc; border-radius: 16px; border: 1px dashed #cbd5e1; }
-.empty-state svg { width: 48px; height: 48px; color: #cbd5e1; }
-.empty-state p { margin: 0; }
+.empty-state svg { width: 48px; height: 48px; color: #cbd5e1; flex-shrink: 0; }
+.empty-state p { margin: 0; word-break: break-word; }
 
 /* Analysis grid */
-.analysis-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+.analysis-grid { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
 
 /* Lecturer card */
-.lec-card { background: #fff; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,.04); overflow: hidden; }
-.lec-card-head { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; background: linear-gradient(135deg,#f8fafc,#f1f5f9); border-bottom: 1px solid #f1f5f9; }
+.lec-card { background: #fff; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,.04); overflow: hidden; max-width: 100%; width: 100%; }
+.lec-card-head { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; background: linear-gradient(135deg,#f8fafc,#f1f5f9); border-bottom: 1px solid #f1f5f9; min-width: 0; flex-wrap: wrap; }
 .lec-avatar { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.lec-info { flex: 1; min-width: 0; }
-.lec-name { margin: 0 0 2px; font-size: 1.05rem; font-weight: 700; color: #0f172a; overflow-wrap: anywhere; }
-.lec-meta { margin: 0; font-size: .8rem; color: #64748b; }
+.lec-info { flex: 1; min-width: 0; overflow: hidden; }
+.lec-name { margin: 0 0 2px; font-size: 1.05rem; font-weight: 700; color: #0f172a; word-break: break-word; overflow-wrap: break-word; }
+.lec-meta { margin: 0; font-size: .8rem; color: #64748b; word-break: break-word; }
 .lec-retention { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
 .retention-val { font-size: 1.5rem; font-weight: 800; }
 .ret-good { color: #10b981; }
@@ -355,41 +357,36 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
 .retention-lbl { font-size: .68rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
 
 /* Course tags on lecturer cards */
-.course-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
-.course-tag  { display: inline-block; background: #ede9fe; color: #6d28d9; font-size: .7rem; font-weight: 700; padding: .15rem .5rem; border-radius: 999px; letter-spacing: .02em; }
+.course-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; max-width: 100%; }
+.course-tag  { display: inline-flex; background: #ede9fe; color: #6d28d9; font-size: .7rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; letter-spacing: .02em; max-width: 100%; word-break: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.3; }
 
 /* Question breakdown */
-.q-breakdown { display: flex; flex-direction: column; }
-.qs-row { display: flex; flex-direction: column; gap: .5rem; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc; }
-.qs-q  { font-size: .85rem; font-weight: 600; color: #334155; }
-.qs-bars { display: flex; flex-direction: column; gap: .3rem; }
-.qs-bar-row { display: flex; align-items: center; gap: .6rem; }
-.qs-opt   { width: 80px; font-size: .75rem; color: #64748b; font-weight: 600; text-align: right; flex-shrink: 0; }
-.qs-track { flex: 1; height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+.q-breakdown { display: flex; flex-direction: column; width: 100%; }
+.qs-row { display: flex; flex-direction: column; gap: .5rem; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc; width: 100%; }
+.qs-q  { font-size: .85rem; font-weight: 600; color: #334155; word-break: break-word; overflow-wrap: break-word; line-height: 1.4; }
+.qs-bars { display: flex; flex-direction: column; gap: .35rem; width: 100%; }
+.qs-bar-row { display: flex; align-items: center; gap: .75rem; width: 100%; min-width: 0; }
+.qs-opt   { min-width: 85px; width: max-content; max-width: 120px; font-size: .78rem; color: #64748b; font-weight: 600; text-align: right; flex-shrink: 0; word-break: break-word; line-height: 1.25; }
+.qs-track { flex: 1; min-width: 40px; height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
 .qs-fill  { height: 100%; border-radius: 999px; transition: width .5s; }
-.qs-count { font-size: .75rem; font-weight: 700; color: #475569; width: 24px; text-align: right; flex-shrink: 0; }
-.qs-score { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; }
-.qs-score-bar-track { flex: 1; height: 5px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+.qs-count { font-size: .75rem; font-weight: 700; color: #475569; min-width: 24px; text-align: right; flex-shrink: 0; }
+.qs-score { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; width: 100%; min-width: 0; }
+.qs-score-bar-track { flex: 1; min-width: 40px; height: 5px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
 .qs-score-bar { height: 100%; border-radius: 999px; transition: width .5s; }
-.qs-pct { font-size: .78rem; font-weight: 700; width: 36px; text-align: right; flex-shrink: 0; }
+.qs-pct { font-size: .78rem; font-weight: 700; min-width: 36px; text-align: right; flex-shrink: 0; }
 .rate-good { color: #10b981; }
 .rate-warn { color: #f59e0b; }
 .rate-bad  { color: #ef4444; }
 
 /* Comments */
-.comments-section { padding: 1.25rem 1.5rem; background: #fafafa; border-top: 1px solid #f1f5f9; }
-.comments-title { margin: 0 0 .75rem; font-size: .85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
-.comments-list { display: flex; flex-direction: column; gap: .5rem; }
-.comment-chip { display: flex; align-items: flex-start; gap: .6rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: .75rem 1rem; font-size: .85rem; color: #334155; line-height: 1.4; overflow-wrap: anywhere; }
+.comments-section { padding: 1.25rem 1.5rem; background: #fafafa; border-top: 1px solid #f1f5f9; width: 100%; }
+.comments-title { margin: 0 0 .75rem; font-size: .85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .05em; word-break: break-word; }
+.comments-list { display: flex; flex-direction: column; gap: .5rem; width: 100%; }
+.comment-chip { display: flex; align-items: flex-start; gap: .6rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: .75rem 1rem; font-size: .85rem; color: #334155; line-height: 1.4; word-break: break-word; overflow-wrap: break-word; min-width: 0; max-width: 100%; }
 .comment-chip svg { width: 14px; height: 14px; color: #94a3b8; flex-shrink: 0; margin-top: 2px; }
 
 /* ══════════════════════════════════════════════════════
    RESPONSIVE BREAKPOINTS
-   S  : ≤ 375px   (small phones)
-   M  : 376–480px (large phones)
-   L  : 481–767px (phablets / small tablets, portrait)
-   Tab: 768–991px (tablets)
-   Lap: 992–1199px (small laptops)
    ══════════════════════════════════════════════════════ */
 
 /* ── Small laptops (≤1199px) ── */
@@ -450,7 +447,7 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
   .retention-val { font-size: 1.2rem; }
 
   .qs-row { padding: .85rem 1rem; }
-  .qs-opt { width: 64px; font-size: .7rem; }
+  .qs-opt { min-width: 75px; max-width: 100px; font-size: .72rem; }
 
   .comments-section { padding: 1rem; }
 }
@@ -467,10 +464,10 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
     margin-left: 0;
   }
 
-  .qs-opt { width: 56px; font-size: .68rem; }
-  .qs-count { width: 20px; font-size: .7rem; }
+  .qs-opt { min-width: 70px; max-width: 90px; font-size: .7rem; }
+  .qs-count { min-width: 20px; font-size: .7rem; }
 
-  .course-tag { font-size: .65rem; padding: .12rem .4rem; }
+  .course-tag { font-size: .65rem; padding: .15rem .45rem; }
 
   .comment-chip { font-size: .8rem; padding: .6rem .8rem; }
 }
@@ -484,6 +481,7 @@ function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' 
 
   .lec-card-head { padding: .85rem; }
   .qs-row { padding: .75rem; }
+  .qs-opt { min-width: 65px; font-size: .68rem; }
   .comments-section { padding: .85rem; }
 }
 </style>

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import api from '@/api.js';
+import { supabase } from '@/stores/supabase';
 
 export const useClassRepStore = defineStore('classRep', () => {
   // ── State ────────────────────────────────────────────────────────────────────
@@ -35,6 +36,33 @@ export const useClassRepStore = defineStore('classRep', () => {
       students.value = data;
     } catch (err) {
       error.value = err?.response?.data?.message || 'Failed to load students';
+    }
+  }
+
+  // Load students directly from Supabase filtered by mode (+ optional level via programme join)
+  async function fetchStudentsByFilter({ mode, level }) {
+    isLoading.value = true;
+    error.value = '';
+    try {
+      let query = supabase.from('users').select('*').eq('role', 'student'); if (mode) query = query.ilike('mode', mode);
+
+      const { data, error: sbError } = await query;
+      if (sbError) throw sbError;
+
+      const mapped = (data ?? []).map(u => ({
+        id:        u.id,
+        name:      u.name,
+        email:     u.email,
+        studentId: u.id_number || u.student_id || u.id,
+        mode:      u.mode,
+      }));
+      students.value = mapped.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } catch (err) {
+      console.error('Fetch students error:', err);
+      error.value = err.message || 'Failed to load students';
+      students.value = [];
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -115,6 +143,7 @@ export const useClassRepStore = defineStore('classRep', () => {
     myRepCourseIds,
     fetchAllReps,
     fetchStudents,
+    fetchStudentsByFilter,
     assignClassRep,
     removeClassRep,
     fetchMyRoles,
@@ -122,3 +151,5 @@ export const useClassRepStore = defineStore('classRep', () => {
     fetchAttendanceHistory,
   };
 });
+
+

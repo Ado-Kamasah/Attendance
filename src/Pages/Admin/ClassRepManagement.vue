@@ -93,41 +93,91 @@
       <div class="modal">
         <div class="modal-header">
           <h2>Assign Class Representative</h2>
-          <button class="modal-close" @click="closeModal">✕</button>
+          <button class="modal-close" @click="closeModal">X</button>
         </div>
 
         <div class="modal-body">
-          <!-- Step 1: Select Course -->
+          <!-- Step 1: Mode -->
           <div class="form-group">
+            <label>Student Mode *</label>
+            <div class="mode-toggle">
+              <button
+                v-for="m in ['Regular', 'Weekend']"
+                :key="m"
+                class="mode-btn"
+                :class="{ active: form.mode === m }"
+                @click="onModeChange(m)"
+                type="button"
+              >
+                {{ m }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Level -->
+          <div class="form-group" v-if="form.mode">
+            <label>Level *</label>
+            <div class="level-pills">
+              <button
+                v-for="lvl in ['100', '200', '300', '400']"
+                :key="lvl"
+                class="level-pill"
+                :class="{ active: form.level === lvl }"
+                @click="onLevelChange(lvl)"
+                type="button"
+              >
+                Level {{ lvl }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 3: Select Course -->
+          <div class="form-group" v-if="form.mode && form.level">
             <label>Select Course *</label>
-            <select v-model="form.courseId" @change="onCourseChange" class="form-sel" id="modal-course-select">
-              <option value="">— Choose a course —</option>
+            <select v-model="form.courseId" class="form-sel" id="modal-course-select">
+              <option value="">-- Choose a course --</option>
               <option v-for="c in coursesStore.courses" :key="c.id" :value="c.id">
-                {{ c.code }} – {{ c.name }}
+                {{ c.code }} - {{ c.name }}
               </option>
             </select>
           </div>
 
-          <!-- Step 2: Search & Select Student -->
-          <div class="form-group" v-if="form.courseId">
-            <label>Search Student *</label>
-            <input v-model="studentSearch" type="text" placeholder="Type name or email…" class="form-in" @input="filterStudents" id="modal-student-search"/>
-            <div v-if="filteredStudents.length" class="student-dropdown">
+          <!-- Step 4: Browse / Search Students -->
+          <div class="form-group" v-if="form.mode && form.level">
+            <label>
+              Select Student *
+              <span v-if="store.isLoading" class="loading-badge">Loading...</span>
+              <span v-else-if="store.students.length" class="count-badge">{{ store.students.length }} students</span>
+            </label>
+            <input
+              v-model="studentSearch"
+              type="text"
+              placeholder="Search by name or ID..."
+              class="form-in"
+              id="modal-student-search"
+            />
+            <div v-if="!store.isLoading && filteredStudents.length" class="student-dropdown">
               <div
-                v-for="s in filteredStudents.slice(0,8)"
+                v-for="s in filteredStudents.slice(0, 10)"
                 :key="s.id"
                 class="student-option"
                 :class="{ selected: form.studentId === s.id }"
                 @click="selectStudent(s)"
               >
                 <div class="avatar-xs">{{ initials(s.name) }}</div>
-                <div>
+                <div style="flex:1; min-width:0">
                   <p class="opt-name">{{ s.name }}</p>
-                  <p class="opt-email">{{ s.email }}</p>
+                  <p class="opt-email">{{ s.email }} &bull; ID: {{ s.studentId }}</p>
                 </div>
+                <span class="mode-micro-badge">{{ s.mode }}</span>
               </div>
             </div>
-            <p v-if="form.courseId && studentSearch && !filteredStudents.length" class="no-match">No students found.</p>
+            <p v-if="!store.isLoading && form.mode && form.level && store.students.length === 0" class="no-match">
+              No students found for {{ form.mode }} - Level {{ form.level }}.
+            </p>
+            <p v-if="!store.isLoading && studentSearch && filteredStudents.length === 0 && store.students.length > 0" class="no-match">
+              No students match your search.
+            </p>
           </div>
 
           <!-- Selected Student Preview -->
@@ -135,18 +185,24 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <div>
               <p class="preview-name">{{ selectedStudent.name }}</p>
-              <p class="preview-email">{{ selectedStudent.email }}</p>
+              <p class="preview-email">{{ selectedStudent.email }} &mdash; Level {{ selectedStudent.level }} {{ selectedStudent.mode }}</p>
             </div>
             <span class="preview-badge">Selected</span>
           </div>
 
           <p v-if="modalError" class="modal-error">{{ modalError }}</p>
+          <p v-if="store.error" class="modal-error">Store error: {{ store.error }}</p>
         </div>
 
         <div class="modal-footer">
           <button class="btn-cancel" @click="closeModal">Cancel</button>
-          <button class="btn-confirm" @click="submitAssign" :disabled="!form.courseId || !form.studentId || store.isLoading" id="confirm-assign-btn">
-            <span v-if="store.isLoading">Assigning…</span>
+          <button
+            class="btn-confirm"
+            @click="submitAssign"
+            :disabled="!form.courseId || !form.studentId || store.isLoading"
+            id="confirm-assign-btn"
+          >
+            <span v-if="store.isLoading">Assigning...</span>
             <span v-else>Confirm Assignment</span>
           </button>
         </div>
@@ -193,7 +249,7 @@ const selectedStudent = ref(null);
 const modalError = ref('');
 const toast = ref(null);
 
-const form = ref({ courseId: '', studentId: '' });
+const form = ref({ courseId: '', studentId: '', mode: '', level: '' });
 
 onMounted(async () => {
   await Promise.all([store.fetchAllReps(), coursesStore.fetchCourses()]);
@@ -215,15 +271,18 @@ const filteredStudents = computed(() => {
   const q = studentSearch.value.toLowerCase();
   if (!q) return store.students;
   return store.students.filter(s =>
-    s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
+    (s.name || '').toLowerCase().includes(q) ||
+    (s.email || '').toLowerCase().includes(q) ||
+    (s.studentId || '').toLowerCase().includes(q)
   );
 });
 
 function openAssignModal() {
-  form.value = { courseId: '', studentId: '' };
+  form.value = { courseId: '', studentId: '', mode: '', level: '' };
   studentSearch.value = '';
   selectedStudent.value = null;
   modalError.value = '';
+  store.students = [];
   showModal.value = true;
 }
 
@@ -232,17 +291,22 @@ function closeModal() {
   store.students = [];
 }
 
-async function onCourseChange() {
+async function onModeChange(mode) {
+  form.value.mode = mode;
+  form.value.level = '';
   form.value.studentId = '';
   selectedStudent.value = null;
   studentSearch.value = '';
-  if (form.value.courseId) {
-    await store.fetchStudents(form.value.courseId);
-  }
+  store.students = [];
 }
 
-function filterStudents() {
-  // Filtering is handled by the computed
+async function onLevelChange(level) {
+  form.value.level = level;
+  form.value.studentId = '';
+  selectedStudent.value = null;
+  studentSearch.value = '';
+  // Load students from Supabase filtered by mode + level
+  await store.fetchStudentsByFilter({ mode: form.value.mode, level });
 }
 
 function selectStudent(s) {
@@ -253,6 +317,8 @@ function selectStudent(s) {
 
 async function submitAssign() {
   modalError.value = '';
+  if (!form.value.courseId) { modalError.value = 'Please select a course.'; return; }
+  if (!form.value.studentId) { modalError.value = 'Please select a student.'; return; }
   try {
     const result = await store.assignClassRep(form.value.studentId, form.value.courseId);
     showToast(result.message, 'success');
@@ -286,7 +352,7 @@ function initials(name) {
 }
 
 function formatDate(dt) {
-  if (!dt) return '—';
+  if (!dt) return '-';
   return new Date(dt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 </script>
@@ -397,4 +463,23 @@ function formatDate(dt) {
   .page-header { flex-direction: column; }
   .rep-table th:nth-child(3), .rep-table td:nth-child(3) { display: none; }
 }
+
+/* Mode toggle */
+.mode-toggle { display: flex; gap: 0.5rem; }
+.mode-btn { flex: 1; padding: 0.55rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #f8fafc; color: #475569; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.mode-btn.active { background: linear-gradient(135deg,#ef4444,#dc2626); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(239,68,68,.3); }
+.mode-btn:hover:not(.active) { border-color: #ef4444; color: #ef4444; }
+
+/* Level pills */
+.level-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.level-pill { padding: 0.4rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 20px; background: #f8fafc; color: #475569; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.level-pill.active { background: #1e293b; color: #fff; border-color: #1e293b; }
+.level-pill:hover:not(.active) { border-color: #334155; color: #334155; }
+
+/* Badges in label */
+.loading-badge { margin-left: 0.5rem; font-size: 0.72rem; font-weight: 600; color: #94a3b8; font-style: italic; font-weight: 400; }
+.count-badge { margin-left: 0.5rem; background: #f1f5f9; color: #475569; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 10px; }
+
+/* Mode badge on student row */
+.mode-micro-badge { font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 5px; background: #e0e7ff; color: #4338ca; white-space: nowrap; flex-shrink: 0; }
 </style>
