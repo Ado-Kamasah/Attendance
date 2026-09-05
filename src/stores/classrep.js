@@ -19,11 +19,13 @@ export const useClassRepStore = defineStore('classRep', () => {
   // ── Admin actions ─────────────────────────────────────────────────────────────
   async function fetchAllReps() {
     isLoading.value = true;
+    error.value = '';
     try {
       const { data } = await api.get('/classrep/all');
       allReps.value = data;
     } catch (err) {
-      error.value = err?.response?.data?.message || 'Failed to load class reps';
+      console.error('Fetch all reps error:', err);
+      allReps.value = [];
     } finally {
       isLoading.value = false;
     }
@@ -35,7 +37,7 @@ export const useClassRepStore = defineStore('classRep', () => {
       const { data } = await api.get('/classrep/students', { params });
       students.value = data;
     } catch (err) {
-      error.value = err?.response?.data?.message || 'Failed to load students';
+      console.error('Fetch students error:', err);
     }
   }
 

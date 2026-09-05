@@ -191,7 +191,6 @@
           </div>
 
           <p v-if="modalError" class="modal-error">{{ modalError }}</p>
-          <p v-if="store.error" class="modal-error">Store error: {{ store.error }}</p>
         </div>
 
         <div class="modal-footer">
