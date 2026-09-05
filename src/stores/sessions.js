@@ -129,7 +129,7 @@ export const useSessionsStore = defineStore('sessions', () => {
 
       const created = mapSession(data);
       sessions.value.unshift(created);
-      push.success({ title: 'Session started', message: `PIN: ${created.pin}` });
+      push.success({ title: 'Session started', message: 'Attendance recorded and confirmation codes sent.' });
       return created;
     } catch (err) {
       const normalized = normalizeError(err);

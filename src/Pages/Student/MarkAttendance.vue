@@ -2,8 +2,8 @@
   <div class="attendance-container">
     <div class="page-header">
       <div>
-        <h1 class="page-title">Mark Attendance</h1>
-        <p class="page-subtitle">Verify your presence for active classes securely.</p>
+        <h1 class="page-title">Attendance Status</h1>
+        <p class="page-subtitle">Your presence is recorded automatically by your lecturer.</p>
       </div>
       <div class="live-badge">
         <span class="pulse-dot"></span>
@@ -50,7 +50,7 @@
             <button class="outline-btn" @click="fetchActiveSessions">Check Again</button>
           </div>
 
-          <!-- Active class code entry -->
+          <!-- Active class status -->
           <div v-else class="active-class-ui">
             <!-- "CLASS IN SESSION" indicator -->
             <div class="in-session-indicator">
@@ -67,38 +67,27 @@
               <p class="course-details">{{ activeClass.lecturer }} • Live Session</p>
             </div>
 
-            <div class="verification-box">
-              <h4>Enter Verification Code</h4>
-              <p>
-                Enter the 6-digit code shown on your lecturer's screen — it was also
-                emailed to
-                <strong v-if="maskedEmail">{{ maskedEmail }}</strong>
-                <span v-else>your registered email</span>.
-              </p>
-
-              <div class="code-inputs">
-                <input v-for="(n, idx) in 6" :key="idx" type="text" inputmode="numeric" maxlength="1"
-                  class="pin-box" :class="{ 'pin-filled': otpCode[idx] }"
-                  v-model="otpCode[idx]"
-                  @input="onOtpInput(idx, $event)"
-                  @keydown.backspace="onOtpBackspace(idx, $event)"
-                  :ref="el => { if (el) otpRefs[idx] = el }" />
+            <!-- Attendance status card -->
+            <div class="attendance-status-card" :class="mySessionStatus">
+              <div class="status-icon-large" :class="mySessionStatus">
+                <svg v-if="mySessionStatus === 'present'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg v-else-if="mySessionStatus === 'absent'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               </div>
-
-              <div v-if="otpError" class="pin-error">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                {{ otpError }}
+              <div class="status-text-wrap">
+                <h4 class="status-title" v-if="mySessionStatus === 'present'">You're Marked Present ✓</h4>
+                <h4 class="status-title absent-title" v-else-if="mySessionStatus === 'absent'">Marked Absent</h4>
+                <h4 class="status-title pending-title" v-else>Awaiting Attendance</h4>
+                <p class="status-desc" v-if="mySessionStatus === 'present'">
+                  Your attendance for <strong>{{ activeClass.code }}</strong> has been recorded. A confirmation was sent to your email.
+                </p>
+                <p class="status-desc" v-else-if="mySessionStatus === 'absent'">
+                  You were not selected as present for this session. Contact your lecturer if this is incorrect.
+                </p>
+                <p class="status-desc" v-else>
+                  The session is live. Your lecturer is taking attendance — your status will appear here shortly.
+                </p>
               </div>
-
-              <button class="primary-btn submit-btn" @click="verifyOtp" :disabled="otpVerifying || otpCode.join('').length < 6">
-                <svg v-if="otpVerifying" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"></circle></svg>
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                {{ otpVerifying ? 'Verifying…' : 'Verify & Mark Present' }}
-              </button>
-
-              <p class="resend-note">
-                Didn't get the email, or has it expired? Ask your lecturer to resend it — only they can reissue it.
-              </p>
             </div>
           </div>
         </div>
@@ -165,18 +154,13 @@ const attendanceMarked = ref(false);
 const markedCourseName = ref('');
 const markedAtTime = ref('');
 
-// 6 digits — matches the PIN shown live on the lecturer's dashboard.
-const otpCode = ref(['', '', '', '', '', '']);
-const otpRefs = ref([]);
-const otpError = ref('');
-const otpVerifying = ref(false);
-
-const maskedEmail = computed(() => {
-  const email = profile.value?.email;
-  if (!email || !email.includes('@')) return '';
-  const [user, domain] = email.split('@');
-  const visible = user.slice(0, Math.min(2, user.length));
-  return `${visible}${'*'.repeat(Math.max(user.length - visible.length, 3))}@${domain}`;
+// Computed attendance status for the currently active session
+const mySessionStatus = computed(() => {
+  const session = activeSessionRaw.value;
+  if (!session) return null;
+  const studentId = profile.value?.id;
+  const record = attendancesStore.getAttendanceRecord(session.id, studentId);
+  return record?.status ?? null; // 'present' | 'absent' | null
 });
 
 
@@ -333,118 +317,8 @@ const fetchActiveSessions = async () => {
   }
 };
 
-const onOtpInput = (idx, event) => {
-  const val = event.target.value.replace(/\D/g, '');
-  otpCode.value[idx] = val ? val[val.length - 1] : '';
-  otpError.value = '';
-  if (otpCode.value[idx] && idx < 5) {
-    otpRefs.value[idx + 1]?.focus();
-  }
-};
-
-const onOtpBackspace = (idx, event) => {
-  if (!otpCode.value[idx] && idx > 0) {
-    otpRefs.value[idx - 1]?.focus();
-  }
-};
-
-// Finalizes a successful check-in — shared by the normal success path and
-// the "duplicate request landed after we'd already succeeded" recovery path
-// below, so both end up in the exact same success state.
-function finalizeAttendanceMarked(sessionId) {
-  const now = new Date();
-  markedCourseName.value = `${activeClass.value.code} — ${activeClass.value.name}`;
-  markedAtTime.value = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-  sessionCourseMap.value = {
-    ...sessionCourseMap.value,
-    [sessionId]: { code: activeClass.value.code, name: activeClass.value.name },
-  };
-
-  auditLogsStore.logAction({
-    action: 'attendance_marked',
-    details: `Marked present for ${markedCourseName.value} (dashboard code verified)`,
-    userId: profile.value?.id,
-    userRole: profile.value?.role,
-    userName: profile.value?.name,
-  });
-
-  attendanceMarked.value = true;
-  otpCode.value = ['', '', '', '', '', ''];
-}
-
-const verifyOtp = async () => {
-  // Explicit re-entrancy guard — don't rely solely on the :disabled binding,
-  // since a fast double-tap can fire twice before Vue re-renders the button.
-  if (!activeClass.value || otpVerifying.value) return;
-  const code = otpCode.value.join('');
-  if (code.length < 6) {
-    otpError.value = 'Enter the complete 6-digit code.';
-    return;
-  }
-
-  otpVerifying.value = true;
-  otpError.value = '';
-
-  const sessionId = activeClass.value.id;
-  const studentId = profile.value?.id;
-
-  try {
-    const res = await fetch(`${OTP_API_BASE}/api/otp/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId, studentId, otp: code }),
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      // The PIN is a single shared code for the whole session, so the OTP
-      // service flags it "already used" the moment ANY verify against it
-      // succeeds. If a duplicate/retried request (double-tap, flaky network,
-      // a stray resend) lands after THIS student's own attendance was
-      // already recorded, that's not really a failure for them — surfacing
-      // "code already used" here would be confusing and wrong. Check the
-      // local record first and treat it as success instead.
-      const already = attendancesStore.getAttendanceRecord(sessionId, studentId);
-      if (already?.status === 'present') {
-        finalizeAttendanceMarked(sessionId);
-        return;
-      }
-      throw new Error(data.message || 'Invalid code.');
-    }
-
-    // The lecturer pre-seeds a 'pending' row for every selected student when
-    // the session starts. Flip that row to 'present' instead of inserting a
-    // new one. If no row exists (e.g. a walk-in the lecturer didn't select),
-    // fall back to creating one directly.
-    const existing = attendancesStore.getAttendanceRecord(sessionId, studentId);
-
-    if (existing?.status === 'present') {
-      // Already recorded present from an earlier successful call — nothing
-      // new to write, just show the same success state.
-      finalizeAttendanceMarked(sessionId);
-      return;
-    }
-
-    if (existing) {
-      await attendancesStore.updateAttendanceStatus(existing.id, 'present');
-    } else {
-      await attendancesStore.markAttendance({ sessionId, studentId, status: 'present' });
-    }
-
-    finalizeAttendanceMarked(sessionId);
-  } catch (e) {
-    otpError.value = e.message || 'Verification failed. Please try again.';
-    otpCode.value = ['', '', '', '', '', ''];
-    otpRefs.value[0]?.focus();
-  } finally {
-    otpVerifying.value = false;
-  }
-};
 const resetState = () => {
   attendanceMarked.value = false;
-  otpCode.value = ['', '', '', '', '', ''];
-  otpError.value = '';
   fetchActiveSessions();
 };
 
@@ -534,22 +408,61 @@ const attendanceHistory = computed(() => {
 .course-name { margin:0 0 0.4rem;font-size:1.15rem;font-weight:700;word-break:break-word; }
 .course-details { margin:0;font-size:.85rem;opacity:.85;word-break:break-word; }
 
-/* Code Entry */
-.verification-box { background:#f8fafc;border-radius:12px;padding:1.5rem;text-align:center;border:1px solid #e2e8f0;min-width:0; }
-.verification-box h4 { margin:0 0 .4rem;font-size:1.05rem;color:#0f172a; }
-.verification-box p { margin:0 0 1.25rem;color:#64748b;font-size:.9rem; }
-.code-inputs { display:flex;justify-content:center;gap:.6rem;margin-bottom:1.25rem;flex-wrap:wrap; }
-.pin-box { width:52px;height:60px;font-size:1.6rem;font-weight:800;text-align:center;border-radius:10px;border:2px solid #cbd5e1;background:#fff;color:#0f172a;outline:none;transition:all .2s; }
-.pin-box:focus { border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1); }
-.pin-filled { border-color:#10b981;background:#ecfdf5;color:#065f46; }
-.pin-error { display:flex;align-items:center;gap:8px;color:#dc2626;font-size:.85rem;font-weight:500;margin-bottom:0.9rem;background:#fef2f2;padding:0.6rem 0.75rem;border-radius:8px;text-align:left; }
-.pin-error svg { width:16px;height:16px;flex-shrink:0; }
-.primary-btn { background:#4f46e5;color:white;border:none;padding:.85rem 1.75rem;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:background .2s; }
-.primary-btn:hover:not(:disabled) { background:#4338ca; }
-.primary-btn:disabled { background:#94a3b8;cursor:not-allowed; }
-.primary-btn svg { width:20px;height:20px; }
-.spin { animation:spin 0.8s linear infinite; }
-.resend-note { margin:0.9rem 0 0;font-size:0.78rem;color:#94a3b8;line-height:1.5; }
+/* Attendance Status Card */
+.attendance-status-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  min-width: 0;
+  transition: border-color 0.3s, background 0.3s;
+}
+.attendance-status-card.present {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+.attendance-status-card.absent {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+.status-icon-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #e2e8f0;
+  color: #64748b;
+}
+.status-icon-large.present {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.status-icon-large.absent {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.status-icon-large svg { width: 22px; height: 22px; }
+.status-text-wrap { flex: 1; min-width: 0; }
+.status-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.absent-title { color: #dc2626; }
+.pending-title { color: #64748b; }
+.status-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.55;
+}
 
 /* Buttons */
 .outline-btn { background:transparent;color:#0f172a;border:1px solid #cbd5e1;padding:.65rem 1.5rem;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;margin-top:0.5rem; }
