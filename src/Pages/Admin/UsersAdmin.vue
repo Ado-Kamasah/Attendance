@@ -3,14 +3,8 @@
     <!-- Header -->
     <div class="page-header">
       <div>
-        <div class="badge-superadmin">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-          </svg>
-          Super Admin Control
-        </div>
         <h1 class="page-title">User Management</h1>
-        <p class="page-subtitle">Provision, inspect, update, and manage access roles across the institution.</p>
+        <p class="page-subtitle">Inspect, search, and review accounts across the institution.</p>
       </div>
 
       <div class="header-actions">
@@ -21,7 +15,7 @@
           <span>Refresh</span>
         </button>
 
-        <button class="primary-btn" @click="openCreateModal" id="btn-add-user">
+        <button v-if="isSuperAdmin" class="primary-btn" @click="openCreateModal" id="btn-add-user">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -87,7 +81,12 @@
         </div>
       </div>
 
-      <div class="kpi-card" @click="roleFilter = 'SUPER_ADMIN'" :class="{ 'active-card': roleFilter === 'SUPER_ADMIN' }">
+      <div 
+        v-if="isSuperAdmin"
+        class="kpi-card" 
+        @click="roleFilter = 'SUPER_ADMIN'" 
+        :class="{ 'active-card': roleFilter === 'SUPER_ADMIN' }"
+      >
         <div class="kpi-icon kpi-superadmin">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -140,7 +139,7 @@
           <label class="filter-label">Role:</label>
           <select v-model="roleFilter" class="filter-select" id="user-role-filter">
             <option value="all">All Roles ({{ stats.total }})</option>
-            <option value="SUPER_ADMIN">Super Admins ({{ stats.superAdmins }})</option>
+            <option v-if="isSuperAdmin" value="SUPER_ADMIN">Super Admins ({{ stats.superAdmins }})</option>
             <option value="ADMIN">Administrators ({{ stats.admins }})</option>
             <option value="LECTURER">Lecturers ({{ stats.lecturers }})</option>
             <option value="STUDENT">Students ({{ stats.students }})</option>
@@ -265,18 +264,25 @@
               <td class="text-right">
                 <div class="action-buttons">
                   <button 
-                    class="action-btn edit-btn" 
+                    class="action-btn"
+                    :class="isSuperAdmin ? 'edit-btn' : 'view-btn'"
                     @click="openEditModal(user)" 
-                    title="Edit User"
-                    :id="'btn-edit-' + user.id"
+                    :title="isSuperAdmin ? 'Edit User' : 'View User Details'"
+                    :id="(isSuperAdmin ? 'btn-edit-' : 'btn-view-') + user.id"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg v-if="isSuperAdmin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
                   </button>
 
+                  <!-- Delete User: Restricted strictly to Super Admin -->
                   <button 
+                    v-if="isSuperAdmin"
                     class="action-btn delete-btn" 
                     @click="openDeleteModal(user)" 
                     title="Delete User"
@@ -324,9 +330,9 @@
               </svg>
             </div>
             <div>
-              <h2 class="modal-title">{{ isEditing ? 'Edit User Profile' : 'Add New User' }}</h2>
+              <h2 class="modal-title">{{ !isSuperAdmin ? 'User Account Details' : (isEditing ? 'Edit User Profile' : 'Add New User') }}</h2>
               <p class="modal-subtitle">
-                {{ isEditing ? `Updating account details for ${userForm.name}` : 'Provision a new student, lecturer, or administrative account.' }}
+                {{ !isSuperAdmin ? `Viewing profile details for ${userForm.name}` : (isEditing ? `Updating account details for ${userForm.name}` : 'Provision a new student, lecturer, or administrative account.') }}
               </p>
             </div>
           </div>
@@ -350,14 +356,18 @@
 
           <!-- Role Selection Cards -->
           <div class="form-group">
-            <label class="input-label">User Role <span class="required">*</span></label>
+            <label class="input-label">User Role <span class="required" v-if="isSuperAdmin">*</span></label>
             <div class="role-selector-grid">
               <div 
                 v-for="r in availableRoles" 
                 :key="r.value" 
                 class="role-option-card"
-                :class="{ 'selected': userForm.role === r.value, [r.badgeClass]: true }"
-                @click="userForm.role = r.value"
+                :class="{ 
+                  'selected': userForm.role === r.value, 
+                  [r.badgeClass]: true,
+                  'disabled-role-card': !isSuperAdmin 
+                }"
+                @click="isSuperAdmin && (userForm.role = r.value)"
               >
                 <div class="role-card-header">
                   <span class="role-card-title">{{ r.label }}</span>
@@ -371,25 +381,27 @@
           <!-- Basic Info Row -->
           <div class="form-row">
             <div class="form-group">
-              <label class="input-label" for="user-full-name">Full Name <span class="required">*</span></label>
+              <label class="input-label" for="user-full-name">Full Name <span class="required" v-if="isSuperAdmin">*</span></label>
               <input 
                 type="text" 
                 id="user-full-name" 
                 v-model="userForm.name" 
                 placeholder="e.g. Dr. Jane Mensah or Kofi Owusu" 
                 class="form-input" 
+                :disabled="!isSuperAdmin"
                 required 
               />
             </div>
 
             <div class="form-group">
-              <label class="input-label" for="user-email">Email Address <span class="required">*</span></label>
+              <label class="input-label" for="user-email">Email Address <span class="required" v-if="isSuperAdmin">*</span></label>
               <input 
                 type="email" 
                 id="user-email" 
                 v-model="userForm.email" 
                 placeholder="e.g. name@southshore.edu.gh" 
                 class="form-input" 
+                :disabled="!isSuperAdmin"
                 required 
               />
             </div>
@@ -400,7 +412,7 @@
             <div class="form-group">
               <label class="input-label" for="user-id">
                 User ID / Student ID
-                <span class="hint-inline" v-if="!isEditing">(Auto-generated if empty)</span>
+                <span class="hint-inline" v-if="!isEditing && isSuperAdmin">(Auto-generated if empty)</span>
               </label>
               <input 
                 type="text" 
@@ -408,14 +420,14 @@
                 v-model="userForm.id" 
                 :placeholder="isEditing ? '' : 'e.g. BSC/CSM/2026/02 or STAFF/009'" 
                 class="form-input" 
-                :disabled="isEditing" 
+                :disabled="!isSuperAdmin || isEditing" 
               />
-              <p class="field-hint" v-if="isEditing">User ID is fixed and cannot be changed.</p>
+              <p class="field-hint" v-if="isEditing && isSuperAdmin">User ID is fixed and cannot be changed.</p>
             </div>
 
             <div class="form-group" v-if="userForm.role === 'STUDENT'">
               <label class="input-label" for="user-program">Academic Programme</label>
-              <select id="user-program" v-model="userForm.program" class="form-input">
+              <select id="user-program" v-model="userForm.program" class="form-input" :disabled="!isSuperAdmin">
                 <option value="">-- Select Programme --</option>
                 <option v-for="prog in availableProgrammes" :key="prog.id" :value="prog.name">
                   {{ prog.name }}
@@ -431,12 +443,13 @@
                 v-model="userForm.program" 
                 placeholder="e.g. School of Computing or Finance Dept" 
                 class="form-input" 
+                :disabled="!isSuperAdmin"
               />
             </div>
           </div>
 
-          <!-- Password Row -->
-          <div class="form-group">
+          <!-- Password Row (Super Admin only) -->
+          <div class="form-group" v-if="isSuperAdmin">
             <label class="input-label" for="user-password">
               {{ isEditing ? 'Change Password' : 'Password' }} 
               <span class="required" v-if="!isEditing">*</span>
@@ -471,8 +484,8 @@
 
           <!-- Actions -->
           <div class="modal-actions">
-            <button type="button" class="clear-btn" @click="closeModal">Cancel</button>
-            <button type="submit" class="primary-btn" :disabled="isSaving" id="btn-save-user">
+            <button type="button" class="clear-btn" @click="closeModal">{{ isSuperAdmin ? 'Cancel' : 'Close' }}</button>
+            <button v-if="isSuperAdmin" type="submit" class="primary-btn" :disabled="isSaving" id="btn-save-user">
               <svg v-if="isSaving" class="spinner-sm spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"></circle>
               </svg>
@@ -533,6 +546,11 @@ import api from '@/api.js';
 import { useAuthStore } from '@/stores/authstore.js';
 
 const authStore = useAuthStore();
+
+const isSuperAdmin = computed(() => {
+  const r = (authStore.profile?.role || '').toUpperCase().replace(/[\s_-]+/g, '_');
+  return r === 'SUPER_ADMIN' || r === 'SUPERADMIN';
+});
 
 // State
 const users = ref([]);
@@ -683,12 +701,14 @@ const fetchUsers = async () => {
       users.value = fetchedList;
 
       // Realtime KPI metrics
-      const total = users.value.length;
       const students = users.value.filter(u => u.role === 'STUDENT').length;
       const lecturers = users.value.filter(u => u.role === 'LECTURER').length;
       const admins = users.value.filter(u => u.role === 'ADMIN').length;
       const superAdmins = users.value.filter(u => u.role === 'SUPER_ADMIN').length;
       const finance = users.value.filter(u => u.role === 'FINANCE').length;
+      const total = isSuperAdmin.value 
+        ? users.value.length 
+        : (students + lecturers + admins + finance);
 
       stats.value = { total, students, lecturers, admins, superAdmins, finance };
     } else {
@@ -716,6 +736,11 @@ onMounted(async () => {
 // Filter & Sort Users
 const filteredUsers = computed(() => {
   let list = [...users.value];
+
+  // Admin has read-only access to administrators, lecturers, finance, and students (exclude super admins)
+  if (!isSuperAdmin.value) {
+    list = list.filter(u => u.role !== 'SUPER_ADMIN');
+  }
 
   // Search filter
   if (searchQuery.value.trim()) {
@@ -758,6 +783,10 @@ const resetFilters = () => {
 
 // Modal Operations
 const openCreateModal = () => {
+  if (!isSuperAdmin.value) {
+    showAlert('Administrators have read-only permissions.', 'error');
+    return;
+  }
   isEditing.value = false;
   modalError.value = '';
   showModalPassword.value = false;
@@ -794,6 +823,10 @@ const closeModal = () => {
 
 // Save User (Create or Update)
 const saveUser = async () => {
+  if (!isSuperAdmin.value) {
+    modalError.value = 'Administrators have read-only access. Only Super Admins can add or modify accounts.';
+    return;
+  }
   modalError.value = '';
   isSaving.value = true;
 
@@ -888,6 +921,10 @@ const saveUser = async () => {
 
 // Delete Modal Operations
 const openDeleteModal = (user) => {
+  if (!isSuperAdmin.value) {
+    showAlert('Administrators have read-only access. Only Super Admins can delete accounts.', 'error');
+    return;
+  }
   if (isCurrentUser(user.id)) {
     showAlert('You cannot delete your own logged-in Super Admin account.', 'error');
     return;
@@ -902,6 +939,11 @@ const closeDeleteModal = () => {
 };
 
 const confirmDeleteUser = async () => {
+  if (!isSuperAdmin.value) {
+    showAlert('You do not have permission to delete users.', 'error');
+    closeDeleteModal();
+    return;
+  }
   if (!userToDelete.value) return;
   isDeleting.value = true;
 
@@ -1478,10 +1520,21 @@ const formatDate = (dateStr) => {
   color: #2563eb;
 }
 
+.view-btn:hover {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
 .delete-btn:hover {
   background: #fef2f2;
   border-color: #fecaca;
   color: #dc2626;
+}
+
+.disabled-role-card {
+  cursor: default !important;
+  opacity: 0.85;
 }
 
 .disabled-btn {

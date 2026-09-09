@@ -150,11 +150,13 @@ const firstName = computed(() => {
   return name.split(' ')[0];
 });
 const roleBadge = computed(() => {
-  const role = profile.value?.role || '';
-  if (role === 'Admin')    return '🛡️ Administrator';
-  if (role === 'Lecturer') return '🏫 Lecturer';
-  if (role === 'Student')  return '📚 Student';
-  return role;
+  const role = (profile.value?.role || '').toUpperCase().replace(/[\s_-]+/g, '_');
+  if (role === 'SUPER_ADMIN') return '👑 Super Admin';
+  if (role === 'ADMIN')       return '🛡️ Administrator';
+  if (role === 'LECTURER' || role === 'STAFF') return '🏫 Lecturer';
+  if (role === 'FINANCE')     return '💼 Finance';
+  if (role === 'STUDENT')     return '📚 Student';
+  return profile.value?.role || '';
 });
 
 // ── Audit log → notifications ─────────────────────────────────────────────
@@ -162,10 +164,10 @@ const readIds = ref(new Set());
 
 // Role-based slice
 const visibleLogs = computed(() => {
-  const role = profile.value?.role;
+  const role = (profile.value?.role || '').toUpperCase().replace(/[\s_-]+/g, '_');
   const uid  = profile.value?.id;
-  if (role === 'Admin') return logs.value;
-  if (role === 'Lecturer') return logs.value.filter(l => l.userId === uid);
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return logs.value;
+  if (role === 'LECTURER' || role === 'STAFF') return logs.value.filter(l => l.userId === uid);
   // Students: schedule notifications only
   return logs.value.filter(l =>
     ['schedule_created', 'schedule_updated', 'schedule_deleted'].includes(l.action)

@@ -72,13 +72,22 @@ export const useAttendancesStore = defineStore('attendances', () => {
     error.value = '';
 
     try {
-      let query = supabase.from(TABLE).select('*').order('timestamp', { ascending: false });
+      let query = supabase.from(TABLE).select('*');
 
       if (filters.sessionId) query = query.eq('session_id', filters.sessionId);
       if (filters.studentId) query = query.eq('student_id', filters.studentId);
       if (filters.status) query = query.eq('status', filters.status);
+
+      // Only ORDER BY timestamp when we have a filter that keeps the result set small.
+      // A full-table ORDER BY timestamp without an index causes a sequential scan
+      // that exceeds Supabase's statement timeout on large tables.
+      const hasNarrowingFilter = filters.sessionId || filters.studentId;
+      if (hasNarrowingFilter) {
+        query = query.order('timestamp', { ascending: false });
+      }
+
       if (filters.limit) query = query.limit(filters.limit);
-      else if (!filters.sessionId && !filters.studentId) query = query.limit(250);
+      else if (!hasNarrowingFilter) query = query.limit(250);
 
       const { data, error: fetchErr } = await query;
       if (fetchErr) throw fetchErr;

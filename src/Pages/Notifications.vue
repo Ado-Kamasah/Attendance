@@ -176,9 +176,10 @@ const searchQuery = ref('');
 const page = ref(1);
 const pageSize = 3; // groups per page
 
-const isAdmin = computed(() => profile.value?.role === 'Admin');
-const isLecturer = computed(() => profile.value?.role === 'Lecturer');
-const isStudent = computed(() => profile.value?.role === 'Student');
+const normRole = computed(() => (profile.value?.role || '').toUpperCase().replace(/[\s_-]+/g, '_'));
+const isAdmin = computed(() => normRole.value === 'ADMIN' || normRole.value === 'SUPER_ADMIN');
+const isLecturer = computed(() => normRole.value === 'LECTURER' || normRole.value === 'STAFF');
+const isStudent = computed(() => normRole.value === 'STUDENT');
 
 // Reset page when filters change
 watch([filterAction, filterRole, searchQuery], () => { page.value = 1; });
@@ -187,7 +188,7 @@ onMounted(async () => {
   await auditStore.fetchLogs();
   auditStore.subscribeToLogs();
   // Also fetch student absence notifications
-  if (profile.value?.role === 'Student') {
+  if (normRole.value === 'STUDENT') {
     await studentNotifStore.fetchNotifications();
   }
 });
@@ -214,9 +215,8 @@ function absenceIcon(type) {
 }
 
 const roleSubtitle = computed(() => {
-  const role = profile.value?.role;
-  if (role === 'Admin')    return 'Full system audit trail — all actions by all users';
-  if (role === 'Lecturer') return 'Your actions and schedule changes that mention you';
+  if (isAdmin.value) return 'Full system audit trail — all actions by all users';
+  if (isLecturer.value) return 'Your actions and schedule changes that mention you';
   return 'Timetable announcements and schedule updates relevant to you';
 });
 
@@ -234,12 +234,11 @@ const enrichedLogs = computed(() => {
 
 // ── Role-based visibility ──────────────────────────────────────────────────────
 const visibleLogs = computed(() => {
-  const role = profile.value?.role;
   const uid  = profile.value?.id;
   const name = (profile.value?.name || '').toLowerCase();
 
-  if (role === 'Admin') {
-    // Admin sees every log
+  if (isAdmin.value) {
+    // Admin & Super Admin sees every log
     return enrichedLogs.value;
   }
 
