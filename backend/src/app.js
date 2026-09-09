@@ -15,6 +15,7 @@ import notificationRoutes from './routes/notifications.js';
 import classRepRoutes from './routes/classrep.js';
 import suggestionRoutes from './routes/suggestions.js';
 import financeRoutes from './routes/finance.js';
+import userRoutes from './routes/users.js';
 const app = express();
 
 // Middlewares
@@ -35,6 +36,7 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/faculties', facultyRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/semesters', semesterRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/classrep', classRepRoutes);

@@ -50,7 +50,7 @@
           </div>
           <div class="user-info" v-if="!isCollapsed">
             <p class="user-name">{{ userName }}</p>
-            <p class="user-role">Super Admin</p>
+            <p class="user-role">{{ roleDisplayName }}</p>
           </div>
         </div>
       </div>
@@ -86,6 +86,11 @@ const navigate = (path) => {
 };
 
 const userName = computed(() => authStore.profile?.name || 'Administrator');
+const roleDisplayName = computed(() => {
+  const r = (authStore.profile?.role || '').toUpperCase().replace(/[\s_-]+/g, '_');
+  if (r === 'SUPER_ADMIN') return 'Super Admin';
+  return 'Administrator';
+});
 const userInitials = computed(() => {
   const n = userName.value;
   return n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -99,6 +104,11 @@ const navGroups = [
         name: 'Dashboard',
         path: '/',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>`
+      },
+      {
+        name: 'User Management',
+        path: '/users-admin',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`
       },
       {
         name: 'Analytics',

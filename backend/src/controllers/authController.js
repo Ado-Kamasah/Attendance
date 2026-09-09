@@ -17,7 +17,7 @@ export const register = async (req, res) => {
 
     // Map role string to Database Enum Role
     let prismaRole;
-    const lowerRole = role.toLowerCase();
+    const lowerRole = role.toLowerCase().replace(/[\s_-]+/g, '');
     if (lowerRole === 'student') {
       prismaRole = 'STUDENT';
     } else if (lowerRole === 'staff' || lowerRole === 'lecturer') {
@@ -26,12 +26,17 @@ export const register = async (req, res) => {
       prismaRole = 'ADMIN';
     } else if (lowerRole === 'finance') {
       prismaRole = 'FINANCE';
+    } else if (lowerRole === 'superadmin') {
+      prismaRole = 'SUPER_ADMIN';
     } else {
       return res.status(400).json({ message: 'Invalid role provided' });
     }
 
     // Determine ID to use (student/staff ID or email/uuid)
-    const userId = idNumber ? idNumber.trim() : (prismaRole === 'ADMIN' ? `admin-${Date.now()}` : email.trim());
+    const userId = idNumber ? idNumber.trim() : (
+      prismaRole === 'SUPER_ADMIN' ? `superadmin-${Date.now()}` :
+      prismaRole === 'ADMIN' ? `admin-${Date.now()}` : email.trim()
+    );
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -133,9 +138,11 @@ export const login = async (req, res) => {
 
     // If role is passed, verify role matches (case-insensitive checks)
     if (role) {
-      let expectedRole = role.toUpperCase();
+      let expectedRole = role.toUpperCase().replace(/[\s_-]+/g, '_');
       if (expectedRole === 'STAFF') expectedRole = 'LECTURER';
-      if (user.role !== expectedRole) {
+      if (expectedRole === 'SUPERADMIN') expectedRole = 'SUPER_ADMIN';
+      const actualRole = (user.role || '').toUpperCase();
+      if (actualRole !== expectedRole && !(expectedRole === 'ADMIN' && actualRole === 'SUPER_ADMIN')) {
         return res.status(400).json({ message: `Access denied: registered as ${user.role}` });
       }
     }

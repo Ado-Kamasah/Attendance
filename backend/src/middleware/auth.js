@@ -24,7 +24,7 @@ export const authenticateToken = (req, res, next) => {
 
 /**
  * Middleware to restrict route access to specific roles
- * @param {string[]} allowedRoles - List of allowed roles (e.g. ['ADMIN', 'LECTURER', 'STUDENT'])
+ * @param {string[]} allowedRoles - List of allowed roles (e.g. ['ADMIN', 'SUPER_ADMIN', 'LECTURER', 'STUDENT'])
  */
 export const requireRole = (allowedRoles) => {
   return (req, res, next) => {
@@ -32,10 +32,30 @@ export const requireRole = (allowedRoles) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
     
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = (req.user.role || '').toUpperCase();
+    const normalizedAllowed = allowedRoles.map(r => r.toUpperCase());
+
+    // SUPER_ADMIN has elevated access across all standard admin endpoints,
+    // or if the user's role is specifically in the allowed list
+    if (!normalizedAllowed.includes(userRole) && userRole !== 'SUPER_ADMIN') {
       return res.status(403).json({ message: 'Access denied: Insufficient privileges' });
     }
     
     next();
   };
 };
+
+/**
+ * Convenience middleware specifically restricting access strictly to SUPER_ADMIN
+ */
+export const requireSuperAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  const userRole = (req.user.role || '').toUpperCase();
+  if (userRole !== 'SUPER_ADMIN') {
+    return res.status(403).json({ message: 'Access denied: Super Admin privileges required' });
+  }
+  next();
+};
+

@@ -234,6 +234,7 @@ const router = useRouter();
 // Where each detected role lands after a successful login.
 // Adjust these paths to match your actual route names/paths.
 const ROLE_DASHBOARDS = {
+  SUPER_ADMIN: '/users-admin',
   ADMIN:    '/',
   LECTURER: '/lecturer-dashboard',
   STUDENT:  '/student-dashboard',
@@ -276,7 +277,8 @@ const handleLogin = async () => {
     });
 
     // Role comes from the profile row, not user input — route accordingly.
-    const destination = ROLE_DASHBOARDS[profile.role] || '/';
+    const normalizedRole = (profile.role || '').toUpperCase().replace(/[\s_-]+/g, '_');
+    const destination = ROLE_DASHBOARDS[normalizedRole] || '/';
     router.push(destination);
   } catch (err) {
     console.error('Login error:', err);

@@ -16,6 +16,7 @@ import Faculties from './Pages/Admin/Faculties.vue';
 import Analytics from './Pages/Admin/Analytics.vue';
 import SessionAnalytics from './Pages/Admin/SessionAnalytics.vue';
 import EvaluationAdmin  from './Pages/Admin/EvaluationAdmin.vue';
+import UsersAdmin        from './Pages/Admin/UsersAdmin.vue';
 import EvaluationForm   from './Pages/Student/EvaluationForm.vue';
 import ClassRepManagement from './Pages/Admin/ClassRepManagement.vue';
 import ClassRepDashboard  from './Pages/Student/ClassRepDashboard.vue';
@@ -45,8 +46,12 @@ const isReady = ref(false); // avoid flashing the login screen while we check se
 
 const isAuthenticated = computed(() => !!authStore.user);
 const userRole = computed(() => {
-  const raw = authStore.profile?.role || 'Student';
-  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+  const raw = (authStore.profile?.role || 'Student').toUpperCase().replace(/[\s_-]+/g, '_');
+  if (raw === 'SUPER_ADMIN' || raw === 'SUPERADMIN') return 'Super Admin';
+  if (raw === 'ADMIN') return 'Admin';
+  if (raw === 'LECTURER' || raw === 'STAFF') return 'Lecturer';
+  if (raw === 'FINANCE') return 'Finance';
+  return 'Student';
 });
 
 const handleNavigationEvent = (path) => {
@@ -80,7 +85,8 @@ onUnmounted(() => {
 });
 
 const redirectForRole = (role) => {
-  if (role === 'Admin')    handleNavigationEvent('/');
+  if (role === 'Super Admin')   handleNavigationEvent('/users-admin');
+  else if (role === 'Admin')    handleNavigationEvent('/');
   else if (role === 'Lecturer') handleNavigationEvent('/lecturer-dashboard');
   else if (role === 'Student')  handleNavigationEvent('/student-dashboard');
   else if (role === 'Finance')  handleNavigationEvent('/finance-dashboard');
@@ -117,7 +123,7 @@ const handleRegisterSuccess = () => {
 
   <div v-else class="app-layout">
     <AdminSidebar 
-      v-if="userRole === 'Admin'"
+      v-if="userRole === 'Admin' || userRole === 'Super Admin'"
       @navigate="handleNavigationEvent" 
       :is-mobile-open="isMobileSidebarOpen"
       @close-mobile="isMobileSidebarOpen = false"
@@ -159,6 +165,7 @@ const handleRegisterSuccess = () => {
         <Analytics v-else-if="currentRoute === '/analytics'" />
         <SessionAnalytics v-else-if="currentRoute === '/session-analytics'" />
         <EvaluationAdmin  v-else-if="currentRoute === '/evaluation-admin'" />
+        <UsersAdmin       v-else-if="currentRoute === '/users-admin'" />
         <EvaluationForm   v-else-if="currentRoute === '/evaluation'" />
         <ClassRepManagement v-else-if="currentRoute === '/classrep-management'" />
         <ClassRepDashboard  v-else-if="currentRoute === '/classrep-dashboard'" />
