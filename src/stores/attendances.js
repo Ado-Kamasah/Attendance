@@ -77,6 +77,8 @@ export const useAttendancesStore = defineStore('attendances', () => {
       if (filters.sessionId) query = query.eq('session_id', filters.sessionId);
       if (filters.studentId) query = query.eq('student_id', filters.studentId);
       if (filters.status) query = query.eq('status', filters.status);
+      if (filters.limit) query = query.limit(filters.limit);
+      else if (!filters.sessionId && !filters.studentId) query = query.limit(250);
 
       const { data, error: fetchErr } = await query;
       if (fetchErr) throw fetchErr;
@@ -86,8 +88,9 @@ export const useAttendancesStore = defineStore('attendances', () => {
     } catch (err) {
       const normalized = normalizeError(err);
       error.value = normalized.message;
-      push.error({ title: 'Failed to load attendance', message: normalized.message });
-      throw normalized;
+      console.warn('Attendance load warning:', normalized.message);
+      // Return currently loaded attendances rather than crashing callers
+      return attendances.value;
     } finally {
       isLoading.value = false;
     }

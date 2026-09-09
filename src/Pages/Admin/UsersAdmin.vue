@@ -417,11 +417,9 @@
               <label class="input-label" for="user-program">Academic Programme</label>
               <select id="user-program" v-model="userForm.program" class="form-input">
                 <option value="">-- Select Programme --</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Information Technology">Information Technology</option>
-                <option value="Business Administration">Business Administration</option>
-                <option value="General Science">General Science</option>
-                <option value="Humanities & Social Sciences">Humanities & Social Sciences</option>
+                <option v-for="prog in availableProgrammes" :key="prog.id" :value="prog.name">
+                  {{ prog.name }}
+                </option>
               </select>
             </div>
 
@@ -530,6 +528,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { supabase } from '@/stores/supabase';
 import api from '@/api.js';
 import { useAuthStore } from '@/stores/authstore.js';
 
@@ -537,6 +536,7 @@ const authStore = useAuthStore();
 
 // State
 const users = ref([]);
+const availableProgrammes = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
 const roleFilter = ref('all');
@@ -622,25 +622,95 @@ const isCurrentUser = (id) => {
   return authStore.user?.id === id || authStore.profile?.id === id;
 };
 
-// Fetch all users
+// Fetch all users (Supabase primary + backend fallback)
 const fetchUsers = async () => {
   isLoading.value = true;
   try {
-    const res = await api.get('/users');
-    users.value = res.data.users || [];
-    if (res.data.stats) {
-      stats.value = res.data.stats;
+    let fetchedList = null;
+
+    // 1. Try Supabase first
+    try {
+      const { data: supaUsers, error: supaErr } = await supabase
+        .from('users')
+        .select('*, programmes(id, name)')
+        .order('created_at', { ascending: false });
+
+      if (!supaErr && supaUsers && supaUsers.length > 0) {
+        fetchedList = supaUsers.map(u => {
+          const rawRole = (u.role || 'Student').toUpperCase().replace(/[\s_-]+/g, '_');
+          let displayRole = 'STUDENT';
+          if (rawRole.includes('SUPER')) displayRole = 'SUPER_ADMIN';
+          else if (rawRole === 'ADMIN') displayRole = 'ADMIN';
+          else if (rawRole === 'LECTURER' || rawRole === 'STAFF') displayRole = 'LECTURER';
+          else if (rawRole === 'FINANCE') displayRole = 'FINANCE';
+
+          return {
+            id: u.id,
+            displayId: u.id_number || u.student_id || (u.id.length > 18 ? u.id.slice(0, 8) + '...' : u.id),
+            name: u.name || u.full_name || 'Unnamed User',
+            email: u.email || '—',
+            role: displayRole,
+            program: u.program || u.programmes?.name || u.mode || '—',
+            program_id: u.program_id,
+            createdAt: u.created_at || u.updated_at || new Date().toISOString()
+          };
+        });
+      }
+    } catch (sbErr) {
+      console.warn('Supabase query failed, falling back to local API:', sbErr);
+    }
+
+    // 2. If Supabase yielded no records or failed, try backend Express API
+    if (!fetchedList || fetchedList.length === 0) {
+      try {
+        const res = await api.get('/users');
+        if (res.data?.users && res.data.users.length > 0) {
+          fetchedList = res.data.users.map(u => ({
+            ...u,
+            displayId: u.id
+          }));
+          if (res.data.stats) {
+            stats.value = res.data.stats;
+          }
+        }
+      } catch (apiErr) {
+        // Backend offline or unreachable
+        console.warn('Local Express server offline:', apiErr.message);
+      }
+    }
+
+    if (fetchedList) {
+      users.value = fetchedList;
+
+      // Realtime KPI metrics
+      const total = users.value.length;
+      const students = users.value.filter(u => u.role === 'STUDENT').length;
+      const lecturers = users.value.filter(u => u.role === 'LECTURER').length;
+      const admins = users.value.filter(u => u.role === 'ADMIN').length;
+      const superAdmins = users.value.filter(u => u.role === 'SUPER_ADMIN').length;
+      const finance = users.value.filter(u => u.role === 'FINANCE').length;
+
+      stats.value = { total, students, lecturers, admins, superAdmins, finance };
+    } else {
+      users.value = [];
     }
   } catch (err) {
     console.error('Failed to fetch users:', err);
-    showAlert(err.response?.data?.message || 'Failed to load user list', 'error');
+    showAlert('Could not load user accounts. Please check your network or database connection.', 'error');
   } finally {
     isLoading.value = false;
   }
 };
 
-onMounted(() => {
-  fetchUsers();
+onMounted(async () => {
+  await fetchUsers();
+  // Load programmes for select dropdown
+  try {
+    const { data } = await supabase.from('programmes').select('id, name').order('name');
+    if (data) availableProgrammes.value = data;
+  } catch (e) {
+    console.warn('Could not load programmes list:', e);
+  }
 });
 
 // Filter & Sort Users
@@ -654,13 +724,14 @@ const filteredUsers = computed(() => {
       (u.name && u.name.toLowerCase().includes(q)) ||
       (u.email && u.email.toLowerCase().includes(q)) ||
       (u.id && u.id.toLowerCase().includes(q)) ||
+      (u.displayId && u.displayId.toLowerCase().includes(q)) ||
       (u.program && u.program.toLowerCase().includes(q))
     );
   }
 
   // Role filter
   if (roleFilter.value !== 'all') {
-    list = list.filter(u => (u.role || '').toUpperCase() === roleFilter.value);
+    list = list.filter(u => u.role === roleFilter.value);
   }
 
   // Sorting
@@ -708,9 +779,9 @@ const openEditModal = (user) => {
   userForm.value = {
     id: user.id,
     name: user.name || '',
-    email: user.email || '',
+    email: user.email === '—' ? '' : (user.email || ''),
     role: user.role || 'STUDENT',
-    program: user.program || '',
+    program: user.program === '—' ? '' : (user.program || ''),
     password: ''
   };
   isModalOpen.value = true;
@@ -727,32 +798,81 @@ const saveUser = async () => {
   isSaving.value = true;
 
   try {
+    const roleString = userForm.value.role === 'SUPER_ADMIN' ? 'Super Admin' :
+                       userForm.value.role === 'ADMIN' ? 'Admin' :
+                       userForm.value.role === 'LECTURER' ? 'Lecturer' :
+                       userForm.value.role === 'FINANCE' ? 'Finance' : 'Student';
+
     if (isEditing.value) {
-      // Update
-      const payload = {
-        name: userForm.value.name,
-        email: userForm.value.email,
-        role: userForm.value.role,
-        program: userForm.value.program
+      // 1. Update in Supabase
+      const updateData = {
+        name: userForm.value.name.trim(),
+        role: roleString,
+        updated_at: new Date().toISOString()
       };
-      if (userForm.value.password) {
-        payload.password = userForm.value.password;
+      if (userForm.value.email) updateData.email = userForm.value.email.trim().toLowerCase();
+      if (userForm.value.program) updateData.program = userForm.value.program;
+
+      const { error: supaErr } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', userForm.value.id);
+
+      // 2. Also sync to backend API if available
+      try {
+        await api.put(`/users/${userForm.value.id}`, {
+          name: userForm.value.name,
+          email: userForm.value.email,
+          role: userForm.value.role,
+          program: userForm.value.program,
+          password: userForm.value.password || undefined
+        });
+      } catch {}
+
+      if (supaErr) {
+        throw new Error(supaErr.message);
       }
 
-      await api.put(`/users/${userForm.value.id}`, payload);
       showAlert(`User '${userForm.value.name}' updated successfully!`, 'success');
     } else {
-      // Create
-      const payload = {
-        id: userForm.value.id ? userForm.value.id.trim() : undefined,
-        name: userForm.value.name.trim(),
-        email: userForm.value.email.trim(),
-        role: userForm.value.role,
-        program: userForm.value.program,
-        password: userForm.value.password
-      };
+      // Create user
+      let created = false;
 
-      await api.post('/users', payload);
+      // 1. Try Express backend API first if running (allows custom ID + password hashing)
+      try {
+        const res = await api.post('/users', {
+          id: userForm.value.id ? userForm.value.id.trim() : undefined,
+          name: userForm.value.name.trim(),
+          email: userForm.value.email.trim().toLowerCase(),
+          role: userForm.value.role,
+          program: userForm.value.program,
+          password: userForm.value.password
+        });
+        if (res.status === 201) created = true;
+      } catch (apiErr) {
+        // Backend not running or gave an error
+      }
+
+      // 2. Try Supabase Auth SignUp if not created by backend
+      if (!created) {
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email: userForm.value.email.trim().toLowerCase(),
+          password: userForm.value.password,
+          options: {
+            data: {
+              full_name: userForm.value.name.trim(),
+              role: roleString,
+              id_number: userForm.value.id || undefined,
+              program: userForm.value.program || undefined
+            }
+          }
+        });
+
+        if (signUpErr) {
+          throw new Error(signUpErr.message);
+        }
+      }
+
       showAlert(`User '${userForm.value.name}' created successfully!`, 'success');
     }
 
@@ -760,7 +880,7 @@ const saveUser = async () => {
     await fetchUsers();
   } catch (err) {
     console.error('Save user error:', err);
-    modalError.value = err.response?.data?.message || 'Operation failed. Please verify inputs.';
+    modalError.value = err.message || 'Operation failed. Please verify inputs.';
   } finally {
     isSaving.value = false;
   }
@@ -786,13 +906,27 @@ const confirmDeleteUser = async () => {
   isDeleting.value = true;
 
   try {
-    await api.delete(`/users/${userToDelete.value.id}`);
+    // 1. Delete from Supabase
+    const { error: supaErr } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userToDelete.value.id);
+
+    // 2. Also try deleting from backend DB if running
+    try {
+      await api.delete(`/users/${userToDelete.value.id}`);
+    } catch {}
+
+    if (supaErr) {
+      throw new Error(supaErr.message);
+    }
+
     showAlert(`User '${userToDelete.value.name}' was successfully deleted.`, 'success');
     closeDeleteModal();
     await fetchUsers();
   } catch (err) {
     console.error('Delete user error:', err);
-    showAlert(err.response?.data?.message || 'Failed to delete user account.', 'error');
+    showAlert(err.message || 'Failed to delete user account.', 'error');
     closeDeleteModal();
   } finally {
     isDeleting.value = false;
