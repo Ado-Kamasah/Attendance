@@ -65,7 +65,7 @@
                   <div class="avatar-sm">{{ initials(rep.studentName) }}</div>
                   <div>
                     <p class="student-name">{{ rep.studentName }}</p>
-                    <p class="student-email">{{ rep.studentEmail }}</p>
+                    <p class="student-email">{{ rep.studentEmail || rep.studentId }}</p>
                   </div>
                 </div>
               </td>
@@ -74,7 +74,7 @@
                 <span class="tag-course">{{ rep.courseCode }}</span>
                 <span class="course-name-text">{{ rep.courseName }}</span>
               </td>
-              <td>{{ rep.courseLevel }}</td>
+              <td><span class="tag-level">Level {{ rep.courseLevel }}</span></td>
               <td>{{ formatDate(rep.assignedAt) }}</td>
               <td>
                 <button class="btn-remove" @click="confirmRemove(rep)" :id="`remove-rep-${rep.courseId}`">
@@ -90,118 +90,121 @@
 
     <!-- Assign Modal -->
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-      <div class="modal">
+      <div class="modal assign-modal">
         <div class="modal-header">
-          <h2>Assign Class Representative</h2>
-          <button class="modal-close" @click="closeModal">X</button>
+          <div>
+            <h2>Assign Class Representative</h2>
+            <p class="modal-subtitle">Designate an enrolled or registered student to manage attendance for this course</p>
+          </div>
+          <button class="modal-close" @click="closeModal" aria-label="Close">✕</button>
         </div>
 
         <div class="modal-body">
-          <!-- Step 1: Mode -->
+          <!-- Step 1: Select Course -->
           <div class="form-group">
-            <label>Student Mode *</label>
-            <div class="mode-toggle">
-              <button
-                v-for="m in ['Regular', 'Weekend']"
-                :key="m"
-                class="mode-btn"
-                :class="{ active: form.mode === m }"
-                @click="onModeChange(m)"
-                type="button"
-              >
-                {{ m }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Step 2: Level -->
-          <div class="form-group" v-if="form.mode">
-            <label>Level *</label>
-            <div class="level-pills">
-              <button
-                v-for="lvl in ['100', '200', '300', '400']"
-                :key="lvl"
-                class="level-pill"
-                :class="{ active: form.level === lvl }"
-                @click="onLevelChange(lvl)"
-                type="button"
-              >
-                Level {{ lvl }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Step 3: Select Course -->
-          <div class="form-group" v-if="form.mode && form.level">
-            <label>Select Course *</label>
-            <select v-model="form.courseId" class="form-sel" id="modal-course-select">
+            <label class="group-label">
+              <span class="step-num">1</span> Select Course *
+              <span v-if="coursesList.length" class="count-badge">{{ coursesList.length }} available</span>
+            </label>
+            <select v-model="form.courseId" class="form-sel" id="modal-course-select" @change="onCourseSelect">
               <option value="">-- Choose a course --</option>
-              <option v-for="c in coursesStore.courses" :key="c.id" :value="c.id">
-                {{ c.code }} - {{ c.name }}
+              <option v-for="c in coursesList" :key="c.id" :value="c.id">
+                {{ c.code }} — {{ c.name }} (Level {{ c.level || '100' }})
               </option>
             </select>
           </div>
 
-          <!-- Step 4: Browse / Search Students -->
-          <div class="form-group" v-if="form.mode && form.level">
-            <label>
-              Select Student *
-              <span v-if="store.isLoading" class="loading-badge">Loading...</span>
-              <span v-else-if="store.students.length" class="count-badge">{{ store.students.length }} students</span>
-            </label>
-            <input
-              v-model="studentSearch"
-              type="text"
-              placeholder="Search by name or ID..."
-              class="form-in"
-              id="modal-student-search"
-            />
-            <div v-if="!store.isLoading && filteredStudents.length" class="student-dropdown">
+          <!-- Step 2: Browse & Select Student -->
+          <div class="form-group">
+            <div class="student-select-header">
+              <label class="group-label">
+                <span class="step-num">2</span> Select Student *
+                <span v-if="store.isLoading" class="loading-badge">Loading students…</span>
+                <span v-else-if="displayStudents.length" class="count-badge">{{ displayStudents.length }} students</span>
+              </label>
+
+              <!-- Quick Mode Filter -->
+              <div class="quick-filters">
+                <button
+                  v-for="m in ['All', 'Regular', 'Weekend']"
+                  :key="m"
+                  type="button"
+                  class="mini-pill"
+                  :class="{ active: filterMode === m }"
+                  @click="filterMode = m"
+                >
+                  {{ m }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Search box -->
+            <div class="search-wrap modal-search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                v-model="studentSearch"
+                type="text"
+                placeholder="Search by student name, ID or email…"
+                class="search-in"
+                id="modal-student-search"
+              />
+              <button v-if="studentSearch" @click="studentSearch = ''" class="clear-btn-xs" type="button">✕</button>
+            </div>
+
+            <!-- Students List -->
+            <div class="student-dropdown">
+              <div v-if="store.isLoading && store.students.length === 0" class="student-loading-box">
+                <div class="spinner"></div> Loading students…
+              </div>
+
               <div
-                v-for="s in filteredStudents.slice(0, 10)"
+                v-for="s in displayStudents.slice(0, 15)"
                 :key="s.id"
                 class="student-option"
                 :class="{ selected: form.studentId === s.id }"
                 @click="selectStudent(s)"
+                :id="`student-opt-${s.id}`"
               >
                 <div class="avatar-xs">{{ initials(s.name) }}</div>
                 <div style="flex:1; min-width:0">
-                  <p class="opt-name">{{ s.name }}</p>
-                  <p class="opt-email">{{ s.email }} &bull; ID: {{ s.studentId }}</p>
+                  <div class="opt-name-row">
+                    <p class="opt-name">{{ s.name }}</p>
+                    <span v-if="s.isEnrolled" class="badge-enrolled">Enrolled</span>
+                  </div>
+                  <p class="opt-email">{{ s.email }} &bull; ID: {{ s.studentId }} &bull; {{ s.program || 'Student' }}</p>
                 </div>
-                <span class="mode-micro-badge">{{ s.mode }}</span>
+                <span class="mode-micro-badge">{{ s.mode || 'Regular' }}</span>
+              </div>
+
+              <div v-if="!store.isLoading && displayStudents.length === 0" class="no-students-box">
+                <p>No students found matching your criteria.</p>
               </div>
             </div>
-            <p v-if="!store.isLoading && form.mode && form.level && store.students.length === 0" class="no-match">
-              No students found for {{ form.mode }} - Level {{ form.level }}.
-            </p>
-            <p v-if="!store.isLoading && studentSearch && filteredStudents.length === 0 && store.students.length > 0" class="no-match">
-              No students match your search.
-            </p>
           </div>
 
           <!-- Selected Student Preview -->
           <div v-if="selectedStudent" class="selected-preview">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <div style="flex:1">
               <p class="preview-name">{{ selectedStudent.name }}</p>
-              <p class="preview-email">{{ selectedStudent.email }} &mdash; Level {{ selectedStudent.level }} {{ selectedStudent.mode }}</p>
+              <p class="preview-email">ID: {{ selectedStudent.studentId }} &mdash; {{ selectedStudent.email }}</p>
             </div>
-            <span class="preview-badge">Selected</span>
+            <span class="preview-badge">Selected for Assignment</span>
           </div>
 
           <p v-if="modalError" class="modal-error">{{ modalError }}</p>
         </div>
 
         <div class="modal-footer">
-          <button class="btn-cancel" @click="closeModal">Cancel</button>
+          <button class="btn-cancel" @click="closeModal" type="button">Cancel</button>
           <button
             class="btn-confirm"
             @click="submitAssign"
             :disabled="!form.courseId || !form.studentId || store.isLoading"
             id="confirm-assign-btn"
+            type="button"
           >
-            <span v-if="store.isLoading">Assigning...</span>
+            <span v-if="store.isLoading">Assigning…</span>
             <span v-else>Confirm Assignment</span>
           </button>
         </div>
@@ -247,83 +250,159 @@ const studentSearch = ref('');
 const selectedStudent = ref(null);
 const modalError = ref('');
 const toast = ref(null);
+const filterMode = ref('All');
 
-const form = ref({ courseId: '', studentId: '', mode: '', level: '' });
+const form = ref({ courseId: '', studentId: '' });
 
 onMounted(async () => {
-  await Promise.all([store.fetchAllReps(), coursesStore.fetchCourses()]);
+  await Promise.allSettled([
+    store.fetchAllReps(),
+    coursesStore.fetchCourses(),
+    store.fetchStudents()
+  ]);
 });
 
-const uniqueCourses = computed(() => new Set(store.allReps.map(r => r.courseId)).size);
+const uniqueCourses = computed(() => new Set(enrichedReps.value.map(r => r.courseId)).size);
+
+const coursesList = computed(() => {
+  return coursesStore.courses || [];
+});
+
+const enrichedReps = computed(() => {
+  return (store.allReps || []).map((rep) => {
+    // 1. Resolve Course
+    const course = (coursesList.value || []).find(
+      (c) => c.id === rep.courseId || c.code === rep.courseId || (rep.courseCode && c.code === rep.courseCode)
+    );
+
+    // 2. Resolve Student
+    const student = (store.students || []).find(
+      (s) => s.id === rep.studentId || s.studentId === rep.studentId || (rep.studentEmail && s.email === rep.studentEmail)
+    );
+
+    const sName = (rep.studentName && rep.studentName !== 'Student' && rep.studentName !== 'Student Rep')
+      ? rep.studentName
+      : (student?.name || rep.studentName || 'Student Rep');
+
+    const sEmail = rep.studentEmail || student?.email || rep.studentId || '';
+    const sProgram = rep.studentProgram || student?.program || course?.programId || course?.program || '—';
+
+    const cCode = rep.courseCode || course?.code || (rep.courseId && rep.courseId.length <= 10 ? rep.courseId : '—');
+    const cName = rep.courseName || course?.name || (cCode !== '—' ? cCode : 'Course');
+
+    let cLevel = rep.courseLevel || course?.level;
+    if (!cLevel && cCode) {
+      const match = cCode.match(/\b([1-4]\d{2})\b/);
+      if (match) cLevel = match[1];
+    }
+    cLevel = cLevel || '100';
+
+    return {
+      ...rep,
+      studentName: sName,
+      studentEmail: sEmail,
+      studentProgram: sProgram,
+      courseCode: cCode,
+      courseName: cName,
+      courseLevel: cLevel
+    };
+  });
+});
 
 const filteredReps = computed(() => {
-  const q = search.value.toLowerCase();
-  if (!q) return store.allReps;
-  return store.allReps.filter(r =>
-    r.studentName.toLowerCase().includes(q) ||
-    r.courseCode.toLowerCase().includes(q) ||
-    r.courseName.toLowerCase().includes(q)
+  const q = search.value.toLowerCase().trim();
+  if (!q) return enrichedReps.value;
+  return enrichedReps.value.filter(r =>
+    (r.studentName || '').toLowerCase().includes(q) ||
+    (r.courseCode || '').toLowerCase().includes(q) ||
+    (r.courseName || '').toLowerCase().includes(q) ||
+    (r.studentEmail || '').toLowerCase().includes(q) ||
+    (r.courseLevel || '').toLowerCase().includes(q) ||
+    (r.studentProgram || '').toLowerCase().includes(q)
   );
 });
 
-const filteredStudents = computed(() => {
-  const q = studentSearch.value.toLowerCase();
-  if (!q) return store.students;
-  return store.students.filter(s =>
-    (s.name || '').toLowerCase().includes(q) ||
-    (s.email || '').toLowerCase().includes(q) ||
-    (s.studentId || '').toLowerCase().includes(q)
-  );
+const displayStudents = computed(() => {
+  let list = store.students || [];
+
+  // Mode filter
+  if (filterMode.value !== 'All') {
+    const matchedMode = list.filter(s => (s.mode || '').toLowerCase() === filterMode.value.toLowerCase());
+    if (matchedMode.length > 0) {
+      list = matchedMode;
+    }
+  }
+
+  // Text search
+  const q = studentSearch.value.toLowerCase().trim();
+  if (q) {
+    list = list.filter(s =>
+      (s.name || '').toLowerCase().includes(q) ||
+      (s.email || '').toLowerCase().includes(q) ||
+      (s.studentId || '').toLowerCase().includes(q) ||
+      (s.program || '').toLowerCase().includes(q)
+    );
+  }
+
+  return list;
 });
 
-function openAssignModal() {
-  form.value = { courseId: '', studentId: '', mode: '', level: '' };
+async function openAssignModal() {
+  form.value = { courseId: '', studentId: '' };
   studentSearch.value = '';
   selectedStudent.value = null;
   modalError.value = '';
-  store.students = [];
+  filterMode.value = 'All';
+
+  if (coursesList.value.length === 0) {
+    await coursesStore.fetchCourses();
+  }
+
   showModal.value = true;
+  await store.fetchStudents();
 }
 
 function closeModal() {
   showModal.value = false;
-  store.students = [];
 }
 
-async function onModeChange(mode) {
-  form.value.mode = mode;
-  form.value.level = '';
-  form.value.studentId = '';
-  selectedStudent.value = null;
-  studentSearch.value = '';
-  store.students = [];
-}
-
-async function onLevelChange(level) {
-  form.value.level = level;
-  form.value.studentId = '';
-  selectedStudent.value = null;
-  studentSearch.value = '';
-  // Load students from Supabase filtered by mode + level
-  await store.fetchStudentsByFilter({ mode: form.value.mode, level });
+function onCourseSelect() {
+  if (form.value.courseId) {
+    store.fetchStudents(form.value.courseId);
+  }
 }
 
 function selectStudent(s) {
   form.value.studentId = s.id;
   selectedStudent.value = s;
-  studentSearch.value = '';
 }
 
 async function submitAssign() {
   modalError.value = '';
-  if (!form.value.courseId) { modalError.value = 'Please select a course.'; return; }
-  if (!form.value.studentId) { modalError.value = 'Please select a student.'; return; }
+  if (!form.value.courseId) {
+    modalError.value = 'Please select a course.';
+    return;
+  }
+  if (!form.value.studentId) {
+    modalError.value = 'Please select a student.';
+    return;
+  }
+
+  const selectedCourse = coursesList.value.find(c => c.id === form.value.courseId || c.code === form.value.courseId);
+
   try {
-    const result = await store.assignClassRep(form.value.studentId, form.value.courseId);
-    showToast(result.message, 'success');
+    const result = await store.assignClassRep(form.value.studentId, form.value.courseId, {
+      studentName: selectedStudent.value?.name,
+      studentEmail: selectedStudent.value?.email,
+      studentProgram: selectedStudent.value?.program,
+      courseCode: selectedCourse?.code,
+      courseName: selectedCourse?.name,
+      courseLevel: selectedCourse?.level,
+    });
+    showToast(result.message || 'Class representative assigned successfully!', 'success');
     closeModal();
   } catch (err) {
-    modalError.value = err.message;
+    modalError.value = err.message || 'Failed to assign class representative';
   }
 }
 
@@ -347,11 +426,17 @@ function showToast(msg, type = 'success') {
 }
 
 function initials(name) {
-  return (name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  return (name || 'ST')
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 function formatDate(dt) {
-  if (!dt) return '-';
+  if (!dt) return '—';
   return new Date(dt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 </script>
@@ -404,6 +489,7 @@ function formatDate(dt) {
 .tag-program { font-size: 0.7rem; background: #f1f5f9; color: #475569; padding: 0.15rem 0.5rem; border-radius: 5px; font-weight: 600; }
 .tag-course { font-size: 0.7rem; background: #e0e7ff; color: #4338ca; padding: 0.15rem 0.5rem; border-radius: 5px; font-weight: 700; margin-right: 0.4rem; }
 .course-name-text { font-size: 0.82rem; color: #334155; }
+.tag-level { font-size: 0.72rem; background: #fef3c7; color: #92400e; padding: 0.18rem 0.55rem; border-radius: 6px; font-weight: 700; display: inline-block; }
 
 .btn-remove { display: inline-flex; align-items: center; gap: 0.4rem; background: #fff; border: 1px solid #fecdd3; color: #b91c1c; padding: 0.4rem 0.85rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .btn-remove svg { width: 14px; height: 14px; }
@@ -480,5 +566,25 @@ function formatDate(dt) {
 .count-badge { margin-left: 0.5rem; background: #f1f5f9; color: #475569; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 10px; }
 
 /* Mode badge on student row */
-.mode-micro-badge { font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 5px; background: #e0e7ff; color: #4338ca; white-space: nowrap; flex-shrink: 0; }
+.mode-micro-badge { font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 6px; background: #e0e7ff; color: #4338ca; white-space: nowrap; flex-shrink: 0; }
+
+.assign-modal { max-width: 580px; width: 100%; }
+.modal-subtitle { margin: 0.25rem 0 0; font-size: 0.8rem; color: #64748b; }
+.group-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 700; color: #1e293b; }
+.step-num { width: 18px; height: 18px; border-radius: 50%; background: #ef4444; color: #fff; font-size: 0.68rem; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+
+.student-select-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+.quick-filters { display: flex; gap: 0.35rem; }
+.mini-pill { border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 12px; cursor: pointer; transition: all 0.15s; }
+.mini-pill.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+.mini-pill:hover:not(.active) { border-color: #cbd5e1; color: #1e293b; }
+
+.modal-search-wrap { max-width: 100%; width: 100%; margin-top: 0.25rem; }
+.clear-btn-xs { background: none; border: none; font-size: 0.8rem; color: #94a3b8; cursor: pointer; padding: 0.1rem 0.3rem; }
+.clear-btn-xs:hover { color: #334155; }
+
+.opt-name-row { display: flex; align-items: center; gap: 0.5rem; }
+.badge-enrolled { background: #dcfce7; color: #15803d; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 5px; }
+
+.student-loading-box, .no-students-box { padding: 1.5rem; text-align: center; color: #64748b; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
 </style>

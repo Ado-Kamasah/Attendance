@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { push } from 'notivue';
 import { supabase } from './supabase';
+import api from '@/api.js';
 
 const TABLE = 'sessions';
 
@@ -87,22 +88,58 @@ export const useSessionsStore = defineStore('sessions', () => {
     error.value = '';
 
     try {
-      let query = supabase.from(TABLE).select('*').order('date', { ascending: false });
+      let supaList = [];
+      try {
+        let query = supabase.from(TABLE).select('*').order('date', { ascending: false });
 
-      if (filters.courseId) query = query.eq('course_id', filters.courseId);
-      if (filters.lecturerId) query = query.eq('lecturer_id', filters.lecturerId);
-      if (filters.isActive !== undefined) query = query.eq('is_active', filters.isActive);
+        if (filters.courseId) query = query.eq('course_id', filters.courseId);
+        if (filters.lecturerId) query = query.eq('lecturer_id', filters.lecturerId);
+        if (filters.isActive !== undefined) query = query.eq('is_active', filters.isActive);
 
-      const { data, error: fetchErr } = await query;
-      if (fetchErr) throw fetchErr;
+        const { data, error: fetchErr } = await query;
+        if (!fetchErr && data && data.length > 0) {
+          supaList = data.map(mapSession);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase sessions fetch error:', sbErr);
+      }
 
-      sessions.value = (data ?? []).map(mapSession);
+      if (supaList.length > 0) {
+        sessions.value = supaList;
+        return sessions.value;
+      }
+
+      // Backend Express fallback (SQLite)
+      try {
+        const res = await api.get('/sessions', { params: filters });
+        if (res.data && res.data.length > 0) {
+          sessions.value = res.data.map((s) => ({
+            id: s.id,
+            courseId: s.courseId,
+            courseCode: s.courseCode,
+            courseName: s.courseName,
+            lecturerId: s.lecturerId,
+            lecturerName: s.lecturerName,
+            mode: s.mode ?? null,
+            date: s.date,
+            pin: s.pin,
+            maxStudents: s.maxStudents,
+            isActive: s.isActive ?? true,
+            createdAt: s.createdAt,
+            updatedAt: s.updatedAt,
+          }));
+          return sessions.value;
+        }
+      } catch (apiErr) {
+        console.warn('Backend sessions API empty or offline:', apiErr.message);
+      }
+
+      sessions.value = supaList;
       return sessions.value;
     } catch (err) {
       const normalized = normalizeError(err);
       error.value = normalized.message;
-      push.error({ title: 'Failed to load sessions', message: normalized.message });
-      throw normalized;
+      return sessions.value;
     } finally {
       isLoading.value = false;
     }

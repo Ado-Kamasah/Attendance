@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="reports-container">
     <div class="page-header">
       <div>
@@ -186,6 +186,12 @@
                       </button>
                     </td>
                   </tr>
+                  <!-- If session was held but has no student check-ins yet -->
+                  <tr v-if="group.rows.length === 0" class="empty-session-row">
+                    <td colspan="7" class="empty-session-cell">
+                      Session held (PIN {{ group.pin }}) · No student attendance check-ins recorded yet.
+                    </td>
+                  </tr>
                   <!-- Attendance rows for this session -->
                   <tr v-for="row in group.rows" :key="row.id" class="attendance-row">
                     <td>
@@ -326,7 +332,7 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authstore';
 import { useCoursesStore } from '@/stores/courses';
@@ -377,24 +383,26 @@ const clearFilters = () => {
 onMounted(async () => {
   isLoading.value = true;
   try {
+    if (!profile.value) {
+      await authStore.fetchProfile();
+    }
+
     await Promise.all([
       coursesStore.fetchCourses(),
       schedulesStore.fetchSchedules(),
       enrollmentsStore.fetchEnrollments(),
-      sessionsStore.fetchSessions({ lecturerId: profile.value?.id }),
+      sessionsStore.fetchSessions(),
       attendancesStore.fetchAttendances(),
     ]);
 
-    // Students aren't covered by a dedicated Pinia store elsewhere in the
-    // app (AttendanceManagement.vue queries `users` directly too) — pull
-    // everyone enrolled in this lecturer's courses in one batch.
-    const lecturerCourseIds = new Set(
-      sessions.value.filter((s) => s.lecturerId === profile.value?.id).map((s) => s.courseId)
-    );
-    // Fall back to ALL of the lecturer's courses (not just ones with a
-    // session yet) so the student filter isn't empty for a lecturer who
-    // hasn't run a session at all.
-    coursesForLecturer.value.forEach((c) => lecturerCourseIds.add(c.id));
+    sessionsStore.subscribeToSessions();
+    attendancesStore.subscribeToAttendances();
+
+    // Pull student profiles for enrolled students in this lecturer's courses
+    const lecturerCourseIds = new Set(coursesForLecturer.value.map((c) => c.id));
+    sessions.value.filter(isMySession).forEach((s) => {
+      if (s.courseId) lecturerCourseIds.add(s.courseId);
+    });
 
     const studentIds = [
       ...new Set(
@@ -411,11 +419,11 @@ onMounted(async () => {
         .in('id', studentIds)
         .order('name');
 
-      if (error) throw error;
-
-      studentsById.value = Object.fromEntries(
-        (data ?? []).map((u) => [u.id, { id: u.id, name: u.name, studentId: u.id_number, program: u.program }])
-      );
+      if (!error && data) {
+        studentsById.value = Object.fromEntries(
+          data.map((u) => [u.id, { id: u.id, name: u.name, studentId: u.id_number, program: u.program }])
+        );
+      }
     }
   } catch (e) {
     console.error('Error loading report data:', e);
@@ -424,20 +432,85 @@ onMounted(async () => {
   }
 });
 
-// Courses this lecturer actually teaches, inferred from schedules
-// (schedules.lecturer is a free-text name in the schema shown elsewhere —
-// fall back to "all courses" if that linkage can't be made reliably).
-const coursesForLecturer = computed(() => {
-  const lecturerName = profile.value?.name;
-  if (!lecturerName) return courses.value;
-  const scheduledCourseIds = new Set(
-    schedulesStore.schedules
-      .filter((s) => s.lecturer === lecturerName)
-      .map((s) => s.courseId)
-  );
-  const bySchedule = courses.value.filter((c) => scheduledCourseIds.has(c.id));
-  return bySchedule.length > 0 ? bySchedule : courses.value;
+onUnmounted(() => {
+  sessionsStore.unsubscribeFromSessions();
+  attendancesStore.unsubscribeFromAttendances();
 });
+
+// Courses this lecturer actually teaches, inferred from schedules and held sessions
+const coursesForLecturer = computed(() => {
+  const lecturerName = (profile.value?.name || '').trim().toLowerCase();
+  const myId = profile.value?.id;
+  const myStaffId = profile.value?.id_number || profile.value?.staff_id;
+
+  const scheduledCourseIds = new Set();
+  (schedulesStore.schedules || []).forEach((s) => {
+    const sName = (s.lecturer || '').trim().toLowerCase();
+    if (lecturerName && sName === lecturerName) {
+      scheduledCourseIds.add(s.courseId);
+    } else if (myStaffId && (s.lecturer === myStaffId || s.lecturerId === myStaffId)) {
+      scheduledCourseIds.add(s.courseId);
+    } else if (myId && s.lecturerId === myId) {
+      scheduledCourseIds.add(s.courseId);
+    }
+  });
+
+  // Also include any course where this lecturer has created or conducted a session
+  sessions.value.forEach((s) => {
+    if (
+      (myId && s.lecturerId === myId) ||
+      (myStaffId && s.lecturerId === myStaffId) ||
+      (authStore.user?.id && s.lecturerId === authStore.user?.id) ||
+      (lecturerName && (s.lecturerName || '').trim().toLowerCase() === lecturerName)
+    ) {
+      if (s.courseId) scheduledCourseIds.add(s.courseId);
+    }
+  });
+
+  const byScheduleOrSession = courses.value.filter((c) => scheduledCourseIds.has(c.id));
+  return byScheduleOrSession.length > 0 ? byScheduleOrSession : courses.value;
+});
+
+// Identifies whether a session belongs to the logged-in lecturer
+const isMySession = (s) => {
+  const role = (profile.value?.role || '').toUpperCase();
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SUPERADMIN') {
+    return true;
+  }
+
+  const myId = profile.value?.id;
+  const myAuthId = authStore.user?.id;
+  const myIdNumber = profile.value?.id_number;
+  const myStaffId = profile.value?.staff_id;
+  const myStudentId = profile.value?.student_id;
+  const myName = (profile.value?.name || '').trim().toLowerCase();
+
+  // Match by lecturerId against any of the user's possible ID representations
+  if (s.lecturerId) {
+    if (
+      (myId && s.lecturerId === myId) ||
+      (myAuthId && s.lecturerId === myAuthId) ||
+      (myIdNumber && s.lecturerId === myIdNumber) ||
+      (myStaffId && s.lecturerId === myStaffId) ||
+      (myStudentId && s.lecturerId === myStudentId)
+    ) {
+      return true;
+    }
+  }
+
+  // Match by lecturer name if present on session
+  if (s.lecturerName && myName && (s.lecturerName || '').trim().toLowerCase() === myName) {
+    return true;
+  }
+
+  // Match by course: if session course belongs to this lecturer's taught courses
+  const lecturerCourseIds = new Set(coursesForLecturer.value.map((c) => c.id));
+  if (s.courseId && lecturerCourseIds.has(s.courseId)) {
+    return true;
+  }
+
+  return false;
+};
 
 const levelOptions = computed(() =>
   [...new Set(coursesForLecturer.value.map((c) => c.level).filter(Boolean))].sort()
@@ -461,19 +534,17 @@ const inDateRange = (dateStr, from, to) => {
   return true;
 };
 
-// Sessions after course/level/semester/date/pin filters — student filter is
-// applied later, at the attendance-row level, since "student" narrows
-// PEOPLE within a session rather than which sessions existed.
+// Sessions after course/level/semester/date/pin filters
 const filteredSessions = computed(() => {
   const f = filters.value;
   return sessions.value.filter((s) => {
-    if (s.lecturerId !== profile.value?.id) return false;
+    if (!isMySession(s)) return false;
+
     const course = coursesStore.getCourseById(s.courseId);
-    if (!course) return false;
 
     if (f.courseId && s.courseId !== f.courseId) return false;
-    if (f.level && course.level !== f.level) return false;
-    if (f.semester && course.semester !== f.semester) return false;
+    if (f.level && course && course.level !== f.level) return false;
+    if (f.semester && course && course.semester !== f.semester) return false;
     if ((f.dateFrom || f.dateTo) && !inDateRange(s.date, f.dateFrom, f.dateTo)) return false;
     if (f.pinSearch && !s.pin?.toLowerCase().includes(f.pinSearch.toLowerCase())) return false;
 
@@ -483,8 +554,7 @@ const filteredSessions = computed(() => {
 
 const filteredSessionIds = computed(() => new Set(filteredSessions.value.map((s) => s.id)));
 
-// Individual attendance rows for the history table — every present record
-// whose session survived the filters above, further narrowed by student.
+// Individual attendance rows for the history table
 const historyRows = computed(() => {
   const f = filters.value;
   return attendances.value
@@ -500,11 +570,11 @@ const historyRows = computed(() => {
         id: a.id,
         sessionId: a.sessionId,
         studentName: student?.name ?? 'Unknown student',
-        courseCode: course?.code ?? '—',
-        courseName: course?.name ?? 'Unknown course',
+        courseCode: course?.code ?? session?.courseCode ?? '—',
+        courseName: course?.name ?? session?.courseName ?? 'Unknown course',
         pin: session?.pin ?? '—',
-        dateStr: ts ? ts.toLocaleDateString() : '—',
-        timeStr: ts ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—',
+        dateStr: ts ? ts.toLocaleDateString('en-US') : '—',
+        timeStr: ts ? ts.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '—',
         status: a.status,
         rawTimestamp: a.timestamp,
       };
@@ -512,22 +582,29 @@ const historyRows = computed(() => {
     .sort((x, y) => new Date(y.rawTimestamp) - new Date(x.rawTimestamp));
 });
 
-// Per-course aggregate cards, built from the same filtered session set.
+// Per-course aggregate cards with accurate Sessions Held calculation
 const reportData = computed(() => {
   const f = filters.value;
-  const byCourse = new Map();
 
-  for (const session of filteredSessions.value) {
-    const course = coursesStore.getCourseById(session.courseId);
-    if (!course) continue;
-    if (!byCourse.has(course.id)) {
-      byCourse.set(course.id, { course, sessions: [] });
+  const candidateCoursesMap = new Map();
+  for (const c of coursesForLecturer.value) {
+    candidateCoursesMap.set(c.id, c);
+  }
+  for (const s of filteredSessions.value) {
+    if (!candidateCoursesMap.has(s.courseId)) {
+      const c = coursesStore.getCourseById(s.courseId);
+      if (c) candidateCoursesMap.set(c.id, c);
     }
-    byCourse.get(course.id).sessions.push(session);
   }
 
   const rows = [];
-  for (const [courseId, { course, sessions: courseSessions }] of byCourse) {
+  for (const [courseId, course] of candidateCoursesMap) {
+    if (f.courseId && courseId !== f.courseId) continue;
+    if (f.level && course.level !== f.level) continue;
+    if (f.semester && course.semester !== f.semester) continue;
+
+    const courseSessions = filteredSessions.value.filter((s) => s.courseId === courseId);
+    const sessionsHeld = courseSessions.length;
     const sessionIds = new Set(courseSessions.map((s) => s.id));
 
     let enrolledStudentIds = enrollments.value
@@ -536,13 +613,17 @@ const reportData = computed(() => {
 
     if (f.studentId) {
       enrolledStudentIds = enrolledStudentIds.filter((id) => id === f.studentId);
+      const hasAttendanceForStudent = attendances.value.some(
+        (a) => sessionIds.has(a.sessionId) && a.studentId === f.studentId
+      );
+      if (enrolledStudentIds.length === 0 && !hasAttendanceForStudent) {
+        continue;
+      }
     }
-    if (enrolledStudentIds.length === 0) continue;
 
     const totalStudents = enrolledStudentIds.length;
-    const sessionsHeld = courseSessions.length;
 
-    // present count per student, within this course's filtered sessions
+    // Present count per student, within this course's filtered sessions
     const presentCountByStudent = new Map(enrolledStudentIds.map((id) => [id, 0]));
     for (const a of attendances.value) {
       if (a.status !== 'present') continue;
@@ -716,23 +797,45 @@ const saveStatusEdit = async (row) => {
 // ── Session groups for the history table ────────────────────────────────────
 const sessionGroups = computed(() => {
   const bySession = new Map();
+
+  // 1. Initialize from filteredSessions so every session held is listed in history
+  for (const session of filteredSessions.value) {
+    const course = coursesStore.getCourseById(session.courseId);
+    const ts = session.date ? new Date(session.date) : (session.createdAt ? new Date(session.createdAt) : null);
+    bySession.set(session.id, {
+      sessionId: session.id,
+      pin: session.pin ?? '—',
+      courseCode: course?.code ?? session.courseCode ?? '—',
+      courseName: course?.name ?? session.courseName ?? 'Unknown Course',
+      dateStr: ts ? ts.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+      rawTimestamp: session.createdAt || session.date || '',
+      rows: [],
+    });
+  }
+
+  // 2. Attach matching historyRows (attendance records) to each session group
   for (const row of historyRows.value) {
-    const session = sessionsStore.getSessionById(row.sessionId ?? row.id);
-    const sid = row.sessionId ?? session?.id;
-    if (!sid) continue;
-    if (!bySession.has(sid)) {
+    const sid = row.sessionId;
+    if (bySession.has(sid)) {
+      bySession.get(sid).rows.push(row);
+    } else {
       bySession.set(sid, {
         sessionId: sid,
         pin: row.pin,
         courseCode: row.courseCode,
         courseName: row.courseName,
         dateStr: row.dateStr,
-        rows: [],
+        rawTimestamp: row.rawTimestamp,
+        rows: [row],
       });
     }
-    bySession.get(sid).rows.push(row);
   }
-  return [...bySession.values()].sort((a, b) => b.rows[0]?.rawTimestamp?.localeCompare(a.rows[0]?.rawTimestamp ?? '') ?? 0);
+
+  return [...bySession.values()].sort((a, b) => {
+    const ta = new Date(a.rawTimestamp || 0).getTime();
+    const tb = new Date(b.rawTimestamp || 0).getTime();
+    return tb - ta;
+  });
 });
 </script>
 
@@ -1523,5 +1626,14 @@ const sessionGroups = computed(() => {
     font-size: 0.85rem;
     padding: 0.55rem 1rem;
   }
+}
+
+.empty-session-row td.empty-session-cell {
+  text-align: center;
+  padding: 1.25rem 1rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-style: italic;
+  background: #f8fafc;
 }
 </style>

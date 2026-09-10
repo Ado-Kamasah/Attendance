@@ -3,6 +3,8 @@ import { ref, computed } from 'vue';
 import { push } from 'notivue';
 import { supabase } from './supabase';
 
+import api from '@/api.js';
+
 const TABLE = 'courses';
 
 function mapCourse(row) {
@@ -78,23 +80,56 @@ export const useCoursesStore = defineStore('courses', () => {
     error.value = '';
 
     try {
-      let query = supabase.from(TABLE).select('*').order('code', { ascending: true });
+      let supaList = [];
+      try {
+        let query = supabase.from(TABLE).select('*').order('code', { ascending: true });
 
-      if (filters.programId) query = query.eq('program_id', filters.programId);
-      if (filters.level) query = query.eq('level', filters.level);
-      if (filters.semester) query = query.eq('semester', filters.semester);
-      if (filters.status) query = query.eq('status', filters.status);
+        if (filters.programId) query = query.eq('program_id', filters.programId);
+        if (filters.level) query = query.eq('level', filters.level);
+        if (filters.semester) query = query.eq('semester', filters.semester);
+        if (filters.status) query = query.eq('status', filters.status);
 
-      const { data, error: fetchErr } = await query;
-      if (fetchErr) throw fetchErr;
+        const { data, error: fetchErr } = await query;
+        if (!fetchErr && data && data.length > 0) {
+          supaList = data.map(mapCourse);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase courses fetch error, falling back to local API:', sbErr);
+      }
 
-      courses.value = (data ?? []).map(mapCourse);
+      if (supaList.length > 0) {
+        courses.value = supaList;
+        return courses.value;
+      }
+
+      // Backend Express fallback
+      try {
+        const res = await api.get('/courses');
+        if (res.data && res.data.length > 0) {
+          courses.value = res.data.map(c => ({
+            id: c.id,
+            code: c.code,
+            name: c.name,
+            credits: c.credits ?? 3,
+            programId: c.program,
+            level: c.level,
+            semester: c.semester || 'Semester 1',
+            status: c.status || 'active',
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt
+          }));
+          return courses.value;
+        }
+      } catch (apiErr) {
+        console.warn('Local courses API offline or empty:', apiErr.message);
+      }
+
+      courses.value = [];
       return courses.value;
     } catch (err) {
       const normalized = normalizeError(err);
       error.value = normalized.message;
-      push.error({ title: 'Failed to load courses', message: normalized.message });
-      throw normalized;
+      return [];
     } finally {
       isLoading.value = false;
     }

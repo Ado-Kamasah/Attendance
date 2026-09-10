@@ -58,14 +58,93 @@
           </div>
 
           <form @submit.prevent="submitAttendance" class="mark-form">
-            <!-- Date -->
+            <!-- Session Code Verification Section -->
+            <div class="form-group session-code-group">
+              <label for="att-session-code" class="session-label">
+                <span>Session Code / PIN *</span>
+                <span class="session-hint">Enter code to auto-retrieve creation date & time for {{ activeCourse.courseCode }}</span>
+              </label>
+
+              <div class="session-input-row">
+                <div class="session-input-wrapper">
+                  <svg class="session-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <input
+                    type="text"
+                    id="att-session-code"
+                    v-model="form.sessionCode"
+                    class="form-in session-code-in"
+                    placeholder="Enter session code (e.g. 482913)"
+                    @input="onSessionCodeInput"
+                    @keyup.enter.prevent="handleVerifySession"
+                  />
+                  <button v-if="form.sessionCode" type="button" @click="clearSessionCode" class="clear-session-btn" title="Clear">✕</button>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn-verify-session"
+                  :disabled="isVerifying || !form.sessionCode"
+                  @click="handleVerifySession"
+                  id="btn-verify-session"
+                >
+                  <span v-if="isVerifying" class="spinner-xs"></span>
+                  <span v-else>Verify & Auto-Fill</span>
+                </button>
+              </div>
+
+              <!-- Available / Recent Sessions for this Course -->
+              <div v-if="courseSessions.length > 0" class="recent-sessions-box">
+                <span class="recent-title">Recent sessions for {{ activeCourse.courseCode }}:</span>
+                <div class="recent-chips">
+                  <button
+                    v-for="s in courseSessions"
+                    :key="s.id || s.pin"
+                    type="button"
+                    class="recent-chip"
+                    :class="{ active: form.sessionCode === s.pin }"
+                    @click="selectRecentSession(s)"
+                    title="Click to apply this session code"
+                  >
+                    <span class="chip-code">#{{ s.pin }}</span>
+                    <span class="chip-meta">{{ s.date }} · {{ s.time }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Verified Session Banner -->
+              <div v-if="verifiedSession" class="verified-session-card">
+                <div class="v-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="v-card-body">
+                  <p class="v-card-title">
+                    Session <strong>#{{ verifiedSession.pin }}</strong> Verified for {{ verifiedSession.courseCode || activeCourse.courseCode }}
+                  </p>
+                  <p class="v-card-sub">
+                    <span>📅 Created: <strong>{{ verifiedSession.date }}</strong> at <strong>{{ verifiedSession.time }}</strong></span>
+                    <span v-if="verifiedSession.lecturerName"> • Lecturer: <strong>{{ verifiedSession.lecturerName }}</strong></span>
+                  </p>
+                </div>
+                <span class="v-card-badge">Date & Time Synced</span>
+              </div>
+
+              <p v-if="sessionError" class="session-error-msg">{{ sessionError }}</p>
+            </div>
+
+            <!-- Date & Time (Auto-retrieved from Session) -->
             <div class="form-row">
               <div class="form-group">
-                <label for="att-date">Date *</label>
+                <label for="att-date">
+                  Date *
+                  <span v-if="verifiedSession" class="sync-tag">Auto-retrieved</span>
+                </label>
                 <input type="date" id="att-date" v-model="form.date" class="form-in" :max="todayStr" required/>
               </div>
               <div class="form-group">
-                <label for="att-time">Time *</label>
+                <label for="att-time">
+                  Time *
+                  <span v-if="verifiedSession" class="sync-tag">Auto-retrieved</span>
+                </label>
                 <input type="time" id="att-time" v-model="form.time" class="form-in" required/>
               </div>
             </div>
@@ -90,13 +169,13 @@
             <!-- Notes -->
             <div class="form-group">
               <label for="att-notes">Notes <span class="optional">(optional)</span></label>
-              <textarea id="att-notes" v-model="form.notes" class="form-ta" rows="3" placeholder="Any additional remarks…"></textarea>
+              <textarea id="att-notes" v-model="form.notes" class="form-ta" rows="2" placeholder="Any remarks regarding lecturer attendance, arrival time, or topic…"></textarea>
             </div>
 
             <p v-if="formError" class="form-error">{{ formError }}</p>
             <p v-if="formSuccess" class="form-success">✅ {{ formSuccess }}</p>
 
-            <button type="submit" class="btn-submit" :disabled="store.isLoading || !form.status">
+            <button type="submit" class="btn-submit" :disabled="store.isLoading || !form.status" id="btn-save-attendance">
               <span v-if="store.isLoading">Saving…</span>
               <span v-else>Save Attendance Record</span>
             </button>
@@ -180,11 +259,17 @@ const now = new Date();
 const currentDate = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
 const form = ref({
+  sessionCode: '',
   date: todayStr,
   time: `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
   status: '',
   notes: '',
 });
+
+const isVerifying = ref(false);
+const verifiedSession = ref(null);
+const sessionError = ref('');
+const courseSessions = ref([]);
 
 const statusOptions = [
   { value: 'present', label: 'Present', icon: '✅' },
@@ -207,29 +292,91 @@ async function switchCourse(courseId) {
   activeCourseId.value = courseId;
   formError.value = '';
   formSuccess.value = '';
+  sessionError.value = '';
+  verifiedSession.value = null;
+  form.value.sessionCode = '';
   histLoading.value = true;
-  await store.fetchAttendanceHistory(courseId);
+
+  await Promise.allSettled([
+    store.fetchAttendanceHistory(courseId),
+    loadCourseSessions(courseId)
+  ]);
+
   histLoading.value = false;
+}
+
+async function loadCourseSessions(courseId) {
+  try {
+    courseSessions.value = await store.fetchCourseSessions(courseId);
+  } catch (err) {
+    console.warn('Error loading course sessions:', err);
+    courseSessions.value = [];
+  }
+}
+
+function onSessionCodeInput() {
+  sessionError.value = '';
+  if (verifiedSession.value && verifiedSession.value.pin !== form.value.sessionCode) {
+    verifiedSession.value = null;
+  }
+}
+
+async function handleVerifySession() {
+  if (!form.value.sessionCode || !form.value.sessionCode.trim()) {
+    sessionError.value = 'Please enter a session code to verify.';
+    return;
+  }
+  sessionError.value = '';
+  isVerifying.value = true;
+
+  try {
+    const session = await store.verifySessionCode(form.value.sessionCode, activeCourseId.value);
+    verifiedSession.value = session;
+    // Auto-populate date and time from the verified session creation!
+    if (session.date) form.value.date = session.date;
+    if (session.time) form.value.time = session.time;
+  } catch (err) {
+    verifiedSession.value = null;
+    sessionError.value = err.message || 'Could not verify session code for this course.';
+  } finally {
+    isVerifying.value = false;
+  }
+}
+
+function selectRecentSession(s) {
+  form.value.sessionCode = s.pin;
+  verifiedSession.value = s;
+  sessionError.value = '';
+  if (s.date) form.value.date = s.date;
+  if (s.time) form.value.time = s.time;
+}
+
+function clearSessionCode() {
+  form.value.sessionCode = '';
+  verifiedSession.value = null;
+  sessionError.value = '';
 }
 
 async function submitAttendance() {
   formError.value = '';
   formSuccess.value = '';
   if (!form.value.status) { formError.value = 'Please select a status.'; return; }
+
   try {
     const result = await store.markLecturerAttendance({
       courseId: activeCourseId.value,
+      sessionCode: form.value.sessionCode || null,
       date: form.value.date,
       time: form.value.time,
       status: form.value.status,
       notes: form.value.notes,
     });
-    formSuccess.value = result.message;
+    formSuccess.value = result.message || 'Attendance recorded successfully!';
     form.value.status = '';
     form.value.notes = '';
     setTimeout(() => (formSuccess.value = ''), 4000);
   } catch (err) {
-    formError.value = err.message;
+    formError.value = err.message || 'Failed to record attendance.';
   }
 }
 
@@ -300,6 +447,219 @@ function formatTime(t) {
 .form-in:focus { border-color: #8b5cf6; }
 .form-ta { padding: 0.65rem 0.85rem; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 0.875rem; color: #334155; outline: none; resize: vertical; width: 100%; font-family: inherit; transition: border-color 0.2s; }
 .form-ta:focus { border-color: #8b5cf6; }
+
+/* Session Code Section */
+.session-code-group {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.session-input-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.session-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.session-code-in {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding-right: 2rem;
+  background: #fff;
+}
+
+.clear-session-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+}
+.clear-session-btn:hover {
+  color: #475569;
+}
+
+.btn-verify-session {
+  background: #ede9fe;
+  color: #6d28d9;
+  border: 1.5px solid #c4b5fd;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-verify-session:hover:not(:disabled) {
+  background: #ddd6fe;
+  border-color: #8b5cf6;
+}
+.btn-verify-session:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spinner-xs {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #c4b5fd;
+  border-top-color: #6d28d9;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+/* Recent Sessions Box */
+.recent-sessions-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed #e2e8f0;
+}
+.recent-title {
+  font-size: 0.73rem;
+  color: #64748b;
+  font-weight: 500;
+}
+.recent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.recent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #334155;
+}
+.recent-chip:hover {
+  border-color: #8b5cf6;
+  background: #f5f3ff;
+}
+.recent-chip.active {
+  border-color: #7c3aed;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-weight: 600;
+}
+.chip-code {
+  font-family: monospace;
+  font-weight: 700;
+  color: #6d28d9;
+}
+.chip-meta {
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+/* Verified Session Card */
+.verified-session-card {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+}
+.v-card-icon {
+  width: 28px;
+  height: 28px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+}
+.v-card-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.v-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.v-card-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #14532d;
+}
+.v-card-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.74rem;
+  color: #166534;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.v-card-badge {
+  background: #22c55e;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.sync-tag {
+  margin-left: 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.session-error-msg {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+}
 
 /* Status options */
 .status-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem; }

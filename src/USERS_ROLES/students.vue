@@ -88,15 +88,24 @@ const navigate = (path) => {
   emit('navigate', path);
 };
 
-const userName = computed(() => authStore.profile?.name || 'Student');
+import { watch } from 'vue';
+
+const userName = computed(() => authStore.profile?.name || authStore.user?.user_metadata?.full_name || 'Student');
 const userProgram = computed(() => authStore.profile?.program || 'Enrolled');
 const isClassRep = computed(() => classRepStore.isClassRep);
 
+watch(
+  [() => authStore.user, () => authStore.profile],
+  async ([newUser, newProfile]) => {
+    if (newUser || newProfile) {
+      await classRepStore.fetchMyRoles();
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(async () => {
-  // Silently check if this student has any class rep roles
-  if (authStore.profile?.id) {
-    await classRepStore.fetchMyRoles();
-  }
+  await classRepStore.fetchMyRoles();
 });
 
 const navGroups = computed(() => [

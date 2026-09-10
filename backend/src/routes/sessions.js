@@ -2,6 +2,7 @@ import express from 'express';
 import { 
   startSession, 
   getActiveSessions, 
+  getAllSessions,
   markAttendance, 
   endSession,
   getSessionAttendances
@@ -9,6 +10,9 @@ import {
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Get all sessions (Authenticated)
+router.get('/', authenticateToken, getAllSessions);
 
 // Get list of active sessions (Authenticated)
 router.get('/active', authenticateToken, getActiveSessions);
