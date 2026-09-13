@@ -409,12 +409,17 @@ onMounted(async () => {
       .map(e => e.studentId);
 
     if (studentIds.length > 0) {
-      const { data, error } = await supabase
+      // Only filter by mode when a valid value is set — an empty courseMode
+      // would match zero rows because the DB CHECK constraint requires 'Regular' or 'Weekend'.
+      let userQuery = supabase
         .from('users')
         .select('id, name, id_number, email, mode')
         .in('id', studentIds)
-        .eq('mode', courseMode.value)
         .order('name');
+      if (courseMode.value === 'Regular' || courseMode.value === 'Weekend') {
+        userQuery = userQuery.eq('mode', courseMode.value);
+      }
+      const { data, error } = await userQuery;
 
       if (error) throw error;
 

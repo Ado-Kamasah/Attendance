@@ -153,6 +153,7 @@ const sessionCourseMap = ref({});
 const attendanceMarked = ref(false);
 const markedCourseName = ref('');
 const markedAtTime = ref('');
+const otpError = ref('');
 
 // Computed attendance status for the currently active session
 const mySessionStatus = computed(() => {

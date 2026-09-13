@@ -415,13 +415,13 @@ onMounted(async () => {
     if (studentIds.length > 0) {
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, id_number, program')
+        .select('id, name, id_number, program_id')
         .in('id', studentIds)
         .order('name');
 
       if (!error && data) {
         studentsById.value = Object.fromEntries(
-          data.map((u) => [u.id, { id: u.id, name: u.name, studentId: u.id_number, program: u.program }])
+          data.map((u) => [u.id, { id: u.id, name: u.name, studentId: u.id_number, programId: u.program_id }])
         );
       }
     }
