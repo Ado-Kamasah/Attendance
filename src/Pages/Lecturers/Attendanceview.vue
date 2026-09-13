@@ -77,69 +77,14 @@
             }}</span
             ><span class="bstat-lbl">Expected</span>
           </div>
-          <div class="bstat-div"></div>
-          <div class="bstat" :class="{ 'danger-stat': timeLeft <= 15 }">
-            <span class="bstat-num">{{ timeLeft }}s</span
-            ><span class="bstat-lbl">Remaining</span>
-          </div>
         </div>
       </div>
 
       <!-- === ACTIVE SESSION: split layout === -->
       <div v-if="liveAttendanceSession.isActive" class="session-split">
-        <!-- Left: PIN + Ring -->
         <div class="pin-panel card">
-          <div class="card-header"><h2>Session PIN</h2></div>
+          <div class="card-header"><h2>Active Session</h2></div>
           <div class="pin-panel-body">
-            <div class="ring-wrap">
-              <svg viewBox="0 0 160 160" width="160" height="160">
-                <circle class="ring-track" cx="80" cy="80" r="66" />
-                <circle
-                  class="ring-fill"
-                  cx="80"
-                  cy="80"
-                  r="66"
-                  :stroke-dasharray="circumference"
-                  :stroke-dashoffset="strokeOffset"
-                  :class="{ 'ring-danger': timeLeft <= 15 }"
-                  transform="rotate(-90 80 80)"
-                />
-              </svg>
-              <div class="ring-center">
-                <span class="ring-label">PIN</span>
-                <div class="ring-pin">{{ liveAttendanceSession.pin }}</div>
-                <span
-                  class="ring-time"
-                  :class="{ 'time-danger': timeLeft <= 15 }"
-                  >{{ timeLeft }}s</span
-                >
-              </div>
-            </div>
-            <div class="session-btns">
-              <button class="extend-btn" @click="extendTimer(extendIncrement)">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                +{{ extendIncrement }}s
-              </button>
-              <button class="danger-btn" @click="stopLiveSession">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                </svg>
-                End Session
-              </button>
-            </div>
             <p class="share-hint">
               Attendance confirmation has been sent to the selected students
             </p>
@@ -187,6 +132,17 @@
                 </div>
               </div>
             </div>
+            <button class="danger-btn" @click="stopLiveSession">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              </svg>
+              End Session
+            </button>
           </div>
         </div>
 
@@ -250,68 +206,6 @@
             a confirmation notification.
           </p>
 
-          <!-- Custom timer settings -->
-          <div class="timer-settings">
-            <div class="list-header">
-              <h3>Session Duration</h3>
-            </div>
-            <div class="duration-presets">
-              <button
-                v-for="preset in durationPresets"
-                :key="preset.secs"
-                type="button"
-                class="preset-btn"
-                :class="{
-                  active: !useCustomDuration && durationSecs === preset.secs,
-                }"
-                @click="selectPreset(preset.secs)"
-              >
-                {{ preset.label }}
-              </button>
-              <button
-                type="button"
-                class="preset-btn"
-                :class="{ active: useCustomDuration }"
-                @click="useCustomDuration = true"
-              >
-                Custom
-              </button>
-            </div>
-
-            <div v-if="useCustomDuration" class="custom-duration-row">
-              <label class="custom-duration-field">
-                <span>Minutes</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="60"
-                  v-model.number="customMinutes"
-                  @input="clampCustomDuration"
-                />
-              </label>
-              <label class="custom-duration-field">
-                <span>Seconds</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="59"
-                  v-model.number="customSeconds"
-                  @input="clampCustomDuration"
-                />
-              </label>
-            </div>
-
-            <p class="duration-summary">
-              Session will run for <strong>{{ formattedDuration }}</strong> once
-              started. Extend button adds
-              <strong>{{ extendIncrement }}s</strong> at a time.
-            </p>
-
-            <div v-if="durationError" class="error-banner">
-              {{ durationError }}
-            </div>
-          </div>
-
           <div class="student-selection-list">
             <div class="list-header">
               <h3>
@@ -360,9 +254,7 @@
             <button
               class="start-btn"
               @click="startLiveSession"
-              :disabled="
-                selectedStudents.length === 0 || isStarting || durationSecs <= 0
-              "
+              :disabled="selectedStudents.length === 0 || isStarting"
             >
               <svg
                 v-if="isStarting"
@@ -475,7 +367,7 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authstore';
 import { useSessionsStore } from '@/stores/sessions';
@@ -504,68 +396,14 @@ const courseMode = ref(localStorage.getItem('activeCourseMode') || 'Regular');
 const enrolledStudents = ref([]);
 const selectedStudents = ref([]);
 const liveAttendanceSession = ref({ isActive: false });
-const timeLeft = ref(60);
-const totalTime = ref(60);
 const isStarting = ref(false);
 const startError = ref('');
 
-let timerInterval = null;
 const OTP_API_BASE = import.meta.env.VITE_OTP_API_URL || '';
-
-// ── Custom timer settings (lecturer-configurable, set before starting) ──
-const durationPresets = [
-  { label: '30s', secs: 30 },
-  { label: '1m', secs: 60 },
-  { label: '2m', secs: 120 },
-  { label: '5m', secs: 300 },
-];
-const useCustomDuration = ref(false);
-const durationSecs = ref(60); // preset selection lands here
-const customMinutes = ref(1);
-const customSeconds = ref(0);
-const durationError = ref('');
-
-// The +N button on the ring reuses whatever duration the lecturer picked,
-// capped so it can't be absurdly long — matches "custom timer" intent
-// without needing a second separate control.
-const extendIncrement = computed(() => Math.min(Math.max(durationSecs.value, 5), 120));
-
-const selectPreset = (secs) => {
-  useCustomDuration.value = false;
-  durationSecs.value = secs;
-  durationError.value = '';
-};
-
-const clampCustomDuration = () => {
-  if (customMinutes.value < 0 || Number.isNaN(customMinutes.value)) customMinutes.value = 0;
-  if (customMinutes.value > 60) customMinutes.value = 60;
-  if (customSeconds.value < 0 || Number.isNaN(customSeconds.value)) customSeconds.value = 0;
-  if (customSeconds.value > 59) customSeconds.value = 59;
-};
-
-watch([useCustomDuration, customMinutes, customSeconds], () => {
-  if (!useCustomDuration.value) return;
-  clampCustomDuration();
-  const total = customMinutes.value * 60 + customSeconds.value;
-  durationSecs.value = total;
-  durationError.value = total <= 0 ? 'Session duration must be at least a few seconds.' : '';
-});
-
-const formattedDuration = computed(() => {
-  const secs = durationSecs.value;
-  if (secs <= 0) return '0s';
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  if (m === 0) return `${s}s`;
-  if (s === 0) return `${m}m`;
-  return `${m}m ${s}s`;
-});
 
 // ── Realtime check-in connection state ──
 const isRealtimeConnected = ref(false);
 
-const circumference = 2 * Math.PI * 66; // r=66
-const strokeOffset = computed(() => circumference * (1 - timeLeft.value / totalTime.value));
 const progressPct = computed(() =>
   liveAttendanceSession.value.maxStudents > 0
     ? Math.min(100, (checkedInStudents.value.length / liveAttendanceSession.value.maxStudents) * 100)
@@ -594,29 +432,6 @@ const checkedInStudents = computed(() => {
     .sort((x, y) => new Date(x.timestamp) - new Date(y.timestamp));
 });
 
-// Starts (or restarts) the 1s countdown interval driving `timeLeft`.
-// Shared by a fresh session start and a resumed session on mount so both
-// paths tick down and auto-end the same way.
-function startCountdownInterval() {
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    if (timeLeft.value > 0) {
-      timeLeft.value--;
-    } else {
-      stopLiveSession();
-    }
-  }, 1000);
-}
-
-// On mount, look for a session on THIS course that is still is_active = true
-// in the sessions table. The countdown isn't persisted server-side, so it's
-// derived from `created_at` + the currently configured duration:
-//   remaining = durationSecs - (now - created_at)
-// If that's already <= 0 the session outlived its window while nobody was
-// looking (e.g. the lecturer refreshed or navigated away) — write
-// is_active = false back to close it out rather than resurrecting a dead
-// countdown. Otherwise the live session panel resumes with the correct
-// remaining time and the countdown keeps ticking as normal.
 async function resumeActiveSessionIfAny() {
   if (!courseId.value) return;
 
@@ -637,33 +452,12 @@ async function resumeActiveSessionIfAny() {
   const existing = data?.[0];
   if (!existing) return;
 
-  const elapsedSecs = Math.floor((Date.now() - new Date(existing.created_at).getTime()) / 1000);
-  const total = durationSecs.value; // best-known duration; not persisted server-side
-  const remaining = total - elapsedSecs;
-
-  if (remaining <= 0) {
-    // Expired while unattended — close it out server-side instead of
-    // reviving a countdown that's already run out.
-    try {
-      await supabase.from('sessions').update({ is_active: false }).eq('id', existing.id);
-    } catch (e) {
-      console.error('[AttendanceView] Failed to auto-close expired session:', e);
-    }
-    return;
-  }
-
-  // Still within its window — keep the session live and resume the UI
-  // with the correctly computed remaining countdown.
-  totalTime.value = total;
-  timeLeft.value = remaining;
   liveAttendanceSession.value = {
     id: existing.id,
     isActive: true,
     pin: existing.pin,
     maxStudents: existing.max_students,
   };
-
-  startCountdownInterval();
 }
 
 onMounted(async () => {
@@ -796,11 +590,6 @@ const resendOtpToStudent = async (studentId) => {
 const startLiveSession = async () => {
   startError.value = '';
 
-  if (durationSecs.value <= 0) {
-    startError.value = 'Set a session duration before starting.';
-    return;
-  }
-
   isStarting.value = true;
   try {
     const created = await sessionsStore.createSession({
@@ -811,8 +600,6 @@ const startLiveSession = async () => {
       isActive: true,
     });
 
-    totalTime.value = durationSecs.value;
-    timeLeft.value = durationSecs.value;
     liveAttendanceSession.value = {
       id: created.id,
       isActive: true,
@@ -839,13 +626,11 @@ const startLiveSession = async () => {
 
     auditLogsStore.logAction({
       action: 'session_started',
-      details: `Started attendance session for ${courseCode.value} (PIN: ${created.pin}, ${selectedStudents.value.length} students)`,
+      details: `Started attendance session for ${courseCode.value} (${selectedStudents.value.length} students)`,
       userId: profile.value?.id,
       userRole: profile.value?.role,
       userName: profile.value?.name,
     });
-
-    startCountdownInterval();
 
     // Send attendance confirmation notifications to the marked-present students
     dispatchOtpsToSelected(created.id, created.pin);
@@ -857,7 +642,6 @@ const startLiveSession = async () => {
 };
 
 const stopLiveSession = async () => {
-  clearInterval(timerInterval); timerInterval = null;
   const sessionId = liveAttendanceSession.value.id;
   const courseCode_ = courseCode.value;
 
@@ -902,8 +686,6 @@ const stopLiveSession = async () => {
   otpBannerMessage.value = '';
 };
 
-const extendTimer = (secs) => { if (liveAttendanceSession.value.isActive) timeLeft.value += secs; };
-
 // sessionId -> { status: 'idle'|'sending'|'sent'|'failed', message }
 const otpDispatch = ref({});
 const isDispatchingOtp = ref(false);
@@ -913,7 +695,6 @@ const otpBannerMessage = ref('');
 const sessionReport = ref(null);
 
 onUnmounted(() => {
-  clearInterval(timerInterval);
   attendancesStore.unsubscribeFromAttendances();
   isRealtimeConnected.value = false;
 });
