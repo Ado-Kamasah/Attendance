@@ -267,19 +267,19 @@ const submitAttendance = async () => {
       isActive: false, // no live period - mark-and-close immediately
     });
 
-    // 2. Mark every enrolled student present or absent
+    // 2. Mark every enrolled student present or absent — single bulk upsert
     const selectedIds = new Set(selectedStudents.value);
     const presentStudents = enrolledStudents.value.filter(s => selectedIds.has(s.id));
     const absentStudents  = enrolledStudents.value.filter(s => !selectedIds.has(s.id));
 
-    await Promise.allSettled(
-      enrolledStudents.value.map(s =>
-        attendancesStore.markAttendance(
-          { sessionId: created.id, studentId: s.id, status: selectedIds.has(s.id) ? 'present' : 'absent' },
-          { silent: true }
-        )
-      )
-    );
+    const attendanceRecords = enrolledStudents.value.map(s => ({
+      sessionId: created.id,
+      studentId: s.id,
+      status: selectedIds.has(s.id) ? 'present' : 'absent',
+    }));
+
+    await attendancesStore.markAttendanceBulk(attendanceRecords, { silent: true });
+
 
     auditLogsStore.logAction({
       action: 'attendance_recorded',

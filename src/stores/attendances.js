@@ -20,6 +20,8 @@ function toRow(attendance) {
   if (attendance.sessionId !== undefined) row.session_id = attendance.sessionId;
   if (attendance.studentId !== undefined) row.student_id = attendance.studentId;
   if (attendance.status !== undefined) row.status = attendance.status;
+  // Always include timestamp so the DB default is never relied upon in edge cases
+  row.timestamp = new Date().toISOString();
   return row;
 }
 
@@ -78,7 +80,6 @@ export const useAttendancesStore = defineStore('attendances', () => {
       if (filters.studentId) query = query.eq('student_id', filters.studentId);
       if (filters.status) query = query.eq('status', filters.status);
       if (filters.limit) query = query.limit(filters.limit);
-      else if (!filters.sessionId && !filters.studentId) query = query.limit(250);
 
       const { data, error: fetchErr } = await query;
       if (fetchErr) throw fetchErr;
@@ -108,20 +109,74 @@ export const useAttendancesStore = defineStore('attendances', () => {
     try {
       const { data, error: insertErr } = await supabase
         .from(TABLE)
-        .insert(toRow(attendance))
+        .upsert(toRow(attendance), { onConflict: 'session_id,student_id' })
         .select()
         .single();
 
       if (insertErr) throw insertErr;
 
       const created = mapAttendance(data);
-      attendances.value.unshift(created);
+      // Replace existing record if it was already in local state
+      const existingIdx = attendances.value.findIndex(
+        (a) => a.sessionId === created.sessionId && a.studentId === created.studentId
+      );
+      if (existingIdx !== -1) {
+        attendances.value[existingIdx] = created;
+      } else {
+        attendances.value.unshift(created);
+      }
       if (!options.silent) push.success({ title: 'Attendance recorded' });
       return created;
     } catch (err) {
       const normalized = normalizeError(err);
       error.value = normalized.message;
       if (!options.silent) push.error({ title: 'Failed to record attendance', message: normalized.message });
+      throw normalized;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /**
+   * Bulk-insert or update attendance for an entire class in one round-trip.
+   * records: Array<{ sessionId, studentId, status }>
+   * options: { silent? }
+   */
+  async function markAttendanceBulk(records, options = {}) {
+    if (!records || records.length === 0) return [];
+    isLoading.value = true;
+    error.value = '';
+
+    try {
+      const rows = records.map(toRow);
+
+      const { data, error: upsertErr } = await supabase
+        .from(TABLE)
+        .upsert(rows, { onConflict: 'session_id,student_id' })
+        .select();
+
+      if (upsertErr) throw upsertErr;
+
+      const created = (data ?? []).map(mapAttendance);
+
+      // Merge into local state (replace existing, prepend new)
+      for (const rec of created) {
+        const idx = attendances.value.findIndex(
+          (a) => a.sessionId === rec.sessionId && a.studentId === rec.studentId
+        );
+        if (idx !== -1) {
+          attendances.value[idx] = rec;
+        } else {
+          attendances.value.unshift(rec);
+        }
+      }
+
+      if (!options.silent) push.success({ title: 'Attendance saved', message: `${created.length} records saved.` });
+      return created;
+    } catch (err) {
+      const normalized = normalizeError(err);
+      error.value = normalized.message;
+      if (!options.silent) push.error({ title: 'Failed to save attendance', message: normalized.message });
       throw normalized;
     } finally {
       isLoading.value = false;
@@ -229,6 +284,7 @@ export const useAttendancesStore = defineStore('attendances', () => {
     getAttendanceRecord,
     fetchAttendances,
     markAttendance,
+    markAttendanceBulk,
     updateAttendanceStatus,
     deleteAttendance,
     removeBySessionId,

@@ -90,20 +90,21 @@ export const useSessionsStore = defineStore('sessions', () => {
     try {
       let supaList = [];
       try {
-        let query = supabase.from(TABLE).select('*').order('date', { ascending: false });
+        let query = supabase.from(TABLE).select('*').order('created_at', { ascending: false });
 
         if (filters.courseId) query = query.eq('course_id', filters.courseId);
         if (filters.lecturerId) query = query.eq('lecturer_id', filters.lecturerId);
         if (filters.isActive !== undefined) query = query.eq('is_active', filters.isActive);
 
         const { data, error: fetchErr } = await query;
-        if (!fetchErr && data && data.length > 0) {
-          supaList = data.map(mapSession);
-        }
+        if (fetchErr) throw fetchErr;
+        supaList = (data ?? []).map(mapSession);
       } catch (sbErr) {
         console.warn('Supabase sessions fetch error:', sbErr);
       }
 
+      // Use Supabase data (even if empty) unless it completely failed (supaList stays [])
+      // Only fall back to Express API when supabase threw an error
       if (supaList.length > 0) {
         sessions.value = supaList;
         return sessions.value;

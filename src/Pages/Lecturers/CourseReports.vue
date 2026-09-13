@@ -76,7 +76,7 @@
         </button>
       </div>
 
-      <!-- Empty State -->
+      <!-- Empty State for report cards -->
       <div v-if="reportData.length === 0" class="empty-state">
         <div class="icon-wrap">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -91,166 +91,165 @@
         <p>No attendance data matches the current filters. Try widening your date range or clearing filters.</p>
       </div>
 
-      <!-- Reports Content -->
-      <template v-else>
-        <div class="reports-content">
-          <div class="course-report-card" v-for="report in reportData" :key="report.courseId">
-            <div class="card-header">
-              <div class="course-info">
-                <span class="course-code">{{ report.code }}</span>
-                <span class="semester-tag">{{ report.semester }}</span>
-                <span class="semester-tag level-tag">{{ report.level }}</span>
-                <h3>{{ report.name }}</h3>
+      <!-- Report Cards (only when there are courses with sessions) -->
+      <div v-else class="reports-content">
+        <div class="course-report-card" v-for="report in reportData" :key="report.courseId">
+          <div class="card-header">
+            <div class="course-info">
+              <span class="course-code">{{ report.code }}</span>
+              <span class="semester-tag">{{ report.semester }}</span>
+              <span class="semester-tag level-tag">{{ report.level }}</span>
+              <h3>{{ report.name }}</h3>
+            </div>
+            <div class="attendance-stat">
+              <span class="stat-value">{{ report.avgAttendance }}%</span>
+              <span class="stat-label">Avg. Attendance</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="label">Total Students</span>
+                <span class="value">{{ report.totalStudents }}</span>
               </div>
-              <div class="attendance-stat">
-                <span class="stat-value">{{ report.avgAttendance }}%</span>
-                <span class="stat-label">Avg. Attendance</span>
+              <div class="stat-item">
+                <span class="label">Sessions Held</span>
+                <span class="value">{{ report.sessionsHeld }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="label">Perfect Attendance</span>
+                <span class="value text-emerald">{{ report.perfectAttendance }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="label">At Risk (&lt; 50%)</span>
+                <span class="value text-rose">{{ report.atRisk }}</span>
               </div>
             </div>
 
-            <div class="card-body">
-              <div class="stats-grid">
-                <div class="stat-item">
-                  <span class="label">Total Students</span>
-                  <span class="value">{{ report.totalStudents }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="label">Sessions Held</span>
-                  <span class="value">{{ report.sessionsHeld }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="label">Perfect Attendance</span>
-                  <span class="value text-emerald">{{ report.perfectAttendance }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="label">At Risk (&lt; 50%)</span>
-                  <span class="value text-rose">{{ report.atRisk }}</span>
-                </div>
-              </div>
-
-              <button class="view-details-btn" @click="openStudentList(report)">View Full Student List</button>
-            </div>
+            <button class="view-details-btn" @click="openStudentList(report)">View Full Student List</button>
           </div>
         </div>
+      </div>
 
-        <!-- History grouped by session -->
-        <div class="history-card">
-          <div class="history-header">
-            <div>
-              <h2>Attendance History</h2>
-              <p class="history-sub">{{ filteredSessions.length }} session{{ filteredSessions.length !== 1 ? 's' : '' }} · {{ historyRows.length }} record{{ historyRows.length !== 1 ? 's' : '' }}</p>
-            </div>
-            <span class="count-pill">{{ historyRows.length }} record{{ historyRows.length === 1 ? '' : 's' }}</span>
+      <!-- History grouped by session — always visible when sessions exist -->
+      <div class="history-card" v-if="sessionGroups.length > 0 || filteredSessions.length > 0">
+        <div class="history-header">
+          <div>
+            <h2>Attendance History</h2>
+            <p class="history-sub">{{ filteredSessions.length }} session{{ filteredSessions.length !== 1 ? 's' : '' }} · {{ historyRows.length }} record{{ historyRows.length !== 1 ? 's' : '' }}</p>
           </div>
+          <span class="count-pill">{{ historyRows.length }} record{{ historyRows.length === 1 ? '' : 's' }}</span>
+        </div>
 
-          <div v-if="sessionGroups.length === 0" class="empty-students">
-            <p>No attendance records match the current filters.</p>
-          </div>
-          <div v-else class="students-table-wrapper">
-            <table class="students-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Course</th>
-                  <th>Session PIN</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                  <th></th>
+        <div v-if="sessionGroups.length === 0" class="empty-students">
+          <p>No attendance records match the current filters.</p>
+        </div>
+        <div v-else class="students-table-wrapper">
+          <table class="students-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Course</th>
+                <th>Session PIN</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-for="group in sessionGroups" :key="group.sessionId">
+                <!-- Session group header row -->
+                <tr class="session-group-row">
+                  <td colspan="6" class="session-group-cell">
+                    <span class="sg-pin">PIN {{ group.pin }}</span>
+                    <span class="sg-course">{{ group.courseCode }} ~ {{ group.courseName }}</span>
+                    <span class="sg-date">{{ group.dateStr }}</span>
+                    <span class="sg-count">{{ group.rows.length }} student{{ group.rows.length !== 1 ? 's' : '' }}</span>
+                  </td>
+                  <td class="session-delete-cell">
+                    <button
+                      class="session-delete-btn"
+                      @click="confirmDeleteSession(group)"
+                      :disabled="deletingSessionId === group.sessionId"
+                      title="Delete this session"
+                    >
+                      <svg v-if="deletingSessionId === group.sessionId" class="spin-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
+                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                <template v-for="group in sessionGroups" :key="group.sessionId">
-                  <!-- Session group header row -->
-                  <tr class="session-group-row">
-                    <td colspan="6" class="session-group-cell">
-                      <span class="sg-pin">PIN {{ group.pin }}</span>
-                      <span class="sg-course">{{ group.courseCode }} ~ {{ group.courseName }}</span>
-                      <span class="sg-date">{{ group.dateStr }}</span>
-                      <span class="sg-count">{{ group.rows.length }} student{{ group.rows.length !== 1 ? 's' : '' }}</span>
-                    </td>
-                    <td class="session-delete-cell">
-                      <button
-                        class="session-delete-btn"
-                        @click="confirmDeleteSession(group)"
-                        :disabled="deletingSessionId === group.sessionId"
-                        title="Delete this session"
+                <!-- If session was held but has no student check-ins yet -->
+                <tr v-if="group.rows.length === 0" class="empty-session-row">
+                  <td colspan="7" class="empty-session-cell">
+                    Session held (PIN {{ group.pin }}) · No student attendance check-ins recorded yet.
+                  </td>
+                </tr>
+                <!-- Attendance rows for this session -->
+                <tr v-for="row in group.rows" :key="row.id" class="attendance-row">
+                  <td>
+                    <div class="student-cell">
+                      <div class="student-avatar">{{ row.studentName.charAt(0) }}</div>
+                      <span class="student-name">{{ row.studentName }}</span>
+                    </div>
+                  </td>
+                  <td>{{ row.courseCode }} ~ {{ row.courseName }}</td>
+                  <td><span class="pin-chip">{{ row.pin }}</span></td>
+                  <td>{{ row.dateStr }}</td>
+                  <td>{{ row.timeStr }}</td>
+                  <td>
+                    <!-- Inline status editor — only reachable for pending/absent rows -->
+                    <div v-if="editingRowId === row.id" class="status-edit-wrap">
+                      <select
+                        class="status-edit-select"
+                        v-model="editingStatus"
+                        :disabled="savingRowId === row.id"
+                        @change="saveStatusEdit(row)"
                       >
-                        <svg v-if="deletingSessionId === group.sessionId" class="spin-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
-                        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="3 6 5 6 21 6"/>
-                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                          <path d="M10 11v6M14 11v6"/>
-                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                  <!-- If session was held but has no student check-ins yet -->
-                  <tr v-if="group.rows.length === 0" class="empty-session-row">
-                    <td colspan="7" class="empty-session-cell">
-                      Session held (PIN {{ group.pin }}) · No student attendance check-ins recorded yet.
-                    </td>
-                  </tr>
-                  <!-- Attendance rows for this session -->
-                  <tr v-for="row in group.rows" :key="row.id" class="attendance-row">
-                    <td>
-                      <div class="student-cell">
-                        <div class="student-avatar">{{ row.studentName.charAt(0) }}</div>
-                        <span class="student-name">{{ row.studentName }}</span>
-                      </div>
-                    </td>
-                    <td>{{ row.courseCode }} ~ {{ row.courseName }}</td>
-                    <td><span class="pin-chip">{{ row.pin }}</span></td>
-                    <td>{{ row.dateStr }}</td>
-                    <td>{{ row.timeStr }}</td>
-                    <td>
-                      <!-- Inline status editor — only reachable for pending/absent rows -->
-                      <div v-if="editingRowId === row.id" class="status-edit-wrap">
-                        <select
-                          class="status-edit-select"
-                          v-model="editingStatus"
-                          :disabled="savingRowId === row.id"
-                          @change="saveStatusEdit(row)"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="absent">Absent</option>
-                          <option value="present">Present</option>
-                        </select>
-                        <button
-                          class="status-edit-cancel"
-                          title="Cancel"
-                          :disabled="savingRowId === row.id"
-                          @click="cancelStatusEdit"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                      </div>
-                      <span v-else class="attendance-badge" :class="badgeClass(row.status)">
-                        {{ statusLabel(row.status) }}
-                      </span>
-                    </td>
-                    <td class="status-edit-cell">
-                      <!-- Editing is only offered for pending/absent rows — a confirmed
-                           'present' check-in (verified by OTP) stays locked here. -->
+                        <option value="pending">Pending</option>
+                        <option value="absent">Absent</option>
+                        <option value="present">Present</option>
+                      </select>
                       <button
-                        v-if="editingRowId !== row.id && (row.status === 'pending' || row.status === 'absent')"
-                        class="status-edit-btn"
-                        title="Edit attendance status"
-                        :disabled="!!savingRowId"
-                        @click="startStatusEdit(row)"
+                        class="status-edit-cancel"
+                        title="Cancel"
+                        :disabled="savingRowId === row.id"
+                        @click="cancelStatusEdit"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                       </button>
-                    </td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                    <span v-else class="attendance-badge" :class="badgeClass(row.status)">
+                      {{ statusLabel(row.status) }}
+                    </span>
+                  </td>
+                  <td class="status-edit-cell">
+                    <!-- Editing is only offered for pending/absent rows — a confirmed
+                         'present' check-in (verified by OTP) stays locked here. -->
+                    <button
+                      v-if="editingRowId !== row.id && (row.status === 'pending' || row.status === 'absent')"
+                      class="status-edit-btn"
+                      title="Edit attendance status"
+                      :disabled="!!savingRowId"
+                      @click="startStatusEdit(row)"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
         </div>
-      </template>
+      </div>
     </template>
+
 
     <!-- Student List Modal -->
     <div class="modal-backdrop" v-if="isModalOpen" @click.self="closeModal">
@@ -590,10 +589,22 @@ const reportData = computed(() => {
   for (const c of coursesForLecturer.value) {
     candidateCoursesMap.set(c.id, c);
   }
+  // Always include courses from filtered sessions, even if not in coursesForLecturer
   for (const s of filteredSessions.value) {
-    if (!candidateCoursesMap.has(s.courseId)) {
+    if (s.courseId && !candidateCoursesMap.has(s.courseId)) {
       const c = coursesStore.getCourseById(s.courseId);
-      if (c) candidateCoursesMap.set(c.id, c);
+      if (c) {
+        candidateCoursesMap.set(c.id, c);
+      } else {
+        // Session references a course not in the store — build a minimal placeholder
+        candidateCoursesMap.set(s.courseId, {
+          id: s.courseId,
+          code: s.courseCode ?? '—',
+          name: s.courseName ?? 'Unknown Course',
+          level: null,
+          semester: null,
+        });
+      }
     }
   }
 
@@ -661,8 +672,9 @@ const reportData = computed(() => {
     });
   }
 
-  return rows.sort((a, b) => a.code.localeCompare(b.code));
+  return rows.sort((a, b) => (a.code ?? '').localeCompare(b.code ?? ''));
 });
+
 
 const openStudentList = (report) => {
   selectedReport.value = report;
