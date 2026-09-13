@@ -240,10 +240,15 @@
 
               <!-- Role Badge -->
               <td>
-                <span class="role-badge" :class="getRoleBadgeClass(user.role)">
-                  <span class="role-dot"></span>
-                  {{ formatRole(user.role) }}
-                </span>
+                <div style="display: inline-flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                  <span class="role-badge" :class="getRoleBadgeClass(user.role)">
+                    <span class="role-dot"></span>
+                    {{ formatRole(user.role) }}
+                  </span>
+                  <span v-if="isClassRep(user.id)" class="role-badge badge-role-classrep" title="Assigned as Class Representative">
+                    🎓 Class Rep
+                  </span>
+                </div>
               </td>
 
               <!-- Program / Department -->
@@ -264,8 +269,22 @@
               <td class="text-right">
                 <div class="action-buttons">
                   <button 
+<<<<<<< HEAD
                     class="action-btn"
                     :class="isSuperAdmin ? 'edit-btn' : 'view-btn'"
+=======
+                    v-if="user.role === 'STUDENT'"
+                    class="action-btn rep-btn" 
+                    @click="navigateToClassRep" 
+                    title="Manage Class Rep"
+                    :id="'btn-rep-' + user.id"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </button>
+
+                  <button 
+                    class="action-btn edit-btn" 
+>>>>>>> c462b06258bbd7443d9e750ae210dc97ea810d4b
                     @click="openEditModal(user)" 
                     :title="isSuperAdmin ? 'Edit User' : 'View User Details'"
                     :id="(isSuperAdmin ? 'btn-edit-' : 'btn-view-') + user.id"
@@ -544,8 +563,10 @@ import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/stores/supabase';
 import api from '@/api.js';
 import { useAuthStore } from '@/stores/authstore.js';
+import { useClassRepStore } from '@/stores/classrep.js';
 
 const authStore = useAuthStore();
+const classRepStore = useClassRepStore();
 
 const isSuperAdmin = computed(() => {
   const r = (authStore.profile?.role || '').toUpperCase().replace(/[\s_-]+/g, '_');
@@ -724,6 +745,7 @@ const fetchUsers = async () => {
 
 onMounted(async () => {
   await fetchUsers();
+  await classRepStore.fetchAllReps().catch(() => {});
   // Load programmes for select dropdown
   try {
     const { data } = await supabase.from('programmes').select('id, name').order('name');
@@ -998,6 +1020,15 @@ const getRoleBadgeClass = (role) => {
   if (r === 'LECTURER') return 'role-lecturer';
   if (r === 'FINANCE') return 'role-finance';
   return 'role-student';
+};
+
+const isClassRep = (id) => {
+  return classRepStore.allReps.some(r => r.studentId === id || r.studentEmail === id);
+};
+
+const navigateToClassRep = () => {
+  window.history.pushState({ path: '/classrep-management' }, '', '/classrep-management');
+  window.dispatchEvent(new PopStateEvent('popstate', { state: { path: '/classrep-management' } }));
 };
 
 const getAvatarClass = (role) => {
@@ -2070,5 +2101,24 @@ const formatDate = (dateStr) => {
 
 .text-right {
   text-align: right;
+}
+
+.badge-role-classrep {
+  background: #e0e7ff;
+  color: #4338ca;
+  font-weight: 700;
+  border: 1px solid #c7d2fe;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+}
+
+.rep-btn {
+  color: #6366f1;
+}
+
+.rep-btn:hover {
+  background: #e0e7ff;
+  color: #4338ca;
 }
 </style>

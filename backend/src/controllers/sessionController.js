@@ -145,6 +145,60 @@ export const getActiveSessions = async (req, res) => {
 };
 
 /**
+ * Fetch all sessions (historical and active)
+ */
+export const getAllSessions = async (req, res) => {
+  try {
+    const { courseId, lecturerId } = req.query;
+    const where = {};
+    if (courseId) where.courseId = courseId;
+    if (lecturerId) where.lecturerId = lecturerId;
+
+    const sessions = await prisma.session.findMany({
+      where,
+      include: {
+        course: {
+          select: {
+            code: true,
+            name: true
+          }
+        },
+        lecturer: {
+          select: {
+            name: true
+          }
+        },
+        _count: {
+          select: { attendances: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formatted = sessions.map(s => ({
+      id: s.id,
+      courseId: s.courseId,
+      courseCode: s.course?.code ?? '—',
+      courseName: s.course?.name ?? 'Unknown Course',
+      lecturerId: s.lecturerId,
+      lecturerName: s.lecturer?.name || 'Unknown Lecturer',
+      pin: s.pin,
+      date: s.date ? new Date(s.date).toISOString().split('T')[0] : (s.createdAt ? new Date(s.createdAt).toISOString().split('T')[0] : null),
+      maxStudents: s.maxStudents,
+      isActive: s.isActive,
+      currentStudents: s._count?.attendances ?? 0,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt
+    }));
+
+    res.status(200).json(formatted);
+  } catch (error) {
+    console.error('Fetch all sessions error:', error);
+    res.status(500).json({ message: 'Server error fetching sessions', error: error.message });
+  }
+};
+
+/**
  * Student submits PIN to mark attendance
  */
 export const markAttendance = async (req, res) => {
