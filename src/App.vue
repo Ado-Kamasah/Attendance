@@ -32,6 +32,7 @@ import LecturerDashboard from './Pages/Lecturers/lecturerDashboard.vue';
 import LecturerCourses from './Pages/Lecturers/MyCourses.vue';
 import AttendanceView from './Pages/Lecturers/Attendanceview.vue';
 import CourseReports from './Pages/Lecturers/CourseReports.vue';
+import AttendanceAnalytics from './Pages/Lecturers/AttendanceAnalytics.vue';
 import Profile from './Pages/Profile/Profile.vue';
 import Notifications from './Pages/Notifications.vue';
 import { onMounted, onUnmounted } from 'vue';
@@ -159,6 +160,7 @@ const handleRegisterSuccess = () => {
         <MarkAttendance v-else-if="currentRoute === '/attendance'" />
         <AttendanceView v-else-if="currentRoute === '/attendance-view'" @navigate="handleNavigationEvent" />
         <CourseReports v-else-if="currentRoute === '/lecturer-reports'" />
+        <AttendanceAnalytics v-else-if="currentRoute === '/attendance-analytics'" />
         <Schedule v-else-if="currentRoute === '/schedule'" />
         <SemesterSetup v-else-if="currentRoute === '/semestersetup'" />
         <Faculties v-else-if="currentRoute === '/faculties'" />
@@ -208,7 +210,8 @@ html, body, #app {
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  overflow-x: hidden;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .main-content {
@@ -217,6 +220,7 @@ html, body, #app {
   overflow-y: auto;
   overflow-x: hidden;
   min-width: 0;
+  min-height: 0;
 }
 
 @media (max-width: 768px) {

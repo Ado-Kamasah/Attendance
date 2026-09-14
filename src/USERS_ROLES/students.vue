@@ -157,9 +157,11 @@ const navGroups = computed(() => [
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 .sidebar-wrapper {
-  position: relative;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-shrink: 0;
   z-index: 1000;
-  height: 100%;
 }
 
 .mobile-overlay {
@@ -179,7 +181,7 @@ const navGroups = computed(() => [
 .sidebar {
   font-family: 'Inter', sans-serif;
   width: 290px;
-  height: 100%;
+  height: 100vh;
   background-color: #0f172a;
   color: #f8fafc;
   display: flex;

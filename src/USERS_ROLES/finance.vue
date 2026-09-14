@@ -119,12 +119,12 @@ export default {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-.sidebar-wrapper { position: relative; z-index: 1000; height: 100%; }
+.sidebar-wrapper { position: sticky; top: 0; height: 100vh; flex-shrink: 0; z-index: 1000; }
 .mobile-overlay  { display: none; }
 
 .sidebar {
   width: 260px;
-  height: 100%;
+  height: 100vh;
   background: linear-gradient(180deg, #0c1220 0%, #0f172a 50%, #0c1220 100%);
   display: flex;
   flex-direction: column;

@@ -113,6 +113,11 @@ const navGroups = [
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`
       },
       {
+        name: 'Attendance Analytics',
+        path: '/attendance-analytics',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21H3V3"/><path d="M7 14l4-4 4 4 4-8"/></svg>`
+      },
+      {
         name: 'My Profile',
         path: '/profile',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -126,9 +131,11 @@ const navGroups = [
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 .sidebar-wrapper {
-  position: relative;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-shrink: 0;
   z-index: 1000;
-  height: 100%;
 }
 
 .mobile-overlay {
@@ -148,7 +155,7 @@ const navGroups = [
 .sidebar {
   font-family: 'Inter', sans-serif;
   width: 290px;
-  height: 100%;
+  height: 100vh;
   background-color: #0f172a;
   color: #f8fafc;
   display: flex;
