@@ -70,6 +70,20 @@
           <span class="svc-date">{{ fmtDate(s.createdAt) }}</span>
         </div>
 
+        <!-- Student info -->
+        <div class="svc-student">
+          <template v-if="s.isAnonymous">
+            <span class="anon-badge">🔒 Anonymous Submission</span>
+          </template>
+          <template v-else>
+            <div class="student-avatar">{{ (s.studentName || '?').charAt(0).toUpperCase() }}</div>
+            <div class="student-info">
+              <span class="student-name">{{ s.studentName }}</span>
+              <span class="student-id" v-if="s.idNumber">ID: {{ s.idNumber }}</span>
+            </div>
+          </template>
+        </div>
+
         <!-- Subject -->
         <p class="svc-subject">{{ s.subject }}</p>
 
@@ -136,7 +150,7 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue';
-import api from '@/api.js';
+import { supabase } from '@/stores/supabase';
 
 const suggestions = ref([]);
 const isLoading   = ref(false);
@@ -185,8 +199,25 @@ const filtered = computed(() => {
 async function load() {
   isLoading.value = true;
   try {
-    const { data } = await api.get('/suggestions');
-    suggestions.value = data.map(s => ({ ...s, _saving: false }));
+    const { data, error: sbErr } = await supabase
+      .from('suggestions')
+      .select('id, student_id, category, subject, message, is_anonymous, status, admin_note, created_at, users(name, id_number)')
+      .order('created_at', { ascending: false });
+    if (sbErr) throw sbErr;
+    suggestions.value = (data ?? []).map(s => ({
+      id:          s.id,
+      studentId:   s.student_id,
+      studentName: s.is_anonymous ? 'Anonymous' : (s.users?.name || 'Student'),
+      idNumber:    s.is_anonymous ? null : (s.users?.id_number || null),
+      category:    s.category,
+      subject:     s.subject,
+      message:     s.message,
+      isAnonymous: s.is_anonymous,
+      status:      s.status,
+      adminNote:   s.admin_note,
+      createdAt:   s.created_at,
+      _saving:     false,
+    }));
   } catch { /* silent */ } finally {
     isLoading.value = false;
   }
@@ -195,7 +226,11 @@ async function load() {
 async function changeStatus(s, newStatus) {
   s._saving = true;
   try {
-    await api.patch(`/suggestions/${s.id}`, { status: newStatus });
+    const { error: sbErr } = await supabase
+      .from('suggestions')
+      .update({ status: newStatus })
+      .eq('id', s.id);
+    if (sbErr) throw sbErr;
     s.status = newStatus;
   } catch { /* silent */ } finally {
     s._saving = false;
@@ -212,7 +247,11 @@ function openNote(s) {
 async function saveNote() {
   noteModal.saving = true;
   try {
-    await api.patch(`/suggestions/${noteModal.id}`, { adminNote: noteModal.note });
+    const { error: sbErr } = await supabase
+      .from('suggestions')
+      .update({ admin_note: noteModal.note })
+      .eq('id', noteModal.id);
+    if (sbErr) throw sbErr;
     const s = suggestions.value.find(x => x.id === noteModal.id);
     if (s) s.adminNote = noteModal.note;
     noteModal.open = false;
@@ -223,6 +262,8 @@ async function saveNote() {
 
 onMounted(load);
 </script>
+
+
 
 <style scoped>
 * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
@@ -292,6 +333,13 @@ onMounted(load);
 .svc-date    { font-size: .75rem; color: #94a3b8; margin-left: auto; white-space: nowrap; }
 .svc-status  { font-size: .72rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; }
 .svc-msg     { margin: 0; font-size: .875rem; color: #475569; line-height: 1.6; }
+/* Student info row */
+.svc-student { display: flex; align-items: center; gap: .6rem; }
+.student-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; flex-shrink: 0; }
+.student-info { display: flex; flex-direction: column; line-height: 1.3; }
+.student-name { font-size: .82rem; font-weight: 700; color: #1e293b; }
+.student-id   { font-size: .72rem; color: #64748b; font-weight: 500; }
+.anon-badge   { display: inline-flex; align-items: center; gap: .35rem; font-size: .75rem; font-weight: 700; color: #7c3aed; background: #f3e8ff; padding: .2rem .65rem; border-radius: 999px; }
 
 .svc-note {
   display: flex; align-items: flex-start; gap: .6rem;

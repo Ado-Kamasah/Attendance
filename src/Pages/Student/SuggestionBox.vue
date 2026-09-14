@@ -149,8 +149,10 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import api from '@/api.js';
+import { supabase } from '@/stores/supabase';
+import { useAuthStore } from '@/stores/authstore';
 
+const authStore = useAuthStore();
 const tab       = ref('submit');
 const isSubmitting = ref(false);
 const successMsg   = ref('');
@@ -188,21 +190,25 @@ async function handleSubmit() {
 
   isSubmitting.value = true;
   try {
-    await api.post('/suggestions', {
-      category:    form.category,
-      subject:     form.subject.trim(),
-      message:     form.message.trim(),
-      isAnonymous: form.isAnonymous,
+    const studentId = authStore.profile?.id || authStore.user?.id;
+    const { error: sbErr } = await supabase.from('suggestions').insert({
+      student_id:   studentId,
+      category:     form.category,
+      subject:      form.subject.trim(),
+      message:      form.message.trim(),
+      is_anonymous: form.isAnonymous,
+      status:       'unread',
     });
+    if (sbErr) throw sbErr;
     successMsg.value = '✅ Your submission has been received. Thank you!';
-    // Reset
     form.category    = '';
     form.subject     = '';
     form.message     = '';
     form.isAnonymous = false;
+    myList.value = []; // reset cache so next history load is fresh
     setTimeout(() => (successMsg.value = ''), 5000);
   } catch (e) {
-    submitError.value = e?.response?.data?.message || 'Failed to submit. Please try again.';
+    submitError.value = e?.message || 'Failed to submit. Please try again.';
   } finally {
     isSubmitting.value = false;
   }
@@ -212,8 +218,23 @@ async function loadMy() {
   if (myList.value.length) return; // cache
   loadingMy.value = true;
   try {
-    const { data } = await api.get('/suggestions/my');
-    myList.value = data;
+    const studentId = authStore.profile?.id || authStore.user?.id;
+    const { data, error: sbErr } = await supabase
+      .from('suggestions')
+      .select('id, category, subject, message, is_anonymous, status, admin_note, created_at')
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false });
+    if (sbErr) throw sbErr;
+    myList.value = (data ?? []).map(s => ({
+      id:          s.id,
+      category:    s.category,
+      subject:     s.subject,
+      message:     s.message,
+      isAnonymous: s.is_anonymous,
+      status:      s.status,
+      adminNote:   s.admin_note,
+      createdAt:   s.created_at,
+    }));
   } catch { /* silent */ } finally {
     loadingMy.value = false;
   }
@@ -224,6 +245,7 @@ const catLabel = (v) => categories.find(c => c.value === v)?.label ?? v;
 const statusLabel = (s) => ({ unread: '🔵 Unread', reviewed: '🟡 Reviewed', resolved: '🟢 Resolved' })[s] ?? s;
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 </script>
+
 
 <style scoped>
 * { font-family: 'Inter', sans-serif; box-sizing: border-box; }

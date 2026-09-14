@@ -225,21 +225,11 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authstore';
 
 const authStore = useAuthStore();
-const router = useRouter();
 
-// Where each detected role lands after a successful login.
-// Adjust these paths to match your actual route names/paths.
-const ROLE_DASHBOARDS = {
-  SUPER_ADMIN: '/users-admin',
-  ADMIN:    '/',
-  LECTURER: '/lecturer-dashboard',
-  STUDENT:  '/student-dashboard',
-  FINANCE:  '/finance-dashboard',
-};
+
 
 const loginId = ref('');
 const password = ref('');
@@ -270,16 +260,12 @@ const handleLogin = async () => {
       password: password.value,
     });
 
+    // Emit to App.vue which handles navigation via redirectForRole()
     emit('login-success', {
       loginId: profile.id,
       role: profile.role,
       user: profile,
     });
-
-    // Role comes from the profile row, not user input — route accordingly.
-    const normalizedRole = (profile.role || '').toUpperCase().replace(/[\s_-]+/g, '_');
-    const destination = ROLE_DASHBOARDS[normalizedRole] || '/';
-    router.push(destination);
   } catch (err) {
     console.error('Login error:', err);
     errorMsg.value = err.message || 'Failed to login. Please check your credentials.';
