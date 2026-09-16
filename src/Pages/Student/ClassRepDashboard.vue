@@ -4,7 +4,7 @@
     <div class="dash-header">
       <div>
         <div class="title-row">
-          <span class="cr-badge">🎓 Class Rep</span>
+          <span class="cr-badge">Class Rep</span>
           <h1 class="page-title">Class Rep Dashboard</h1>
         </div>
         <p class="page-subtitle">{{ currentDate }} · Mark and track lecturer attendance</p>
@@ -18,7 +18,7 @@
 
     <!-- No roles assigned -->
     <div v-else-if="store.myRoles.length === 0" class="empty-state">
-      <div class="empty-icon">🎓</div>
+      <div class="empty-icon">CR</div>
       <h3>No Class Rep Roles Found</h3>
       <p>You have not been assigned as a class representative for any course yet. Please contact your administrator.</p>
     </div>
@@ -42,7 +42,7 @@
         <!-- Left: Mark Attendance Form -->
         <div class="panel mark-panel">
           <div class="panel-head">
-            <div class="panel-icon">📋</div>
+            <div class="panel-icon">+</div>
             <div>
               <h2>Mark Lecturer Attendance</h2>
               <p class="panel-sub">{{ activeCourse.courseCode }} – {{ activeCourse.courseName }}</p>
@@ -121,7 +121,7 @@
                     Session <strong>#{{ verifiedSession.pin }}</strong> Verified for {{ verifiedSession.courseCode || activeCourse.courseCode }}
                   </p>
                   <p class="v-card-sub">
-                    <span>📅 Created: <strong>{{ verifiedSession.date }}</strong> at <strong>{{ verifiedSession.time }}</strong></span>
+                    <span>Created: <strong>{{ verifiedSession.date }}</strong> at <strong>{{ verifiedSession.time }}</strong></span>
                     <span v-if="verifiedSession.lecturerName"> • Lecturer: <strong>{{ verifiedSession.lecturerName }}</strong></span>
                   </p>
                 </div>
@@ -173,7 +173,7 @@
             </div>
 
             <p v-if="formError" class="form-error">{{ formError }}</p>
-            <p v-if="formSuccess" class="form-success">✅ {{ formSuccess }}</p>
+            <p v-if="formSuccess" class="form-success">{{ formSuccess }}</p>
 
             <button type="submit" class="btn-submit" :disabled="store.isLoading || !form.status" id="btn-save-attendance">
               <span v-if="store.isLoading">Saving…</span>
@@ -185,7 +185,7 @@
         <!-- Right: History -->
         <div class="panel history-panel">
           <div class="panel-head">
-            <div class="panel-icon">📊</div>
+            <div class="panel-icon">~</div>
             <div>
               <h2>Attendance History</h2>
               <p class="panel-sub">Past records for {{ activeCourse.courseCode }}</p>
@@ -229,7 +229,7 @@
               <div class="hist-body">
                 <div class="hist-top">
                   <span class="hist-date">{{ formatDate(rec.date) }}</span>
-                  <span class="hist-time">🕐 {{ formatTime(rec.time) }}</span>
+                  <span class="hist-time">{{ formatTime(rec.time) }}</span>
                   <span class="hist-badge" :class="`badge-${rec.status}`">{{ rec.status }}</span>
                 </div>
                 <p v-if="rec.notes" class="hist-notes">{{ rec.notes }}</p>
@@ -272,9 +272,9 @@ const sessionError = ref('');
 const courseSessions = ref([]);
 
 const statusOptions = [
-  { value: 'present', label: 'Present', icon: '✅' },
-  { value: 'late',    label: 'Late',    icon: '🕐' },
-  { value: 'absent',  label: 'Absent',  icon: '❌' },
+  { value: 'present', label: 'Present', icon: 'P' },
+  { value: 'late',    label: 'Late',    icon: 'L' },
+  { value: 'absent',  label: 'Absent',  icon: 'X' },
 ];
 
 onMounted(async () => {
@@ -381,7 +381,7 @@ async function submitAttendance() {
 }
 
 function countStatus(s) { return history.value.filter(r => r.status === s).length; }
-function statusIcon(s) { return s === 'present' ? '✅' : s === 'late' ? '🕐' : '❌'; }
+function statusIcon(s) { return s === 'present' ? 'P' : s === 'late' ? 'L' : 'X'; }
 function formatDate(d) {
   if (!d) return '—';
   return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });

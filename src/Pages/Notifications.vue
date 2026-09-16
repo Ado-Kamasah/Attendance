@@ -149,9 +149,9 @@
 
     <!-- Pagination -->
     <div class="pagination" v-if="totalPages > 1">
-      <button class="page-btn" :disabled="page === 1" @click="page--" id="notif-prev-btn">← Prev</button>
+      <button class="page-btn" :disabled="page === 1" @click="page--" id="notif-prev-btn">Prev</button>
       <span class="page-info">Page {{ page }} of {{ totalPages }}</span>
-      <button class="page-btn" :disabled="page === totalPages" @click="page++" id="notif-next-btn">Next →</button>
+      <button class="page-btn" :disabled="page === totalPages" @click="page++" id="notif-next-btn">Next</button>
     </div>
   </div>
 </template>
@@ -201,16 +201,16 @@ function absenceTypeClass(type) {
   return 'abs-warning-1';
 }
 function absenceLabel(type) {
-  if (type === 'ineligible') return '❌ Exam Ineligible';
-  if (type === 'warning_2')  return '🚨 Critical Warning';
-  if (type === 'eval_open')  return '📋 Evaluation Open';
-  return '⚠️ Warning';
+  if (type === 'ineligible') return 'Exam Ineligible';
+  if (type === 'warning_2')  return 'Critical Warning';
+  if (type === 'eval_open')  return 'Evaluation Open';
+  return 'Warning';
 }
 function absenceIcon(type) {
-  if (type === 'ineligible') return '❌';
-  if (type === 'warning_2')  return '🚨';
-  if (type === 'eval_open')  return '📋';
-  return '⚠️';
+  if (type === 'ineligible') return 'X';
+  if (type === 'warning_2')  return '!';
+  if (type === 'eval_open')  return 'i';
+  return '!';
 }
 
 const roleSubtitle = computed(() => {

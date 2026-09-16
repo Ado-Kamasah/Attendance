@@ -51,7 +51,7 @@
           <div class="user-info" v-if="!isCollapsed">
             <p class="user-name">{{ userName }}</p>
             <p class="user-role">{{ userProgram }}</p>
-            <span v-if="isClassRep" class="cr-footer-badge">🎓 Class Rep</span>
+            <span v-if="isClassRep" class="cr-footer-badge">Class Rep</span>
           </div>
         </div>
       </div>

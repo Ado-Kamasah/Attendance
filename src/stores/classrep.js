@@ -1,4 +1,4 @@
-﻿import { defineStore } from 'pinia';
+import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { supabase } from '@/stores/supabase';
 import { useAuthStore } from '@/stores/authstore.js';
@@ -24,7 +24,7 @@ export const useClassRepStore = defineStore('classRep', () => {
     try {
       const { data, error: sbErr } = await supabase
         .from('class_reps')
-        .select('*, courses(*), users(*)');
+        .select('*, courses(*), users(*, programmes(*))');
       if (sbErr) throw sbErr;
 
       const coursesStore = useCoursesStore();
@@ -45,7 +45,7 @@ export const useClassRepStore = defineStore('classRep', () => {
           studentId: sr.student_id,
           studentName: sUser?.name || sUser?.full_name || 'Student Rep',
           studentEmail: sUser?.email || '',
-          studentProgram: sUser?.program || c?.program || 'â€”',
+          studentProgram: sUser?.programmes?.name || sUser?.program || c?.program || '-',
           courseId: sr.course_id,
           courseCode: code,
           courseName: name,
@@ -69,7 +69,7 @@ export const useClassRepStore = defineStore('classRep', () => {
     try {
       let query = supabase
         .from('users')
-        .select('id, name, email, id_number, program_id, mode, role')
+        .select('id, name, email, id_number, program_id, mode, role, programmes(name)')
         .ilike('role', 'student')
         .order('name');
 
@@ -90,7 +90,7 @@ export const useClassRepStore = defineStore('classRep', () => {
         studentId: u.id_number || u.id,
         name: u.name || 'Student',
         email: u.email || '',
-        program: u.program_id || '',
+        program: u.programmes?.name || u.program_id || '',
         mode: u.mode || 'Regular',
         isEnrolled: !!courseId,
       }));

@@ -42,7 +42,7 @@
               :class="{ selected: form.category === c.value, [`cat-${c.value}`]: true }"
             >
               <input type="radio" :value="c.value" v-model="form.category" />
-              {{ c.icon }} {{ c.label }}
+              {{ c.label }}
             </label>
           </div>
           <p v-if="errors.category" class="field-err">{{ errors.category }}</p>
@@ -139,7 +139,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span><strong>Response:</strong> {{ s.adminNote }}</span>
           </div>
-          <span v-if="s.isAnonymous" class="hc-anon">🔒 Submitted anonymously</span>
+          <span v-if="s.isAnonymous" class="hc-anon">Submitted anonymously</span>
         </div>
       </div>
     </div>
@@ -161,10 +161,10 @@ const loadingMy    = ref(false);
 const myList       = ref([]);
 
 const categories = [
-  { value: 'complaint',   label: 'Complaint',   icon: '😤' },
-  { value: 'suggestion',  label: 'Suggestion',  icon: '💡' },
-  { value: 'feedback',    label: 'Feedback',    icon: '📝' },
-  { value: 'other',       label: 'Other',       icon: '📌' },
+  { value: 'complaint',   label: 'Complaint',   icon: '' },
+  { value: 'suggestion',  label: 'Suggestion',  icon: '' },
+  { value: 'feedback',    label: 'Feedback',    icon: '' },
+  { value: 'other',       label: 'Other',       icon: '' },
 ];
 
 const form = reactive({
@@ -200,7 +200,7 @@ async function handleSubmit() {
       status:       'unread',
     });
     if (sbErr) throw sbErr;
-    successMsg.value = '✅ Your submission has been received. Thank you!';
+    successMsg.value = 'Your submission has been received. Thank you!';
     form.category    = '';
     form.subject     = '';
     form.message     = '';
@@ -240,9 +240,9 @@ async function loadMy() {
   }
 }
 
-const catIcon  = (v) => categories.find(c => c.value === v)?.icon  ?? '📌';
+const catIcon  = (v) => categories.find(c => c.value === v)?.icon  ?? '';
 const catLabel = (v) => categories.find(c => c.value === v)?.label ?? v;
-const statusLabel = (s) => ({ unread: '🔵 Unread', reviewed: '🟡 Reviewed', resolved: '🟢 Resolved' })[s] ?? s;
+const statusLabel = (s) => ({ unread: 'Unread', reviewed: 'Reviewed', resolved: 'Resolved' })[s] ?? s;
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 </script>
 

@@ -73,7 +73,7 @@
         <!-- Student info -->
         <div class="svc-student">
           <template v-if="s.isAnonymous">
-            <span class="anon-badge">🔒 Anonymous Submission</span>
+            <span class="anon-badge">Anonymous Submission</span>
           </template>
           <template v-else>
             <div class="student-avatar">{{ (s.studentName || '?').charAt(0).toUpperCase() }}</div>
@@ -161,21 +161,21 @@ const filterCategory = ref('');
 const noteModal = reactive({ open: false, id: '', subject: '', note: '', saving: false });
 
 const statusOptions = [
-  { value: 'unread',   label: '🔵 Unread'   },
-  { value: 'reviewed', label: '🟡 Reviewed' },
-  { value: 'resolved', label: '🟢 Resolved' },
+  { value: 'unread',   label: 'Unread'   },
+  { value: 'reviewed', label: 'Reviewed' },
+  { value: 'resolved', label: 'Resolved' },
 ];
 
 const categories = [
-  { value: 'complaint',  label: 'Complaint',  icon: '😤' },
-  { value: 'suggestion', label: 'Suggestion', icon: '💡' },
-  { value: 'feedback',   label: 'Feedback',   icon: '📝' },
-  { value: 'other',      label: 'Other',      icon: '📌' },
+  { value: 'complaint',  label: 'Complaint',  icon: '' },
+  { value: 'suggestion', label: 'Suggestion', icon: '' },
+  { value: 'feedback',   label: 'Feedback',   icon: '' },
+  { value: 'other',      label: 'Other',      icon: '' },
 ];
 
-const catIcon  = (v) => categories.find(c => c.value === v)?.icon  ?? '📌';
+const catIcon  = (v) => categories.find(c => c.value === v)?.icon  ?? '';
 const catLabel = (v) => categories.find(c => c.value === v)?.label ?? v;
-const statusLabel = (s) => ({ unread: '🔵 Unread', reviewed: '🟡 Reviewed', resolved: '🟢 Resolved' })[s] ?? s;
+const statusLabel = (s) => ({ unread: 'Unread', reviewed: 'Reviewed', resolved: 'Resolved' })[s] ?? s;
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 const unread   = computed(() => suggestions.value.filter(s => s.status === 'unread').length);

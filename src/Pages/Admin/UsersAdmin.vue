@@ -247,7 +247,7 @@
                     {{ formatRole(user.role) }}
                   </span>
                   <span v-if="isClassRep(user.id)" class="role-badge badge-role-classrep" title="Assigned as Class Representative">
-                    🎓 Class Rep
+                    Class Rep
                   </span>
                 </div>
               </td>
@@ -516,7 +516,7 @@
         </p>
 
         <div class="delete-warning-box">
-          <p>⚠️ This will automatically cascade and clean up all associated attendances, enrollments, notifications, and logs. This action cannot be undone.</p>
+          <p>Warning: This will automatically cascade and clean up all associated attendances, enrollments, notifications, and logs. This action cannot be undone.</p>
         </div>
 
         <div class="modal-actions-center">
@@ -1089,6 +1089,8 @@ const formatDate = (dateStr) => {
   border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .kpi-card:hover {
@@ -1128,6 +1130,8 @@ const formatDate = (dateStr) => {
 .kpi-details {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .kpi-label {
@@ -1136,6 +1140,10 @@ const formatDate = (dateStr) => {
   text-transform: uppercase;
   color: #64748b;
   letter-spacing: 0.05em;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.3;
 }
 
 .kpi-value {
@@ -1144,6 +1152,9 @@ const formatDate = (dateStr) => {
   color: #0f172a;
   margin: 0;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Controls Card */
@@ -1342,6 +1353,8 @@ const formatDate = (dateStr) => {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .avatar-badge {
@@ -1389,24 +1402,38 @@ const formatDate = (dateStr) => {
 .user-meta {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .user-name {
   font-size: 0.95rem;
   font-weight: 600;
   color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
 }
 
 .user-id-tag {
   font-size: 0.75rem;
   color: #64748b;
   font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
 }
 
 /* Email Cell */
 .email-text {
   font-size: 0.9rem;
   color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
 }
 
 /* Role Badges */
@@ -1466,6 +1493,10 @@ const formatDate = (dateStr) => {
 .program-text {
   font-size: 0.85rem;
   color: #475569;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
 }
 
 .date-text {

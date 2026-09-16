@@ -185,9 +185,9 @@ async function handleToggle() {
   if (!wasOpen && evalStore.settings.isOpen) {
     try {
       const { data } = await api.post('/notifications/evaluation-open');
-      toast.value = `✅ Evaluations opened — ${data.count} student(s) notified`;
+      toast.value = `Evaluations opened — ${data.count} student(s) notified`;
     } catch (e) {
-      toast.value = '⚠️ Evaluations opened but student notifications could not be sent.';
+      toast.value = 'Evaluations opened but student notifications could not be sent.';
     }
     setTimeout(() => (toast.value = ''), 4500);
   }

@@ -38,10 +38,10 @@
 
     <!-- Summary pills -->
     <div class="fc-summary" v-if="!isLoading && filtered.length">
-      <span class="summary-pill">📋 {{ filtered.length }} claim rows</span>
-      <span class="summary-pill">🎓 {{ uniqueLecturers }} lecturers</span>
-      <span class="summary-pill">📚 {{ uniqueCourses }} courses</span>
-      <span class="summary-pill">🗓️ {{ totalSessions }} sessions</span>
+      <span class="summary-pill">{{ filtered.length }} claim rows</span>
+      <span class="summary-pill">{{ uniqueLecturers }} lecturers</span>
+      <span class="summary-pill">{{ uniqueCourses }} courses</span>
+      <span class="summary-pill">{{ totalSessions }} sessions</span>
     </div>
 
     <!-- Loading / empty -->
@@ -110,9 +110,9 @@
 
     <!-- Pagination -->
     <div class="pagination" v-if="totalPages > 1">
-      <button class="page-btn" :disabled="page === 1"          @click="page--">← Prev</button>
+      <button class="page-btn" :disabled="page === 1"          @click="page--">Prev</button>
       <span class="page-info">Page {{ page }} of {{ totalPages }}</span>
-      <button class="page-btn" :disabled="page === totalPages" @click="page++">Next →</button>
+      <button class="page-btn" :disabled="page === totalPages" @click="page++">Next</button>
     </div>
 
   </div>

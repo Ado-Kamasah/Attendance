@@ -1109,18 +1109,23 @@ const sessionGroups = computed(() => {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .stat-item .label {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: #64748b;
   font-weight: 500;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.3;
 }
 
 .stat-item .value {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #1e293b;
+  word-break: break-word;
 }
 
 .text-emerald { color: #10b981 !important; }

@@ -148,7 +148,7 @@
       <div class="section-card" v-if="atRiskStudents.length > 0">
         <div class="section-header">
           <div>
-            <h2>⚠️ At-Risk Students</h2>
+            <h2>At-Risk Students</h2>
             <p>Students with attendance below 75% in one or more of your courses</p>
           </div>
           <span class="badge badge-red">{{ atRiskStudents.length }} student{{ atRiskStudents.length !== 1 ? 's' : '' }}</span>
@@ -229,7 +229,7 @@
       <div class="section-card">
         <div class="section-header">
           <div>
-            <h2>🎓 Class Rep Attendance Reports</h2>
+            <h2>Class Rep Attendance Reports</h2>
             <p>Lecturer attendance marked by class representatives</p>
           </div>
           <span class="badge badge-teal">{{ filteredLecturerAttendances.length }} record{{ filteredLecturerAttendances.length !== 1 ? 's' : '' }}</span>
@@ -265,7 +265,7 @@
                 </td>
                 <td>
                   <span class="la-status-chip" :class="r.status">
-                    {{ r.status === 'present' ? '✅ Present' : r.status === 'late' ? '🕐 Late' : '❌ Absent' }}
+                    {{ r.status === 'present' ? 'Present' : r.status === 'late' ? 'Late' : 'Absent' }}
                   </span>
                 </td>
                 <td>

@@ -63,7 +63,7 @@
       <div class="panel">
         <div class="panel-head">
           <h2>Today's Classes</h2>
-          <button class="link-btn" @click="$emit('navigate', '/my-courses')">Full Timetable →</button>
+          <button class="link-btn" @click="$emit('navigate', '/my-courses')">Full Timetable</button>
         </div>
         <div v-if="isLoading" class="panel-loading">Loading schedule…</div>
         <div v-else-if="todayClasses.length === 0" class="panel-empty">
@@ -94,7 +94,7 @@
       <div class="panel">
         <div class="panel-head">
           <h2>My Attendance</h2>
-          <button class="link-btn" @click="$emit('navigate', '/attendance')">Mark Now →</button>
+          <button class="link-btn" @click="$emit('navigate', '/attendance')">Mark Now</button>
         </div>
         <div v-if="isLoading" class="panel-loading">Loading attendance…</div>
         <div v-else-if="courseStats.length === 0" class="panel-empty">
@@ -127,7 +127,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <h2>Notifications</h2>
         <span class="alerts-count" v-if="notifUnreadCount > 0">{{ notifUnreadCount }} unread</span>
-        <button class="link-btn" @click="$emit('navigate', '/notifications')" style="margin-left:auto">View All →</button>
+        <button class="link-btn" @click="$emit('navigate', '/notifications')" style="margin-left:auto">View All</button>
       </div>
 
       <!-- Evaluation Open notices -->
@@ -138,7 +138,7 @@
         :class="{ 'alert-read': n.isRead }"
         @click="notifStore.markRead(n.id); $emit('navigate', '/evaluation')"
       >
-        <div class="alert-icon">📋</div>
+        <div class="alert-icon">i</div>
         <div class="alert-body">
           <p class="alert-title">Evaluations Now Open</p>
           <p class="alert-msg">{{ n.message }}</p>
@@ -149,7 +149,7 @@
 
       <!-- Ineligible notices -->
       <div v-for="n in ineligibleWarnings" :key="n.id" class="alert-card alert-ineligible" :class="{ 'alert-read': n.isRead }" @click="notifStore.markRead(n.id)">
-        <div class="alert-icon">❌</div>
+        <div class="alert-icon">X</div>
         <div class="alert-body">
           <p class="alert-title">Exam Ineligibility – {{ n.courseCode }}</p>
           <p class="alert-msg">{{ n.message }}</p>
@@ -160,7 +160,7 @@
 
       <!-- Warning notices -->
       <div v-for="n in absenceWarnings" :key="n.id" class="alert-card" :class="[n.type === 'warning_2' ? 'alert-warning-2' : 'alert-warning-1', { 'alert-read': n.isRead }]" @click="notifStore.markRead(n.id)">
-        <div class="alert-icon">{{ n.type === 'warning_2' ? '🚨' : '⚠️' }}</div>
+        <div class="alert-icon">{{ n.type === 'warning_2' ? '!!' : '!' }}</div>
         <div class="alert-body">
           <p class="alert-title">{{ n.type === 'warning_2' ? 'Critical Warning' : 'Attendance Warning' }} – {{ n.courseCode }}</p>
           <p class="alert-msg">{{ n.message }}</p>
