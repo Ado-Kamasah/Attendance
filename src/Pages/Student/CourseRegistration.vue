@@ -1,133 +1,233 @@
 <template>
-  <div class="registration-container">
-    <div class="page-header">
+  <div class="space-y-6 w-full max-w-7xl mx-auto">
+    <!-- Header with Blueprint Eyebrow -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <h1 class="page-title">Course Registration</h1>
-        <p class="page-subtitle">Select and register for your courses for the current semester.</p>
-        <div class="user-program-info" v-if="currentUserProgram">
-          <span class="program-label">Program:</span>
-          <span class="program-value">{{ currentUserProgram }}</span>
+        <div class="dim-eyebrow">
+          <span>COURSE ENROLLMENT // CURRICULUM CATALOGUE</span>
+          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+            <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
+          </svg>
         </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+          Course <span class="text-secondary dark:text-dark-secondary">Registration</span>
+        </h1>
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+          Select and confirm accredited modules for the active semester &bull; {{ currentUserProgram }}
+        </p>
       </div>
-      <div class="semester-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        Registration Open
+
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold font-mono bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Enrollment Open
+        </span>
       </div>
     </div>
 
-    <!-- Registration Content -->
-    <div class="registration-content">
-      
-      <!-- Left Column: Available Courses -->
-      <div class="available-courses-panel">
-        <div class="panel-header">
-          <h2>Available Courses</h2>
-          <div class="controls-row">
-            <select v-model="semesterFilter" class="filter-select">
-              <option value="all">All Semesters</option>
-              <option value="Semester 1">Semester 1</option>
-              <option value="Semester 2">Semester 2</option>
-            </select>
-            <select v-model="levelFilter" class="filter-select">
-              <option value="all">All Levels</option>
-              <option value="100">Level 100</option>
-              <option value="200">Level 200</option>
-              <option value="300">Level 300</option>
-              <option value="400">Level 400</option>
-            </select>
-            <div class="search-box">
-              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <input type="text" v-model="searchQuery" placeholder="Search code or name..." />
-            </div>
-          </div>
+    <!-- Notification Toast Banners -->
+    <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
+      <div v-if="feedbackMsg" class="p-3.5 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-between gap-2.5" :class="feedbackIsError ? 'bg-error/10 border-error/30 text-error' : 'bg-success/10 border-success/30 text-success'">
+        <div class="flex items-center gap-2">
+          <component :is="feedbackIsError ? AlertTriangle : CheckCircle2" class="w-4 h-4 shrink-0" />
+          <span>{{ feedbackMsg }}</span>
         </div>
+        <button @click="feedbackMsg = ''" class="cursor-pointer font-bold">&times;</button>
+      </div>
+    </transition>
 
-        <div class="courses-list">
-          <!-- Empty State (Defaults to zero as per requirements) -->
-          <div v-if="filteredCourses.length === 0" class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-              <polyline points="13 2 13 9 20 9"></polyline>
-            </svg>
-            <p>No courses are currently available for registration.</p>
-            <span class="subtext">Waiting for the Administrator to publish the semester courses.</span>
-          </div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Left Column: Available Courses (8 cols) -->
+      <div class="lg:col-span-8 space-y-4">
+        <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-5">
+          <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
+          <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
 
-          <!-- Active Courses List (Visual layout if items exist) -->
-          <div class="course-item" v-for="course in filteredCourses" :key="course.id" :class="{ 'selected': isSelected(course) }">
-            <div class="course-checkbox" @click="toggleSelection(course)">
-              <div class="checkbox-box" :class="{ 'checked': isSelected(course) }">
-                <svg v-if="isSelected(course)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
+          <!-- Filter / Search Controls -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
+            <div class="flex items-center gap-2">
+              <BookOpen class="w-4 h-4 text-secondary" />
+              <h2 class="text-xs sm:text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+                Available Courses ({{ filteredCourses.length }})
+              </h2>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <select 
+                v-model="semesterFilter" 
+                class="bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 rounded-xl px-2.5 py-1 text-xs text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary"
+              >
+                <option value="all">All Semesters</option>
+                <option value="Semester 1">Semester 1</option>
+                <option value="Semester 2">Semester 2</option>
+              </select>
+
+              <select 
+                v-model="levelFilter" 
+                class="bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 rounded-xl px-2.5 py-1 text-xs text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary"
+              >
+                <option value="all">All Levels</option>
+                <option value="100">Level 100</option>
+                <option value="200">Level 200</option>
+                <option value="300">Level 300</option>
+                <option value="400">Level 400</option>
+              </select>
+
+              <div class="relative">
+                <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40 pointer-events-none" />
+                <input 
+                  type="text" 
+                  v-model="searchQuery" 
+                  placeholder="Filter courses…" 
+                  class="pl-7 pr-3 py-1 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono placeholder:text-foreground/40 w-32 sm:w-40"
+                />
               </div>
             </div>
-            <div class="course-details">
-              <div class="course-head">
-                <div class="head-left">
-                  <span class="course-code">{{ course.code }}</span>
-                  <span class="semester-tag">{{ course.semester || 'Semester 1' }}</span>
+          </div>
+
+          <!-- Courses List -->
+          <div class="pt-4">
+            <div v-if="filteredCourses.length === 0" class="py-16 text-center text-foreground/50 dark:text-dark-foreground/50">
+              <BookOpen class="w-8 h-8 mx-auto mb-2 text-foreground/30" />
+              <p class="text-sm font-medium text-foreground dark:text-dark-foreground">No available courses found</p>
+              <p class="text-xs font-mono mt-0.5">There are no unpublished modules matching your filters.</p>
+            </div>
+
+            <div v-else class="space-y-3">
+              <div 
+                v-for="course in filteredCourses" 
+                :key="course.id"
+                @click="toggleSelection(course)"
+                class="p-4 rounded-xl border transition-all flex items-start gap-3.5 cursor-pointer select-none"
+                :class="isSelected(course) 
+                  ? 'bg-secondary/10 dark:bg-dark-secondary/15 border-secondary shadow-xs ring-1 ring-secondary/30' 
+                  : 'bg-muted/20 dark:bg-dark-muted/20 border-outline/30 dark:border-dark-outline/40 hover:bg-muted/40'"
+              >
+                <!-- Custom Checkbox -->
+                <div 
+                  class="w-5 h-5 rounded-md mt-0.5 shrink-0 flex items-center justify-center border transition-all"
+                  :class="isSelected(course) 
+                    ? 'bg-secondary border-secondary text-primary' 
+                    : 'bg-surface dark:bg-dark-surface border-outline/50 dark:border-dark-outline/60'"
+                >
+                  <Check v-if="isSelected(course)" class="w-3.5 h-3.5 stroke-[3]" />
                 </div>
-                <span class="credit-badge">{{ course.credits }} Credits</span>
+
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold font-mono text-secondary dark:text-dark-secondary">
+                        {{ course.code }}
+                      </span>
+                      <span class="px-2 py-0.2 rounded text-[10px] font-mono font-medium bg-muted/60 dark:bg-dark-muted/60 text-foreground/60 border border-outline/30">
+                        {{ course.semester || 'Semester 1' }}
+                      </span>
+                    </div>
+
+                    <span class="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-primary/10 dark:bg-primary/20 text-primary dark:text-dark-primary border border-primary/20">
+                      {{ course.credits }} Credits
+                    </span>
+                  </div>
+
+                  <h3 class="text-xs sm:text-sm font-semibold text-foreground dark:text-dark-foreground truncate mt-1">
+                    {{ course.name }}
+                  </h3>
+                  <p class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50 mt-0.5">
+                    Faculty Instructor: {{ course.lecturer }}
+                  </p>
+                </div>
               </div>
-              <h4 class="course-name">{{ course.name }}</h4>
-              <p class="course-lecturer">Instructor: {{ course.lecturer }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Right Column: Registration Summary -->
-      <div class="summary-panel">
-        <div class="panel-header">
-          <h2>Your Selection</h2>
-        </div>
-        
-        <div class="summary-content">
-          <div class="credits-meter">
-            <div class="meter-labels">
-              <span>Total Credits</span>
-              <span>{{ totalSelectedCredits }} / {{ maxCredits }}</span>
+      <!-- Right Column: Registration Summary (4 cols) -->
+      <div class="lg:col-span-4 space-y-4">
+        <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-5 flex flex-col justify-between">
+          <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
+          <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+
+          <div>
+            <div class="flex items-center gap-2 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
+              <ClipboardList class="w-4 h-4 text-secondary" />
+              <h2 class="text-xs sm:text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+                Registration Summary
+              </h2>
             </div>
-            <div class="meter-bar">
-              <div class="meter-fill" :style="{ width: `${(totalSelectedCredits / maxCredits) * 100}%` }" :class="{ 'over-limit': totalSelectedCredits > maxCredits }"></div>
+
+            <!-- Credits Meter -->
+            <div class="pt-4 space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono">
+                <span class="text-foreground/60 dark:text-dark-foreground/60">Credit Load</span>
+                <span class="font-bold" :class="totalSelectedCredits > maxCredits ? 'text-error font-extrabold' : 'text-foreground dark:text-dark-foreground'">
+                  {{ totalSelectedCredits }} / {{ maxCredits }} Max
+                </span>
+              </div>
+
+              <!-- Meter Bar -->
+              <div class="h-2 w-full bg-muted/70 dark:bg-dark-muted/70 rounded-full overflow-hidden">
+                <div 
+                  class="h-full rounded-full transition-all duration-300"
+                  :class="totalSelectedCredits > maxCredits ? 'bg-error' : totalSelectedCredits >= 15 ? 'bg-emerald-500' : 'bg-secondary'"
+                  :style="{ width: `${Math.min(100, (totalSelectedCredits / maxCredits) * 100)}%` }"
+                ></div>
+              </div>
+
+              <p v-if="totalSelectedCredits > maxCredits" class="text-[11px] font-mono text-error">
+                You have exceeded the maximum limit of {{ maxCredits }} credits.
+              </p>
             </div>
-            <p v-if="totalSelectedCredits > maxCredits" class="error-msg">You have exceeded the maximum credit limit.</p>
+
+            <!-- Selected Courses List -->
+            <div class="pt-5 space-y-3">
+              <h3 class="text-xs font-bold font-mono text-foreground/70 dark:text-dark-foreground/70 uppercase tracking-wider">
+                Selected Modules ({{ selectedCourses.length }})
+              </h3>
+
+              <div v-if="selectedCourses.length === 0" class="py-8 text-center text-foreground/40 font-mono text-xs">
+                No courses selected yet.
+              </div>
+
+              <div v-else class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                <div 
+                  v-for="course in selectedCourses" 
+                  :key="course.id"
+                  class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30 dark:border-dark-outline/40 flex items-center justify-between gap-2"
+                >
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold text-foreground dark:text-dark-foreground truncate">
+                      {{ course.code }} &bull; {{ course.name }}
+                    </p>
+                    <span class="text-[10px] font-mono text-secondary dark:text-dark-secondary">
+                      {{ course.credits }} Credits
+                    </span>
+                  </div>
+
+                  <button 
+                    @click.stop="toggleSelection(course)"
+                    class="p-1 rounded-lg text-foreground/40 hover:text-error hover:bg-error/10 transition-colors cursor-pointer"
+                    title="Remove from selection"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="selected-list">
-            <h3 class="list-title">Selected Courses ({{ selectedCourses.length }})</h3>
-            
-            <div v-if="selectedCourses.length === 0" class="empty-selection">
-              <p>You haven't selected any courses yet.</p>
-            </div>
-
-            <ul v-else class="selected-items">
-              <li v-for="course in selectedCourses" :key="course.id">
-                <span class="sel-code">{{ course.code }}</span>
-                <span class="sel-credits">{{ course.credits }} cr</span>
-                <button class="remove-btn" @click="toggleSelection(course)" title="Remove">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-              </li>
-            </ul>
+          <!-- Footer Submit Button -->
+          <div class="pt-6 mt-6 border-t border-outline/30 dark:border-dark-outline/40">
+            <button 
+              class="w-full py-2.5 rounded-xl bg-primary dark:bg-dark-secondary text-surface dark:text-primary font-bold text-xs shadow-md hover:opacity-90 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
+              :disabled="selectedCourses.length === 0 || totalSelectedCredits > maxCredits || isSubmitting"
+              @click="submitRegistration"
+            >
+              <RefreshCw v-if="isSubmitting" class="w-4 h-4 animate-spin" />
+              <CheckCircle2 v-else class="w-4 h-4" />
+              <span>{{ isSubmitting ? 'Registering Modules…' : 'Submit Registration' }}</span>
+            </button>
           </div>
-        </div>
-
-        <div class="panel-footer">
-          <button 
-            class="submit-btn" 
-            :disabled="selectedCourses.length === 0 || totalSelectedCredits > maxCredits || isSubmitting"
-            @click="submitRegistration"
-          >
-            {{ isSubmitting ? 'Submitting...' : 'Submit Registration' }}
-          </button>
         </div>
       </div>
     </div>
@@ -142,6 +242,16 @@ import { useCoursesStore } from '@/stores/courses';
 import { useSchedulesStore } from '@/stores/schedules';
 import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useAuditLogsStore } from '@/stores/auditlogs';
+import { 
+  BookOpen, 
+  Search, 
+  Check, 
+  CheckCircle2, 
+  ClipboardList, 
+  X, 
+  RefreshCw, 
+  AlertTriangle 
+} from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const coursesStore = useCoursesStore();
@@ -161,8 +271,10 @@ const maxCredits = 21;
 
 const selectedCourses = ref([]);
 const isSubmitting = ref(false);
+const feedbackMsg = ref('');
+const feedbackIsError = ref(false);
 
-const currentUserProgram = computed(() => profile.value?.program || 'Unknown');
+const currentUserProgram = computed(() => profile.value?.program || 'Enrolled Student');
 
 onMounted(async () => {
   try {
@@ -184,10 +296,9 @@ onUnmounted(() => {
   enrollmentsStore.unsubscribeFromEnrollments();
 });
 
-/** Lecturer name for a course, taken from any schedule slot on that course. */
 function lecturerForCourse(courseId) {
   const match = schedules.value.find((s) => s.courseId === courseId);
-  return match?.lecturer || 'Unassigned';
+  return match?.lecturer || 'Faculty Staff';
 }
 
 const enrolledCourseIds = computed(
@@ -206,8 +317,9 @@ const availableGlobalCourses = computed(() =>
 const filteredCourses = computed(() => {
   let list = availableGlobalCourses.value;
 
-  if (currentUserProgram.value && currentUserProgram.value !== 'Unknown') {
-list = list.filter((course) => course.programId === profile.value?.programId);  }
+  if (profile.value?.programId) {
+    list = list.filter((course) => course.programId === profile.value?.programId);
+  }
 
   if (semesterFilter.value !== 'all') {
     list = list.filter((course) => (course.semester || 'Semester 1') === semesterFilter.value);
@@ -242,11 +354,13 @@ const toggleSelection = (course) => {
 };
 
 const totalSelectedCredits = computed(() => {
-  return selectedCourses.value.reduce((total, course) => total + course.credits, 0);
+  return selectedCourses.value.reduce((total, course) => total + (course.credits || 3), 0);
 });
 
 const submitRegistration = async () => {
   isSubmitting.value = true;
+  feedbackMsg.value = '';
+  feedbackIsError.value = false;
   const studentId = profile.value?.id;
   const registered = [];
   const failed = [];
@@ -269,648 +383,21 @@ const submitRegistration = async () => {
       }
     }
 
-    if (registered.length > 0) {
-      alert(`Successfully registered for ${registered.length} course(s)!`);
-    }
-    if (failed.length > 0) {
-      alert(
-        `Could not register for: ${failed.map((f) => `${f.course.code} (${f.message})`).join(', ')}`
-      );
+    if (registered.length > 0 && failed.length === 0) {
+      feedbackMsg.value = `Successfully enrolled in ${registered.length} module(s)!`;
+      feedbackIsError.value = false;
+    } else if (failed.length > 0) {
+      feedbackMsg.value = `Registered for ${registered.length} module(s). Issues with: ${failed.map(f => f.course.code).join(', ')}`;
+      feedbackIsError.value = true;
     }
 
     selectedCourses.value = [];
   } catch (error) {
     console.error('Registration failed', error);
-    alert('An error occurred during registration.');
+    feedbackMsg.value = 'An error occurred during registration.';
+    feedbackIsError.value = true;
   } finally {
     isSubmitting.value = false;
   }
 };
 </script>
-
-<style scoped>
-.registration-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.page-subtitle {
-  margin: 0.25rem 0 0.75rem 0;
-  font-size: 0.95rem;
-  color: #64748b;
-}
-
-.user-program-info {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #f1f5f9;
-  padding: 0.35rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-}
-
-.program-label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #64748b;
-}
-
-.program-value {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #4f46e5;
-}
-
-.semester-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #dcfce7;
-  color: #166534;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.semester-badge svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-/* Base Layout */
-.registration-content {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
-  min-width: 0;
-}
-
-.available-courses-panel,
-.summary-panel {
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.panel-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.panel-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.controls-row {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
-  width: 100%;
-}
-
-.filter-select {
-  padding: 0.5rem 2rem 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background-color: #f8fafc;
-  color: #334155;
-  font-size: 0.85rem;
-  outline: none;
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.5rem center;
-  background-size: 14px;
-  transition: all 0.2s;
-  font-family: inherit;
-  flex-shrink: 0;
-}
-
-.filter-select:focus {
-  background-color: #ffffff;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.search-box {
-  position: relative;
-  width: 280px;
-  max-width: 100%;
-  flex: 1;
-  min-width: 160px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  color: #94a3b8;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 0.5rem 1rem 0.5rem 2.25rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background-color: #f8fafc;
-  font-size: 0.85rem;
-  outline: none;
-  font-family: inherit;
-  transition: all 0.2s;
-  box-sizing: border-box;
-}
-
-.search-box input:focus {
-  background-color: #ffffff;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-/* Empty State */
-.courses-list {
-  padding: 1.5rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 1rem;
-  text-align: center;
-  background-color: #f8fafc;
-  border-radius: 12px;
-  border: 1px dashed #cbd5e1;
-  margin: 1rem 0;
-}
-
-.empty-state svg {
-  width: 48px;
-  height: 48px;
-  color: #94a3b8;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.empty-state p {
-  color: #334155;
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.empty-state .subtext {
-  color: #64748b;
-  font-size: 0.85rem;
-}
-
-/* Course Items */
-.course-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem;
-  border-radius: 12px;
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.course-item:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-.course-item.selected {
-  background-color: #f5f3ff;
-  border-color: #8b5cf6;
-}
-
-.course-checkbox {
-  padding-top: 0.25rem;
-}
-
-.checkbox-box {
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  border: 2px solid #cbd5e1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  background-color: #ffffff;
-  color: white;
-  flex-shrink: 0;
-}
-
-.checkbox-box.checked {
-  background-color: #8b5cf6;
-  border-color: #8b5cf6;
-}
-
-.checkbox-box svg {
-  width: 12px;
-  height: 12px;
-}
-
-.course-details {
-  flex: 1;
-  min-width: 0;
-}
-
-.course-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.25rem;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.course-code {
-  font-weight: 700;
-  color: #0f172a;
-  font-size: 0.9rem;
-}
-
-.head-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.semester-tag {
-  font-size: 0.7rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  background-color: #e2e8f0;
-  color: #475569;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.credit-badge {
-  background-color: #f1f5f9;
-  color: #475569;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.course-name {
-  margin: 0 0 0.25rem 0;
-  font-size: 1rem;
-  color: #1e293b;
-  word-break: break-word;
-}
-
-.course-lecturer {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #64748b;
-  word-break: break-word;
-}
-
-/* Summary Panel */
-.summary-content {
-  padding: 1.5rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.meter-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.meter-bar {
-  height: 8px;
-  background-color: #e2e8f0;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.meter-fill {
-  height: 100%;
-  background-color: #4f46e5;
-  transition: width 0.3s ease;
-}
-
-.meter-fill.over-limit {
-  background-color: #ef4444;
-}
-
-.error-msg {
-  margin: 0.5rem 0 0 0;
-  font-size: 0.75rem;
-  color: #ef4444;
-  font-weight: 500;
-}
-
-.list-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.empty-selection p {
-  font-size: 0.85rem;
-  color: #94a3b8;
-  font-style: italic;
-}
-
-.selected-items {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.selected-items li {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #f1f5f9;
-}
-
-.sel-code {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: #1e293b;
-  flex: 1;
-  word-break: break-word;
-}
-
-.sel-credits {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #64748b;
-  white-space: nowrap;
-}
-
-.remove-btn {
-  background: none;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  padding: 0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.remove-btn:hover {
-  background-color: #fee2e2;
-  color: #ef4444;
-}
-
-.remove-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
-.panel-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #f1f5f9;
-}
-
-.submit-btn {
-  width: 100%;
-  padding: 0.85rem;
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
-}
-
-.submit-btn:hover:not(:disabled) {
-  background-color: #4338ca;
-}
-
-.submit-btn:disabled {
-  background-color: #cbd5e1;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* ==========================================================================
-   Responsive Breakpoints
-   L  (large / laptop-desktop): < 1200px  — tighten gaps slightly
-   M  (tablet):                 < 1024px  — stack columns
-   S  (small tablet / large phone): < 768px — stack headers, full-width controls
-   XS (mobile):                 < 480px  — compact spacing, smaller type
-   ========================================================================== */
-
-/* L — Large screens / small laptops */
-@media (max-width: 1200px) {
-  .registration-content {
-    gap: 1.25rem;
-  }
-}
-
-/* M — Tablets: stack the two-column layout */
-@media (max-width: 1024px) {
-  .registration-content {
-    grid-template-columns: 1fr;
-  }
-
-  .search-box {
-    width: auto;
-  }
-}
-
-/* S — Small tablets / large phones */
-@media (max-width: 768px) {
-  .registration-container {
-    gap: 1.5rem;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .semester-badge {
-    align-self: flex-start;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-  }
-
-  .panel-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1.25rem;
-  }
-
-  .controls-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-  }
-
-  .filter-select {
-    width: 100%;
-  }
-
-  .search-box {
-    width: 100%;
-  }
-
-  .courses-list {
-    padding: 1.25rem;
-  }
-
-  .summary-content,
-  .panel-footer {
-    padding: 1.25rem;
-  }
-
-  .course-item {
-    padding: 0.85rem;
-    gap: 0.75rem;
-  }
-}
-
-/* XS — Mobile phones */
-@media (max-width: 480px) {
-  .registration-container {
-    gap: 1.25rem;
-  }
-
-  .page-title {
-    font-size: 1.3rem;
-  }
-
-  .page-subtitle {
-    font-size: 0.85rem;
-  }
-
-  .semester-badge {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.75rem;
-  }
-
-  .panel-header {
-    padding: 1rem;
-  }
-
-  .panel-header h2 {
-    font-size: 1.1rem;
-  }
-
-  .courses-list,
-  .summary-content,
-  .panel-footer {
-    padding: 1rem;
-  }
-
-  .course-item {
-    flex-wrap: wrap;
-  }
-
-  .course-head {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.35rem;
-  }
-
-  .credit-badge {
-    align-self: flex-start;
-  }
-
-  .course-name {
-    font-size: 0.95rem;
-  }
-
-  .course-lecturer {
-    font-size: 0.8rem;
-  }
-
-  .empty-state {
-    padding: 2.5rem 1rem;
-  }
-
-  .selected-items li {
-    flex-wrap: wrap;
-  }
-
-  .submit-btn {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-  }
-}
-</style>

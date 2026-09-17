@@ -1,139 +1,336 @@
 <template>
-  <div class="ea-container">
-    <!-- Header -->
-    <div class="ea-header">
-      <div>
-        <h1 class="ea-title">Evaluation Management</h1>
-        <p class="ea-subtitle">Control access and view analysis of student lecturer evaluations</p>
+  <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
+    <!-- Header with Blueprint Eyebrow & Status Toggle -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-6 sm:p-8 shadow-sm">
+      <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff_1px,transparent_1px)] bg-[size:16px_16px] opacity-[0.03] dark:opacity-[0.02] pointer-events-none"></div>
+      
+      <!-- Blueprint Corner Accents -->
+      <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-secondary/40"></div>
+      <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-secondary/40"></div>
+      <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-secondary/40"></div>
+      <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-secondary/40"></div>
+
+      <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-mono uppercase tracking-wider mb-3">
+            <Sparkles class="w-3.5 h-3.5" />
+            <span>FACULTY EVALUATION // QA INTELLIGENCE</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white">
+            Evaluation <span class="text-secondary">Management</span>
+          </h1>
+          <p class="text-xs sm:text-sm font-mono text-slate-500 dark:text-slate-400 mt-1">
+            Control student feedback windows and inspect real-time academic survey metrics
+          </p>
+        </div>
+
+        <!-- Access Toggle Card -->
+        <div 
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border transition-all duration-200 min-w-[280px] lg:min-w-[360px]"
+          :class="evalStore.settings.isOpen 
+            ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40' 
+            : 'bg-rose-50/70 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800/40'"
+        >
+          <div class="flex items-center gap-3">
+            <span class="relative flex h-3 w-3">
+              <span 
+                class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                :class="evalStore.settings.isOpen ? 'bg-emerald-400' : 'bg-rose-400'"
+              ></span>
+              <span 
+                class="relative inline-flex rounded-full h-3 w-3"
+                :class="evalStore.settings.isOpen ? 'bg-emerald-500' : 'bg-rose-500'"
+              ></span>
+            </span>
+            <div>
+              <p class="text-xs sm:text-sm font-bold font-display text-slate-900 dark:text-white">
+                Evaluations are {{ evalStore.settings.isOpen ? 'OPEN' : 'CLOSED' }}
+              </p>
+              <p class="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                {{ evalStore.settings.isOpen ? 'Students can submit reviews' : 'Survey portal is locked' }}
+              </p>
+            </div>
+          </div>
+
+          <button 
+            @click="handleToggle" 
+            id="ea-toggle-btn"
+            class="px-4 py-2 rounded-xl text-xs font-mono font-bold tracking-wide transition-all shadow-sm active:scale-95 cursor-pointer self-start sm:self-center"
+            :class="evalStore.settings.isOpen 
+              ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20' 
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'"
+          >
+            {{ evalStore.settings.isOpen ? 'Close Portal' : 'Open Portal' }}
+          </button>
+        </div>
       </div>
-      <!-- Access toggle -->
-      <div class="toggle-card" :class="evalStore.settings.isOpen ? 'toggle-open' : 'toggle-closed'">
-        <div class="toggle-info">
-          <span class="toggle-status-dot"></span>
-          <div>
-            <p class="toggle-label">Evaluations are {{ evalStore.settings.isOpen ? 'OPEN' : 'CLOSED' }}</p>
-            <p class="toggle-hint">{{ evalStore.settings.isOpen ? 'Students can submit evaluations.' : 'Students cannot submit evaluations.' }}</p>
+    </div>
+
+    <!-- KPI Strip -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <!-- Total Responses -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <Users class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Responses</p>
+            <h3 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
+              {{ evalStore.evaluations.length }}
+            </h3>
           </div>
         </div>
-        <button class="toggle-btn" @click="handleToggle" id="ea-toggle-btn">
-          {{ evalStore.settings.isOpen ? 'Close Evaluations' : 'Open Evaluations' }}
-        </button>
+      </div>
+
+      <!-- Lecturers Evaluated -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <GraduationCap class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Lecturers</p>
+            <h3 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
+              {{ uniqueLecturers }}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Courses Evaluated -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <BookOpen class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Courses</p>
+            <h3 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
+              {{ uniqueCourses }}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Avg Overall Rating -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <Star class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Avg Rating</p>
+            <h3 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
+              {{ avgOverallRating }}%
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Retention Rate -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+            <TrendingUp class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Retention</p>
+            <h3 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
+              {{ avgRetentionRate }}%
+            </h3>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- KPI strip -->
-    <div class="kpi-row">
-      <div class="kpi-tile">
-        <div class="kpi-ico kpi-indigo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <div class="kpi-body"><p class="kpi-lbl">Total Responses</p><h3 class="kpi-val">{{ evalStore.evaluations.length }}</h3></div>
-      </div>
-      <div class="kpi-tile">
-        <div class="kpi-ico kpi-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-        <div class="kpi-body"><p class="kpi-lbl">Lecturers Evaluated</p><h3 class="kpi-val">{{ uniqueLecturers }}</h3></div>
-      </div>
-      <div class="kpi-tile">
-        <div class="kpi-ico kpi-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-        <div class="kpi-body"><p class="kpi-lbl">Courses Evaluated</p><h3 class="kpi-val">{{ uniqueCourses }}</h3></div>
-      </div>
-      <div class="kpi-tile">
-        <div class="kpi-ico kpi-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-        <div class="kpi-body"><p class="kpi-lbl">Avg Overall Rating</p><h3 class="kpi-val">{{ avgOverallRating }}%</h3></div>
-      </div>
-      <div class="kpi-tile">
-        <div class="kpi-ico kpi-sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <div class="kpi-body"><p class="kpi-lbl">Retention Rate</p><h3 class="kpi-val">{{ avgRetentionRate }}%</h3></div>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="filter-bar">
-      <select v-model="filterLecturer" class="fsel" id="ea-lecturer-filter">
+    <!-- Filters Strip -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-3 shadow-sm">
+      <select 
+        v-model="filterLecturer" 
+        id="ea-lecturer-filter"
+        class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-secondary"
+      >
         <option value="">All Lecturers</option>
         <option v-for="(name, id) in lecturerNames" :key="id" :value="id">{{ name }}</option>
       </select>
-      <select v-model="filterCourse" class="fsel" id="ea-course-filter">
+
+      <select 
+        v-model="filterCourse" 
+        id="ea-course-filter"
+        class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-secondary"
+      >
         <option value="">All Courses</option>
         <option v-for="c in evaluatedCourses" :key="c.id" :value="c.id">{{ c.label }}</option>
       </select>
-      <div class="search-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input v-model="searchQ" type="text" placeholder="Search lecturer or course…" class="search-in" id="ea-search"/>
+
+      <div class="relative flex-1">
+        <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <input 
+          v-model="searchQ" 
+          type="text" 
+          placeholder="Search lecturer or course name…" 
+          id="ea-search"
+          class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-hidden focus:border-secondary"
+        />
       </div>
     </div>
 
-    <!-- Per-lecturer analysis cards -->
-    <div v-if="evalStore.isLoading" class="loading-state">Loading evaluation data…</div>
-    <div v-else-if="filteredAnalysis.length === 0" class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      <p>No evaluation responses found.</p>
+    <!-- Status States -->
+    <div v-if="evalStore.isLoading" class="py-20 text-center rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80">
+      <div class="inline-block animate-spin w-6 h-6 border-2 border-secondary border-t-transparent rounded-full mb-2"></div>
+      <p class="text-xs font-mono text-slate-500 dark:text-slate-400">Loading evaluation survey data…</p>
     </div>
-<!-- Error state -->
-    <div v-if="evalStore.error && !evalStore.isLoading" class="empty-state" style="border-color:#fecaca;background:#fef2f2;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <p style="color:#ef4444;">{{ evalStore.error }}</p>
+
+    <div v-else-if="evalStore.error" class="p-6 rounded-2xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/50 text-center">
+      <AlertTriangle class="w-8 h-8 text-rose-500 mx-auto mb-2" />
+      <p class="text-xs font-mono text-rose-600 dark:text-rose-400">{{ evalStore.error }}</p>
     </div>
-    <div v-else class="analysis-grid">
-      <div v-for="lec in filteredAnalysis" :key="lec.lecturerId" class="lec-card">
-        <!-- Card header -->
-        <div class="lec-card-head">
-          <div class="lec-avatar">{{ (lecturerNames[lec.lecturerId] || 'L').charAt(0) }}</div>
-          <div class="lec-info">
-            <h2 class="lec-name">{{ lecturerNames[lec.lecturerId] ?? 'Unknown Lecturer' }}</h2>
-            <p class="lec-meta">{{ lec.totalResponses }} response{{ lec.totalResponses !== 1 ? 's' : '' }}</p>
-            <!-- Course tags -->
-            <div class="course-tags" v-if="lec.courses && lec.courses.length">
-              <span v-for="c in lec.courses" :key="c.id" class="course-tag">{{ c.label }}</span>
+
+    <div v-else-if="filteredAnalysis.length === 0" class="py-20 text-center rounded-2xl bg-white dark:bg-[#071328] border border-dashed border-slate-300 dark:border-slate-800">
+      <CheckCircle2 class="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
+      <h3 class="text-sm font-bold font-display text-slate-700 dark:text-slate-300">No evaluation responses found</h3>
+      <p class="text-xs font-mono text-slate-400 mt-1">Adjust filters or open evaluations for student submissions</p>
+    </div>
+
+    <!-- Per-Lecturer Analysis Cards Grid -->
+    <div v-else class="space-y-6">
+      <div 
+        v-for="lec in filteredAnalysis" 
+        :key="lec.lecturerId" 
+        class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 shadow-sm"
+      >
+        <!-- Blueprint Corner Accent -->
+        <div class="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-secondary/30"></div>
+
+        <!-- Lecturer Card Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 bg-slate-50/70 dark:bg-slate-900/40 border-b border-slate-200/80 dark:border-slate-800/80">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-slate-800 text-white font-black font-display text-lg flex items-center justify-center shadow-md shrink-0 border border-secondary/20">
+              {{ (lecturerNames[lec.lecturerId] || 'L').charAt(0) }}
+            </div>
+            <div>
+              <h2 class="text-base sm:text-lg font-bold font-display text-slate-900 dark:text-white">
+                {{ lecturerNames[lec.lecturerId] ?? 'Unknown Lecturer' }}
+              </h2>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-xs font-mono text-slate-500 dark:text-slate-400">
+                  {{ lec.totalResponses }} submission{{ lec.totalResponses !== 1 ? 's' : '' }}
+                </span>
+              </div>
+              <!-- Course badges -->
+              <div class="flex flex-wrap gap-1.5 mt-2.5" v-if="lec.courses && lec.courses.length">
+                <span 
+                  v-for="c in lec.courses" 
+                  :key="c.id" 
+                  class="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-mono font-semibold"
+                >
+                  {{ c.label }}
+                </span>
+              </div>
             </div>
           </div>
-          <div class="lec-retention">
-            <span class="retention-val" :class="retentionClass(lec.retainedPct)">{{ lec.retainedPct }}%</span>
-            <span class="retention-lbl">Retention</span>
+
+          <!-- Retention Metric Pill -->
+          <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center p-3 sm:p-0 rounded-xl bg-white dark:bg-slate-900/80 sm:bg-transparent border border-slate-200 dark:border-slate-800 sm:border-0">
+            <span 
+              class="text-2xl sm:text-3xl font-black font-display"
+              :class="lec.retainedPct >= 70 ? 'text-emerald-500' : lec.retainedPct >= 45 ? 'text-amber-500' : 'text-rose-500'"
+            >
+              {{ lec.retainedPct }}%
+            </span>
+            <span class="text-[10px] font-mono uppercase text-slate-400 font-semibold tracking-wider">
+              Student Retention
+            </span>
           </div>
         </div>
 
-        <!-- Question breakdown -->
-        <div class="q-breakdown">
-          <div v-for="qs in lec.questionStats" :key="qs.questionId" class="qs-row">
-            <div class="qs-q">{{ qs.text }}</div>
-            <div class="qs-bars">
-              <div
-                v-for="(count, opt) in qs.counts"
-                :key="opt"
-                class="qs-bar-row"
-              >
-                <span class="qs-opt">{{ opt }}</span>
-                <div class="qs-track">
-                  <div class="qs-fill" :style="{ width: barPct(count, lec.totalResponses) + '%', background: optColor(opt) }"></div>
+        <!-- Question Breakdown Accordion / List -->
+        <div class="divide-y divide-slate-100 dark:divide-slate-800/60">
+          <div 
+            v-for="qs in lec.questionStats" 
+            :key="qs.questionId" 
+            class="p-5 sm:p-6 hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors"
+          >
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div class="lg:w-2/5">
+                <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
+                  {{ qs.text }}
+                </p>
+                <div v-if="qs.pct !== null" class="flex items-center gap-2 mt-2">
+                  <div class="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full rounded-full transition-all duration-500" 
+                      :style="{ width: qs.pct + '%', backgroundColor: rateColor(qs.pct) }"
+                    ></div>
+                  </div>
+                  <span class="text-xs font-mono font-bold" :class="rateClass(qs.pct)">
+                    {{ qs.pct }}% Satisfied
+                  </span>
                 </div>
-                <span class="qs-count">{{ count }}</span>
               </div>
-            </div>
-            <div v-if="qs.pct !== null" class="qs-score">
-              <div class="qs-score-bar-track">
-                <div class="qs-score-bar" :style="{ width: qs.pct + '%', background: rateColor(qs.pct) }"></div>
+
+              <!-- Option distribution bars -->
+              <div class="lg:w-3/5 space-y-1.5">
+                <div
+                  v-for="(count, opt) in qs.counts"
+                  :key="opt"
+                  class="flex items-center gap-3 text-xs font-mono"
+                >
+                  <span class="w-24 text-right text-slate-500 dark:text-slate-400 truncate text-[11px]">{{ opt }}</span>
+                  <div class="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full rounded-full transition-all duration-500"
+                      :style="{ width: barPct(count, lec.totalResponses) + '%', backgroundColor: optColor(opt) }"
+                    ></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-700 dark:text-slate-300 text-[11px]">{{ count }}</span>
+                </div>
               </div>
-              <span class="qs-pct" :class="rateClass(qs.pct)">{{ qs.pct }}%</span>
             </div>
           </div>
         </div>
 
-        <!-- Comments section -->
-        <div class="comments-section" v-if="commentsFor(lec.lecturerId).length">
-          <h3 class="comments-title">Student Comments</h3>
-          <div class="comments-list">
-            <div v-for="(c, i) in commentsFor(lec.lecturerId)" :key="i" class="comment-chip">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              {{ c }}
+        <!-- Student Comments Section -->
+        <div v-if="commentsFor(lec.lecturerId).length" class="p-5 sm:p-6 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-200/80 dark:border-slate-800/80">
+          <div class="flex items-center gap-2 mb-3">
+            <MessageSquare class="w-4 h-4 text-secondary" />
+            <h3 class="text-xs font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+              Student Qualitative Feedback ({{ commentsFor(lec.lecturerId).length }})
+            </h3>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div 
+              v-for="(c, i) in commentsFor(lec.lecturerId)" 
+              :key="i"
+              class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs font-mono text-slate-600 dark:text-slate-300 leading-relaxed shadow-2xs flex items-start gap-2.5"
+            >
+              <span class="text-secondary select-none font-bold">“</span>
+              <span class="flex-1">{{ c }}</span>
+              <span class="text-secondary select-none font-bold">”</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Admin toast -->
+    <!-- Admin Notification Toast via Teleport -->
     <Teleport to="body">
-      <transition name="ea-toast">
-        <div v-if="toast" class="ea-toast-bar">{{ toast }}</div>
+      <transition 
+        enter-active-class="transition ease-out duration-300 transform"
+        enter-from-class="opacity-0 translate-y-4"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition ease-in duration-200 transform"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-4"
+      >
+        <div 
+          v-if="toast" 
+          class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-2xl text-xs font-mono font-medium max-w-md"
+        >
+          <Sparkles class="w-4 h-4 text-secondary shrink-0" />
+          <span>{{ toast }}</span>
+        </div>
       </transition>
     </Teleport>
   </div>
@@ -146,6 +343,18 @@ import { useAuthStore }        from '@/stores/authstore';
 import { useEvaluationStore, QUESTIONS, SCORE_MAP } from '@/stores/evaluations';
 import { supabase }            from '@/stores/supabase';
 import api                     from '@/api.js';
+import {
+  Users,
+  GraduationCap,
+  BookOpen,
+  Star,
+  TrendingUp,
+  Search,
+  MessageSquare,
+  AlertTriangle,
+  CheckCircle2,
+  Sparkles
+} from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const evalStore = useEvaluationStore();
@@ -194,10 +403,8 @@ async function handleToggle() {
 }
 
 // ── Aggregated analysis ────────────────────────────────────────────────────
-// Extends the store's analysisByLecturer with course info for display
 const enrichedAnalysis = computed(() => {
   return evalStore.analysisByLecturer.map(lec => {
-    // Find all distinct courses this lecturer was evaluated for
     const courses = [...new Set(
       evalStore.evaluations
         .filter(e => e.lecturer_id === lec.lecturerId && e.course_id)
@@ -224,7 +431,6 @@ const filteredAnalysis = computed(() => {
 const uniqueLecturers = computed(() => new Set(evalStore.evaluations.map(e => e.lecturer_id)).size);
 const uniqueCourses   = computed(() => new Set(evalStore.evaluations.map(e => e.course_id)).size);
 
-// For the course filter dropdown — all courses that have been evaluated
 const evaluatedCourses = computed(() =>
   [...new Set(evalStore.evaluations.map(e => e.course_id).filter(Boolean))]
     .map(id => ({ id, label: courseNames.value[id] ?? id }))
@@ -258,230 +464,9 @@ function optColor(opt) {
   const bad  = ['Very poor', 'Rarely', 'No'];
   if (good.includes(opt)) return '#10b981';
   if (bad.includes(opt))  return '#ef4444';
-  return '#6366f1';
+  return '#bc9333';
 }
 
-function rateClass(p) { return p >= 70 ? 'rate-good' : p >= 45 ? 'rate-warn' : 'rate-bad'; }
+function rateClass(p) { return p >= 70 ? 'text-emerald-500' : p >= 45 ? 'text-amber-500' : 'text-rose-500'; }
 function rateColor(p) { return p >= 70 ? '#10b981' : p >= 45 ? '#f59e0b' : '#ef4444'; }
-function retentionClass(p) { return p >= 70 ? 'ret-good' : p >= 45 ? 'ret-warn' : 'ret-bad'; }
 </script>
-
-<style scoped>
-* { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-.ea-container { display: flex; flex-direction: column; gap: 1.75rem; width: 100%; max-width: 100%; overflow-x: hidden; }
-
-/* Header */
-.ea-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem; width: 100%; }
-.ea-title   { margin: 0; font-size: 1.75rem; font-weight: 700; color: #0f172a; letter-spacing: -.025em; word-break: break-word; }
-.ea-subtitle { margin: .25rem 0 0; font-size: .9rem; color: #64748b; word-break: break-word; }
-
-/* Toggle card */
-.toggle-card { display: flex; align-items: center; gap: 1.25rem; padding: 1rem 1.25rem; border-radius: 14px; border: 1px solid; max-width: 100%; min-width: 0; }
-.toggle-open  { background: #f0fdf4; border-color: #bbf7d0; }
-.toggle-closed { background: #fef2f2; border-color: #fecaca; }
-.toggle-info { display: flex; align-items: center; gap: .75rem; min-width: 0; flex: 1; }
-.toggle-status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; animation: pulse 2s infinite; }
-.toggle-open  .toggle-status-dot { background: #10b981; }
-.toggle-closed .toggle-status-dot { background: #ef4444; }
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
-.toggle-label { margin: 0 0 2px; font-size: .85rem; font-weight: 700; color: #0f172a; word-break: break-word; }
-.toggle-hint  { margin: 0; font-size: .75rem; color: #64748b; word-break: break-word; }
-.toggle-btn { padding: .5rem 1.1rem; border-radius: 8px; font-size: .85rem; font-weight: 700; cursor: pointer; border: none; transition: all .2s; white-space: nowrap; flex-shrink: 0; }
-.toggle-open  .toggle-btn { background: #ef4444; color: #fff; }
-.toggle-open  .toggle-btn:hover { background: #dc2626; }
-.toggle-closed .toggle-btn { background: #10b981; color: #fff; }
-.toggle-closed .toggle-btn:hover { background: #059669; }
-
-/* Admin broadcast toast */
-.ea-toast-bar {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  background: #1e293b;
-  color: #f8fafc;
-  padding: 0.85rem 1.4rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  z-index: 10000;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-  max-width: calc(100vw - 3rem);
-  word-break: break-word;
-}
-.ea-toast-enter-active, .ea-toast-leave-active { transition: all 0.3s ease; }
-.ea-toast-enter-from, .ea-toast-leave-to { opacity: 0; transform: translateY(12px); }
-
-/* KPI row */
-.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1.25rem; width: 100%; }
-.kpi-tile { display: flex; align-items: center; gap: 1rem; background: #fff; border-radius: 16px; padding: 1.25rem 1.5rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,.04); min-width: 0; max-width: 100%; }
-.kpi-ico  { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.kpi-ico svg { width: 22px; height: 22px; }
-.kpi-body { min-width: 0; flex: 1; overflow: hidden; }
-.kpi-lbl  { margin: 0 0 2px; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #64748b; line-height: 1.25; word-break: break-word; overflow-wrap: break-word; }
-.kpi-val  { margin: 0; font-size: 1.9rem; font-weight: 700; color: #0f172a; letter-spacing: -.03em; word-break: break-word; }
-.kpi-indigo { background: #e0e7ff; color: #4338ca; }
-.kpi-green  { background: #dcfce7; color: #15803d; }
-.kpi-purple { background: #f3e8ff; color: #7c3aed; }
-.kpi-amber  { background: #fef9c3; color: #a16207; }
-.kpi-sky    { background: #e0f2fe; color: #0369a1; }
-
-/* Filters */
-.filter-bar { display: flex; gap: .75rem; flex-wrap: wrap; width: 100%; }
-.fsel { padding: .45rem .75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .875rem; color: #334155; background: #fff; outline: none; cursor: pointer; max-width: 100%; min-width: 0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-.fsel:focus { border-color: #6366f1; }
-.search-wrap { display: flex; align-items: center; gap: .5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: .4rem .75rem; min-width: 200px; max-width: 100%; flex: 1; }
-.search-wrap svg { width: 15px; height: 15px; color: #94a3b8; flex-shrink: 0; }
-.search-in { border: none; background: transparent; outline: none; font-size: .875rem; color: #334155; min-width: 0; width: 100%; }
-
-/* States */
-.loading-state, .empty-state { text-align: center; padding: 4rem; color: #94a3b8; font-size: .95rem; word-break: break-word; }
-.empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; background: #f8fafc; border-radius: 16px; border: 1px dashed #cbd5e1; }
-.empty-state svg { width: 48px; height: 48px; color: #cbd5e1; flex-shrink: 0; }
-.empty-state p { margin: 0; word-break: break-word; }
-
-/* Analysis grid */
-.analysis-grid { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
-
-/* Lecturer card */
-.lec-card { background: #fff; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,.04); overflow: hidden; max-width: 100%; width: 100%; }
-.lec-card-head { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; background: linear-gradient(135deg,#f8fafc,#f1f5f9); border-bottom: 1px solid #f1f5f9; min-width: 0; flex-wrap: wrap; }
-.lec-avatar { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.lec-info { flex: 1; min-width: 0; overflow: hidden; }
-.lec-name { margin: 0 0 2px; font-size: 1.05rem; font-weight: 700; color: #0f172a; word-break: break-word; overflow-wrap: break-word; }
-.lec-meta { margin: 0; font-size: .8rem; color: #64748b; word-break: break-word; }
-.lec-retention { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-.retention-val { font-size: 1.5rem; font-weight: 800; }
-.ret-good { color: #10b981; }
-.ret-warn { color: #f59e0b; }
-.ret-bad  { color: #ef4444; }
-.retention-lbl { font-size: .68rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
-
-/* Course tags on lecturer cards */
-.course-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; max-width: 100%; }
-.course-tag  { display: inline-flex; background: #ede9fe; color: #6d28d9; font-size: .7rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; letter-spacing: .02em; max-width: 100%; word-break: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.3; }
-
-/* Question breakdown */
-.q-breakdown { display: flex; flex-direction: column; width: 100%; }
-.qs-row { display: flex; flex-direction: column; gap: .5rem; padding: 1rem 1.5rem; border-bottom: 1px solid #f8fafc; width: 100%; }
-.qs-q  { font-size: .85rem; font-weight: 600; color: #334155; word-break: break-word; overflow-wrap: break-word; line-height: 1.4; }
-.qs-bars { display: flex; flex-direction: column; gap: .35rem; width: 100%; }
-.qs-bar-row { display: flex; align-items: center; gap: .75rem; width: 100%; min-width: 0; }
-.qs-opt   { min-width: 85px; width: max-content; max-width: 120px; font-size: .78rem; color: #64748b; font-weight: 600; text-align: right; flex-shrink: 0; word-break: break-word; line-height: 1.25; }
-.qs-track { flex: 1; min-width: 40px; height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
-.qs-fill  { height: 100%; border-radius: 999px; transition: width .5s; }
-.qs-count { font-size: .75rem; font-weight: 700; color: #475569; min-width: 24px; text-align: right; flex-shrink: 0; }
-.qs-score { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; width: 100%; min-width: 0; }
-.qs-score-bar-track { flex: 1; min-width: 40px; height: 5px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
-.qs-score-bar { height: 100%; border-radius: 999px; transition: width .5s; }
-.qs-pct { font-size: .78rem; font-weight: 700; min-width: 36px; text-align: right; flex-shrink: 0; }
-.rate-good { color: #10b981; }
-.rate-warn { color: #f59e0b; }
-.rate-bad  { color: #ef4444; }
-
-/* Comments */
-.comments-section { padding: 1.25rem 1.5rem; background: #fafafa; border-top: 1px solid #f1f5f9; width: 100%; }
-.comments-title { margin: 0 0 .75rem; font-size: .85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .05em; word-break: break-word; }
-.comments-list { display: flex; flex-direction: column; gap: .5rem; width: 100%; }
-.comment-chip { display: flex; align-items: flex-start; gap: .6rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: .75rem 1rem; font-size: .85rem; color: #334155; line-height: 1.4; word-break: break-word; overflow-wrap: break-word; min-width: 0; max-width: 100%; }
-.comment-chip svg { width: 14px; height: 14px; color: #94a3b8; flex-shrink: 0; margin-top: 2px; }
-
-/* ══════════════════════════════════════════════════════
-   RESPONSIVE BREAKPOINTS
-   ══════════════════════════════════════════════════════ */
-
-/* ── Small laptops (≤1199px) ── */
-@media (max-width: 1199px) {
-  .kpi-row { grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); }
-}
-
-/* ── Tablets (≤991px) ── */
-@media (max-width: 991px) {
-  .ea-container { gap: 1.5rem; }
-  .ea-header { flex-direction: column; align-items: stretch; }
-  .toggle-card { width: 100%; }
-  .kpi-row { grid-template-columns: repeat(2,1fr); gap: 1rem; }
-  .filter-bar { flex-direction: column; align-items: stretch; }
-  .search-wrap { width: 100%; }
-}
-
-/* ── Large phones / small tablets, portrait (≤767px) ── */
-@media (max-width: 767px) {
-  .ea-container { gap: 1.25rem; }
-
-  .ea-title { font-size: 1.4rem; }
-  .ea-subtitle { font-size: .85rem; }
-
-  .toggle-card {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-    padding: 1rem;
-    border-radius: 12px;
-  }
-  .toggle-btn { width: 100%; }
-
-  .kpi-row { grid-template-columns: repeat(2,1fr); gap: .75rem; }
-  .kpi-tile { padding: 1rem; border-radius: 12px; gap: .75rem; }
-  .kpi-ico { width: 38px; height: 38px; border-radius: 10px; }
-  .kpi-ico svg { width: 18px; height: 18px; }
-  .kpi-lbl { font-size: .7rem; }
-  .kpi-val { font-size: 1.3rem; }
-
-  .loading-state, .empty-state { padding: 2.5rem 1.25rem; }
-
-  .analysis-grid { gap: 1rem; }
-
-  .lec-card-head {
-    flex-wrap: wrap;
-    padding: 1rem;
-    gap: .75rem;
-  }
-  .lec-avatar { width: 40px; height: 40px; font-size: 1rem; border-radius: 12px; }
-  .lec-name { font-size: .95rem; }
-  .lec-retention {
-    flex-direction: row;
-    align-items: baseline;
-    gap: .4rem;
-    margin-left: auto;
-  }
-  .retention-val { font-size: 1.2rem; }
-
-  .qs-row { padding: .85rem 1rem; }
-  .qs-opt { min-width: 75px; max-width: 100px; font-size: .72rem; }
-
-  .comments-section { padding: 1rem; }
-}
-
-/* ── Large phones (≤480px) ── */
-@media (max-width: 480px) {
-  .kpi-row { grid-template-columns: 1fr; gap: .75rem; }
-  .kpi-tile { padding: .9rem 1rem; }
-
-  .lec-card-head { flex-direction: column; align-items: flex-start; }
-  .lec-retention {
-    flex-direction: column;
-    align-items: flex-start;
-    margin-left: 0;
-  }
-
-  .qs-opt { min-width: 70px; max-width: 90px; font-size: .7rem; }
-  .qs-count { min-width: 20px; font-size: .7rem; }
-
-  .course-tag { font-size: .65rem; padding: .15rem .45rem; }
-
-  .comment-chip { font-size: .8rem; padding: .6rem .8rem; }
-}
-
-/* ── Small phones (≤375px) ── */
-@media (max-width: 375px) {
-  .ea-title { font-size: 1.2rem; }
-  .kpi-val { font-size: 1.1rem; }
-  .kpi-ico { width: 32px; height: 32px; }
-  .kpi-ico svg { width: 16px; height: 16px; }
-
-  .lec-card-head { padding: .85rem; }
-  .qs-row { padding: .75rem; }
-  .qs-opt { min-width: 65px; font-size: .68rem; }
-  .comments-section { padding: .85rem; }
-}
-</style>

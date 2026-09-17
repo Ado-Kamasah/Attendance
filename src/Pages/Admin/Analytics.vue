@@ -1,216 +1,423 @@
 <template>
-  <div class="analytics-container">
-    <!-- Header -->
-    <div class="analytics-header">
-      <div>
-        <h1 class="page-title">Attendance Analytics</h1>
-        <p class="page-subtitle">Full attendance breakdown across all courses and sessions</p>
-      </div>
-      <div class="header-actions">
-        <select v-model="selectedCourseFilter" class="filter-select" id="course-filter">
-          <option value="">All Courses</option>
-          <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
-        <select v-model="selectedStatusFilter" class="filter-select" id="status-filter">
-          <option value="">All Statuses</option>
-          <option value="present">Present</option>
-          <option value="absent">Absent</option>
-        </select>
-      </div>
-    </div>
+  <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
+    <!-- Header with Blueprint Eyebrow -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-6 sm:p-8 shadow-sm">
+      <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff_1px,transparent_1px)] bg-[size:16px_16px] opacity-[0.03] dark:opacity-[0.02] pointer-events-none"></div>
+      
+      <!-- Blueprint Corner Accents -->
+      <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-secondary/40"></div>
+      <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-secondary/40"></div>
+      <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-secondary/40"></div>
+      <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-secondary/40"></div>
 
-    <!-- KPI Cards -->
-    <div class="kpi-grid">
-      <div class="kpi-card kpi-blue">
-        <div class="kpi-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-mono uppercase tracking-wider mb-3">
+            <BarChart2 class="w-3.5 h-3.5" />
+            <span>ATTENDANCE INTELLIGENCE // INSTITUTIONAL AUDIT</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white">
+            Attendance <span class="text-secondary">Analytics</span>
+          </h1>
+          <p class="text-xs sm:text-sm font-mono text-slate-500 dark:text-slate-400 mt-1">
+            Complete institutional rollcall statistics across all courses, programmes, and students
+          </p>
         </div>
-        <div class="kpi-body">
-          <p class="kpi-label">Total Students</p>
-          <h2 class="kpi-value">{{ totalStudents }}</h2>
-        </div>
-      </div>
 
-      <div class="kpi-card kpi-green">
-        <div class="kpi-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div class="kpi-body">
-          <p class="kpi-label">Overall Attendance Rate</p>
-          <h2 class="kpi-value">{{ overallRate }}%</h2>
-        </div>
-      </div>
-
-      <div class="kpi-card kpi-amber">
-        <div class="kpi-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div class="kpi-body">
-          <p class="kpi-label">Total Sessions</p>
-          <h2 class="kpi-value">{{ sessions.length }}</h2>
-        </div>
-      </div>
-
-      <div class="kpi-card kpi-red">
-        <div class="kpi-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        </div>
-        <div class="kpi-body">
-          <p class="kpi-label">Total Absences</p>
-          <h2 class="kpi-value">{{ totalAbsences }}</h2>
-        </div>
-      </div>
-    </div>
-
-    <!-- Course Breakdown Table -->
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Per-Course Attendance Breakdown</h2>
-      </div>
-      <div class="table-wrapper">
-        <table class="data-table" id="course-breakdown-table">
-          <thead>
-            <tr>
-              <th>Course</th>
-              <th>Sessions</th>
-              <th>Present</th>
-              <th>Absent</th>
-              <th>Attendance Rate</th>
-              <th>Rate Bar</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="courseBreakdown.length === 0">
-              <td colspan="6" class="empty-cell">No data available.</td>
-            </tr>
-            <tr v-for="row in courseBreakdown" :key="row.courseId">
-              <td class="course-name-cell">{{ row.courseName }}</td>
-              <td>{{ row.sessionCount }}</td>
-              <td class="present-cell">{{ row.present }}</td>
-              <td class="absent-cell">{{ row.absent }}</td>
-              <td>
-                <span class="rate-badge" :class="rateClass(row.rate)">{{ row.rate }}%</span>
-              </td>
-              <td class="bar-cell">
-                <div class="progress-track">
-                  <div class="progress-fill" :style="{ width: row.rate + '%', backgroundColor: rateColor(row.rate) }"></div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Per-Student Attendance Breakdown -->
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Per-Student Attendance Rate</h2>
-        <div class="filter-group">
-          <select v-model="studentProgramFilter" class="filter-select" id="student-program-filter">
-            <option value="">All Programmes</option>
-            <option v-for="p in programmes" :key="p.id" :value="p.id">{{ p.name }}</option>
-          </select>
-          <select v-model="studentCourseFilter" class="filter-select" id="student-course-filter">
+        <div class="flex flex-wrap items-center gap-3">
+          <select 
+            v-model="selectedCourseFilter" 
+            id="course-filter"
+            class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-secondary shadow-2xs"
+          >
             <option value="">All Courses</option>
             <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
-          <div class="search-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input v-model="studentSearch" type="text" placeholder="Search name or ID…" id="student-search" class="search-input" />
+
+          <select 
+            v-model="selectedStatusFilter" 
+            id="status-filter"
+            class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-secondary shadow-2xs"
+          >
+            <option value="">All Statuses</option>
+            <option value="present">Present</option>
+            <option value="absent">Absent</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Total Students -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+            <Users class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Enrolled Students</p>
+            <h2 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
+              {{ totalStudents }}
+            </h2>
           </div>
         </div>
       </div>
-      <div class="table-wrapper">
-        <table class="data-table" id="student-breakdown-table">
-          <thead>
+
+      <!-- Overall Attendance Rate -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <Percent class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Overall Rate</p>
+            <h2 class="text-2xl font-black font-display text-emerald-600 dark:text-emerald-400 tracking-tight mt-0.5">
+              {{ overallRate }}%
+            </h2>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Sessions -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <Calendar class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Total Sessions</p>
+            <h2 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
+              {{ sessions.length }}
+            </h2>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Absences -->
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+            <UserX class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Total Absences</p>
+            <h2 class="text-2xl font-black font-display text-rose-500 tracking-tight mt-0.5">
+              {{ totalAbsences }}
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Course Breakdown Table Panel -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+      <div class="flex items-center justify-between gap-4 p-5 sm:p-6 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div>
+          <h2 class="text-base font-bold font-display text-slate-900 dark:text-white">Per-Course Attendance Breakdown</h2>
+          <p class="text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5">Aggregated rollcall performance grouped by course module</p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left text-slate-600 dark:text-slate-400" id="course-breakdown-table">
+          <thead class="text-[11px] font-mono uppercase bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80">
             <tr>
-              <th>Student</th>
-              <th>Student ID</th>
-              <th>Programme</th>
-              <th>Course</th>
-              <th>Sessions</th>
-              <th>Present</th>
-              <th>Absent</th>
-              <th>Rate</th>
-              <th>Rate Bar</th>
+              <th scope="col" class="px-5 py-3.5">Course</th>
+              <th scope="col" class="px-5 py-3.5">Sessions</th>
+              <th scope="col" class="px-5 py-3.5">Present</th>
+              <th scope="col" class="px-5 py-3.5">Absent</th>
+              <th scope="col" class="px-5 py-3.5">Attendance Rate</th>
+              <th scope="col" class="px-5 py-3.5 w-32">Rate Bar</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-if="filteredStudentBreakdown.length === 0">
-              <td colspan="9" class="empty-cell">No data matches your filters.</td>
-            </tr>
-            <tr v-for="row in paginatedStudentBreakdown" :key="row.key">
-              <td class="student-name-cell">{{ row.studentName }}</td>
-              <td class="mono">{{ row.idNumber }}</td>
-              <td class="muted">{{ row.programmeName }}</td>
-              <td class="course-name-cell">{{ row.courseName }}</td>
-              <td>{{ row.sessionCount }}</td>
-              <td class="present-cell">{{ row.present }}</td>
-              <td class="absent-cell">{{ row.absent }}</td>
-              <td>
-                <span class="rate-badge" :class="rateClass(row.rate)">{{ row.rate }}%</span>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <tr v-if="courseBreakdown.length === 0">
+              <td colspan="6" class="px-5 py-10 text-center text-xs font-mono text-slate-400">
+                No data available.
               </td>
-              <td class="bar-cell">
-                <div class="progress-track">
-                  <div class="progress-fill" :style="{ width: row.rate + '%', backgroundColor: rateColor(row.rate) }"></div>
+            </tr>
+            <tr 
+              v-for="row in courseBreakdown" 
+              :key="row.courseId"
+              class="hover:bg-slate-50/70 dark:hover:bg-slate-900/30 transition-colors"
+            >
+              <td class="px-5 py-4 font-semibold text-slate-800 dark:text-slate-200">
+                {{ row.courseName }}
+              </td>
+              <td class="px-5 py-4 font-mono font-medium text-slate-700 dark:text-slate-300">
+                {{ row.sessionCount }}
+              </td>
+              <td class="px-5 py-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {{ row.present }}
+              </td>
+              <td class="px-5 py-4 font-mono font-bold text-rose-500">
+                {{ row.absent }}
+              </td>
+              <td class="px-5 py-4">
+                <span 
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
+                  :class="row.rate >= 75 
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                    : row.rate >= 50 
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'"
+                >
+                  {{ row.rate }}%
+                </span>
+              </td>
+              <td class="px-5 py-4">
+                <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    class="h-full rounded-full transition-all duration-500" 
+                    :style="{ width: row.rate + '%', backgroundColor: rateColor(row.rate) }"
+                  ></div>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="pagination" v-if="studentTotalPages > 1">
-        <button class="page-btn" :disabled="studentPage === 1" @click="studentPage--" id="student-prev-btn">← Prev</button>
-        <span class="page-info">Page {{ studentPage }} of {{ studentTotalPages }}</span>
-        <button class="page-btn" :disabled="studentPage === studentTotalPages" @click="studentPage++" id="student-next-btn">Next →</button>
-      </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Attendance Records</h2>
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input v-model="searchQuery" type="text" placeholder="Search by name, student ID or course…" id="attendance-search" class="search-input" />
+    <!-- Per-Student Attendance Breakdown Panel -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-6 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div>
+          <h2 class="text-base font-bold font-display text-slate-900 dark:text-white">Per-Student Attendance Rate</h2>
+          <p class="text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5">Individual student course engagement and eligibility metrics</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <select 
+            v-model="studentProgramFilter" 
+            id="student-program-filter"
+            class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-secondary shadow-2xs"
+          >
+            <option value="">All Programmes</option>
+            <option v-for="p in programmes" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+
+          <select 
+            v-model="studentCourseFilter" 
+            id="student-course-filter"
+            class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-secondary shadow-2xs"
+          >
+            <option value="">All Courses</option>
+            <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+
+          <div class="relative min-w-[200px]">
+            <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input 
+              v-model="studentSearch" 
+              type="text" 
+              placeholder="Search name or ID…" 
+              id="student-search"
+              class="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-hidden focus:border-secondary shadow-2xs"
+            />
+          </div>
         </div>
       </div>
 
-      <div class="table-wrapper">
-        <table class="data-table" id="attendance-records-table">
-          <thead>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left text-slate-600 dark:text-slate-400" id="student-breakdown-table">
+          <thead class="text-[11px] font-mono uppercase bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80">
             <tr>
-              <th>Student</th>
-              <th>Student ID</th>
-              <th>Course</th>
-              <th>Session Date</th>
-              <th>Status</th>
-              <th>Recorded At</th>
+              <th scope="col" class="px-5 py-3.5">Student</th>
+              <th scope="col" class="px-5 py-3.5">Student ID</th>
+              <th scope="col" class="px-5 py-3.5">Programme</th>
+              <th scope="col" class="px-5 py-3.5">Course</th>
+              <th scope="col" class="px-5 py-3.5">Sessions</th>
+              <th scope="col" class="px-5 py-3.5">Present</th>
+              <th scope="col" class="px-5 py-3.5">Absent</th>
+              <th scope="col" class="px-5 py-3.5">Rate</th>
+              <th scope="col" class="px-5 py-3.5 w-28">Rate Bar</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-if="filteredAttendances.length === 0">
-              <td colspan="6" class="empty-cell">No records match your filters.</td>
-            </tr>
-            <tr v-for="rec in paginatedAttendances" :key="rec.id">
-              <td class="student-name-cell">{{ rec.studentName }}</td>
-              <td class="mono">{{ rec.idNumber }}</td>
-              <td>{{ rec.courseName }}</td>
-              <td>{{ rec.sessionDate }}</td>
-              <td>
-                <span class="status-pill" :class="rec.status">{{ rec.status }}</span>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <tr v-if="filteredStudentBreakdown.length === 0">
+              <td colspan="9" class="px-5 py-10 text-center text-xs font-mono text-slate-400">
+                No data matches your filters.
               </td>
-              <td class="mono muted">{{ rec.recordedAt }}</td>
+            </tr>
+            <tr 
+              v-for="row in paginatedStudentBreakdown" 
+              :key="row.key"
+              class="hover:bg-slate-50/70 dark:hover:bg-slate-900/30 transition-colors"
+            >
+              <td class="px-5 py-4 font-semibold text-slate-800 dark:text-slate-200">
+                {{ row.studentName }}
+              </td>
+              <td class="px-5 py-4 font-mono font-medium text-slate-700 dark:text-slate-300">
+                {{ row.idNumber }}
+              </td>
+              <td class="px-5 py-4 text-slate-500 dark:text-slate-400 truncate max-w-[150px]">
+                {{ row.programmeName }}
+              </td>
+              <td class="px-5 py-4 font-medium text-slate-800 dark:text-slate-200">
+                {{ row.courseName }}
+              </td>
+              <td class="px-5 py-4 font-mono font-medium text-slate-700 dark:text-slate-300">
+                {{ row.sessionCount }}
+              </td>
+              <td class="px-5 py-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {{ row.present }}
+              </td>
+              <td class="px-5 py-4 font-mono font-bold text-rose-500">
+                {{ row.absent }}
+              </td>
+              <td class="px-5 py-4">
+                <span 
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
+                  :class="row.rate >= 75 
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                    : row.rate >= 50 
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'"
+                >
+                  {{ row.rate }}%
+                </span>
+              </td>
+              <td class="px-5 py-4">
+                <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    class="h-full rounded-full transition-all duration-500" 
+                    :style="{ width: row.rate + '%', backgroundColor: rateColor(row.rate) }"
+                  ></div>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Pagination -->
-      <div class="pagination" v-if="totalPages > 1">
-        <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--" id="prev-page-btn">← Prev</button>
-        <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++" id="next-page-btn">Next →</button>
+      <div v-if="studentTotalPages > 1" class="flex items-center justify-between gap-4 p-4 sm:p-5 border-t border-slate-200/80 dark:border-slate-800/80 text-xs font-mono">
+        <button 
+          :disabled="studentPage === 1" 
+          @click="studentPage--" 
+          id="student-prev-btn"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-secondary transition-colors cursor-pointer"
+        >
+          <ChevronLeft class="w-3.5 h-3.5" />
+          <span>Previous</span>
+        </button>
+
+        <span class="text-slate-500 dark:text-slate-400">
+          Page <strong class="text-slate-800 dark:text-slate-200">{{ studentPage }}</strong> of <strong class="text-slate-800 dark:text-slate-200">{{ studentTotalPages }}</strong>
+        </span>
+
+        <button 
+          :disabled="studentPage === studentTotalPages" 
+          @click="studentPage++" 
+          id="student-next-btn"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-secondary transition-colors cursor-pointer"
+        >
+          <span>Next</span>
+          <ChevronRight class="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+
+    <!-- Attendance Records Panel -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div>
+          <h2 class="text-base font-bold font-display text-slate-900 dark:text-white">Individual Attendance Records</h2>
+          <p class="text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5">Chronological audit ledger of all student check-in transactions</p>
+        </div>
+
+        <div class="relative min-w-[240px]">
+          <Search class="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input 
+            v-model="searchQuery" 
+            type="text" 
+            placeholder="Search name, ID, or course…" 
+            id="attendance-search"
+            class="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-hidden focus:border-secondary shadow-2xs"
+          />
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left text-slate-600 dark:text-slate-400" id="attendance-records-table">
+          <thead class="text-[11px] font-mono uppercase bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80">
+            <tr>
+              <th scope="col" class="px-5 py-3.5">Student</th>
+              <th scope="col" class="px-5 py-3.5">Student ID</th>
+              <th scope="col" class="px-5 py-3.5">Course</th>
+              <th scope="col" class="px-5 py-3.5">Session Date</th>
+              <th scope="col" class="px-5 py-3.5">Status</th>
+              <th scope="col" class="px-5 py-3.5">Recorded At</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <tr v-if="filteredAttendances.length === 0">
+              <td colspan="6" class="px-5 py-10 text-center text-xs font-mono text-slate-400">
+                No records match your filters.
+              </td>
+            </tr>
+            <tr 
+              v-for="rec in paginatedAttendances" 
+              :key="rec.id"
+              class="hover:bg-slate-50/70 dark:hover:bg-slate-900/30 transition-colors"
+            >
+              <td class="px-5 py-4 font-semibold text-slate-800 dark:text-slate-200">
+                {{ rec.studentName }}
+              </td>
+              <td class="px-5 py-4 font-mono font-medium text-slate-700 dark:text-slate-300">
+                {{ rec.idNumber }}
+              </td>
+              <td class="px-5 py-4 font-medium text-slate-800 dark:text-slate-200">
+                {{ rec.courseName }}
+              </td>
+              <td class="px-5 py-4 font-mono text-slate-600 dark:text-slate-400">
+                {{ rec.sessionDate }}
+              </td>
+              <td class="px-5 py-4">
+                <span 
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider"
+                  :class="rec.status === 'present' 
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'"
+                >
+                  {{ rec.status }}
+                </span>
+              </td>
+              <td class="px-5 py-4 font-mono text-slate-400">
+                {{ rec.recordedAt }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="flex items-center justify-between gap-4 p-4 sm:p-5 border-t border-slate-200/80 dark:border-slate-800/80 text-xs font-mono">
+        <button 
+          :disabled="currentPage === 1" 
+          @click="currentPage--" 
+          id="prev-page-btn"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-secondary transition-colors cursor-pointer"
+        >
+          <ChevronLeft class="w-3.5 h-3.5" />
+          <span>Previous</span>
+        </button>
+
+        <span class="text-slate-500 dark:text-slate-400">
+          Page <strong class="text-slate-800 dark:text-slate-200">{{ currentPage }}</strong> of <strong class="text-slate-800 dark:text-slate-200">{{ totalPages }}</strong>
+        </span>
+
+        <button 
+          :disabled="currentPage === totalPages" 
+          @click="currentPage++" 
+          id="next-page-btn"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-secondary transition-colors cursor-pointer"
+        >
+          <span>Next</span>
+          <ChevronRight class="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   </div>
@@ -225,6 +432,16 @@ import { useCoursesStore } from '@/stores/courses';
 import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useProgrammesStore } from '@/stores/programmes';
 import { supabase } from '@/stores/supabase';
+import {
+  Users,
+  Percent,
+  Calendar,
+  UserX,
+  BarChart2,
+  Search,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-vue-next';
 
 const attendancesStore = useAttendancesStore();
 const sessionsStore = useSessionsStore();
@@ -347,7 +564,6 @@ const courseBreakdown = computed(() => {
 
 // ─── Per-Student Breakdown ────────────────────────────────────────────────────
 
-// Build a quick map: courseId -> Set of sessionIds
 const courseSessionMap = computed(() => {
   const map = {};
   sessions.value.forEach(s => {
@@ -462,484 +678,9 @@ const paginatedAttendances = computed(() => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function rateClass(rate) {
-  if (rate >= 75) return 'rate-good';
-  if (rate >= 50) return 'rate-warn';
-  return 'rate-bad';
-}
-
 function rateColor(rate) {
   if (rate >= 75) return '#10b981';
   if (rate >= 50) return '#f59e0b';
   return '#ef4444';
 }
 </script>
-
-<style scoped>
-/* ── Layout ─────────────────────────────────────────── */
-.analytics-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* ── Header ─────────────────────────────────────────── */
-.analytics-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.page-subtitle {
-  margin: 0.25rem 0 0;
-  font-size: 0.9rem;
-  color: #64748b;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.filter-select {
-  padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  color: #334155;
-  background: #ffffff;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.filter-select:focus {
-  border-color: #6366f1;
-}
-
-/* ── KPI Grid ───────────────────────────────────────── */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-}
-
-.kpi-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-  border: 1px solid rgba(226,232,240,0.8);
-  transition: transform 0.2s, box-shadow 0.2s;
-  min-width: 0;
-}
-
-.kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.08);
-}
-
-.kpi-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.kpi-icon svg {
-  width: 22px;
-  height: 22px;
-}
-
-.kpi-blue .kpi-icon  { background: rgba(99,102,241,0.1); color: #6366f1; }
-.kpi-green .kpi-icon { background: rgba(16,185,129,0.1); color: #10b981; }
-.kpi-amber .kpi-icon { background: rgba(245,158,11,0.1); color: #f59e0b; }
-.kpi-red .kpi-icon   { background: rgba(239,68,68,0.1);  color: #ef4444; }
-
-.kpi-body {
-  min-width: 0;
-}
-
-.kpi-label {
-  margin: 0 0 0.25rem;
-  font-size: 0.8rem;
-  color: #64748b;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.kpi-value {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-/* ── Panel ──────────────────────────────────────────── */
-.panel {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-  border: 1px solid rgba(226,232,240,0.8);
-  min-width: 0;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-
-.panel-header h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-/* ── Search ─────────────────────────────────────────── */
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.45rem 0.75rem;
-}
-
-.search-box svg {
-  width: 15px;
-  height: 15px;
-  color: #94a3b8;
-  flex-shrink: 0;
-}
-
-.search-input {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 0.875rem;
-  color: #334155;
-  min-width: 220px;
-  width: 100%;
-}
-
-/* ── Table ──────────────────────────────────────────── */
-.table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.data-table th {
-  text-align: left;
-  padding: 0.75rem 1rem;
-  color: #64748b;
-  font-weight: 600;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  white-space: nowrap;
-}
-
-.data-table th:first-child { border-radius: 8px 0 0 8px; }
-.data-table th:last-child  { border-radius: 0 8px 8px 0; }
-
-.data-table td {
-  padding: 0.85rem 1rem;
-  color: #334155;
-  border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle;
-}
-
-.data-table tbody tr:last-child td { border-bottom: none; }
-
-.data-table tbody tr:hover td {
-  background: #fafbff;
-}
-
-.empty-cell {
-  text-align: center;
-  color: #94a3b8;
-  padding: 2rem !important;
-}
-
-.course-name-cell { font-weight: 600; color: #1e293b; }
-.student-name-cell { font-weight: 600; color: #1e293b; }
-.present-cell { color: #10b981; font-weight: 600; }
-.absent-cell  { color: #ef4444; font-weight: 600; }
-.mono  { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 0.82rem; }
-.muted { color: #94a3b8; }
-
-/* ── Rate Badge ─────────────────────────────────────── */
-.rate-badge {
-  display: inline-block;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.rate-badge.rate-good { background: #dcfce7; color: #15803d; }
-.rate-badge.rate-warn { background: #fef9c3; color: #a16207; }
-.rate-badge.rate-bad  { background: #fee2e2; color: #b91c1c; }
-
-/* ── Progress Bar ───────────────────────────────────── */
-.bar-cell { min-width: 120px; }
-.progress-track {
-  background: #f1f5f9;
-  border-radius: 9999px;
-  height: 8px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  border-radius: 9999px;
-  transition: width 0.6s ease;
-}
-
-/* ── Status Pill ────────────────────────────────────── */
-.status-pill {
-  display: inline-block;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: capitalize;
-  white-space: nowrap;
-}
-.status-pill.present { background: #dcfce7; color: #15803d; }
-.status-pill.absent  { background: #fee2e2; color: #b91c1c; }
-
-/* ── Pagination ─────────────────────────────────────── */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1rem;
-  flex-wrap: wrap;
-}
-
-.page-btn {
-  padding: 0.4rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
-  color: #6366f1;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-.page-btn:hover:not(:disabled) { background: #6366f1; color: #fff; border-color: #6366f1; }
-.page-btn:disabled { opacity: 0.35; cursor: default; }
-.page-info { font-size: 0.875rem; color: #64748b; }
-
-/* ══════════════════════════════════════════════════════
-   RESPONSIVE BREAKPOINTS
-   S  : ≤ 375px   (small phones)
-   M  : 376–480px (large phones)
-   L  : 481–767px (phablets / small tablets, portrait)
-   Tab: 768–1023px (tablets)
-   Lap: 1024–1279px (small laptops)
-   ══════════════════════════════════════════════════════ */
-
-/* ── Small laptops / narrow desktop (≤1279px): tighten grid a touch ── */
-@media (max-width: 1279px) {
-  .kpi-grid {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  }
-}
-
-/* ── Tablets (≤1023px) ── */
-@media (max-width: 1023px) {
-  .analytics-container { gap: 1.5rem; }
-
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-
-  .panel { padding: 1.25rem; }
-
-  .search-input { min-width: 160px; }
-
-  .filter-group {
-    width: 100%;
-  }
-
-  .panel-header {
-    align-items: stretch;
-  }
-}
-
-/* ── Large phones / small tablets, portrait (≤767px) ── */
-@media (max-width: 767px) {
-  .analytics-container { gap: 1.25rem; }
-
-  .analytics-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .page-title { font-size: 1.4rem; }
-  .page-subtitle { font-size: 0.85rem; }
-
-  .header-actions {
-    width: 100%;
-  }
-  .header-actions .filter-select {
-    flex: 1 1 45%;
-  }
-
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-
-  .kpi-card {
-    padding: 1rem;
-    border-radius: 12px;
-    gap: 0.75rem;
-  }
-
-  .kpi-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-  }
-  .kpi-icon svg { width: 18px; height: 18px; }
-
-  .kpi-label { font-size: 0.72rem; }
-  .kpi-value { font-size: 1.3rem; }
-
-  .panel {
-    padding: 1rem;
-    border-radius: 12px;
-  }
-
-  .panel-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-  }
-  .panel-header h2 { font-size: 1rem; }
-
-  .filter-group {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
-  .filter-group .filter-select,
-  .filter-group .search-box {
-    width: 100%;
-  }
-
-  .search-box { width: 100%; }
-  .search-input { min-width: 0; }
-
-  .data-table { font-size: 0.8rem; }
-  .data-table th,
-  .data-table td { padding: 0.6rem 0.65rem; }
-
-  .bar-cell { min-width: 90px; }
-
-  .pagination {
-    justify-content: space-between;
-  }
-}
-
-/* ── Large phones (≤480px) ── */
-@media (max-width: 480px) {
-  .kpi-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .kpi-card {
-    padding: 0.9rem 1rem;
-  }
-
-  .header-actions {
-    flex-direction: column;
-  }
-  .header-actions .filter-select {
-    flex: 1 1 100%;
-    width: 100%;
-  }
-
-  .data-table { font-size: 0.76rem; }
-  .data-table th { font-size: 0.68rem; }
-
-  .rate-badge,
-  .status-pill { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
-
-  .pagination {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-  }
-  .page-btn { width: 100%; }
-}
-
-/* ── Small phones (≤375px) ── */
-@media (max-width: 375px) {
-  .page-title { font-size: 1.2rem; }
-
-  .kpi-value { font-size: 1.15rem; }
-  .kpi-icon { width: 32px; height: 32px; }
-  .kpi-icon svg { width: 16px; height: 16px; }
-
-  .panel { padding: 0.85rem; }
-
-  .data-table th,
-  .data-table td { padding: 0.5rem; }
-
-  .mono { font-size: 0.72rem; }
-}
-</style>

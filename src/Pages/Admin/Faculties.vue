@@ -1,65 +1,110 @@
 <template>
-  <div class="faculties-page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1>Faculty Management</h1>
-        <p>Add and manage faculties for student and staff registration.</p>
+  <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
+
+    <!-- Header -->
+    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+      <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
+      <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+      <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+
+      <div class="relative z-10">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium tracking-wide uppercase bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
+            <Building2 class="w-3 h-3" />
+            ADMIN // FACULTY REGISTRY
+          </span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Faculty Management</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add and manage faculties for student and staff registration.</p>
       </div>
     </div>
 
-    <div class="content-card">
-      <div class="add-faculty-section">
-        <h3>Add New Faculty</h3>
-        <form @submit.prevent="handleAddFaculty" class="add-form">
-          <div class="input-wrapper">
-            <input type="text" v-model="newFacultyName" :placeholder="editingFacultyId ? 'Update Faculty Name' : 'e.g., School of Medicine'" required />
-            <button type="button" v-if="editingFacultyId" class="btn-ghost" @click="cancelEdit">Cancel</button>
-            <button type="submit" class="btn-primary" :disabled="isAdding">
-              <span v-if="!isAdding">{{ editingFacultyId ? 'Update' : 'Add Faculty' }}</span>
-              <svg v-else class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
-                <path d="M12 2a10 10 0 0 1 10 10"></path>
-              </svg>
+    <!-- Add / Edit Form -->
+    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm">
+      <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+        <component :is="editingFacultyId ? Edit3 : Plus" class="w-4 h-4 text-secondary" />
+        {{ editingFacultyId ? 'Update Faculty' : 'Add New Faculty' }}
+      </h3>
+      <form @submit.prevent="handleAddFaculty">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            v-model="newFacultyName"
+            :placeholder="editingFacultyId ? 'Update faculty name...' : 'e.g., School of Medicine'"
+            required
+            class="flex-1 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all placeholder:text-slate-400"
+          />
+          <div class="flex gap-2">
+            <button v-if="editingFacultyId" type="button" @click="cancelEdit"
+              class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap">
+              Cancel
+            </button>
+            <button type="submit" :disabled="isAdding"
+              class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md inline-flex items-center gap-2 disabled:opacity-50 active:scale-95 whitespace-nowrap"
+            >
+              <Loader2 v-if="isAdding" class="w-4 h-4 animate-spin" />
+              <span>{{ isAdding ? 'Saving...' : (editingFacultyId ? 'Update' : 'Add Faculty') }}</span>
             </button>
           </div>
-          <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
-          <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
-        </form>
+        </div>
+
+        <div v-if="errorMsg" class="mt-3 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+          <AlertCircle class="w-3.5 h-3.5 flex-shrink-0" /> {{ errorMsg }}
+        </div>
+        <div v-if="successMsg" class="mt-3 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+          <CheckCircle2 class="w-3.5 h-3.5 flex-shrink-0" /> {{ successMsg }}
+        </div>
+      </form>
+    </div>
+
+    <!-- Faculties List -->
+    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Registered Faculties</h3>
+        <span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-primary/5 dark:bg-secondary/10 border border-primary/20 dark:border-secondary/20 text-primary dark:text-secondary font-semibold">
+          {{ faculties.length }} Total
+        </span>
       </div>
 
-      <div class="faculties-list-section">
-        <h3>Existing Faculties</h3>
-        <div v-if="isLoading" class="loading-state">
-          <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
-            <path d="M12 2a10 10 0 0 1 10 10"></path>
-          </svg>
-          <p>Loading faculties...</p>
-        </div>
-        <div v-else-if="faculties.length === 0" class="empty-state">
-          <p>No faculties added yet. Add one above.</p>
-        </div>
-        <ul v-else class="faculties-list">
-          <li v-for="faculty in faculties" :key="faculty.id" class="faculty-item" :class="{ 'is-editing': editingFacultyId === faculty.id }">
-            <div class="faculty-info">
-              <span class="faculty-name">{{ faculty.name }}</span>
-            </div>
-            <div class="action-buttons">
-              <button class="btn-edit" @click="editFaculty(faculty)" aria-label="Edit faculty">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              </button>
-              <button class="btn-delete" @click="deleteFaculty(faculty.id)" aria-label="Delete faculty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
-              </button>
-            </div>
-          </li>
-        </ul>
+      <!-- Loading -->
+      <div v-if="isLoading" class="flex flex-col items-center justify-center py-16">
+        <Loader2 class="w-8 h-8 text-secondary animate-spin mb-3" />
+        <span class="text-xs font-mono text-slate-500 dark:text-slate-400">LOADING FACULTIES...</span>
       </div>
+
+      <!-- Empty -->
+      <div v-else-if="faculties.length === 0" class="py-12 text-center text-slate-400 text-sm">
+        No faculties added yet. Add one above.
+      </div>
+
+      <!-- List -->
+      <ul v-else class="divide-y divide-slate-100 dark:divide-slate-800/60">
+        <li
+          v-for="faculty in faculties"
+          :key="faculty.id"
+          :class="['flex items-center justify-between gap-4 px-5 py-4 transition-colors group',
+            editingFacultyId === faculty.id ? 'bg-secondary/5 dark:bg-secondary/10' : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/30'
+          ]"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-secondary/15 border border-primary/20 dark:border-secondary/30 text-primary dark:text-secondary flex items-center justify-center font-bold text-xs uppercase">
+              {{ faculty.name.charAt(0) }}
+            </div>
+            <span class="font-medium text-sm text-slate-900 dark:text-slate-100">{{ faculty.name }}</span>
+            <span v-if="editingFacultyId === faculty.id" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary/15 text-secondary">Editing</span>
+          </div>
+          <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button @click="editFaculty(faculty)" aria-label="Edit faculty"
+              class="p-1.5 text-slate-400 hover:text-primary dark:hover:text-secondary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+              <Edit3 class="w-3.5 h-3.5" />
+            </button>
+            <button @click="deleteFaculty(faculty.id)" aria-label="Delete faculty"
+              class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors">
+              <Trash2 class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
@@ -70,6 +115,7 @@ import { storeToRefs } from 'pinia';
 import { useFacultiesStore } from '@/stores/faculties';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
+import { Building2, Plus, Edit3, Trash2, Loader2, AlertCircle, CheckCircle2 } from 'lucide-vue-next';
 
 const facultiesStore = useFacultiesStore();
 const auditLogsStore = useAuditLogsStore();
@@ -85,25 +131,13 @@ const currentUser = ref(null);
 const loadCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
-
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, name, role')
-    .eq('id', user.id)
-    .single();
-
+  const { data, error } = await supabase.from('users').select('id, name, role').eq('id', user.id).single();
   if (!error) currentUser.value = data;
 };
 
 const logAudit = (action, details) => {
   if (!currentUser.value) return;
-  auditLogsStore.logAction({
-    action,
-    details,
-    userId: currentUser.value.id,
-    userRole: currentUser.value.role,
-    userName: currentUser.value.name,
-  });
+  auditLogsStore.logAction({ action, details, userId: currentUser.value.id, userRole: currentUser.value.role, userName: currentUser.value.name });
 };
 
 const handleAddFaculty = async () => {
@@ -111,9 +145,7 @@ const handleAddFaculty = async () => {
   isAdding.value = true;
   errorMsg.value = '';
   successMsg.value = '';
-
   const name = newFacultyName.value.trim();
-
   try {
     if (editingFacultyId.value) {
       await facultiesStore.updateFaculty(editingFacultyId.value, { name });
@@ -124,7 +156,6 @@ const handleAddFaculty = async () => {
       logAudit('faculty_created', `Added faculty "${name}"`);
       successMsg.value = 'Faculty added successfully!';
     }
-
     faculties.value.sort((a, b) => a.name.localeCompare(b.name));
     cancelEdit();
     setTimeout(() => { successMsg.value = ''; }, 3000);
@@ -151,9 +182,7 @@ const cancelEdit = () => {
 
 const deleteFaculty = async (id) => {
   if (!confirm('Are you sure you want to delete this faculty?')) return;
-
   const faculty = faculties.value.find(f => f.id === id);
-
   try {
     await facultiesStore.deleteFaculty(id);
     logAudit('faculty_deleted', `Deleted faculty "${faculty?.name ?? ''}"`);
@@ -168,232 +197,5 @@ onMounted(async () => {
   facultiesStore.subscribeToFaculties();
 });
 
-onUnmounted(() => {
-  facultiesStore.unsubscribeFromFaculties();
-});
+onUnmounted(() => { facultiesStore.unsubscribeFromFaculties(); });
 </script>
-
-<style scoped>
-.faculties-page {
-  font-family: 'Inter', sans-serif;
-  animation: fadeIn 0.4s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.header-content h1 {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -0.02em;
-}
-
-.header-content p {
-  color: #64748b;
-  margin: 0;
-  font-size: 1rem;
-}
-
-.content-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025);
-  padding: 2rem;
-  max-width: 800px;
-}
-
-.add-faculty-section {
-  margin-bottom: 2.5rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 1rem 0;
-}
-
-.input-wrapper {
-  display: flex;
-  gap: 1rem;
-}
-
-.input-wrapper input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  font-size: 0.95rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  outline: none;
-  transition: all 0.2s;
-}
-
-.input-wrapper input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.btn-primary {
-  background: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 0 1.5rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 120px;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #4338ca;
-}
-
-.btn-primary:disabled {
-  background: #94a3b8;
-  cursor: not-allowed;
-}
-
-.error-msg {
-  color: #ef4444;
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-  font-weight: 500;
-}
-
-.success-msg {
-  color: #10b981;
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-  font-weight: 500;
-}
-
-.faculties-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.faculty-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  transition: all 0.2s;
-}
-
-.faculty-item:hover {
-  background: white;
-  border-color: #cbd5e1;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.faculty-name {
-  font-weight: 600;
-  color: #334155;
-  font-size: 1rem;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-delete, .btn-edit {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.btn-delete {
-  color: #94a3b8;
-}
-
-.btn-edit {
-  color: #64748b;
-}
-
-.btn-delete:hover {
-  color: #ef4444;
-  background: #fee2e2;
-}
-
-.btn-edit:hover {
-  color: #4f46e5;
-  background: #e0e7ff;
-}
-
-.faculty-item.is-editing {
-  border-color: #6366f1;
-  background: #f8fafc;
-}
-
-.btn-ghost {
-  background: transparent;
-  border: 1px solid #cbd5e1;
-  color: #64748b;
-  padding: 0 1rem;
-  border-radius: 10px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-ghost:hover {
-  background: #f1f5f9;
-  color: #334155;
-}
-
-.btn-delete svg, .btn-edit svg {
-  width: 18px;
-  height: 18px;
-}
-
-.loading-state, .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 0;
-  color: #64748b;
-  font-size: 0.95rem;
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 0.5rem;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-</style>

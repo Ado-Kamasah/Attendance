@@ -1,156 +1,193 @@
 <template>
-  <div class="sv-container">
+  <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
-    <div class="sv-header">
-      <div>
-        <h1 class="sv-title">Suggestion Box</h1>
-        <p class="sv-subtitle">Review complaints, suggestions and feedback submitted by students</p>
+    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+      <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
+      <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+      <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+
+      <div class="relative z-10">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium tracking-wide uppercase bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
+            <MessageSquare class="w-3 h-3" />
+            ADMIN // SUGGESTION BOX
+          </span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Suggestion Box</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Review complaints, suggestions and feedback submitted by students.</p>
       </div>
-      <div class="sv-kpis">
-        <div class="kpi-pill kpi-blue">
-          <span class="kpi-num">{{ unread }}</span>
-          <span class="kpi-lbl">Unread</span>
-        </div>
-        <div class="kpi-pill kpi-amber">
-          <span class="kpi-num">{{ reviewed }}</span>
-          <span class="kpi-lbl">Reviewed</span>
-        </div>
-        <div class="kpi-pill kpi-green">
-          <span class="kpi-num">{{ resolved }}</span>
-          <span class="kpi-lbl">Resolved</span>
-        </div>
+    </div>
+
+    <!-- KPI Pills -->
+    <div class="flex flex-wrap gap-3">
+      <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
+        <span class="text-2xl font-display font-extrabold text-sky-700 dark:text-sky-400">{{ unread }}</span>
+        <span class="text-xs font-mono uppercase tracking-wider text-sky-600 dark:text-sky-400 font-bold">Unread</span>
+      </div>
+      <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+        <span class="text-2xl font-display font-extrabold text-amber-700 dark:text-amber-400">{{ reviewed }}</span>
+        <span class="text-xs font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">Reviewed</span>
+      </div>
+      <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+        <span class="text-2xl font-display font-extrabold text-emerald-700 dark:text-emerald-400">{{ resolved }}</span>
+        <span class="text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold">Resolved</span>
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="sv-filters">
-      <div class="search-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input v-model="search" type="text" placeholder="Search subject or message…" class="search-in" />
+    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row flex-wrap gap-3">
+      <div class="flex-1 relative min-w-[200px]">
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input v-model="search" type="text" placeholder="Search subject or message…"
+          class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
       </div>
-      <select v-model="filterStatus"   class="fsel">
+      <select v-model="filterStatus"
+        class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
         <option value="">All Statuses</option>
         <option value="unread">Unread</option>
         <option value="reviewed">Reviewed</option>
         <option value="resolved">Resolved</option>
       </select>
-      <select v-model="filterCategory" class="fsel">
+      <select v-model="filterCategory"
+        class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
         <option value="">All Categories</option>
         <option value="complaint">Complaint</option>
         <option value="suggestion">Suggestion</option>
         <option value="feedback">Feedback</option>
         <option value="other">Other</option>
       </select>
-      <button class="refresh-btn" @click="load" :disabled="isLoading">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <button @click="load" :disabled="isLoading"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-secondary text-sm font-medium transition-all shadow-sm disabled:opacity-50 whitespace-nowrap"
+      >
+        <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
         Refresh
       </button>
     </div>
 
-    <!-- Loading / empty -->
-    <div v-if="isLoading" class="sv-state">Loading submissions…</div>
-    <div v-else-if="filtered.length === 0" class="sv-empty">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <p>No submissions found.</p>
+    <!-- Loading -->
+    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
+      <Loader2 class="w-10 h-10 text-secondary animate-spin mb-4" />
+      <p class="text-sm font-mono text-slate-500 dark:text-slate-400">LOADING SUBMISSIONS...</p>
     </div>
 
-    <!-- Cards grid -->
-    <div v-else class="sv-grid">
+    <!-- Empty -->
+    <div v-else-if="filtered.length === 0" class="bg-white dark:bg-[#071328] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-14 text-center">
+      <MessageSquare class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+      <p class="text-sm text-slate-400">No submissions found.</p>
+    </div>
+
+    <!-- Cards -->
+    <div v-else class="space-y-4">
       <div
         v-for="s in filtered"
         :key="s.id"
-        class="sv-card"
-        :class="`border-${s.category}`"
+        :class="['bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border-l-4', getCategoryBorder(s.category)]"
       >
         <!-- Top row -->
-        <div class="svc-top">
-          <span class="svc-cat" :class="`cat-${s.category}`">{{ catIcon(s.category) }} {{ catLabel(s.category) }}</span>
-          <span class="svc-status" :class="`status-${s.status}`">{{ statusLabel(s.status) }}</span>
-          <span class="svc-date">{{ fmtDate(s.createdAt) }}</span>
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <span :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold border', getCategoryBadge(s.category)]">
+            {{ catLabel(s.category) }}
+          </span>
+          <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-bold border', getStatusBadge(s.status)]">
+            {{ statusLabel(s.status) }}
+          </span>
+          <span class="ml-auto text-[11px] font-mono text-slate-400">{{ fmtDate(s.createdAt) }}</span>
         </div>
 
         <!-- Student info -->
-        <div class="svc-student">
+        <div class="flex items-center gap-2 mb-3">
           <template v-if="s.isAnonymous">
-            <span class="anon-badge">Anonymous Submission</span>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800 font-bold">Anonymous Submission</span>
           </template>
           <template v-else>
-            <div class="student-avatar">{{ (s.studentName || '?').charAt(0).toUpperCase() }}</div>
-            <div class="student-info">
-              <span class="student-name">{{ s.studentName }}</span>
-              <span class="student-id" v-if="s.idNumber">ID: {{ s.idNumber }}</span>
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary/70 dark:from-secondary dark:to-secondary/70 text-white dark:text-primary flex items-center justify-center font-bold text-xs uppercase">
+              {{ (s.studentName || '?').charAt(0).toUpperCase() }}
+            </div>
+            <div>
+              <div class="text-xs font-bold text-slate-900 dark:text-slate-100">{{ s.studentName }}</div>
+              <div v-if="s.idNumber" class="text-[10px] font-mono text-slate-400">{{ s.idNumber }}</div>
             </div>
           </template>
         </div>
 
-        <!-- Subject -->
-        <p class="svc-subject">{{ s.subject }}</p>
+        <!-- Subject + Message -->
+        <p class="font-bold text-sm text-slate-900 dark:text-white mb-1">{{ s.subject }}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ s.message }}</p>
 
-        <!-- Message -->
-        <p class="svc-msg">{{ s.message }}</p>
-
-        <!-- Admin note (if any) -->
-        <div v-if="s.adminNote" class="svc-note">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <!-- Admin note -->
+        <div v-if="s.adminNote" class="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs text-sky-700 dark:text-sky-400">
+          <MessageSquare class="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
           <span><strong>Your note:</strong> {{ s.adminNote }}</span>
         </div>
 
         <!-- Actions -->
-        <div class="svc-actions">
-          <div class="svc-status-btns">
-            <button
-              v-for="st in statusOptions"
-              :key="st.value"
-              class="st-btn"
-              :class="[`st-${st.value}`, { active: s.status === st.value }]"
+        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+          <div class="flex gap-1.5 flex-wrap">
+            <button v-for="st in statusOptions" :key="st.value"
               @click="changeStatus(s, st.value)"
               :disabled="s.status === st.value || s._saving"
+              :class="['px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold border transition-all disabled:cursor-not-allowed',
+                s.status === st.value
+                  ? getStatusActiveCls(st.value)
+                  : 'bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 opacity-60 hover:opacity-100'
+              ]"
             >{{ st.label }}</button>
           </div>
-          <button class="reply-btn" @click="openNote(s)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <button @click="openNote(s)"
+            class="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary transition-all"
+          >
+            <MessageSquare class="w-3.5 h-3.5" />
             {{ s.adminNote ? 'Edit Note' : 'Add Note' }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Note modal -->
+    <!-- Note Modal -->
     <Teleport to="body">
-      <transition name="modal">
-        <div v-if="noteModal.open" class="modal-overlay" @click.self="noteModal.open = false">
-          <div class="modal-box">
-            <div class="modal-head">
-              <h3>Add / Edit Response Note</h3>
-              <button class="modal-close" @click="noteModal.open = false">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <transition name="fade">
+        <div v-if="noteModal.open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="noteModal.open = false">
+          <div class="relative w-full max-w-md bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+            <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+
+            <div class="flex items-center justify-between">
+              <span class="font-display font-bold text-slate-900 dark:text-white text-base">Add / Edit Response Note</span>
+              <button @click="noteModal.open = false" class="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <X class="w-4 h-4" />
               </button>
             </div>
-            <p class="modal-subject">Re: {{ noteModal.subject }}</p>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">Re: {{ noteModal.subject }}</p>
+
             <textarea
               v-model="noteModal.note"
-              class="modal-ta"
               rows="5"
               placeholder="Write your internal note or response here…"
+              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 resize-y transition-all"
             ></textarea>
-            <div class="modal-footer">
-              <button class="modal-cancel" @click="noteModal.open = false">Cancel</button>
-              <button class="modal-save"   @click="saveNote" :disabled="noteModal.saving">
-                {{ noteModal.saving ? 'Saving…' : 'Save Note' }}
+
+            <div class="flex items-center justify-end gap-3">
+              <button @click="noteModal.open = false" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+              <button @click="saveNote" :disabled="noteModal.saving"
+                class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md inline-flex items-center gap-2 disabled:opacity-50 active:scale-95"
+              >
+                <Loader2 v-if="noteModal.saving" class="w-4 h-4 animate-spin" />
+                <span>{{ noteModal.saving ? 'Saving…' : 'Save Note' }}</span>
               </button>
             </div>
           </div>
         </div>
       </transition>
     </Teleport>
-
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue';
 import { supabase } from '@/stores/supabase';
+import { MessageSquare, Search, RefreshCw, Loader2, X } from 'lucide-vue-next';
 
 const suggestions = ref([]);
 const isLoading   = ref(false);
@@ -167,13 +204,12 @@ const statusOptions = [
 ];
 
 const categories = [
-  { value: 'complaint',  label: 'Complaint',  icon: '' },
-  { value: 'suggestion', label: 'Suggestion', icon: '' },
-  { value: 'feedback',   label: 'Feedback',   icon: '' },
-  { value: 'other',      label: 'Other',      icon: '' },
+  { value: 'complaint',  label: 'Complaint'  },
+  { value: 'suggestion', label: 'Suggestion' },
+  { value: 'feedback',   label: 'Feedback'   },
+  { value: 'other',      label: 'Other'      },
 ];
 
-const catIcon  = (v) => categories.find(c => c.value === v)?.icon  ?? '';
 const catLabel = (v) => categories.find(c => c.value === v)?.label ?? v;
 const statusLabel = (s) => ({ unread: 'Unread', reviewed: 'Reviewed', resolved: 'Resolved' })[s] ?? s;
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -186,37 +222,46 @@ const filtered = computed(() => {
   let list = suggestions.value;
   if (filterStatus.value)   list = list.filter(s => s.status   === filterStatus.value);
   if (filterCategory.value) list = list.filter(s => s.category === filterCategory.value);
-  if (search.value.trim()) {
-    const q = search.value.toLowerCase();
-    list = list.filter(s =>
-      s.subject.toLowerCase().includes(q) ||
-      s.message.toLowerCase().includes(q)
-    );
-  }
+  if (search.value.trim()) { const q = search.value.toLowerCase(); list = list.filter(s => s.subject.toLowerCase().includes(q) || s.message.toLowerCase().includes(q)); }
   return list;
 });
+
+// Style helpers
+const getCategoryBorder = (v) => ({
+  complaint: 'border-l-rose-500', suggestion: 'border-l-amber-500', feedback: 'border-l-emerald-500', other: 'border-l-violet-500'
+}[v] ?? 'border-l-slate-400');
+
+const getCategoryBadge = (v) => ({
+  complaint: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800',
+  suggestion: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800',
+  feedback: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800',
+  other: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800',
+}[v] ?? 'bg-slate-100 text-slate-600 border-slate-200');
+
+const getStatusBadge = (s) => ({
+  unread: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800',
+  reviewed: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800',
+  resolved: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800',
+}[s] ?? 'bg-slate-100 text-slate-600 border-slate-200');
+
+const getStatusActiveCls = (s) => ({
+  unread: 'bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-950/60 dark:text-sky-400 dark:border-sky-700',
+  reviewed: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-700',
+  resolved: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-700',
+}[s] ?? '');
 
 async function load() {
   isLoading.value = true;
   try {
-    const { data, error: sbErr } = await supabase
-      .from('suggestions')
-      .select('id, student_id, category, subject, message, is_anonymous, status, admin_note, created_at, users(name, id_number)')
-      .order('created_at', { ascending: false });
+    const { data, error: sbErr } = await supabase.from('suggestions').select('id, student_id, category, subject, message, is_anonymous, status, admin_note, created_at, users(name, id_number)').order('created_at', { ascending: false });
     if (sbErr) throw sbErr;
     suggestions.value = (data ?? []).map(s => ({
-      id:          s.id,
-      studentId:   s.student_id,
+      id: s.id, studentId: s.student_id,
       studentName: s.is_anonymous ? 'Anonymous' : (s.users?.name || 'Student'),
-      idNumber:    s.is_anonymous ? null : (s.users?.id_number || null),
-      category:    s.category,
-      subject:     s.subject,
-      message:     s.message,
-      isAnonymous: s.is_anonymous,
-      status:      s.status,
-      adminNote:   s.admin_note,
-      createdAt:   s.created_at,
-      _saving:     false,
+      idNumber: s.is_anonymous ? null : (s.users?.id_number || null),
+      category: s.category, subject: s.subject, message: s.message,
+      isAnonymous: s.is_anonymous, status: s.status, adminNote: s.admin_note,
+      createdAt: s.created_at, _saving: false,
     }));
   } catch { /* silent */ } finally {
     isLoading.value = false;
@@ -226,10 +271,7 @@ async function load() {
 async function changeStatus(s, newStatus) {
   s._saving = true;
   try {
-    const { error: sbErr } = await supabase
-      .from('suggestions')
-      .update({ status: newStatus })
-      .eq('id', s.id);
+    const { error: sbErr } = await supabase.from('suggestions').update({ status: newStatus }).eq('id', s.id);
     if (sbErr) throw sbErr;
     s.status = newStatus;
   } catch { /* silent */ } finally {
@@ -238,19 +280,13 @@ async function changeStatus(s, newStatus) {
 }
 
 function openNote(s) {
-  noteModal.id      = s.id;
-  noteModal.subject = s.subject;
-  noteModal.note    = s.adminNote || '';
-  noteModal.open    = true;
+  noteModal.id = s.id; noteModal.subject = s.subject; noteModal.note = s.adminNote || ''; noteModal.open = true;
 }
 
 async function saveNote() {
   noteModal.saving = true;
   try {
-    const { error: sbErr } = await supabase
-      .from('suggestions')
-      .update({ admin_note: noteModal.note })
-      .eq('id', noteModal.id);
+    const { error: sbErr } = await supabase.from('suggestions').update({ admin_note: noteModal.note }).eq('id', noteModal.id);
     if (sbErr) throw sbErr;
     const s = suggestions.value.find(x => x.id === noteModal.id);
     if (s) s.adminNote = noteModal.note;
@@ -262,158 +298,3 @@ async function saveNote() {
 
 onMounted(load);
 </script>
-
-
-
-<style scoped>
-* { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-.sv-container { display: flex; flex-direction: column; gap: 1.75rem; width: 100%; }
-
-/* Header */
-.sv-header  { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
-.sv-title   { margin: 0; font-size: 1.75rem; font-weight: 800; color: #0f172a; letter-spacing: -.025em; }
-.sv-subtitle { margin: .25rem 0 0; font-size: .9rem; color: #64748b; }
-.sv-kpis    { display: flex; gap: .75rem; flex-wrap: wrap; }
-
-.kpi-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: .6rem 1.1rem;
-  border-radius: 12px;
-  min-width: 72px;
-}
-.kpi-num  { font-size: 1.5rem; font-weight: 800; line-height: 1; }
-.kpi-lbl  { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-top: .2rem; }
-.kpi-blue  { background: #dbeafe; color: #1d4ed8; }
-.kpi-amber { background: #fef9c3; color: #a16207; }
-.kpi-green { background: #dcfce7; color: #15803d; }
-
-/* Filters */
-.sv-filters { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
-.search-wrap { display: flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 9px; padding: .45rem .85rem; flex: 1; min-width: 200px; }
-.search-wrap svg { width: 15px; height: 15px; color: #94a3b8; flex-shrink: 0; }
-.search-in { border: none; background: transparent; outline: none; font-size: .875rem; color: #334155; width: 100%; }
-.fsel { padding: .45rem .75rem; border: 1px solid #e2e8f0; border-radius: 9px; font-size: .875rem; color: #334155; background: #fff; outline: none; cursor: pointer; }
-.refresh-btn { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .9rem; border: 1px solid #e2e8f0; border-radius: 9px; font-size: .875rem; font-weight: 600; color: #475569; background: #fff; cursor: pointer; transition: all .2s; white-space: nowrap; }
-.refresh-btn svg { width: 14px; height: 14px; }
-.refresh-btn:hover:not(:disabled) { border-color: #6366f1; color: #4f46e5; }
-
-/* States */
-.sv-state { text-align: center; color: #94a3b8; padding: 4rem; }
-.sv-empty { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 2rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 16px; text-align: center; }
-.sv-empty svg { width: 48px; height: 48px; color: #cbd5e1; }
-.sv-empty p  { margin: 0; color: #64748b; }
-
-/* Grid */
-.sv-grid { display: flex; flex-direction: column; gap: 1rem; }
-
-.sv-card {
-  background: #fff;
-  border-radius: 16px;
-  border: 1px solid #f1f5f9;
-  border-left: 5px solid #e2e8f0;
-  box-shadow: 0 2px 8px rgba(0,0,0,.04);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: .75rem;
-  transition: box-shadow .2s;
-}
-.sv-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
-.border-complaint  { border-left-color: #be123c; }
-.border-suggestion { border-left-color: #a16207; }
-.border-feedback   { border-left-color: #15803d; }
-.border-other      { border-left-color: #6d28d9; }
-
-.svc-top     { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
-.svc-cat     { display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; }
-.svc-subject { margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; }
-.svc-date    { font-size: .75rem; color: #94a3b8; margin-left: auto; white-space: nowrap; }
-.svc-status  { font-size: .72rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; }
-.svc-msg     { margin: 0; font-size: .875rem; color: #475569; line-height: 1.6; }
-/* Student info row */
-.svc-student { display: flex; align-items: center; gap: .6rem; }
-.student-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; flex-shrink: 0; }
-.student-info { display: flex; flex-direction: column; line-height: 1.3; }
-.student-name { font-size: .82rem; font-weight: 700; color: #1e293b; }
-.student-id   { font-size: .72rem; color: #64748b; font-weight: 500; }
-.anon-badge   { display: inline-flex; align-items: center; gap: .35rem; font-size: .75rem; font-weight: 700; color: #7c3aed; background: #f3e8ff; padding: .2rem .65rem; border-radius: 999px; }
-
-.svc-note {
-  display: flex; align-items: flex-start; gap: .6rem;
-  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
-  padding: .75rem 1rem; font-size: .85rem; color: #1d4ed8;
-}
-.svc-note svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; }
-
-/* Actions */
-.svc-actions { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; padding-top: .5rem; border-top: 1px solid #f8fafc; }
-.svc-status-btns { display: flex; gap: .4rem; flex-wrap: wrap; }
-.st-btn { padding: .35rem .8rem; border-radius: 8px; font-size: .78rem; font-weight: 700; cursor: pointer; border: 1.5px solid transparent; transition: all .15s; opacity: .55; }
-.st-btn.active, .st-btn:not(:disabled):hover { opacity: 1; }
-.st-unread   { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
-.st-reviewed { background: #fef9c3; color: #a16207; border-color: #fde68a; }
-.st-resolved { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
-.st-btn.active { transform: scale(1.05); }
-.st-btn:disabled { cursor: not-allowed; }
-
-.reply-btn {
-  display: inline-flex; align-items: center; gap: .4rem;
-  padding: .35rem .85rem; border-radius: 8px; border: 1px solid #e2e8f0;
-  background: #fff; color: #475569; font-size: .78rem; font-weight: 600;
-  cursor: pointer; transition: all .2s; margin-left: auto;
-}
-.reply-btn svg { width: 13px; height: 13px; }
-.reply-btn:hover { border-color: #6366f1; color: #4f46e5; background: #f5f3ff; }
-
-/* Category + status colours shared */
-.cat-complaint  { background: #fff1f2; color: #be123c; }
-.cat-suggestion { background: #fef9c3; color: #a16207; }
-.cat-feedback   { background: #f0fdf4; color: #15803d; }
-.cat-other      { background: #f5f3ff; color: #6d28d9; }
-.status-unread   { background: #dbeafe; color: #1d4ed8; }
-.status-reviewed { background: #fef9c3; color: #a16207; }
-.status-resolved { background: #dcfce7; color: #15803d; }
-
-/* Modal */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(15,23,42,.55); backdrop-filter: blur(5px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 9999; padding: 1rem;
-}
-.modal-box {
-  background: #fff; border-radius: 20px; padding: 2rem;
-  width: 100%; max-width: 480px;
-  box-shadow: 0 24px 48px rgba(0,0,0,.18);
-  display: flex; flex-direction: column; gap: 1rem;
-}
-.modal-head { display: flex; justify-content: space-between; align-items: center; }
-.modal-head h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #0f172a; }
-.modal-close { background: none; border: none; cursor: pointer; color: #94a3b8; padding: 0; }
-.modal-close svg { width: 20px; height: 20px; }
-.modal-subject { margin: 0; font-size: .85rem; color: #64748b; }
-.modal-ta { width: 100%; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: .75rem; font-size: .9rem; color: #334155; outline: none; resize: vertical; font-family: inherit; }
-.modal-ta:focus { border-color: #6366f1; }
-.modal-footer { display: flex; justify-content: flex-end; gap: .75rem; }
-.modal-cancel { padding: .6rem 1.25rem; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; font-size: .875rem; font-weight: 600; color: #475569; cursor: pointer; }
-.modal-save   { padding: .6rem 1.5rem; border: none; border-radius: 9px; background: linear-gradient(135deg,#6366f1,#4f46e5); color: #fff; font-size: .875rem; font-weight: 700; cursor: pointer; transition: all .2s; }
-.modal-save:hover:not(:disabled) { transform: translateY(-1px); }
-.modal-save:disabled { opacity: .55; cursor: not-allowed; }
-
-.modal-enter-active, .modal-leave-active { transition: all .25s ease; }
-.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(.96); }
-
-@media (max-width: 640px) {
-  .sv-header { flex-direction: column; }
-  .sv-kpis   { width: 100%; }
-  .kpi-pill  { flex: 1; }
-  .sv-filters { flex-direction: column; }
-  .search-wrap { min-width: 100%; }
-  .fsel { width: 100%; }
-  .svc-actions { flex-direction: column; align-items: flex-start; }
-  .reply-btn { margin-left: 0; }
-}
-</style>

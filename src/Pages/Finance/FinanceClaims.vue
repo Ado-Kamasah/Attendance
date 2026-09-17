@@ -1,126 +1,291 @@
 <template>
-  <div class="fc-container">
+  <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
-    <div class="fc-header">
-      <div>
-        <h1 class="fc-title">Lecturer Claims Report</h1>
-        <p class="fc-subtitle">Session-based claims for all lecturers — filter and download as CSV</p>
+    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+      <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
+      <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+      <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+
+      <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium tracking-wide uppercase bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
+              <FileSpreadsheet class="w-3 h-3" />
+              FINANCE // CLAIMS REPORT
+            </span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
+            Lecturer Claims Report
+          </h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Session-based claims for all lecturers — filter by lecturer, date range, and download as CSV.
+          </p>
+        </div>
+
+        <button
+          @click="downloadCSV"
+          :disabled="isDownloading"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+        >
+          <Loader2 v-if="isDownloading" class="w-4 h-4 animate-spin" />
+          <Download v-else class="w-4 h-4" />
+          <span>{{ isDownloading ? 'Downloading...' : 'Download CSV' }}</span>
+        </button>
       </div>
-      <button class="download-btn" @click="downloadCSV" :disabled="isDownloading">
-        <svg v-if="isDownloading" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
-        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        {{ isDownloading ? 'Downloading…' : 'Download CSV' }}
-      </button>
     </div>
 
-    <!-- Filters -->
-    <div class="fc-filters">
-      <div class="search-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input v-model="search" type="text" placeholder="Search lecturer or course…" class="search-in" />
+    <!-- Filters Bar -->
+    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+      <div class="flex flex-col sm:flex-row flex-wrap gap-3 items-end">
+        <!-- Search -->
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5">Search</label>
+          <div class="relative">
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Search lecturer or course..."
+              class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary"
+            />
+          </div>
+        </div>
+
+        <!-- Lecturer -->
+        <div class="min-w-[160px]">
+          <label class="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5">Lecturer</label>
+          <select
+            v-model="filterLecturer"
+            class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+          >
+            <option value="">All Lecturers</option>
+            <option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option>
+          </select>
+        </div>
+
+        <!-- From Date -->
+        <div>
+          <label class="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5">From</label>
+          <input
+            type="date"
+            v-model="fromDate"
+            class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+          />
+        </div>
+
+        <!-- To Date -->
+        <div>
+          <label class="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5">To</label>
+          <input
+            type="date"
+            v-model="toDate"
+            class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+          />
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-2">
+          <button
+            @click="loadClaims"
+            class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-semibold rounded-xl transition-all shadow-sm active:scale-95"
+          >
+            Apply
+          </button>
+          <button
+            @click="resetFilters"
+            class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+          >
+            Reset
+          </button>
+        </div>
       </div>
-      <select v-model="filterLecturer" class="fsel">
-        <option value="">All Lecturers</option>
-        <option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option>
-      </select>
-      <div class="date-group">
-        <label class="date-label">From</label>
-        <input type="date" v-model="fromDate" class="date-in" />
-      </div>
-      <div class="date-group">
-        <label class="date-label">To</label>
-        <input type="date" v-model="toDate" class="date-in" />
-      </div>
-      <button class="apply-btn" @click="loadClaims">Apply</button>
-      <button class="reset-btn"  @click="resetFilters">Reset</button>
     </div>
 
-    <!-- Summary pills -->
-    <div class="fc-summary" v-if="!isLoading && filtered.length">
-      <span class="summary-pill">{{ filtered.length }} claim rows</span>
-      <span class="summary-pill">{{ uniqueLecturers }} lecturers</span>
-      <span class="summary-pill">{{ uniqueCourses }} courses</span>
-      <span class="summary-pill">{{ totalSessions }} sessions</span>
+    <!-- Summary Pills -->
+    <div v-if="!isLoading && filtered.length" class="flex flex-wrap gap-2">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+        <FileSpreadsheet class="w-3 h-3" />
+        {{ filtered.length }} claim rows
+      </span>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-primary/5 dark:bg-secondary/10 text-primary dark:text-secondary border border-primary/20 dark:border-secondary/20">
+        <Users class="w-3 h-3" />
+        {{ uniqueLecturers }} lecturer{{ uniqueLecturers !== 1 ? 's' : '' }}
+      </span>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
+        <BookOpen class="w-3 h-3" />
+        {{ uniqueCourses }} course{{ uniqueCourses !== 1 ? 's' : '' }}
+      </span>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800">
+        <Calendar class="w-3 h-3" />
+        {{ totalSessions }} session{{ totalSessions !== 1 ? 's' : '' }}
+      </span>
     </div>
 
-    <!-- Loading / empty -->
-    <div v-if="isLoading" class="fc-state">
-      <div class="spinner"></div>
-      <span>Loading claims…</span>
-    </div>
-    <div v-else-if="filtered.length === 0" class="fc-empty">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      <p>No claims data found for the selected filters.</p>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+      <Loader2 class="w-10 h-10 text-secondary animate-spin mb-4" />
+      <p class="text-sm font-mono text-slate-500 dark:text-slate-400">LOADING CLAIMS DATA...</p>
     </div>
 
-    <!-- Claims table -->
-    <div v-else class="fc-table-wrap">
-      <table class="fc-table">
-        <thead>
-          <tr>
-            <th @click="sortBy('lecturerName')" class="sortable">
-              Lecturer <span class="sort-arrow">{{ sortKey === 'lecturerName' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
-            </th>
-            <th @click="sortBy('courseCode')" class="sortable">
-              Course <span class="sort-arrow">{{ sortKey === 'courseCode' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
-            </th>
-            <th>Credits</th>
-            <th @click="sortBy('totalSessions')" class="sortable">
-              Sessions <span class="sort-arrow">{{ sortKey === 'totalSessions' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
-            </th>
-            <th>Student Slots</th>
-            <th>Total Present</th>
-            <th @click="sortBy('attendanceRate')" class="sortable">
-              Attendance % <span class="sort-arrow">{{ sortKey === 'attendanceRate' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in paginated" :key="`${c.lecturerId}-${c.courseId}`">
-            <td>
-              <div class="lec-cell">
-                <div class="lec-dot">{{ c.lecturerName.charAt(0) }}</div>
-                <div>
-                  <p class="lec-name">{{ c.lecturerName }}</p>
-                  <p class="lec-email">{{ c.lecturerEmail }}</p>
+    <!-- Empty State -->
+    <div
+      v-else-if="filtered.length === 0"
+      class="bg-white dark:bg-[#071328] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-14 text-center"
+    >
+      <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-4 text-slate-400">
+        <BarChart3 class="w-7 h-7" />
+      </div>
+      <h3 class="text-base font-display font-bold text-slate-900 dark:text-white">No Claims Data Found</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">No claims data matches the selected filters. Try adjusting dates or clearing filters.</p>
+    </div>
+
+    <!-- Claims Table -->
+    <div v-else class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-mono uppercase text-[11px] tracking-wider">
+              <th
+                @click="sortBy('lecturerName')"
+                class="py-3 px-4 font-semibold cursor-pointer select-none hover:text-primary dark:hover:text-secondary transition-colors"
+              >
+                <div class="flex items-center gap-1">
+                  Lecturer
+                  <span class="text-[10px]">{{ sortKey === 'lecturerName' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
                 </div>
-              </div>
-            </td>
-            <td>
-              <p class="course-code">{{ c.courseCode }}</p>
-              <p class="course-name">{{ c.courseName }}</p>
-            </td>
-            <td><span class="credit-badge">{{ c.credits }} cr</span></td>
-            <td class="num-cell">{{ c.totalSessions }}</td>
-            <td class="num-cell">{{ c.totalStudentSlots }}</td>
-            <td class="num-cell">{{ c.totalPresent }}</td>
-            <td>
-              <div class="rate-wrap">
-                <div class="rate-track">
-                  <div class="rate-fill" :style="{ width: c.attendanceRate + '%', background: rateColor(c.attendanceRate) }"></div>
+              </th>
+              <th
+                @click="sortBy('courseCode')"
+                class="py-3 px-4 font-semibold cursor-pointer select-none hover:text-primary dark:hover:text-secondary transition-colors"
+              >
+                <div class="flex items-center gap-1">
+                  Course
+                  <span class="text-[10px]">{{ sortKey === 'courseCode' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
                 </div>
-                <span class="rate-pct" :class="rateClass(c.attendanceRate)">{{ c.attendanceRate }}%</span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </th>
+              <th class="py-3 px-4 font-semibold">Credits</th>
+              <th
+                @click="sortBy('totalSessions')"
+                class="py-3 px-4 font-semibold cursor-pointer select-none hover:text-primary dark:hover:text-secondary transition-colors"
+              >
+                <div class="flex items-center gap-1">
+                  Sessions
+                  <span class="text-[10px]">{{ sortKey === 'totalSessions' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
+                </div>
+              </th>
+              <th class="py-3 px-4 font-semibold">Student Slots</th>
+              <th class="py-3 px-4 font-semibold">Total Present</th>
+              <th
+                @click="sortBy('attendanceRate')"
+                class="py-3 px-4 font-semibold cursor-pointer select-none hover:text-primary dark:hover:text-secondary transition-colors"
+              >
+                <div class="flex items-center gap-1">
+                  Attendance %
+                  <span class="text-[10px]">{{ sortKey === 'attendanceRate' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
+            <tr
+              v-for="c in paginated"
+              :key="`${c.lecturerId}-${c.courseId}`"
+              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
+            >
+              <!-- Lecturer -->
+              <td class="py-3.5 px-4">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/70 dark:from-secondary dark:to-secondary/70 text-white dark:text-primary flex items-center justify-center font-bold text-sm uppercase flex-shrink-0">
+                    {{ c.lecturerName.charAt(0) }}
+                  </div>
+                  <div>
+                    <p class="font-semibold text-slate-900 dark:text-slate-100 text-xs">{{ c.lecturerName }}</p>
+                    <p class="text-[10px] text-slate-400">{{ c.lecturerEmail }}</p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Course -->
+              <td class="py-3.5 px-4">
+                <p class="font-bold text-slate-900 dark:text-slate-100 text-xs">{{ c.courseCode }}</p>
+                <p class="text-[10px] text-slate-400">{{ c.courseName }}</p>
+              </td>
+
+              <!-- Credits -->
+              <td class="py-3.5 px-4">
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
+                  {{ c.credits }} cr
+                </span>
+              </td>
+
+              <!-- Sessions -->
+              <td class="py-3.5 px-4 text-center font-bold font-mono text-slate-700 dark:text-slate-300">{{ c.totalSessions }}</td>
+
+              <!-- Student Slots -->
+              <td class="py-3.5 px-4 text-center font-bold font-mono text-slate-700 dark:text-slate-300">{{ c.totalStudentSlots }}</td>
+
+              <!-- Total Present -->
+              <td class="py-3.5 px-4 text-center font-bold font-mono text-emerald-600 dark:text-emerald-400">{{ c.totalPresent }}</td>
+
+              <!-- Rate -->
+              <td class="py-3.5 px-4">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex-shrink-0">
+                    <div
+                      class="h-full rounded-full transition-all duration-700"
+                      :class="c.attendanceRate >= 70 ? 'bg-emerald-500' : c.attendanceRate >= 45 ? 'bg-amber-500' : 'bg-rose-500'"
+                      :style="{ width: c.attendanceRate + '%' }"
+                    ></div>
+                  </div>
+                  <span
+                    class="font-mono font-bold text-xs"
+                    :class="c.attendanceRate >= 70 ? 'text-emerald-600 dark:text-emerald-400' : c.attendanceRate >= 45 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'"
+                  >{{ c.attendanceRate }}%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Pagination -->
-    <div class="pagination" v-if="totalPages > 1">
-      <button class="page-btn" :disabled="page === 1"          @click="page--">Prev</button>
-      <span class="page-info">Page {{ page }} of {{ totalPages }}</span>
-      <button class="page-btn" :disabled="page === totalPages" @click="page++">Next</button>
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-3">
+      <button
+        :disabled="page === 1"
+        @click="page--"
+        class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+      >
+        ← Prev
+      </button>
+      <span class="text-sm font-mono text-slate-500 dark:text-slate-400">
+        Page {{ page }} of {{ totalPages }}
+      </span>
+      <button
+        :disabled="page === totalPages"
+        @click="page++"
+        class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+      >
+        Next →
+      </button>
     </div>
-
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import api from '@/api.js';
+import {
+  Download,
+  Search,
+  Users,
+  BookOpen,
+  Calendar,
+  FileSpreadsheet,
+  BarChart3,
+  Loader2
+} from 'lucide-vue-next';
 
 const claims         = ref([]);
 const lecturers      = ref([]);
@@ -231,103 +396,4 @@ async function downloadCSV() {
     isDownloading.value = false;
   }
 }
-
-const rateClass = (p) => p >= 70 ? 'rate-good' : p >= 45 ? 'rate-warn' : 'rate-bad';
-const rateColor = (p) => p >= 70 ? '#10b981' : p >= 45 ? '#f59e0b' : '#ef4444';
 </script>
-
-<style scoped>
-* { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-.fc-container { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
-
-/* Header */
-.fc-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
-.fc-title   { margin: 0; font-size: 1.75rem; font-weight: 800; color: #0f172a; letter-spacing: -.025em; }
-.fc-subtitle { margin: .25rem 0 0; font-size: .875rem; color: #64748b; }
-
-.download-btn {
-  display: inline-flex; align-items: center; gap: .55rem;
-  padding: .7rem 1.4rem; background: linear-gradient(135deg, #10b981, #059669);
-  color: #fff; border: none; border-radius: 12px; font-size: .875rem; font-weight: 700;
-  cursor: pointer; box-shadow: 0 4px 14px rgba(16,185,129,.3); transition: all .2s; white-space: nowrap;
-}
-.download-btn svg { width: 17px; height: 17px; }
-.download-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(16,185,129,.4); }
-.download-btn:disabled { opacity: .55; cursor: not-allowed; }
-
-/* Filters */
-.fc-filters { display: flex; gap: .65rem; flex-wrap: wrap; align-items: flex-end; }
-.search-wrap { display: flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 9px; padding: .45rem .9rem; flex: 1; min-width: 200px; }
-.search-wrap svg { width: 15px; height: 15px; color: #94a3b8; flex-shrink: 0; }
-.search-in { border: none; background: transparent; outline: none; font-size: .875rem; color: #334155; width: 100%; }
-.fsel { padding: .48rem .75rem; border: 1px solid #e2e8f0; border-radius: 9px; font-size: .875rem; color: #334155; background: #fff; outline: none; cursor: pointer; }
-.date-group { display: flex; flex-direction: column; gap: .2rem; }
-.date-label { font-size: .7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
-.date-in { padding: .45rem .7rem; border: 1px solid #e2e8f0; border-radius: 9px; font-size: .875rem; color: #334155; background: #fff; outline: none; cursor: pointer; }
-.apply-btn { padding: .5rem 1.1rem; background: #0ea5e9; color: #fff; border: none; border-radius: 9px; font-size: .875rem; font-weight: 700; cursor: pointer; transition: background .2s; align-self: flex-end; }
-.apply-btn:hover { background: #0284c7; }
-.reset-btn { padding: .5rem 1rem; background: #fff; color: #475569; border: 1px solid #e2e8f0; border-radius: 9px; font-size: .875rem; font-weight: 600; cursor: pointer; transition: all .2s; align-self: flex-end; }
-.reset-btn:hover { border-color: #94a3b8; color: #334155; }
-
-/* Summary pills */
-.fc-summary { display: flex; flex-wrap: wrap; gap: .5rem; }
-.summary-pill { display: inline-block; background: #f1f5f9; color: #475569; font-size: .78rem; font-weight: 700; padding: .3rem .75rem; border-radius: 999px; border: 1px solid #e2e8f0; }
-
-/* Loading / empty */
-.fc-state { display: flex; flex-direction: column; align-items: center; gap: .75rem; padding: 4rem; color: #94a3b8; font-size: .95rem; }
-.spinner { width: 28px; height: 28px; border: 3px solid #e2e8f0; border-top-color: #0ea5e9; border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.fc-empty { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 2rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 16px; text-align: center; }
-.fc-empty svg { width: 48px; height: 48px; color: #cbd5e1; }
-.fc-empty p { margin: 0; color: #64748b; }
-
-/* Table */
-.fc-table-wrap { background: #fff; border-radius: 18px; border: 1px solid #f1f5f9; box-shadow: 0 2px 12px rgba(0,0,0,.05); overflow: hidden; }
-.fc-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-.fc-table th { background: #f8fafc; color: #64748b; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: .85rem 1.1rem; text-align: left; white-space: nowrap; }
-.fc-table th.sortable { cursor: pointer; user-select: none; }
-.fc-table th.sortable:hover { color: #0ea5e9; }
-.sort-arrow { font-size: .65rem; margin-left: .25rem; }
-.fc-table td { padding: .9rem 1.1rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
-.fc-table tr:last-child td { border-bottom: none; }
-.fc-table tr:hover td { background: #f8fafc; }
-
-.lec-cell { display: flex; align-items: center; gap: .65rem; }
-.lec-dot { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; font-size: .9rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.lec-name  { margin: 0; font-size: .875rem; font-weight: 700; color: #0f172a; }
-.lec-email { margin: 0; font-size: .75rem; color: #94a3b8; }
-.course-code { margin: 0; font-size: .875rem; font-weight: 700; color: #0f172a; }
-.course-name { margin: 0; font-size: .75rem; color: #64748b; }
-.credit-badge { display: inline-block; background: #f3e8ff; color: #7c3aed; font-size: .72rem; font-weight: 700; padding: .15rem .55rem; border-radius: 999px; }
-.num-cell { font-weight: 700; color: #334155; text-align: center; }
-
-.rate-wrap  { display: flex; align-items: center; gap: .65rem; }
-.rate-track { flex: 1; height: 6px; background: #f1f5f9; border-radius: 999px; overflow: hidden; min-width: 60px; }
-.rate-fill  { height: 100%; border-radius: 999px; transition: width .5s; }
-.rate-pct   { font-size: .82rem; font-weight: 700; white-space: nowrap; }
-.rate-good  { color: #10b981; }
-.rate-warn  { color: #f59e0b; }
-.rate-bad   { color: #ef4444; }
-
-/* Pagination */
-.pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; padding: .5rem; }
-.page-btn   { padding: .45rem 1.1rem; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; font-size: .875rem; font-weight: 600; color: #475569; cursor: pointer; transition: all .2s; }
-.page-btn:hover:not(:disabled) { border-color: #0ea5e9; color: #0ea5e9; }
-.page-btn:disabled { opacity: .4; cursor: not-allowed; }
-.page-info  { font-size: .875rem; color: #64748b; font-weight: 600; }
-
-/* Spin animation */
-.spin { animation: spin .8s linear infinite; }
-
-@media (max-width: 768px) {
-  .fc-header { flex-direction: column; }
-  .download-btn { width: 100%; justify-content: center; }
-  .fc-filters { flex-direction: column; }
-  .search-wrap, .fsel, .date-in { width: 100%; }
-  .apply-btn, .reset-btn { width: 100%; }
-  .fc-table { font-size: .78rem; }
-  .fc-table th, .fc-table td { padding: .65rem .75rem; }
-  .lec-email, .course-name { display: none; }
-}
-</style>

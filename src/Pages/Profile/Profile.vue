@@ -1,193 +1,355 @@
 <template>
-  <div class="profile-container">
-    <!-- Header -->
-    <div class="page-header">
-      <div class="header-text">
-        <h1 class="page-title">My Profile</h1>
-        <p class="page-subtitle">View and manage your account details</p>
+  <div class="space-y-6 w-full max-w-6xl mx-auto">
+    <!-- Header with Blueprint Eyebrow -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
+      <div>
+        <div class="dim-eyebrow">
+          <span>INSTITUTIONAL REGISTRATION // IDENTITY CARD</span>
+          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+            <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+          My Account <span class="text-secondary dark:text-dark-secondary">Profile</span>
+        </h1>
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+          Institutional credentials and authentication security
+        </p>
       </div>
-      <button v-if="!isEditing" class="edit-btn" @click="startEdit" id="edit-profile-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Edit Profile
-      </button>
+
+      <div class="flex items-center gap-3">
+        <button 
+          v-if="!isEditing"
+          @click="startEdit" 
+          id="edit-profile-btn"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary dark:bg-dark-secondary text-surface dark:text-primary font-semibold text-xs sm:text-sm shadow-md hover:opacity-90 active:scale-98 transition-all cursor-pointer"
+        >
+          <Edit3 class="w-4 h-4" />
+          <span>Edit Profile</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Success / Error alerts -->
-    <transition name="fade">
-      <div v-if="successMsg" class="alert alert-success">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        {{ successMsg }}
-      </div>
-    </transition>
-    <transition name="fade">
-      <div v-if="errorMsg" class="alert alert-error">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        {{ errorMsg }}
+    <!-- Feedback Banners -->
+    <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
+      <div v-if="successMsg" class="p-3.5 rounded-xl bg-success/10 border border-success/30 text-success text-xs sm:text-sm font-medium flex items-center gap-2.5">
+        <CheckCircle2 class="w-4 h-4 shrink-0" />
+        <span>{{ successMsg }}</span>
       </div>
     </transition>
 
-    <div class="profile-grid">
-      <!-- Left: Avatar card -->
-      <div class="avatar-card">
-        <div class="avatar-wrap">
-          <div class="avatar-circle" :style="{ background: avatarBg }">
-            {{ initials }}
+    <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
+      <div v-if="errorMsg" class="p-3.5 rounded-xl bg-error/10 border border-error/30 text-error text-xs sm:text-sm font-medium flex items-center gap-2.5">
+        <AlertTriangle class="w-4 h-4 shrink-0" />
+        <span>{{ errorMsg }}</span>
+      </div>
+    </transition>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Left: Identity Badge Card (4 cols) -->
+      <div class="lg:col-span-4 space-y-4">
+        <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6 text-center">
+          <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
+          <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+
+          <!-- Avatar Monogram -->
+          <div class="relative inline-block mx-auto mb-4">
+            <div 
+              class="w-24 h-24 rounded-2xl flex items-center justify-center font-display font-extrabold text-3xl text-white shadow-xl ring-4 ring-surface dark:ring-dark-surface"
+              :style="{ backgroundColor: avatarBg }"
+            >
+              {{ initials }}
+            </div>
+            <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-surface dark:ring-dark-surface"></span>
           </div>
-          <div class="role-badge" :class="'role-' + roleLower">{{ profile?.role || 'User' }}</div>
-        </div>
-        <h2 class="avatar-name">{{ profile?.name || '—' }}</h2>
-        <p class="avatar-email">{{ profile?.email || '—' }}</p>
-        <div class="avatar-meta">
-          <div class="meta-item">
-            <span class="meta-label">User ID</span>
-            <span class="meta-value">{{ profile?.id_number || '—' }}</span>
+
+          <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-dark-foreground truncate">
+            {{ profile?.name || '—' }}
+          </h2>
+          <p class="text-xs font-mono text-foreground/50 dark:text-dark-foreground/50 truncate mt-0.5">
+            {{ profile?.email || '—' }}
+          </p>
+
+          <div class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-wider" :class="roleBadgeStyle">
+            <Shield class="w-3.5 h-3.5" />
+            <span>{{ profile?.role || 'User' }}</span>
           </div>
-          <div class="meta-item" v-if="profile?.program">
-            <span class="meta-label">Program</span>
-            <span class="meta-value">{{ profile.program }}</span>
-          </div>
-          <div class="meta-item" v-if="profile?.mode">
-            <span class="meta-label">Mode</span>
-            <span class="meta-value mode-chip" :class="'mode-' + (profile.mode || '').toLowerCase()">{{ profile.mode }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Member Since</span>
-            <span class="meta-value">{{ joinDate }}</span>
+
+          <!-- Institutional Metadata List -->
+          <div class="mt-6 pt-4 border-t border-outline/30 dark:border-dark-outline/40 text-left space-y-3 text-xs font-mono">
+            <div class="flex items-center justify-between">
+              <span class="text-foreground/50 dark:text-dark-foreground/50">User ID</span>
+              <span class="font-bold text-foreground dark:text-dark-foreground">{{ profile?.id_number || '—' }}</span>
+            </div>
+            <div v-if="profile?.program" class="flex items-center justify-between">
+              <span class="text-foreground/50 dark:text-dark-foreground/50">Program</span>
+              <span class="font-bold text-foreground dark:text-dark-foreground truncate max-w-40 text-right">{{ profile.program }}</span>
+            </div>
+            <div v-if="profile?.mode" class="flex items-center justify-between">
+              <span class="text-foreground/50 dark:text-dark-foreground/50">Study Mode</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold" :class="profile.mode === 'Weekend' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'">
+                {{ profile.mode }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-foreground/50 dark:text-dark-foreground/50">Member Since</span>
+              <span class="font-bold text-foreground dark:text-dark-foreground">{{ joinDate }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Right: Details / Edit form -->
-      <div class="details-panel">
-
+      <!-- Right: Personal Information & Security (8 cols) -->
+      <div class="lg:col-span-8 space-y-6">
         <!-- VIEW MODE -->
-        <div v-if="!isEditing" class="view-mode">
-          <div class="section-header"><h3>Personal Information</h3></div>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Full Name</label>
-              <span>{{ profile?.name || '—' }}</span>
+        <div v-if="!isEditing" class="space-y-6">
+          <!-- Information Card -->
+          <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6">
+            <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
+            <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+
+            <div class="flex items-center gap-2 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
+              <User class="w-4 h-4 text-secondary" />
+              <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+                Institutional Records
+              </h3>
             </div>
-            <div class="info-item">
-              <label>Email Address</label>
-              <span>{{ profile?.email || '—' }}</span>
-            </div>
-            <div class="info-item">
-              <label>Role</label>
-              <span class="role-text" :class="'role-' + roleLower">{{ profile?.role || '—' }}</span>
-            </div>
-            <div class="info-item" v-if="profile?.program">
-              <label>Programme</label>
-              <span>{{ profile.program }}</span>
-            </div>
-            <div class="info-item">
-              <label>Study Mode</label>
-              <span class="mode-chip" :class="'mode-' + (profile?.mode || '').toLowerCase()">{{ profile?.mode || '—' }}</span>
-            </div>
-            <div class="info-item">
-              <label>User ID / Index</label>
-              <span class="mono">{{ profile?.id_number || '—' }}</span>
-            </div>
-            <div class="info-item">
-              <label>Account Created</label>
-              <span>{{ joinDate }}</span>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-xs">
+              <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">Full Name</span>
+                <p class="font-bold text-sm text-foreground dark:text-dark-foreground mt-0.5">{{ profile?.name || '—' }}</p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">Email Address</span>
+                <p class="font-bold text-sm text-foreground dark:text-dark-foreground mt-0.5 truncate">{{ profile?.email || '—' }}</p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">System Role</span>
+                <p class="font-bold text-sm text-secondary dark:text-dark-secondary mt-0.5">{{ profile?.role || '—' }}</p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">ID Number</span>
+                <p class="font-bold text-sm font-mono text-foreground dark:text-dark-foreground mt-0.5">{{ profile?.id_number || '—' }}</p>
+              </div>
+
+              <div v-if="profile?.program" class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40 sm:col-span-2">
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">Academic Program</span>
+                <p class="font-bold text-sm text-foreground dark:text-dark-foreground mt-0.5">{{ profile.program }}</p>
+              </div>
             </div>
           </div>
 
-          <div class="section-header mt"><h3>Security</h3></div>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Password</label>
-              <span>••••••••</span>
-            </div>
-          </div>
-          <button class="change-pw-btn" @click="showPasswordSection = !showPasswordSection" id="toggle-password-btn">
-            {{ showPasswordSection ? 'Cancel' : 'Change Password' }}
-          </button>
+          <!-- Security & Credentials Card -->
+          <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6">
+            <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
+            <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
 
-          <!-- Inline password change -->
-          <div v-if="showPasswordSection" class="password-section">
-            <div class="form-group">
-              <label>New Password</label>
-              <div class="input-wrap">
-                <input :type="showNewPw ? 'text' : 'password'" v-model="pwForm.newPassword" placeholder="Min. 8 characters" id="new-password-input" />
-                <button class="eye-btn" type="button" @click="showNewPw = !showNewPw">
-                  <svg v-if="!showNewPw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                </button>
+            <div class="flex items-center justify-between pb-4 border-b border-outline/30 dark:border-dark-outline/40">
+              <div class="flex items-center gap-2">
+                <Lock class="w-4 h-4 text-secondary" />
+                <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+                  Security & Access
+                </h3>
+              </div>
+              <button 
+                @click="showPasswordSection = !showPasswordSection"
+                id="toggle-password-btn"
+                class="text-xs font-semibold text-secondary hover:underline cursor-pointer"
+              >
+                {{ showPasswordSection ? 'Cancel' : 'Change Password' }}
+              </button>
+            </div>
+
+            <div class="pt-4">
+              <div v-if="!showPasswordSection" class="flex items-center justify-between text-xs">
+                <div>
+                  <p class="font-medium text-foreground dark:text-dark-foreground">Password Authentication</p>
+                  <p class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50">Protected via Supabase Auth</p>
+                </div>
+                <span class="font-mono tracking-widest text-foreground/40">••••••••••••</span>
+              </div>
+
+              <!-- Password Update Drawer -->
+              <div v-else class="space-y-4 pt-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+                      New Password (Min. 8 chars)
+                    </label>
+                    <div class="relative">
+                      <input 
+                        :type="showNewPw ? 'text' : 'password'" 
+                        v-model="pwForm.newPassword" 
+                        placeholder="••••••••" 
+                        id="new-password-input"
+                        class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono"
+                      />
+                      <button 
+                        type="button" 
+                        @click="showNewPw = !showNewPw"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground cursor-pointer"
+                      >
+                        <Eye v-if="!showNewPw" class="w-3.5 h-3.5" />
+                        <EyeOff v-else class="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+                      Confirm New Password
+                    </label>
+                    <div class="relative">
+                      <input 
+                        :type="showConfirmPw ? 'text' : 'password'" 
+                        v-model="pwForm.confirmPassword" 
+                        placeholder="••••••••" 
+                        id="confirm-password-input"
+                        class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono"
+                      />
+                      <button 
+                        type="button" 
+                        @click="showConfirmPw = !showConfirmPw"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground cursor-pointer"
+                      >
+                        <Eye v-if="!showConfirmPw" class="w-3.5 h-3.5" />
+                        <EyeOff v-else class="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="pwError" class="p-2.5 rounded-lg bg-error/10 border border-error/20 text-error text-xs font-mono">
+                  {{ pwError }}
+                </div>
+
+                <div class="flex justify-end pt-2">
+                  <button 
+                    @click="changePassword" 
+                    :disabled="isSavingPw" 
+                    id="save-password-btn"
+                    class="px-4 py-2 rounded-xl bg-primary dark:bg-dark-secondary text-surface dark:text-primary font-semibold text-xs shadow-xs hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer"
+                  >
+                    <RefreshCw v-if="isSavingPw" class="w-3.5 h-3.5 animate-spin" />
+                    <span>{{ isSavingPw ? 'Updating…' : 'Update Password' }}</span>
+                  </button>
+                </div>
               </div>
             </div>
-            <div class="form-group">
-              <label>Confirm Password</label>
-              <div class="input-wrap">
-                <input :type="showConfirmPw ? 'text' : 'password'" v-model="pwForm.confirmPassword" placeholder="Repeat new password" id="confirm-password-input" />
-                <button class="eye-btn" type="button" @click="showConfirmPw = !showConfirmPw">
-                  <svg v-if="!showConfirmPw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                </button>
-              </div>
-            </div>
-            <div v-if="pwError" class="inline-error">{{ pwError }}</div>
-            <button class="save-pw-btn" @click="changePassword" :disabled="isSavingPw" id="save-password-btn">
-              <svg v-if="isSavingPw" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
-              {{ isSavingPw ? 'Updating…' : 'Update Password' }}
-            </button>
           </div>
         </div>
 
         <!-- EDIT MODE -->
-        <div v-else class="edit-mode">
-          <div class="section-header"><h3>Edit Personal Information</h3></div>
-          <div class="form-grid">
-            <div class="form-group full">
-              <label for="edit-name">Full Name <span class="req">*</span></label>
-              <input id="edit-name" type="text" v-model="editForm.name" placeholder="Enter full name" />
+        <div v-else class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6 space-y-5">
+          <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
+          <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+
+          <div class="flex items-center gap-2 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
+            <Edit3 class="w-4 h-4 text-secondary" />
+            <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+              Edit Account Information
+            </h3>
+          </div>
+
+          <div class="space-y-4 text-xs">
+            <div>
+              <label for="edit-name" class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+                Full Legal Name <span class="text-error">*</span>
+              </label>
+              <input 
+                id="edit-name" 
+                type="text" 
+                v-model="editForm.name" 
+                placeholder="Enter full name" 
+                class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground"
+              />
             </div>
-            <div class="form-group full">
-              <label>Email Address</label>
-              <input type="email" :value="profile?.email" disabled class="disabled-input" />
-              <span class="field-hint">Email cannot be changed</span>
+
+            <div>
+              <label class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+                Institutional Email (Immutable)
+              </label>
+              <input 
+                type="email" 
+                :value="profile?.email" 
+                disabled 
+                class="w-full px-3.5 py-2 text-xs bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40 rounded-xl text-foreground/50 dark:text-dark-foreground/50 cursor-not-allowed font-mono"
+              />
             </div>
-            <div class="form-group full" v-if="roleLower === 'student'">
-              <label for="edit-program">Programme</label>
-              <input id="edit-program" type="text" v-model="editForm.program" placeholder="e.g. Computer Science" />
+
+            <div v-if="roleLower === 'student'">
+              <label for="edit-program" class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+                Academic Programme
+              </label>
+              <input 
+                id="edit-program" 
+                type="text" 
+                v-model="editForm.program" 
+                placeholder="e.g. B.Sc. Computer Science" 
+                class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground"
+              />
             </div>
-            <div class="form-group full">
-              <label>Study Mode</label>
-              <div class="mode-toggle-group" id="edit-mode-group">
+
+            <div>
+              <label class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1.5">
+                Study Track Mode
+              </label>
+              <div class="grid grid-cols-2 gap-3" id="edit-mode-group">
                 <button
                   type="button"
-                  class="mode-toggle-btn"
-                  :class="{ 'mode-active-regular': editForm.mode === 'Regular' }"
                   @click="editForm.mode = 'Regular'"
                   id="mode-regular-btn"
+                  class="p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer"
+                  :class="editForm.mode === 'Regular' ? 'bg-primary/10 dark:bg-primary/20 border-primary text-primary dark:text-dark-primary font-bold shadow-xs' : 'bg-muted/30 dark:bg-dark-muted/30 border-outline/40 text-foreground/60'"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  Regular
-                  <span class="mode-sub">Mon – Fri</span>
+                  <Calendar class="w-4 h-4" />
+                  <div>
+                    <p class="text-xs font-semibold">Regular Mode</p>
+                    <p class="text-[10px] font-mono text-foreground/50">Mon – Fri Schedule</p>
+                  </div>
                 </button>
+
                 <button
                   type="button"
-                  class="mode-toggle-btn"
-                  :class="{ 'mode-active-weekend': editForm.mode === 'Weekend' }"
                   @click="editForm.mode = 'Weekend'"
                   id="mode-weekend-btn"
+                  class="p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer"
+                  :class="editForm.mode === 'Weekend' ? 'bg-secondary/15 dark:bg-dark-secondary/20 border-secondary text-secondary dark:text-dark-secondary font-bold shadow-xs' : 'bg-muted/30 dark:bg-dark-muted/30 border-outline/40 text-foreground/60'"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  Weekend
-                  <span class="mode-sub">Sat – Sun</span>
+                  <CalendarDays class="w-4 h-4" />
+                  <div>
+                    <p class="text-xs font-semibold">Weekend Mode</p>
+                    <p class="text-[10px] font-mono text-foreground/50">Sat – Sun Sessions</p>
+                  </div>
                 </button>
               </div>
             </div>
           </div>
 
-          <div v-if="editError" class="inline-error">{{ editError }}</div>
+          <div v-if="editError" class="p-2.5 rounded-lg bg-error/10 border border-error/20 text-error text-xs font-mono">
+            {{ editError }}
+          </div>
 
-          <div class="edit-actions">
-            <button class="cancel-btn" @click="cancelEdit" id="cancel-edit-btn">Cancel</button>
-            <button class="save-btn" @click="saveProfile" :disabled="isSaving" id="save-profile-btn">
-              <svg v-if="isSaving" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
-              {{ isSaving ? 'Saving…' : 'Save Changes' }}
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-outline/30 dark:border-dark-outline/40">
+            <button 
+              @click="cancelEdit" 
+              id="cancel-edit-btn"
+              class="px-4 py-2 rounded-xl bg-muted/60 dark:bg-dark-muted/60 text-foreground/70 hover:text-foreground font-semibold text-xs transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button 
+              @click="saveProfile" 
+              :disabled="isSaving" 
+              id="save-profile-btn"
+              class="px-5 py-2 rounded-xl bg-primary dark:bg-dark-secondary text-surface dark:text-primary font-semibold text-xs shadow-md hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer"
+            >
+              <RefreshCw v-if="isSaving" class="w-3.5 h-3.5 animate-spin" />
+              <span>{{ isSaving ? 'Saving…' : 'Save Changes' }}</span>
             </button>
           </div>
         </div>
@@ -202,12 +364,24 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authstore';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
+import { 
+  Edit3, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Shield, 
+  User, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  RefreshCw, 
+  Calendar, 
+  CalendarDays 
+} from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const auditLogsStore = useAuditLogsStore();
 const { profile } = storeToRefs(authStore);
 
-// ── UI state ──────────────────────────────────────────
 const isEditing = ref(false);
 const isSaving = ref(false);
 const isSavingPw = ref(false);
@@ -219,11 +393,9 @@ const errorMsg = ref('');
 const editError = ref('');
 const pwError = ref('');
 
-// ── Forms ─────────────────────────────────────────────
 const editForm = ref({ name: '', program: '', mode: '' });
 const pwForm = ref({ newPassword: '', confirmPassword: '' });
 
-// ── Computed ──────────────────────────────────────────
 const roleLower = computed(() => (profile.value?.role || 'student').toLowerCase());
 
 const initials = computed(() => {
@@ -232,17 +404,24 @@ const initials = computed(() => {
 });
 
 const avatarBg = computed(() => {
-  const map = { admin: '#ef4444', lecturer: '#10b981', student: '#3b82f6' };
-  return map[roleLower.value] || '#6366f1';
+  const map = { admin: '#bc9333', lecturer: '#10b981', student: '#3b82f6', finance: '#0ea5e9' };
+  return map[roleLower.value] || '#031c45';
+});
+
+const roleBadgeStyle = computed(() => {
+  const r = roleLower.value;
+  if (r === 'admin' || r === 'super_admin') return 'bg-secondary/15 text-secondary border border-secondary/30';
+  if (r === 'lecturer') return 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30';
+  if (r === 'finance')  return 'bg-sky-500/15 text-sky-500 border border-sky-500/30';
+  return 'bg-blue-500/15 text-blue-500 border border-blue-500/30';
 });
 
 const joinDate = computed(() => {
   const d = profile.value?.created_at || profile.value?.createdAt;
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 });
 
-// ── Methods ───────────────────────────────────────────
 function clearAlerts() {
   successMsg.value = '';
   errorMsg.value = '';
@@ -337,174 +516,3 @@ onMounted(async () => {
   if (!profile.value) await authStore.fetchProfile();
 });
 </script>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-* { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-.profile-container { display: flex; flex-direction: column; gap: 1.75rem; width: 100%; max-width: 1100px; }
-
-/* Header */
-.page-header { display: flex; justify-content: space-between; align-items: flex-start; }
-.page-title { margin: 0; font-size: 1.85rem; font-weight: 800; color: #0f172a; letter-spacing: -0.025em; }
-.page-subtitle { margin: 0.25rem 0 0; color: #64748b; font-size: 0.95rem; }
-
-.edit-btn {
-  display: flex; align-items: center; gap: 0.5rem;
-  background: #0f172a; color: #fff; border: none;
-  padding: 0.65rem 1.25rem; border-radius: 10px;
-  font-size: 0.875rem; font-weight: 600; cursor: pointer;
-  transition: all 0.2s; white-space: nowrap;
-}
-.edit-btn svg { width: 15px; height: 15px; }
-.edit-btn:hover { background: #1e293b; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,23,42,0.2); }
-
-/* Alerts */
-.alert { display: flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1.25rem; border-radius: 10px; font-size: 0.9rem; font-weight: 500; }
-.alert svg { width: 18px; height: 18px; flex-shrink: 0; }
-.alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-
-/* Grid layout */
-.profile-grid { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; align-items: start; }
-
-/* Avatar card */
-.avatar-card {
-  background: #fff; border-radius: 20px;
-  border: 1px solid #e2e8f0; padding: 2rem 1.5rem;
-  display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-}
-.avatar-wrap { position: relative; margin-bottom: 0.5rem; }
-.avatar-circle {
-  width: 96px; height: 96px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 2rem; font-weight: 800; color: #fff;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-}
-.role-badge {
-  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
-  font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.6rem;
-  border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
-}
-.role-admin { background: #fee2e2; color: #991b1b; }
-.role-lecturer { background: #dcfce7; color: #166534; }
-.role-student { background: #dbeafe; color: #1e40af; }
-
-.avatar-name { margin: 0.5rem 0 0; font-size: 1.15rem; font-weight: 700; color: #0f172a; text-align: center; }
-.avatar-email { margin: 0; font-size: 0.82rem; color: #64748b; text-align: center; word-break: break-all; }
-
-.avatar-meta { width: 100%; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem; border-top: 1px solid #f1f5f9; padding-top: 1rem; }
-.meta-item { display: flex; flex-direction: column; gap: 2px; }
-.meta-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; }
-.meta-value { font-size: 0.82rem; color: #334155; font-weight: 500; word-break: break-all; }
-
-/* Details panel */
-.details-panel {
-  background: #fff; border-radius: 20px;
-  border: 1px solid #e2e8f0; padding: 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-}
-
-.section-header { margin-bottom: 1.25rem; }
-.section-header h3 { margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; }
-.mt { margin-top: 2rem; }
-
-/* Info grid (view) */
-.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-.info-item { display: flex; flex-direction: column; gap: 4px; padding: 0.85rem 1rem; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9; }
-.info-item label { font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; }
-.info-item span { font-size: 0.9rem; color: #0f172a; font-weight: 500; }
-.mono { font-family: 'Courier New', monospace; font-size: 0.82rem !important; }
-.role-text { font-weight: 700; }
-
-/* Change password */
-.change-pw-btn {
-  margin-top: 1.25rem;
-  background: transparent; border: 1.5px solid #cbd5e1; color: #475569;
-  padding: 0.55rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
-  cursor: pointer; transition: all 0.2s;
-}
-.change-pw-btn:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
-
-.password-section { margin-top: 1.25rem; padding: 1.5rem; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 1rem; }
-
-/* Form (edit + password) */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
-.form-group.full { grid-column: 1 / -1; }
-.form-group label { font-size: 0.78rem; font-weight: 700; color: #475569; }
-.req { color: #ef4444; }
-.form-group input {
-  padding: 0.65rem 0.9rem; border: 1.5px solid #cbd5e1; border-radius: 8px;
-  font-size: 0.9rem; color: #0f172a; background: #fff; transition: border-color 0.2s;
-  outline: none;
-}
-.form-group input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-.disabled-input { background: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed; }
-.field-hint { font-size: 0.72rem; color: #94a3b8; }
-
-/* Input wrap (eye toggle) */
-.input-wrap { position: relative; }
-.input-wrap input { width: 100%; padding-right: 2.75rem; }
-.eye-btn { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #94a3b8; padding: 0; }
-.eye-btn svg { width: 16px; height: 16px; }
-.eye-btn:hover { color: #475569; }
-
-.inline-error { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.82rem; font-weight: 500; }
-
-/* Edit actions */
-.edit-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
-.cancel-btn {
-  background: transparent; border: 1.5px solid #cbd5e1; color: #475569;
-  padding: 0.65rem 1.5rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600;
-  cursor: pointer; transition: all 0.2s;
-}
-.cancel-btn:hover { background: #f1f5f9; }
-
-.save-btn, .save-pw-btn {
-  display: flex; align-items: center; gap: 0.5rem;
-  background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border: none;
-  padding: 0.65rem 1.75rem; border-radius: 10px; font-size: 0.875rem; font-weight: 700;
-  cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(99,102,241,0.3);
-}
-.save-btn:hover:not(:disabled), .save-pw-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.4); }
-.save-btn:disabled, .save-pw-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-.spin { animation: spin 0.8s linear infinite; width: 16px; height: 16px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Mode chip (view) */
-.mode-chip { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.78rem !important; font-weight: 700 !important; }
-.mode-regular { background: #dbeafe; color: #1e40af; }
-.mode-weekend { background: #fef9c3; color: #a16207; }
-
-/* Mode toggle (edit) */
-.mode-toggle-group { display: flex; gap: 0.75rem; }
-.mode-toggle-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
-  padding: 0.85rem 1rem; border-radius: 12px; border: 2px solid #e2e8f0;
-  background: #f8fafc; color: #475569; font-size: 0.9rem; font-weight: 600;
-  cursor: pointer; transition: all 0.2s;
-}
-.mode-toggle-btn svg { width: 20px; height: 20px; }
-.mode-toggle-btn:hover { border-color: #94a3b8; background: #fff; }
-.mode-sub { font-size: 0.7rem; font-weight: 500; color: #94a3b8; }
-.mode-active-regular { border-color: #3b82f6 !important; background: #eff6ff !important; color: #1e40af !important; }
-.mode-active-regular .mode-sub { color: #3b82f6; }
-.mode-active-weekend { border-color: #f59e0b !important; background: #fefce8 !important; color: #a16207 !important; }
-.mode-active-weekend .mode-sub { color: #f59e0b; }
-
-/* Responsive */
-@media (max-width: 900px) {
-  .profile-grid { grid-template-columns: 1fr; }
-  .info-grid { grid-template-columns: 1fr; }
-  .form-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 600px) {
-  .page-header { flex-direction: column; gap: 1rem; }
-  .page-title { font-size: 1.4rem; }
-}
-</style>

@@ -1,100 +1,138 @@
 <template>
-  <div class="my-courses-container">
-    <div class="page-header">
+  <div class="space-y-6 w-full max-w-7xl mx-auto">
+    <!-- Header with Blueprint Eyebrow -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <h1 class="page-title">My Courses</h1>
-        <p class="page-subtitle">Manage your active enrolments and track your attendance.</p>
+        <div class="dim-eyebrow">
+          <span>ENROLLED CURRICULUM // ATTENDANCE RECORDS</span>
+          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+            <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+          My <span class="text-secondary dark:text-dark-secondary">Enrolled Courses</span>
+        </h1>
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+          Active semester courses, lecture venues, and individual attendance records
+        </p>
       </div>
-      <div class="header-controls">
-        <select class="term-select">
-          <option>Current Semester</option>
-          <option>Previous Semester</option>
-        </select>
+
+      <div class="flex items-center gap-3">
+        <button 
+          @click="$emit('navigate', '/registration')"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary dark:bg-dark-secondary text-surface dark:text-primary font-semibold text-xs sm:text-sm shadow-md hover:opacity-90 active:scale-98 transition-all cursor-pointer"
+        >
+          <Plus class="w-4 h-4" />
+          <span>Add Courses</span>
+        </button>
       </div>
     </div>
 
-    <div class="courses-content">
-      <!-- Empty State -->
-      <div v-if="myCourses.length === 0" class="empty-state">
-        <div class="empty-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-          </svg>
-        </div>
-        <h3>No Enrolled Courses</h3>
-        <p>You haven't registered for any courses this semester.</p>
-        <button class="primary-btn" @click="$emit('navigate', '/registration')">
-          Browse Course Catalog
-        </button>
+    <!-- Empty State -->
+    <div v-if="myCourses.length === 0" class="py-16 text-center text-foreground/50 dark:text-dark-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-2xl p-8 max-w-md mx-auto">
+      <div class="w-12 h-12 rounded-2xl bg-secondary/15 text-secondary mx-auto mb-3 flex items-center justify-center">
+        <BookOpen class="w-6 h-6" />
       </div>
+      <h3 class="text-base font-bold font-display text-foreground dark:text-dark-foreground">No Enrolled Courses</h3>
+      <p class="text-xs font-mono mt-1">You haven't registered for any modules for the active semester yet.</p>
+      <button 
+        @click="$emit('navigate', '/registration')"
+        class="mt-4 px-4 py-2 rounded-xl bg-secondary text-primary font-bold text-xs shadow-md hover:opacity-90 transition-all cursor-pointer"
+      >
+        Browse Course Catalog
+      </button>
+    </div>
 
-      <!-- Courses Grid (Visual layout if items exist) -->
-      <div v-else class="courses-grid">
-        <div class="course-card" v-for="course in myCourses" :key="course.id">
-          <div class="course-color-bar" :style="{ backgroundColor: course.color }"></div>
-          <div class="course-card-content">
-            <div class="card-header">
-              <span class="course-code">{{ course.code }}</span>
-              <div class="header-right">
-                <span class="credits-badge">{{ course.credits }} Credits</span>
-                <button
-                  class="delete-icon-btn"
-                  type="button"
-                  title="Unenroll from this course"
-                  aria-label="Unenroll from this course"
-                  :disabled="unenrollingId === course.enrollmentId"
-                  @click="unenrollCourse(course)"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <h3 class="course-name">{{ course.name }}</h3>
-            
-            <div class="instructor-info">
-              <div class="avatar" :style="{ backgroundColor: course.color + '20', color: course.color }">
-                {{ getInitials(course.lecturer) }}
-              </div>
-              <span class="instructor-name">{{ course.lecturer }}</span>
-            </div>
-            
-            <div class="schedule-info">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              {{ course.schedule || 'Schedule pending' }}
-            </div>
-            <div class="schedule-info">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-              </svg>
-              {{ course.venue || 'Venue pending' }} {{ course.mode || 'Mode pending' }}
-            </div>
-
-            <div class="attendance-tracker">
-              <div class="tracker-labels">
-                <span>Attendance</span>
-                <span :class="course.attendance < 75 ? 'text-danger' : 'text-success'">
-                  {{ course.attendance }}%
-                </span>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: `${course.attendance}%`, backgroundColor: course.attendance < 75 ? '#ef4444' : '#10b981' }"></div>
-              </div>
-            </div>
-
-            <div class="card-actions">
-              <button class="action-btn solid-btn" :style="{ backgroundColor: course.color }" @click="$emit('navigate', '/attendance')">
-                Mark Present
+    <!-- Courses Grid -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div 
+        v-for="course in myCourses" 
+        :key="course.id"
+        class="blueprint-card relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-5 flex flex-col justify-between group"
+      >
+        <div>
+          <!-- Top Card Meta -->
+          <div class="flex items-center justify-between gap-2 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
+            <span class="text-xs font-bold font-mono text-secondary dark:text-dark-secondary">
+              {{ course.code }}
+            </span>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-primary/10 dark:bg-primary/20 text-primary dark:text-dark-primary border border-primary/20">
+                {{ course.credits }} Credits
+              </span>
+              <button
+                type="button"
+                title="Unenroll from this course"
+                :disabled="unenrollingId === course.enrollmentId"
+                @click="unenrollCourse(course)"
+                class="p-1 rounded-lg text-foreground/40 hover:text-error hover:bg-error/10 transition-colors disabled:opacity-40 cursor-pointer"
+              >
+                <RefreshCw v-if="unenrollingId === course.enrollmentId" class="w-3.5 h-3.5 animate-spin" />
+                <Trash2 v-else class="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
+
+          <!-- Course Title -->
+          <h3 class="text-sm sm:text-base font-bold text-foreground dark:text-dark-foreground mt-3 line-clamp-2">
+            {{ course.name }}
+          </h3>
+
+          <!-- Instructor Info -->
+          <div class="flex items-center gap-2.5 mt-3 text-xs">
+            <div 
+              class="w-7 h-7 rounded-lg flex items-center justify-center font-bold font-mono text-[10px] text-white shrink-0 shadow-2xs"
+              :style="{ backgroundColor: course.color }"
+            >
+              {{ getInitials(course.lecturer) }}
+            </div>
+            <span class="font-medium text-foreground/80 dark:text-dark-foreground/80 truncate">
+              {{ course.lecturer }}
+            </span>
+          </div>
+
+          <!-- Schedule & Venue -->
+          <div class="mt-3.5 space-y-1.5 text-xs font-mono text-foreground/60 dark:text-dark-foreground/60">
+            <div class="flex items-center gap-2">
+              <Clock class="w-3.5 h-3.5 text-foreground/40 shrink-0" />
+              <span class="truncate">{{ course.schedule }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <MapPin class="w-3.5 h-3.5 text-foreground/40 shrink-0" />
+              <span class="truncate">{{ course.venue }} &bull; {{ course.mode }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Tracker & Actions -->
+        <div class="mt-5 pt-4 border-t border-outline/30 dark:border-dark-outline/40 space-y-3">
+          <div>
+            <div class="flex items-center justify-between text-xs font-mono mb-1.5">
+              <span class="text-foreground/60 dark:text-dark-foreground/60">Turnout Record</span>
+              <span 
+                class="font-bold"
+                :class="course.attendance >= 75 ? 'text-success' : 'text-error'"
+              >
+                {{ course.attendance }}%
+              </span>
+            </div>
+            <div class="h-2 w-full bg-muted/70 dark:bg-dark-muted/70 rounded-full overflow-hidden">
+              <div 
+                class="h-full rounded-full transition-all duration-500" 
+                :class="course.attendance >= 75 ? 'bg-success' : 'bg-error'"
+                :style="{ width: `${course.attendance}%` }"
+              ></div>
+            </div>
+          </div>
+
+          <button 
+            @click="goToAttendance(course)"
+            class="w-full py-2 rounded-xl text-surface font-semibold text-xs shadow-xs hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            :style="{ backgroundColor: course.color }"
+          >
+            <CheckCircle2 class="w-3.5 h-3.5" />
+            <span>Mark Attendance</span>
+          </button>
         </div>
       </div>
     </div>
@@ -111,6 +149,15 @@ import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { useAuditLogsStore } from '@/stores/auditlogs';
+import { 
+  BookOpen, 
+  Plus, 
+  Trash2, 
+  Clock, 
+  MapPin, 
+  CheckCircle2, 
+  RefreshCw 
+} from 'lucide-vue-next';
 
 const emit = defineEmits(['navigate']);
 
@@ -129,7 +176,7 @@ const { enrollments } = storeToRefs(enrollmentsStore);
 const { sessions } = storeToRefs(sessionsStore);
 const { attendances } = storeToRefs(attendancesStore);
 
-const palette = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6'];
+const palette = ['#031c45', '#10b981', '#bc9333', '#ec4899', '#0ea5e9', '#6366f1'];
 
 onMounted(async () => {
   try {
@@ -159,12 +206,10 @@ onUnmounted(() => {
   attendancesStore.unsubscribeFromAttendances();
 });
 
-/** The schedule for this course matching the student's own mode. */
 function scheduleForCourse(courseId, mode) {
   return schedules.value.find((s) => s.courseId === courseId && s.mode === mode) ?? null;
 }
 
-/** Present-count / total-sessions for this student on this course. */
 function attendanceForCourse(courseId) {
   const sessionIds = new Set(
     sessions.value.filter((s) => s.courseId === courseId).map((s) => s.id)
@@ -193,7 +238,7 @@ const myCourses = computed(() => {
         code: course?.code ?? 'Unknown',
         name: course?.name ?? 'Unknown Course',
         credits: course?.credits ?? 0,
-        lecturer: schedule?.lecturer ?? 'Unassigned',
+        lecturer: schedule?.lecturer ?? 'Unassigned Faculty',
         schedule: schedule
           ? `${schedule.day} • ${schedule.startTime} - ${schedule.endTime}`
           : 'Schedule pending',
@@ -206,14 +251,11 @@ const myCourses = computed(() => {
     .filter((c) => c.mode === profile.value?.mode);
 });
 
-
 const getInitials = (name) => {
   if (!name) return 'UN';
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
-// Tracks which enrollment is mid-delete so its trash button can disable/spin
-// without blocking the other cards.
 const unenrollingId = ref(null);
 
 const unenrollCourse = async (course) => {
@@ -253,471 +295,3 @@ const goToAttendance = (course) => {
   emit('navigate', '/attendance');
 };
 </script>
-
-<style scoped>
-.my-courses-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.page-subtitle {
-  margin: 0.25rem 0 0 0;
-  font-size: 0.95rem;
-  color: #64748b;
-}
-
-.header-controls {
-  flex-shrink: 0;
-}
-
-.term-select {
-  padding: 0.65rem 2rem 0.65rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background-color: #ffffff;
-  color: #0f172a;
-  font-size: 0.9rem;
-  font-weight: 500;
-  outline: none;
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.term-select:focus {
-  border-color: #6366f1;
-}
-
-/* Empty State */
-.courses-content {
-  width: 100%;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6rem 1rem;
-  text-align: center;
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.empty-icon-wrap {
-  width: 80px;
-  height: 80px;
-  background-color: #f8fafc;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-  color: #94a3b8;
-}
-
-.empty-icon-wrap svg {
-  width: 40px;
-  height: 40px;
-  opacity: 0.8;
-}
-
-.empty-state h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-  color: #1e293b;
-  font-weight: 600;
-}
-
-.empty-state p {
-  color: #64748b;
-  margin: 0 0 2rem 0;
-  font-size: 1rem;
-}
-
-.primary-btn {
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  padding: 0.85rem 1.75rem;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
-}
-
-.primary-btn:hover {
-  background-color: #4338ca;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 10px -2px rgba(79, 70, 229, 0.3);
-}
-
-/* Grid Layout */
-.courses-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-}
-
-.course-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.course-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-}
-
-.course-color-bar {
-  height: 6px;
-  width: 100%;
-}
-
-.course-card-content {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.course-code {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #64748b;
-  letter-spacing: 0.05em;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.credits-badge {
-  font-size: 0.75rem;
-  font-weight: 600;
-  background-color: #f1f5f9;
-  color: #475569;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-
-.delete-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-
-.delete-icon-btn svg {
-  width: 15px;
-  height: 15px;
-  pointer-events: none;
-}
-
-.delete-icon-btn:hover:not(:disabled) {
-  background-color: #fee2e2;
-  color: #ef4444;
-}
-
-.delete-icon-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.course-name {
-  margin: 0 0 1rem 0;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: #0f172a;
-  line-height: 1.3;
-  word-break: break-word;
-}
-
-.instructor-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  min-width: 0;
-}
-
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.instructor-name {
-  font-size: 0.9rem;
-  color: #334155;
-  font-weight: 500;
-  word-break: break-word;
-}
-
-.schedule-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #64748b;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid #f1f5f9;
-  flex-wrap: wrap;
-}
-
-.schedule-info svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-.attendance-tracker {
-  margin-bottom: 1.5rem;
-}
-
-.tracker-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #475569;
-  margin-bottom: 0.5rem;
-}
-
-.text-success { color: #10b981; }
-.text-danger { color: #ef4444; }
-
-.progress-bar {
-  height: 6px;
-  background-color: #e2e8f0;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.5s ease;
-}
-
-.card-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: auto;
-}
-
-.action-btn {
-  flex: 1;
-  padding: 0.6rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-}
-
-.outline-btn {
-  background-color: transparent;
-  color: #475569;
-  border: 1px solid #cbd5e1;
-}
-
-.outline-btn:hover {
-  background-color: #f8fafc;
-  border-color: #94a3b8;
-  color: #0f172a;
-}
-
-.solid-btn {
-  color: white;
-  border: none;
-}
-
-.solid-btn:hover {
-  filter: brightness(110%);
-}
-
-/* ==========================================================================
-   Responsive Breakpoints
-   L  (large / laptop-desktop): < 1200px  — tighten grid gaps
-   M  (tablet):                 < 1024px  — narrow card minimum
-   S  (small tablet / large phone): < 768px — stack header, single-column grid
-   XS (mobile):                 < 480px  — compact card padding/type
-   ========================================================================== */
-
-/* L — Large screens / small laptops */
-@media (max-width: 1200px) {
-  .courses-grid {
-    gap: 1.25rem;
-  }
-}
-
-/* M — Tablets */
-@media (max-width: 1024px) {
-  .courses-grid {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  }
-}
-
-/* S — Small tablets / large phones */
-@media (max-width: 768px) {
-  .my-courses-container {
-    gap: 1.5rem;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-  }
-
-  .header-controls {
-    width: 100%;
-  }
-
-  .courses-grid {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
-  }
-
-  .term-select {
-    width: 100%;
-  }
-
-  .empty-state {
-    padding: 4rem 1rem;
-  }
-}
-
-/* XS — Mobile phones */
-@media (max-width: 480px) {
-  .my-courses-container {
-    gap: 1.25rem;
-  }
-
-  .page-title {
-    font-size: 1.3rem;
-  }
-
-  .page-subtitle {
-    font-size: 0.85rem;
-  }
-
-  .course-card-content {
-    padding: 1.15rem;
-  }
-
-  .course-name {
-    font-size: 1.05rem;
-  }
-
-  .card-header {
-    margin-bottom: 0.6rem;
-  }
-
-  .instructor-info {
-    margin-bottom: 0.85rem;
-  }
-
-  .schedule-info {
-    margin-bottom: 1.15rem;
-    padding-bottom: 1rem;
-    font-size: 0.8rem;
-  }
-
-  .attendance-tracker {
-    margin-bottom: 1.15rem;
-  }
-
-  .card-actions {
-    flex-direction: column;
-  }
-
-  .empty-state {
-    padding: 3rem 1rem;
-  }
-
-  .empty-icon-wrap {
-    width: 64px;
-    height: 64px;
-    margin-bottom: 1rem;
-  }
-
-  .empty-icon-wrap svg {
-    width: 32px;
-    height: 32px;
-  }
-
-  .primary-btn {
-    width: 100%;
-    padding: 0.75rem 1.5rem;
-  }
-}
-</style>

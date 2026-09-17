@@ -1,145 +1,242 @@
 <template>
-  <div class="notif-page">
-    <!-- Header -->
-    <div class="page-header">
+  <div class="space-y-6 w-full max-w-6xl mx-auto">
+    <!-- Header with Blueprint Eyebrow -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <h1 class="page-title">Notifications</h1>
-        <p class="page-subtitle">{{ roleSubtitle }}</p>
+        <div class="dim-eyebrow">
+          <span>EVENT STREAM // AUDIT & COMMUNICATIONS</span>
+          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+            <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+          System <span class="text-secondary dark:text-dark-secondary">Notifications</span>
+        </h1>
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+          {{ roleSubtitle }}
+        </p>
       </div>
-      <div class="header-actions">
-        <select v-model="filterAction" class="filter-sel" id="notif-action-filter">
+
+      <!-- Action & Search Toolbar -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <select 
+          v-model="filterAction" 
+          id="notif-action-filter"
+          class="bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-xl px-3 py-1.5 text-xs text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary shadow-2xs"
+        >
           <option value="">All Actions</option>
           <option v-for="a in availableActions" :key="a" :value="a">{{ formatAction(a) }}</option>
         </select>
-        <select v-model="filterRole" class="filter-sel" id="notif-role-filter" v-if="isAdmin">
+
+        <select 
+          v-if="isAdmin"
+          v-model="filterRole" 
+          id="notif-role-filter"
+          class="bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-xl px-3 py-1.5 text-xs text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary shadow-2xs"
+        >
           <option value="">All Roles</option>
           <option value="Admin">Admin</option>
           <option value="Lecturer">Lecturer</option>
           <option value="Student">Student</option>
           <option value="System">System</option>
         </select>
-        <div class="search-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input v-model="searchQuery" type="text" placeholder="Search notifications…" class="search-in" id="notif-search"/>
+
+        <div class="relative">
+          <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 pointer-events-none" />
+          <input 
+            v-model="searchQuery" 
+            type="text" 
+            placeholder="Search feed…" 
+            id="notif-search"
+            class="pl-8 pr-3 py-1.5 text-xs bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono placeholder:text-foreground/40 w-44 sm:w-52 shadow-2xs"
+          />
         </div>
-        <button class="btn-mark-all" @click="clearFilters" id="clear-filters-btn" v-if="filterAction || filterRole || searchQuery">
-          Clear filters
+
+        <button 
+          v-if="filterAction || filterRole || searchQuery"
+          @click="clearFilters" 
+          id="clear-filters-btn"
+          class="p-1.5 text-xs font-mono text-secondary hover:underline cursor-pointer"
+        >
+          Clear
         </button>
       </div>
     </div>
 
-    <!-- Stats strip -->
-    <div class="stats-strip" v-if="!isLoading && visibleLogs.length > 0">
-      <div class="stat-pill stat-total">
-        <span class="stat-num">{{ visibleLogs.length }}</span>
-        <span class="stat-lbl">Total</span>
+    <!-- Stats Pill Strip -->
+    <div v-if="!isLoading && visibleLogs.length > 0" class="flex flex-wrap items-center gap-2">
+      <div class="px-3 py-1.5 rounded-xl bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 flex items-center gap-2 text-xs shadow-2xs">
+        <span class="font-extrabold font-mono text-foreground dark:text-dark-foreground">{{ visibleLogs.length }}</span>
+        <span class="text-[11px] font-mono text-foreground/50">Total</span>
       </div>
-      <div class="stat-pill stat-created">
-        <span class="stat-num">{{ countByType('created') }}</span>
-        <span class="stat-lbl">Created</span>
+
+      <div class="px-3 py-1.5 rounded-xl bg-success/10 border border-success/25 text-success flex items-center gap-2 text-xs shadow-2xs">
+        <span class="font-extrabold font-mono">{{ countByType('created') }}</span>
+        <span class="text-[11px] font-mono opacity-80">Created</span>
       </div>
-      <div class="stat-pill stat-updated">
-        <span class="stat-num">{{ countByType('updated') }}</span>
-        <span class="stat-lbl">Updated</span>
+
+      <div class="px-3 py-1.5 rounded-xl bg-info/10 border border-info/25 text-info flex items-center gap-2 text-xs shadow-2xs">
+        <span class="font-extrabold font-mono">{{ countByType('updated') }}</span>
+        <span class="text-[11px] font-mono opacity-80">Updated</span>
       </div>
-      <div class="stat-pill stat-deleted">
-        <span class="stat-num">{{ countByType('deleted') }}</span>
-        <span class="stat-lbl">Deleted</span>
+
+      <div class="px-3 py-1.5 rounded-xl bg-error/10 border border-error/25 text-error flex items-center gap-2 text-xs shadow-2xs">
+        <span class="font-extrabold font-mono">{{ countByType('deleted') }}</span>
+        <span class="text-[11px] font-mono opacity-80">Deleted</span>
       </div>
-      <div class="stat-pill stat-conflict" v-if="countByType('conflict') > 0">
-        <span class="stat-num">{{ countByType('conflict') }}</span>
-        <span class="stat-lbl">Conflicts</span>
-      </div>
-      <div class="stat-pill stat-failed" v-if="countByType('failed') > 0">
-        <span class="stat-num">{{ countByType('failed') }}</span>
-        <span class="stat-lbl">Failures</span>
+
+      <div v-if="countByType('conflict') > 0" class="px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/25 text-warning flex items-center gap-2 text-xs shadow-2xs">
+        <span class="font-extrabold font-mono">{{ countByType('conflict') }}</span>
+        <span class="text-[11px] font-mono opacity-80">Conflicts</span>
       </div>
     </div>
 
     <!-- Student Absence Warnings Section -->
-    <div v-if="isStudent && studentNotifStore.notifications.length > 0" class="absence-section">
-      <div class="absence-section-head">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <h2>My Notifications</h2>
-        <span class="absence-unread" v-if="studentNotifStore.unreadCount > 0">
-          {{ studentNotifStore.unreadCount }} unread
-        </span>
-        <button class="btn-mark-all" @click="studentNotifStore.markAllRead()" v-if="studentNotifStore.unreadCount > 0" style="margin-left:auto">
+    <div v-if="isStudent && studentNotifStore.notifications.length > 0" class="space-y-3">
+      <div class="flex items-center justify-between pb-2 border-b border-outline/30 dark:border-dark-outline/40">
+        <div class="flex items-center gap-2">
+          <AlertTriangle class="w-4 h-4 text-warning" />
+          <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+            Academic Status Notices
+          </h2>
+          <span v-if="studentNotifStore.unreadCount > 0" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-error/15 text-error border border-error/30">
+            {{ studentNotifStore.unreadCount }} unread
+          </span>
+        </div>
+
+        <button 
+          v-if="studentNotifStore.unreadCount > 0"
+          @click="studentNotifStore.markAllRead()"
+          class="text-xs font-semibold text-secondary hover:underline cursor-pointer"
+        >
           Mark all read
         </button>
       </div>
 
-      <div
-        v-for="n in studentNotifStore.notifications"
-        :key="n.id"
-        class="absence-card"
-        :class="[absenceTypeClass(n.type), { 'absence-read': n.isRead }]"
-        @click="studentNotifStore.markRead(n.id)"
-      >
-        <div class="absence-icon">{{ absenceIcon(n.type) }}</div>
-        <div class="absence-body">
-          <div class="absence-top">
-            <span class="absence-label" :class="absenceTypeClass(n.type)">
-              {{ absenceLabel(n.type) }}
-            </span>
-            <span class="absence-course">{{ n.courseCode }} – {{ n.courseName }}</span>
-            <span class="absence-time" style="margin-left:auto">{{ relativeTime(n.createdAt) }}</span>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div
+          v-for="n in studentNotifStore.notifications"
+          :key="n.id"
+          class="p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition-all"
+          :class="[
+            n.type === 'ineligible' ? 'bg-error/10 border-error/30' : '',
+            n.type === 'warning_2' ? 'bg-error/5 border-error/30' : '',
+            n.type === 'warning_1' ? 'bg-warning/10 border-warning/30' : '',
+            n.type === 'eval_open' ? 'bg-secondary/10 border-secondary/30' : '',
+            { 'opacity-65': n.isRead }
+          ]"
+          @click="studentNotifStore.markRead(n.id)"
+        >
+          <div 
+            class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold font-mono text-sm"
+            :class="[
+              n.type === 'ineligible' ? 'bg-error text-white' : '',
+              n.type === 'warning_2' ? 'bg-error/20 text-error' : '',
+              n.type === 'warning_1' ? 'bg-warning/20 text-warning' : '',
+              n.type === 'eval_open' ? 'bg-secondary/20 text-secondary' : ''
+            ]"
+          >
+            <AlertOctagon v-if="n.type === 'ineligible'" class="w-4 h-4" />
+            <AlertTriangle v-else-if="n.type === 'warning_2' || n.type === 'warning_1'" class="w-4 h-4" />
+            <Award v-else class="w-4 h-4" />
           </div>
-          <p class="absence-msg">{{ n.message }}</p>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <span 
+                class="text-xs font-bold font-mono uppercase"
+                :class="n.type === 'ineligible' || n.type === 'warning_2' ? 'text-error' : n.type === 'eval_open' ? 'text-secondary' : 'text-warning'"
+              >
+                {{ absenceLabel(n.type) }}
+              </span>
+              <span class="text-[10px] font-mono text-foreground/50 shrink-0">
+                {{ relativeTime(n.createdAt) }}
+              </span>
+            </div>
+            <p v-if="n.courseCode" class="text-xs font-semibold text-foreground dark:text-dark-foreground mt-0.5">
+              {{ n.courseCode }} &bull; {{ n.courseName }}
+            </p>
+            <p class="text-[11px] text-foreground/70 dark:text-dark-foreground/70 mt-0.5">
+              {{ n.message }}
+            </p>
+          </div>
+
+          <span v-if="!n.isRead" class="w-2 h-2 rounded-full bg-secondary shrink-0 mt-1"></span>
         </div>
-        <span v-if="!n.isRead" class="absence-unread-dot"></span>
       </div>
     </div>
 
-    <!-- Loading -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="spinner"></div>
-      <span>Loading notifications…</span>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-dark-foreground/50 flex items-center justify-center gap-2">
+      <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
+      <span>Streaming notification ledger…</span>
     </div>
 
-    <!-- Empty -->
-    <div v-else-if="filteredLogs.length === 0" class="empty-state">
-      <div class="empty-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      </div>
-      <h3>No notifications</h3>
-      <p>Nothing matches your current filters.</p>
+    <!-- Empty State -->
+    <div v-else-if="filteredLogs.length === 0" class="py-16 text-center text-foreground/50 dark:text-dark-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-2xl">
+      <BellOff class="w-8 h-8 mx-auto mb-2 text-foreground/30" />
+      <p class="text-sm font-medium text-foreground dark:text-dark-foreground">No events recorded</p>
+      <p class="text-xs font-mono mt-0.5">There are no notification logs matching your active filters.</p>
     </div>
 
-    <!-- Grouped list -->
-    <div v-else class="log-groups">
-      <div v-for="group in paginatedGroups" :key="group.label" class="day-group">
-        <div class="day-label">{{ group.label }}</div>
-        <div class="log-list">
+    <!-- Grouped Activity Feed -->
+    <div v-else class="space-y-6">
+      <div v-for="group in paginatedGroups" :key="group.label" class="space-y-3">
+        <!-- Date Marker -->
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold font-mono uppercase tracking-wider text-foreground/60 dark:text-dark-foreground/60 bg-muted/40 dark:bg-dark-muted/40 px-3 py-1 rounded-lg border border-outline/30 dark:border-dark-outline/40">
+            {{ group.label }}
+          </span>
+          <div class="h-px flex-1 bg-outline/30 dark:bg-dark-outline/40"></div>
+        </div>
+
+        <!-- Log Items -->
+        <div class="space-y-2">
           <div
             v-for="log in group.items"
             :key="log.id"
-            class="log-card"
-            :class="actionClass(log.action)"
+            class="p-4 rounded-xl bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/50 shadow-2xs hover:border-secondary/30 transition-all flex items-start gap-3.5"
           >
-            <div class="log-icon-wrap" :class="actionClass(log.action)">
-              <svg v-if="log.action.includes('created')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <svg v-else-if="log.action.includes('deleted')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              <svg v-else-if="log.action.includes('updated')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              <svg v-else-if="log.action.includes('conflict')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <svg v-else-if="log.action.includes('failed')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <!-- Icon -->
+            <div 
+              class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+              :class="getActionBadgeStyle(log.action)"
+            >
+              <PlusCircle v-if="log.action.includes('created')" class="w-4 h-4" />
+              <Trash2 v-else-if="log.action.includes('deleted')" class="w-4 h-4" />
+              <RefreshCw v-else-if="log.action.includes('updated')" class="w-4 h-4" />
+              <AlertTriangle v-else-if="log.action.includes('conflict')" class="w-4 h-4" />
+              <AlertOctagon v-else-if="log.action.includes('failed')" class="w-4 h-4" />
+              <Info v-else class="w-4 h-4" />
             </div>
-            <div class="log-body">
-              <div class="log-top">
-                <span class="log-action-label" :class="actionClass(log.action)">{{ formatAction(log.action) }}</span>
-                <span class="log-time">{{ log.relativeTime }}</span>
+
+            <!-- Content -->
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-bold text-foreground dark:text-dark-foreground">
+                  {{ formatAction(log.action) }}
+                </span>
+                <span class="text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45 shrink-0">
+                  {{ log.relativeTime }}
+                </span>
               </div>
-              <p class="log-detail">{{ log.details }}</p>
-              <div class="log-meta">
-                <span class="role-pill" :class="log.userRole?.toLowerCase()">{{ log.userRole }}</span>
-                <span class="log-user">{{ log.userName }}</span>
-                <!-- relevance tag for non-admins -->
-                <span class="relevance-tag" v-if="log.relevance && !isAdmin" :title="log.relevance">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6l11 12 11-12"/></svg>
+
+              <p class="text-xs text-foreground/75 dark:text-dark-foreground/75 mt-0.5 leading-relaxed">
+                {{ log.details }}
+              </p>
+
+              <!-- Meta Footer -->
+              <div class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-outline/20 dark:border-dark-outline/25 text-[10px] font-mono">
+                <span 
+                  class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                  :class="getRoleBadgeStyle(log.userRole)"
+                >
+                  {{ log.userRole || 'System' }}
+                </span>
+                <span class="text-foreground/50">By: {{ log.userName }}</span>
+                <span v-if="log.relevance && !isAdmin" class="ml-auto px-2 py-0.5 rounded bg-secondary/15 text-secondary border border-secondary/25">
                   {{ log.relevance }}
                 </span>
-                <span class="log-timestamp">{{ log.formattedTime }}</span>
               </div>
             </div>
           </div>
@@ -148,10 +245,24 @@
     </div>
 
     <!-- Pagination -->
-    <div class="pagination" v-if="totalPages > 1">
-      <button class="page-btn" :disabled="page === 1" @click="page--" id="notif-prev-btn">Prev</button>
-      <span class="page-info">Page {{ page }} of {{ totalPages }}</span>
-      <button class="page-btn" :disabled="page === totalPages" @click="page++" id="notif-next-btn">Next</button>
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-3 pt-4 border-t border-outline/30 dark:border-dark-outline/40 text-xs font-mono">
+      <button 
+        :disabled="page === 1" 
+        @click="page--" 
+        id="notif-prev-btn"
+        class="px-3.5 py-1.5 rounded-lg border border-outline/40 dark:border-dark-outline/40 bg-surface dark:bg-dark-surface text-foreground dark:text-dark-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/40 cursor-pointer"
+      >
+        Previous
+      </button>
+      <span class="text-foreground/60">Page {{ page }} of {{ totalPages }}</span>
+      <button 
+        :disabled="page === totalPages" 
+        @click="page++" 
+        id="notif-next-btn"
+        class="px-3.5 py-1.5 rounded-lg border border-outline/40 dark:border-dark-outline/40 bg-surface dark:bg-dark-surface text-foreground dark:text-dark-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/40 cursor-pointer"
+      >
+        Next
+      </button>
     </div>
   </div>
 </template>
@@ -162,6 +273,17 @@ import { storeToRefs } from 'pinia';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { useAuthStore } from '@/stores/authstore';
 import { useStudentNotificationsStore } from '@/stores/studentNotifications';
+import { 
+  Search, 
+  AlertTriangle, 
+  AlertOctagon, 
+  Award, 
+  RefreshCw, 
+  BellOff, 
+  PlusCircle, 
+  Trash2, 
+  Info 
+} from 'lucide-vue-next';
 
 const auditStore = useAuditLogsStore();
 const authStore = useAuthStore();
@@ -174,79 +296,55 @@ const filterAction = ref('');
 const filterRole = ref('');
 const searchQuery = ref('');
 const page = ref(1);
-const pageSize = 3; // groups per page
+const pageSize = 3;
 
-const isAdmin = computed(() => profile.value?.role === 'Admin');
-const isLecturer = computed(() => profile.value?.role === 'Lecturer');
+const isAdmin = computed(() => profile.value?.role === 'Admin' || profile.value?.role === 'Super Admin');
 const isStudent = computed(() => profile.value?.role === 'Student');
 
-// Reset page when filters change
 watch([filterAction, filterRole, searchQuery], () => { page.value = 1; });
 
 onMounted(async () => {
   await auditStore.fetchLogs();
   auditStore.subscribeToLogs();
-  // Also fetch student absence notifications
   if (profile.value?.role === 'Student') {
     await studentNotifStore.fetchNotifications();
   }
 });
+
 onUnmounted(() => auditStore.unsubscribeFromLogs());
 
-// Absence notification helpers
-function absenceTypeClass(type) {
-  if (type === 'ineligible') return 'abs-ineligible';
-  if (type === 'warning_2')  return 'abs-warning-2';
-  if (type === 'eval_open')  return 'abs-eval-open';
-  return 'abs-warning-1';
-}
 function absenceLabel(type) {
   if (type === 'ineligible') return 'Exam Ineligible';
   if (type === 'warning_2')  return 'Critical Warning';
   if (type === 'eval_open')  return 'Evaluation Open';
-  return 'Warning';
-}
-function absenceIcon(type) {
-  if (type === 'ineligible') return 'X';
-  if (type === 'warning_2')  return '!';
-  if (type === 'eval_open')  return 'i';
-  return '!';
+  return 'Attendance Warning';
 }
 
 const roleSubtitle = computed(() => {
   const role = profile.value?.role;
-  if (role === 'Admin')    return 'Full system audit trail — all actions by all users';
-  if (role === 'Lecturer') return 'Your actions and schedule changes that mention you';
-  return 'Timetable announcements and schedule updates relevant to you';
+  if (role === 'Admin' || role === 'Super Admin') return 'Full institutional ledger — all recorded system operations';
+  if (role === 'Lecturer') return 'Teaching assignments, attendance submissions, and mentions';
+  return 'Timetable updates, attendance alerts, and academic notices';
 });
 
-// ── Enriched logs ──────────────────────────────────────────────────────────────
 const enrichedLogs = computed(() => {
   return logs.value.map(l => ({
     ...l,
-    formattedTime: l.timestamp
-      ? new Date(l.timestamp).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
-      : '—',
     relativeTime: relativeTime(l.timestamp),
     dateKey: l.timestamp ? new Date(l.timestamp).toDateString() : 'Unknown',
   }));
 });
 
-// ── Role-based visibility ──────────────────────────────────────────────────────
 const visibleLogs = computed(() => {
   const role = profile.value?.role;
   const uid  = profile.value?.id;
   const name = (profile.value?.name || '').toLowerCase();
 
-  if (role === 'Admin') {
-    // Admin sees every log
+  if (role === 'Admin' || role === 'Super Admin') {
     return enrichedLogs.value;
   }
 
   if (role === 'Lecturer') {
-    // Lecturers see:
-    // 1. Logs they personally triggered (their own userId)
-    // 2. Logs whose details mention their name (e.g. schedule assigned to them)
     return enrichedLogs.value
       .filter(l =>
         l.userId === uid ||
@@ -254,14 +352,10 @@ const visibleLogs = computed(() => {
       )
       .map(l => ({
         ...l,
-        relevance:
-          l.userId === uid
-            ? 'Your action'
-            : 'Mentions you',
+        relevance: l.userId === uid ? 'Your action' : 'Mentions you',
       }));
   }
 
-  // Students: see schedule changes (timetable announcements) + conflict notices
   return enrichedLogs.value
     .filter(l =>
       ['schedule_created', 'schedule_updated', 'schedule_deleted',
@@ -270,7 +364,6 @@ const visibleLogs = computed(() => {
     .map(l => ({ ...l, relevance: 'Timetable update' }));
 });
 
-// ── Filter ─────────────────────────────────────────────────────────────────────
 const filteredLogs = computed(() => {
   let list = visibleLogs.value;
   if (filterAction.value) list = list.filter(l => l.action === filterAction.value);
@@ -286,12 +379,10 @@ const filteredLogs = computed(() => {
   return list;
 });
 
-// ── Available action types for the filter dropdown ────────────────────────────
 const availableActions = computed(() =>
   [...new Set(visibleLogs.value.map(l => l.action))].sort()
 );
 
-// ── Group by date ──────────────────────────────────────────────────────────────
 const groupedLogs = computed(() => {
   const groups = {};
   filteredLogs.value.forEach(l => {
@@ -309,7 +400,6 @@ const paginatedGroups = computed(() => {
   return groupedLogs.value.slice(start, start + pageSize);
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function clearFilters() {
   filterAction.value = '';
   filterRole.value = '';
@@ -322,13 +412,21 @@ function formatAction(action) {
     .replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function actionClass(action) {
-  if (action.includes('created'))  return 'type-created';
-  if (action.includes('deleted'))  return 'type-deleted';
-  if (action.includes('updated'))  return 'type-updated';
-  if (action.includes('conflict')) return 'type-conflict';
-  if (action.includes('failed'))   return 'type-failed';
-  return 'type-info';
+function getActionBadgeStyle(action) {
+  if (action.includes('created'))  return 'bg-success/15 text-success border border-success/30';
+  if (action.includes('deleted'))  return 'bg-error/15 text-error border border-error/30';
+  if (action.includes('updated'))  return 'bg-info/15 text-info border border-info/30';
+  if (action.includes('conflict')) return 'bg-warning/15 text-warning border border-warning/30';
+  if (action.includes('failed'))   return 'bg-error/20 text-error border border-error/30';
+  return 'bg-secondary/15 text-secondary border border-secondary/30';
+}
+
+function getRoleBadgeStyle(role) {
+  const r = (role || '').toLowerCase();
+  if (r.includes('admin')) return 'bg-secondary/15 text-secondary border border-secondary/30';
+  if (r.includes('lecturer')) return 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30';
+  if (r.includes('student')) return 'bg-blue-500/15 text-blue-500 border border-blue-500/30';
+  return 'bg-muted text-foreground/60 border border-outline/40';
 }
 
 function countByType(keyword) {
@@ -358,374 +456,3 @@ function friendlyDate(ts) {
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 </script>
-
-<style scoped>
-.notif-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-  width: 100%;
-}
-
-/* Stats strip */
-.stats-strip {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.stat-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  font-size: 0.85rem;
-}
-
-.stat-num { font-weight: 700; font-size: 1rem; }
-.stat-lbl { color: inherit; opacity: 0.75; }
-
-.stat-total    { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
-.stat-created  { background: #dcfce7; border-color: #bbf7d0; color: #15803d; }
-.stat-updated  { background: #fef9c3; border-color: #fde047; color: #a16207; }
-.stat-deleted  { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
-.stat-conflict { background: #ffedd5; border-color: #fed7aa; color: #c2410c; }
-.stat-failed   { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
-
-/* Relevance tag */
-.relevance-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.15rem 0.45rem;
-  border-radius: 5px;
-  background: #e0e7ff;
-  color: #4338ca;
-  letter-spacing: 0.02em;
-}
-.relevance-tag svg { width: 10px; height: 10px; }
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.page-subtitle {
-  margin: 0.25rem 0 0;
-  font-size: 0.9rem;
-  color: #64748b;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.filter-sel {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  color: #334155;
-  background: #fff;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-.filter-sel:focus { border-color: #6366f1; }
-
-.search-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.45rem 0.75rem;
-}
-.search-wrap svg { width: 15px; height: 15px; color: #94a3b8; flex-shrink: 0; }
-.search-in { border: none; background: transparent; outline: none; font-size: 0.875rem; color: #334155; min-width: 180px; }
-
-.btn-mark-all {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
-  color: #64748b;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-mark-all:hover { background: #f1f5f9; color: #334155; }
-
-/* Loading */
-.loading-state {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 3rem;
-  justify-content: center;
-  color: #64748b;
-}
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #e2e8f0;
-  border-top-color: #6366f1;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Empty */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 5rem 1rem;
-  background: #fff;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  text-align: center;
-}
-.empty-icon { width: 64px; height: 64px; background: #f8fafc; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; color: #94a3b8; }
-.empty-icon svg { width: 30px; height: 30px; }
-.empty-state h3 { margin: 0 0 0.5rem; color: #1e293b; font-size: 1.1rem; }
-.empty-state p  { margin: 0; color: #64748b; font-size: 0.9rem; }
-
-/* Day groups */
-.log-groups { display: flex; flex-direction: column; gap: 1.5rem; }
-.day-group  { display: flex; flex-direction: column; gap: 0.75rem; }
-
-.day-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #94a3b8;
-  padding: 0 0.25rem;
-}
-
-.log-list { display: flex; flex-direction: column; gap: 0.75rem; }
-
-/* Log card */
-.log-card {
-  display: flex;
-  gap: 1rem;
-  background: #fff;
-  border-radius: 14px;
-  padding: 1.1rem 1.25rem;
-  border: 1px solid #f1f5f9;
-  border-left: 4px solid transparent;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-  transition: box-shadow 0.2s, transform 0.2s;
-}
-.log-card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.06); transform: translateY(-1px); }
-
-.log-card.type-created  { border-left-color: #10b981; }
-.log-card.type-deleted  { border-left-color: #ef4444; }
-.log-card.type-updated  { border-left-color: #f59e0b; }
-.log-card.type-conflict { border-left-color: #f97316; }
-.log-card.type-failed   { border-left-color: #dc2626; }
-.log-card.type-info     { border-left-color: #6366f1; }
-
-/* Icon wrap */
-.log-icon-wrap {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.log-icon-wrap svg { width: 18px; height: 18px; }
-
-.log-icon-wrap.type-created  { background: rgba(16,185,129,0.1); color: #10b981; }
-.log-icon-wrap.type-deleted  { background: rgba(239,68,68,0.1);  color: #ef4444; }
-.log-icon-wrap.type-updated  { background: rgba(245,158,11,0.1); color: #f59e0b; }
-.log-icon-wrap.type-conflict { background: rgba(249,115,22,0.1); color: #f97316; }
-.log-icon-wrap.type-failed   { background: rgba(220,38,38,0.1);  color: #dc2626; }
-.log-icon-wrap.type-info     { background: rgba(99,102,241,0.1); color: #6366f1; }
-
-/* Log body */
-.log-body { flex: 1; min-width: 0; }
-
-.log-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.3rem; }
-
-.log-action-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.2rem 0.5rem;
-  border-radius: 5px;
-}
-.log-action-label.type-created  { background: #dcfce7; color: #15803d; }
-.log-action-label.type-deleted  { background: #fee2e2; color: #b91c1c; }
-.log-action-label.type-updated  { background: #fef9c3; color: #a16207; }
-.log-action-label.type-conflict { background: #ffedd5; color: #c2410c; }
-.log-action-label.type-failed   { background: #fee2e2; color: #991b1b; }
-.log-action-label.type-info     { background: #e0e7ff; color: #4338ca; }
-
-.log-time { font-size: 0.78rem; color: #94a3b8; white-space: nowrap; }
-
-.log-detail {
-  margin: 0 0 0.5rem;
-  font-size: 0.9rem;
-  color: #334155;
-  line-height: 1.5;
-  word-break: break-word;
-}
-
-.log-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-
-.role-pill {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-}
-.role-pill.admin    { background: #e0e7ff; color: #4338ca; }
-.role-pill.lecturer { background: #dcfce7; color: #15803d; }
-.role-pill.student  { background: #fef9c3; color: #a16207; }
-.role-pill.system   { background: #f1f5f9; color: #64748b; }
-
-.log-user      { font-size: 0.8rem; color: #475569; font-weight: 500; }
-.log-timestamp { font-size: 0.78rem; color: #94a3b8; margin-left: auto; }
-
-/* Pagination */
-.pagination { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; margin-top: 0.5rem; }
-.page-btn { padding: 0.4rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #6366f1; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; }
-.page-btn:hover:not(:disabled) { background: #6366f1; color: #fff; border-color: #6366f1; }
-.page-btn:disabled { opacity: 0.35; cursor: default; }
-.page-info { font-size: 0.875rem; color: #64748b; }
-
-@media (max-width: 768px) {
-  .page-header { flex-direction: column; }
-  .log-card { flex-direction: column; }
-}
-
-/* ── Absence Warning Section (Student view) ───────────────────────────────── */
-.absence-section {
-  background: #fff;
-  border-radius: 16px;
-  padding: 1.5rem;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 2px 8px rgba(0,0,0,.04);
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.absence-section-head {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.25rem;
-}
-.absence-section-head svg { width: 20px; height: 20px; color: #f59e0b; flex-shrink: 0; }
-.absence-section-head h2 { margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; }
-
-.absence-unread {
-  font-size: 0.72rem;
-  font-weight: 700;
-  background: #fee2e2;
-  color: #b91c1c;
-  padding: 0.15rem 0.55rem;
-  border-radius: 20px;
-}
-
-.absence-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-  padding: 1rem 1.15rem;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: opacity 0.2s, box-shadow 0.2s;
-  position: relative;
-}
-.absence-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.06); }
-.absence-card.absence-read { opacity: 0.6; }
-
-.abs-warning-1  { background: #fffbeb; border-color: #fde68a; }
-.abs-warning-2  { background: #fff7ed; border-color: #fed7aa; }
-.abs-ineligible { background: #fff1f2; border-color: #fecdd3; }
-.abs-eval-open  { background: #eff6ff; border-color: #bfdbfe; cursor: pointer; }
-.abs-eval-open:hover { background: #dbeafe; }
-
-.absence-icon { font-size: 1.35rem; flex-shrink: 0; line-height: 1.5; }
-.absence-body { flex: 1; min-width: 0; }
-
-.absence-top {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.3rem;
-}
-
-.absence-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.15rem 0.45rem;
-  border-radius: 5px;
-  white-space: nowrap;
-}
-.abs-warning-1.absence-label  { background: #fef9c3; color: #a16207; }
-.abs-warning-2.absence-label  { background: #ffedd5; color: #c2410c; }
-.abs-ineligible.absence-label { background: #fee2e2; color: #991b1b; }
-.abs-eval-open.absence-label  { background: #dbeafe; color: #1d4ed8; }
-
-.absence-course { font-size: 0.8rem; font-weight: 600; color: #334155; }
-.absence-time   { font-size: 0.75rem; color: #94a3b8; white-space: nowrap; }
-.absence-msg    { margin: 0; font-size: 0.87rem; color: #475569; line-height: 1.45; word-break: break-word; }
-
-.absence-unread-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #ef4444;
-  flex-shrink: 0;
-  margin-top: 5px;
-}
-
-.btn-mark-all {
-  background: none;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  font-size: 0.78rem;
-  font-weight: 600;
-  padding: 0.3rem 0.8rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-.btn-mark-all:hover { background: #f1f5f9; color: #0f172a; }
-
-</style>

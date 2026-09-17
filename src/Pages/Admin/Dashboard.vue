@@ -1,88 +1,579 @@
 <template>
-  <div class="dashboard-container">
-    <div class="dashboard-header">
-      <h1 class="page-title">Dashboard Overview</h1>
-      <div class="date-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="16" y1="2" x2="16" y2="6"></line>
-          <line x1="8" y1="2" x2="8" y2="6"></line>
-          <line x1="3" y1="10" x2="21" y2="10"></line>
-        </svg>
-        <span>{{ currentDate }}</span>
+  <div class="space-y-6 sm:space-y-8 font-sans pb-10">
+    
+    <!-- ── Top Architectural Header ────────────────────────────────────── -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-outline/40 dark:border-dark-outline/60">
+      <div>
+        <!-- Dimension Line Eyebrow -->
+        <div class="dim-eyebrow flex items-center gap-2 mb-1.5 text-secondary dark:text-dark-secondary">
+          <svg class="w-8 h-[2px] text-secondary dark:text-dark-secondary" viewBox="0 0 32 2">
+            <line x1="0" y1="1" x2="32" y2="1" stroke="currentColor" stroke-width="2" />
+          </svg>
+          <span class="tracking-widest font-semibold text-xs font-display">OPERATIONAL HUB // CAD-ADMIN 01</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground dark:text-dark-foreground">
+          Dashboard Overview
+        </h1>
+        <p class="text-xs sm:text-sm text-foreground/60 dark:text-dark-foreground/60 mt-0.5">
+          Real-time institutional attendance analytics, active schedules, and live system audit streams.
+        </p>
       </div>
-    </div>
 
-    <!-- Key Metrics Grid -->
-    <div class="metrics-grid">
-      <div class="metric-card" v-for="metric in metrics" :key="metric.title">
-        <div class="metric-icon-wrap" :style="{ backgroundColor: metric.bgColor, color: metric.color }">
-          <div class="metric-icon" v-html="metric.icon"></div>
-        </div>
-        <div class="metric-content">
-          <p class="metric-title">{{ metric.title }}</p>
-          <h3 class="metric-value">{{ metric.value }}</h3>
-          <p class="metric-trend" :class="metric.trend > 0 ? 'positive' : 'negative'">
-            <svg v-if="metric.trend > 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
-            <span>{{ Math.abs(metric.trend) }}% from last week</span>
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div class="dashboard-content-split">
-      <!-- Left Column: Ongoing / Upcoming Schedules -->
-      <div class="schedule-panel">
-        <div class="panel-header">
-          <h2>Today's Schedule</h2>
-          <button class="view-all-btn" @click="$emit('navigate', '/schedule')">View All</button>
-        </div>
+      <!-- Action Chips & Live Status -->
+      <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
         
-        <div class="schedule-list">
-          <div class="schedule-item" v-for="course in todaySchedule" :key="course.id">
-            <div class="time-block">
-              <span class="time-start">{{ course.startTime }}</span>
-              <span class="time-end">{{ course.endTime }}</span>
-            </div>
-            <div class="course-info">
-              <h4>{{ course.name }}</h4>
-              <p>{{ course.lecturer }} • {{ course.room }}</p>
-            </div>
-            <div class="status-badge" :class="course.status">
-              {{ course.statusText }}
+        <!-- Live Calendar / Clock Chip -->
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline shadow-sm text-xs font-medium text-foreground/80 dark:text-dark-foreground/80">
+          <Calendar class="w-3.5 h-3.5 text-secondary dark:text-dark-secondary" />
+          <span>{{ currentDate }}</span>
+          <span class="text-foreground/30 dark:text-dark-foreground/30">•</span>
+          <span class="font-mono text-primary dark:text-dark-secondary font-semibold">{{ currentTimeString }}</span>
+        </div>
+
+        <!-- Live Sync Status -->
+        <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Live Sync Active</span>
+        </div>
+
+        <!-- Refresh Button -->
+        <button
+          type="button"
+          @click="refreshData"
+          :disabled="isRefreshing"
+          class="p-2 rounded-xl bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline hover:border-primary dark:hover:border-dark-secondary text-foreground/70 dark:text-dark-foreground/70 hover:text-primary dark:hover:text-dark-secondary transition-all shadow-sm focus:outline-none cursor-pointer disabled:opacity-50"
+          title="Refresh Dashboard Data"
+        >
+          <RotateCw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
+        </button>
+
+        <!-- Quick Navigate to Schedule -->
+        <button
+          type="button"
+          @click="$emit('navigate', '/schedule')"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-display font-semibold text-white bg-primary hover:bg-[#052b66] dark:bg-primary dark:hover:bg-[#0b295c] shadow-sm shadow-primary/20 transition-all cursor-pointer"
+        >
+          <CalendarDays class="w-3.5 h-3.5" />
+          <span>Full Timetable</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ── 4 Key Metric Cards ─────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      
+      <!-- Metric 1: Total Students -->
+      <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+        <div class="flex items-start justify-between">
+          <div class="space-y-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
+              Total Students
+            </span>
+            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-dark-foreground">
+              {{ totalStudents }}
             </div>
           </div>
-          
-          <div v-if="todaySchedule.length === 0" class="empty-schedule-msg" style="padding: 2rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">
-            You have no courses scheduled for today.
+          <div class="w-11 h-11 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center transition-transform group-hover:scale-105">
+            <Users class="w-5 h-5" />
+          </div>
+        </div>
+
+        <div class="mt-3.5 pt-3 border-t border-outline/40 dark:border-dark-outline/40 flex items-center justify-between text-xs">
+          <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+            <ArrowUpRight class="w-3.5 h-3.5" />
+            <span>+5%</span>
+          </span>
+          <span class="text-foreground/45 dark:text-dark-foreground/45 text-[11px]">from last week</span>
+        </div>
+      </div>
+
+      <!-- Metric 2: Average Attendance -->
+      <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+        <div class="flex items-start justify-between">
+          <div class="space-y-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
+              Avg Attendance
+            </span>
+            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-dark-foreground">
+              {{ averageAttendance }}%
+            </div>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition-transform group-hover:scale-105">
+            <TrendingUp class="w-5 h-5" />
+          </div>
+        </div>
+
+        <div class="mt-3.5 pt-3 border-t border-outline/40 dark:border-dark-outline/40 flex items-center justify-between text-xs">
+          <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+            <ArrowUpRight class="w-3.5 h-3.5" />
+            <span>+2%</span>
+          </span>
+          <!-- Mini Progress Bar -->
+          <div class="w-20 h-1.5 bg-background dark:bg-dark-background rounded-full overflow-hidden">
+            <div class="h-full bg-emerald-500 rounded-full" :style="{ width: `${averageAttendance}%` }"></div>
           </div>
         </div>
       </div>
 
-      <div class="side-panel">
-        <div class="attendance-summary audit-panel">
-          <div class="panel-header">
-            <h2>Live Audit Logs</h2>
-          </div>
-          <div class="audit-content">
-            <div class="audit-item" v-for="log in systemAuditLogs.slice(0, 5)" :key="log.id">
-              <div class="audit-header">
-                <span class="audit-action">{{ log.action }}</span>
-                <span class="audit-time">{{ log.timestamp }}</span>
-              </div>
-              <p class="audit-details">{{ log.details }}</p>
-              <div class="audit-user">
-                <span class="user-role" :class="log.role.toLowerCase()">{{ log.role }}</span>
-                <span class="user-name">{{ log.user }}</span>
-              </div>
+      <!-- Metric 3: Active Courses -->
+      <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+        <div class="flex items-start justify-between">
+          <div class="space-y-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
+              Active Courses
+            </span>
+            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-dark-foreground">
+              {{ activeCoursesCount }}
             </div>
-            <div v-if="systemAuditLogs.length === 0" class="empty-msg">No audit logs available.</div>
           </div>
-          <button class="view-all-btn full-width" @click="alert('Full Audit Trail functionality coming soon')">View Full Audit Trail</button>
+          <div class="w-11 h-11 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-secondary dark:text-dark-secondary flex items-center justify-center transition-transform group-hover:scale-105">
+            <BookOpen class="w-5 h-5" />
+          </div>
+        </div>
+
+        <div class="mt-3.5 pt-3 border-t border-outline/40 dark:border-dark-outline/40 flex items-center justify-between text-xs">
+          <span class="inline-flex items-center gap-1 text-secondary dark:text-dark-secondary font-medium">
+            <ArrowUpRight class="w-3.5 h-3.5" />
+            <span>+12%</span>
+          </span>
+          <span class="text-foreground/45 dark:text-dark-foreground/45 text-[11px]">in current semester</span>
         </div>
       </div>
+
+      <!-- Metric 4: Flagged Absences -->
+      <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+        <div class="flex items-start justify-between">
+          <div class="space-y-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
+              Flagged Absences
+            </span>
+            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-dark-foreground">
+              {{ flaggedAbsences }}
+            </div>
+          </div>
+          <div class="w-11 h-11 rounded-xl bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center transition-transform group-hover:scale-105">
+            <AlertTriangle class="w-5 h-5" />
+          </div>
+        </div>
+
+        <div class="mt-3.5 pt-3 border-t border-outline/40 dark:border-dark-outline/40 flex items-center justify-between text-xs">
+          <span class="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-medium">
+            <ArrowDownRight class="w-3.5 h-3.5" />
+            <span>-4%</span>
+          </span>
+          <span class="text-foreground/45 dark:text-dark-foreground/45 text-[11px]">needs attention</span>
+        </div>
+      </div>
+
     </div>
+
+    <!-- ── Main Content Split (Today's Schedule & Live Audit Logs) ──────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+      
+      <!-- Left Column: Today's Schedule (7 cols on lg) -->
+      <div class="lg:col-span-7 space-y-4">
+        
+        <div class="bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm p-5 sm:p-6">
+          
+          <!-- Panel Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline/40 dark:border-dark-outline/60">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-dark-primary/20 text-primary dark:text-dark-secondary flex items-center justify-center">
+                <Clock class="w-4 h-4" />
+              </div>
+              <div>
+                <h2 class="font-display font-bold text-lg text-foreground dark:text-dark-foreground">
+                  Today's Schedule
+                </h2>
+                <span class="text-xs text-foreground/50 dark:text-dark-foreground/50">
+                  {{ currentDayName }} • {{ todaySchedule.length }} lecture{{ todaySchedule.length === 1 ? '' : 's' }} scheduled
+                </span>
+              </div>
+            </div>
+
+            <!-- Schedule Filter Tabs -->
+            <div class="flex items-center gap-1 p-1 rounded-xl bg-background dark:bg-dark-background border border-outline/50 dark:border-dark-outline/60 text-xs">
+              <button
+                v-for="tab in filterTabs"
+                :key="tab.id"
+                @click="activeScheduleFilter = tab.id"
+                class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer"
+                :class="activeScheduleFilter === tab.id
+                  ? 'bg-surface dark:bg-dark-surface text-primary dark:text-dark-secondary shadow-xs font-semibold'
+                  : 'text-foreground/60 dark:text-dark-foreground/60 hover:text-foreground dark:hover:text-dark-foreground'"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Schedule List -->
+          <div class="mt-4 space-y-3">
+            
+            <div
+              v-for="course in filteredSchedule"
+              :key="course.id"
+              class="blueprint-card p-4 rounded-xl border border-outline/60 dark:border-dark-outline/80 bg-background/50 dark:bg-dark-background/50 hover:bg-background dark:hover:bg-dark-background transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            >
+              <!-- Time Block & Course Info -->
+              <div class="flex items-start gap-3.5">
+                <!-- Time Pillar -->
+                <div class="px-2.5 py-2 rounded-lg bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline text-center shrink-0 min-w-[72px]">
+                  <span class="block text-xs font-bold font-mono text-primary dark:text-dark-secondary">
+                    {{ course.startTime || 'TBD' }}
+                  </span>
+                  <span class="block text-[10px] text-foreground/50 dark:text-dark-foreground/50 font-mono">
+                    {{ course.endTime || '' }}
+                  </span>
+                </div>
+
+                <!-- Course Description -->
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-display font-bold text-sm text-foreground dark:text-dark-foreground">
+                      {{ course.name }}
+                    </h3>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-foreground/60 dark:text-dark-foreground/60">
+                    <span class="inline-flex items-center gap-1">
+                      <GraduationCap class="w-3.5 h-3.5 text-secondary dark:text-dark-secondary" />
+                      {{ course.lecturer || 'Faculty Lecturer' }}
+                    </span>
+                    <span>•</span>
+                    <span class="inline-flex items-center gap-1">
+                      <MapPin class="w-3.5 h-3.5 text-foreground/40 dark:text-dark-foreground/40" />
+                      {{ course.room || 'Room TBD' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Status Badge & Action -->
+              <div class="flex items-center justify-between sm:justify-end gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-outline/30 dark:border-dark-outline/30">
+                <!-- Status Badge -->
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                  :class="{
+                    'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30': course.status === 'ongoing',
+                    'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30': course.status === 'upcoming',
+                    'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-dark-foreground/60 border border-outline/40': course.status === 'completed',
+                  }"
+                >
+                  <span
+                    v-if="course.status === 'ongoing'"
+                    class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"
+                  ></span>
+                  <Radio v-if="course.status === 'ongoing'" class="w-3 h-3" />
+                  <Clock v-else-if="course.status === 'upcoming'" class="w-3 h-3" />
+                  <CheckCircle2 v-else class="w-3 h-3" />
+                  <span>{{ course.statusText }}</span>
+                </span>
+
+                <!-- Quick Attendance View -->
+                <button
+                  type="button"
+                  @click="$emit('navigate', '/attendance-view')"
+                  class="p-1.5 rounded-lg text-foreground/50 hover:text-primary dark:hover:text-dark-secondary hover:bg-surface dark:hover:bg-dark-surface border border-transparent hover:border-outline dark:hover:border-dark-outline transition-colors cursor-pointer"
+                  title="View Attendance Log"
+                >
+                  <ArrowRight class="w-4 h-4" />
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Empty State -->
+            <div
+              v-if="filteredSchedule.length === 0"
+              class="py-10 px-4 text-center rounded-xl border border-dashed border-outline dark:border-dark-outline bg-background/30 dark:bg-dark-background/30 space-y-2"
+            >
+              <div class="w-10 h-10 rounded-full bg-muted dark:bg-dark-muted text-foreground/40 dark:text-dark-foreground/40 flex items-center justify-center mx-auto">
+                <CalendarCheck class="w-5 h-5" />
+              </div>
+              <p class="text-sm font-display font-medium text-foreground/80 dark:text-dark-foreground/80">
+                No lectures found for this filter.
+              </p>
+              <p class="text-xs text-foreground/50 dark:text-dark-foreground/50 max-w-xs mx-auto">
+                {{ todaySchedule.length === 0 ? "There are no academic sessions scheduled for today (" + currentDayName + ")." : "Try switching to another tab to view scheduled sessions." }}
+              </p>
+            </div>
+
+          </div>
+
+          <!-- Bottom Schedule Action Footer -->
+          <div class="mt-4 pt-4 border-t border-outline/40 dark:border-dark-outline/60 flex items-center justify-between text-xs">
+            <span class="text-foreground/50 dark:text-dark-foreground/50 font-mono text-[11px]">
+              UPDATED LIVE EVERY 30 SECONDS
+            </span>
+            <button
+              type="button"
+              @click="$emit('navigate', '/schedule')"
+              class="font-semibold text-secondary hover:text-[#9e7a25] dark:text-dark-secondary dark:hover:text-[#e4bc5e] inline-flex items-center gap-1 transition-colors cursor-pointer"
+            >
+              <span>Manage Lecture Schedules</span>
+              <ArrowRight class="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Right Column: Live Audit Logs & System Status (5 cols on lg) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Live Audit Trail Card -->
+        <div class="bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm p-5 sm:p-6">
+          
+          <div class="flex items-center justify-between pb-3.5 border-b border-outline/40 dark:border-dark-outline/60">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-secondary/15 dark:bg-dark-secondary/20 text-secondary dark:text-dark-secondary flex items-center justify-center">
+                <History class="w-4 h-4" />
+              </div>
+              <h2 class="font-display font-bold text-base text-foreground dark:text-dark-foreground">
+                Live Audit Stream
+              </h2>
+            </div>
+            <button
+              type="button"
+              @click="isAuditModalOpen = true"
+              class="text-xs font-semibold text-secondary hover:text-[#9e7a25] dark:text-dark-secondary transition-colors cursor-pointer"
+            >
+              View All ({{ systemAuditLogs.length }})
+            </button>
+          </div>
+
+          <!-- Audit Log Entries List -->
+          <div class="mt-3.5 space-y-2.5">
+            <div
+              v-for="log in systemAuditLogs.slice(0, 5)"
+              :key="log.id"
+              class="p-3 rounded-xl bg-background/60 dark:bg-dark-background/60 border border-outline/40 dark:border-dark-outline/60 hover:border-outline dark:hover:border-dark-outline transition-all"
+            >
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-display font-semibold text-foreground dark:text-dark-foreground">
+                  {{ log.action }}
+                </span>
+                <span class="text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45">
+                  {{ log.timestamp }}
+                </span>
+              </div>
+              <p class="text-xs text-foreground/70 dark:text-dark-foreground/70 line-clamp-2 leading-relaxed mb-2">
+                {{ log.details }}
+              </p>
+              <div class="flex items-center justify-between text-[11px]">
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider"
+                    :class="getRoleBadgeClass(log.role)"
+                  >
+                    {{ log.role }}
+                  </span>
+                  <span class="text-foreground/60 dark:text-dark-foreground/60 font-medium">
+                    {{ log.user }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty Audit Logs -->
+            <div
+              v-if="systemAuditLogs.length === 0"
+              class="py-8 text-center text-xs text-foreground/50 dark:text-dark-foreground/50"
+            >
+              No system activity logs recorded yet.
+            </div>
+          </div>
+
+          <!-- Open Modal CTA -->
+          <button
+            type="button"
+            @click="isAuditModalOpen = true"
+            class="w-full mt-4 py-2.5 px-4 rounded-xl border border-outline/70 dark:border-dark-outline text-xs font-display font-semibold text-foreground/80 dark:text-dark-foreground/80 hover:bg-background dark:hover:bg-dark-background transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <ShieldCheck class="w-3.5 h-3.5 text-secondary dark:text-dark-secondary" />
+            <span>Open Complete Audit Trail</span>
+          </button>
+
+        </div>
+
+        <!-- Technical Specification / Architecture Title Block -->
+        <div class="title-block relative overflow-hidden bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl p-5">
+          <!-- Subtle corner marks -->
+          <div class="corner corner-tl"></div>
+          <div class="corner corner-tr"></div>
+          
+          <div class="flex items-center gap-2 mb-3">
+            <Sparkles class="w-4 h-4 text-secondary dark:text-dark-secondary" />
+            <h3 class="text-xs font-bold uppercase tracking-wider text-foreground/70 dark:text-dark-foreground/70 font-display">
+              Infrastructure Specifications
+            </h3>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-dark-foreground/45 block mb-0.5">Database Tier</span>
+              <span class="font-medium text-foreground dark:text-dark-foreground flex items-center gap-1">
+                <Database class="w-3 h-3 text-emerald-500" />
+                Supabase PG-15
+              </span>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-dark-foreground/45 block mb-0.5">Attendance Ledger</span>
+              <span class="font-medium font-mono text-foreground dark:text-dark-foreground">
+                {{ attendances.length }} logs logged
+              </span>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-dark-foreground/45 block mb-0.5">Enrollment Count</span>
+              <span class="font-medium font-mono text-foreground dark:text-dark-foreground">
+                {{ enrollments.length }} records
+              </span>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-dark-foreground/45 block mb-0.5">Active Session</span>
+              <span class="font-medium text-secondary dark:text-dark-secondary">
+                Semester 2 (2025)
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ── Full Audit Trail Modal ──────────────────────────────────────── -->
+    <transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div
+        v-if="isAuditModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click.self="isAuditModalOpen = false"
+      >
+        <div
+          class="relative w-full max-w-3xl max-h-[85vh] flex flex-col bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden blueprint-card"
+          role="dialog"
+          aria-modal="true"
+        >
+          <!-- Modal Header -->
+          <div class="p-5 sm:p-6 border-b border-outline/50 dark:border-dark-outline/50 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-dark-primary/20 text-primary dark:text-dark-secondary flex items-center justify-center">
+                <ShieldCheck class="w-5 h-5" />
+              </div>
+              <div>
+                <h2 class="text-lg font-bold font-display text-foreground dark:text-dark-foreground">
+                  Complete System Audit Trail
+                </h2>
+                <p class="text-xs text-foreground/50 dark:text-dark-foreground/50">
+                  Comprehensive append-only record of administrative, faculty, and student operations.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              @click="isAuditModalOpen = false"
+              class="p-2 rounded-xl text-foreground/40 hover:text-foreground dark:text-dark-foreground/40 dark:hover:text-dark-foreground hover:bg-background dark:hover:bg-dark-background transition-colors cursor-pointer"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- Search & Filter Bar -->
+          <div class="p-4 bg-background/50 dark:bg-dark-background/50 border-b border-outline/40 dark:border-dark-outline/40 flex flex-col sm:flex-row items-center gap-3 shrink-0">
+            <div class="relative w-full sm:flex-1">
+              <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/40 dark:text-dark-foreground/40" />
+              <input
+                type="text"
+                v-model="auditSearchQuery"
+                placeholder="Search audit actions, details, or users..."
+                class="w-full pl-10 pr-4 py-2 bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-xl text-xs text-foreground dark:text-dark-foreground focus:outline-none focus:border-primary dark:focus:border-dark-secondary"
+              />
+            </div>
+            <div class="flex items-center gap-1 text-xs self-start sm:self-auto">
+              <span class="text-foreground/50 dark:text-dark-foreground/50 mr-1">Role:</span>
+              <button
+                v-for="role in ['All', 'Admin', 'Lecturer', 'Student', 'System']"
+                :key="role"
+                @click="selectedAuditRole = role"
+                class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                :class="selectedAuditRole === role
+                  ? 'bg-primary dark:bg-dark-secondary text-white dark:text-dark-background font-semibold'
+                  : 'text-foreground/60 dark:text-dark-foreground/60 hover:bg-background dark:hover:bg-dark-background'"
+              >
+                {{ role }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Scrollable Log Table / List -->
+          <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2.5 scrollbar-thin">
+            <div
+              v-for="log in filteredModalAuditLogs"
+              :key="log.id"
+              class="p-3.5 rounded-xl border border-outline/50 dark:border-dark-outline/60 bg-background/40 dark:bg-dark-background/40 hover:bg-background dark:hover:bg-dark-background transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+            >
+              <div class="space-y-1 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold font-display text-foreground dark:text-dark-foreground">
+                    {{ log.action }}
+                  </span>
+                  <span
+                    class="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider"
+                    :class="getRoleBadgeClass(log.role)"
+                  >
+                    {{ log.role }}
+                  </span>
+                </div>
+                <p class="text-foreground/75 dark:text-dark-foreground/75 leading-relaxed">
+                  {{ log.details }}
+                </p>
+              </div>
+
+              <div class="sm:text-right shrink-0">
+                <span class="block font-medium text-foreground dark:text-dark-foreground text-[11px]">
+                  {{ log.user }}
+                </span>
+                <span class="block font-mono text-[10px] text-foreground/45 dark:text-dark-foreground/45">
+                  {{ log.timestamp }}
+                </span>
+              </div>
+            </div>
+
+            <div
+              v-if="filteredModalAuditLogs.length === 0"
+              class="py-12 text-center text-xs text-foreground/50 dark:text-dark-foreground/50"
+            >
+              No matching audit records found.
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="p-4 border-t border-outline/50 dark:border-dark-outline/50 bg-background/30 dark:bg-dark-background/30 flex items-center justify-between text-xs shrink-0">
+            <span class="text-foreground/50 dark:text-dark-foreground/50">
+              Showing {{ filteredModalAuditLogs.length }} of {{ systemAuditLogs.length }} entries
+            </span>
+            <button
+              type="button"
+              @click="isAuditModalOpen = false"
+              class="px-4 py-2 rounded-xl bg-primary hover:bg-[#052b66] dark:bg-primary dark:hover:bg-[#0b295c] text-white font-display font-semibold transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
@@ -94,6 +585,32 @@ import { useSchedulesStore } from '@/stores/schedules';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useAttendancesStore } from '@/stores/attendances';
+import {
+  Users,
+  TrendingUp,
+  BookOpen,
+  AlertTriangle,
+  Calendar,
+  Clock,
+  RotateCw,
+  CalendarDays,
+  CalendarCheck,
+  GraduationCap,
+  MapPin,
+  Radio,
+  CheckCircle2,
+  ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  History,
+  ShieldCheck,
+  Sparkles,
+  Database,
+  Search,
+  X
+} from 'lucide-vue-next';
+
+defineEmits(['navigate']);
 
 const coursesStore = useCoursesStore();
 const schedulesStore = useSchedulesStore();
@@ -108,28 +625,32 @@ const { enrollments } = storeToRefs(enrollmentsStore);
 const { attendances } = storeToRefs(attendancesStore);
 
 // Ticks every 30s so schedule statuses (upcoming/ongoing/completed) update live
-// without needing a page refresh.
 const now = ref(new Date());
 let clockInterval = null;
+const isRefreshing = ref(false);
+
+// Filter tabs for today's schedule
+const activeScheduleFilter = ref('all');
+const filterTabs = [
+  { id: 'all', label: 'All' },
+  { id: 'ongoing', label: 'Ongoing' },
+  { id: 'upcoming', label: 'Upcoming' },
+  { id: 'completed', label: 'Completed' },
+];
+
+// Audit trail modal states
+const isAuditModalOpen = ref(false);
+const auditSearchQuery = ref('');
+const selectedAuditRole = ref('All');
 
 onMounted(async () => {
-  try {
-    await Promise.all([
-      coursesStore.fetchCourses(),
-      schedulesStore.fetchSchedules(),
-      auditLogsStore.fetchLogs(),
-      enrollmentsStore.fetchEnrollments(),
-      attendancesStore.fetchAttendances(),
-    ]);
+  await fetchAllDashboardData();
 
-    coursesStore.subscribeToCourses();
-    schedulesStore.subscribeToSchedules();
-    auditLogsStore.subscribeToLogs();
-    enrollmentsStore.subscribeToEnrollments();
-    attendancesStore.subscribeToAttendances();
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error);
-  }
+  coursesStore.subscribeToCourses();
+  schedulesStore.subscribeToSchedules();
+  auditLogsStore.subscribeToLogs();
+  enrollmentsStore.subscribeToEnrollments();
+  attendancesStore.subscribeToAttendances();
 
   clockInterval = setInterval(() => {
     now.value = new Date();
@@ -146,17 +667,50 @@ onUnmounted(() => {
   if (clockInterval) clearInterval(clockInterval);
 });
 
-const currentDate = new Date().toLocaleDateString('en-US', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
-});
+async function fetchAllDashboardData() {
+  try {
+    await Promise.all([
+      coursesStore.fetchCourses(),
+      schedulesStore.fetchSchedules(),
+      auditLogsStore.fetchLogs(),
+      enrollmentsStore.fetchEnrollments(),
+      attendancesStore.fetchAttendances(),
+    ]);
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+  }
+}
 
-const currentDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+async function refreshData() {
+  isRefreshing.value = true;
+  await fetchAllDashboardData();
+  now.value = new Date();
+  setTimeout(() => {
+    isRefreshing.value = false;
+  }, 400);
+}
 
-// --- Derived stats (replacing the old /admin/dashboard-stats endpoint) ---
+const currentDate = computed(() =>
+  now.value.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+);
 
+const currentTimeString = computed(() =>
+  now.value.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+);
+
+const currentDayName = computed(() =>
+  now.value.toLocaleDateString('en-US', { weekday: 'long' })
+);
+
+// --- Derived Metrics ---
 const totalStudents = computed(() => {
   const uniqueStudentIds = new Set(enrollments.value.map((e) => e.studentId));
   return uniqueStudentIds.size;
@@ -168,47 +722,15 @@ const averageAttendance = computed(() => {
   return Math.round((presentCount / attendances.value.length) * 100);
 });
 
+const activeCoursesCount = computed(() =>
+  courses.value.filter((c) => c.status === 'active').length
+);
+
 const flaggedAbsences = computed(() =>
   attendances.value.filter((a) => a.status === 'absent').length
 );
 
-const metrics = computed(() => [
-  {
-    title: 'Total Students',
-    value: totalStudents.value.toString(),
-    trend: 5,
-    bgColor: 'rgba(99, 102, 241, 0.1)',
-    color: '#6366f1',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>'
-  },
-  {
-    title: 'Average Attendance',
-    value: `${averageAttendance.value}%`,
-    trend: 2,
-    bgColor: 'rgba(16, 185, 129, 0.1)',
-    color: '#10b981',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'
-  },
-  {
-    title: 'Active Courses',
-    value: courses.value.filter((c) => c.status === 'active').length.toString(),
-    trend: 12,
-    bgColor: 'rgba(245, 158, 11, 0.1)',
-    color: '#f59e0b',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>'
-  },
-  {
-    title: 'Flagged Absences',
-    value: flaggedAbsences.value.toString(),
-    trend: -4,
-    bgColor: 'rgba(239, 68, 68, 0.1)',
-    color: '#ef4444',
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
-  }
-]);
-
-// Converts a "HH:MM" (or "HH:MM:SS") string into minutes-since-midnight so it
-// can be compared against the current time.
+// Converts a "HH:MM" (or "HH:MM:SS") string into minutes-since-midnight
 function parseTimeToMinutes(timeStr) {
   if (!timeStr) return null;
   const [h, m] = timeStr.split(':').map(Number);
@@ -216,12 +738,12 @@ function parseTimeToMinutes(timeStr) {
   return h * 60 + m;
 }
 
-// --- Today's schedule (attach course info via coursesStore, same pattern as Schedule.vue) ---
+// --- Today's schedule ---
 const todaySchedule = computed(() => {
   const nowMinutes = now.value.getHours() * 60 + now.value.getMinutes();
 
   return schedules.value
-    .filter((s) => s.day === currentDayName)
+    .filter((s) => s.day === currentDayName.value)
     .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
     .map((s) => {
       const course = coursesStore.getCourseById(s.courseId);
@@ -251,7 +773,12 @@ const todaySchedule = computed(() => {
     });
 });
 
-// --- Audit logs reshaped to match the template's expected field names ---
+const filteredSchedule = computed(() => {
+  if (activeScheduleFilter.value === 'all') return todaySchedule.value;
+  return todaySchedule.value.filter((s) => s.status === activeScheduleFilter.value);
+});
+
+// --- Audit logs ---
 const systemAuditLogs = computed(() =>
   logs.value.map((l) => ({
     id: l.id,
@@ -269,630 +796,29 @@ const systemAuditLogs = computed(() =>
     user: l.userName || 'System',
   }))
 );
+
+const filteredModalAuditLogs = computed(() => {
+  return systemAuditLogs.value.filter((log) => {
+    const matchesRole =
+      selectedAuditRole.value === 'All' ||
+      log.role.toLowerCase() === selectedAuditRole.value.toLowerCase();
+
+    const query = auditSearchQuery.value.trim().toLowerCase();
+    const matchesSearch =
+      !query ||
+      log.action.toLowerCase().includes(query) ||
+      log.details.toLowerCase().includes(query) ||
+      log.user.toLowerCase().includes(query);
+
+    return matchesRole && matchesSearch;
+  });
+});
+
+function getRoleBadgeClass(role) {
+  const r = (role || '').toLowerCase();
+  if (r.includes('admin')) return 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30';
+  if (r.includes('lecturer') || r.includes('staff')) return 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30';
+  if (r.includes('student')) return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+  return 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+}
 </script>
-<style scoped>
-.dashboard-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.date-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #ffffff;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #64748b;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
-  white-space: nowrap;
-}
-
-.date-badge svg {
-  width: 16px;
-  height: 16px;
-  color: #6366f1;
-  flex-shrink: 0;
-}
-
-/* Key Metrics */
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: 1.5rem;
-}
-
-.metric-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 1.5rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  min-width: 0;
-}
-
-.metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-}
-
-.metric-icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.metric-icon {
-  width: 24px;
-  height: 24px;
-  display: flex;
-}
-
-.metric-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.metric-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.metric-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.metric-value {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.metric-trend {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  flex-wrap: wrap;
-}
-
-.metric-trend svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-.metric-trend.positive {
-  color: #10b981;
-}
-
-.metric-trend.negative {
-  color: #ef4444;
-}
-
-.metric-trend span {
-  color: #94a3b8;
-  font-weight: 500;
-  margin-left: 0.25rem;
-}
-
-/* Content Split */
-.dashboard-content-split {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
-}
-
-.schedule-panel,
-.attendance-summary {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  min-width: 0;
-}
-
-.side-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.panel-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #0f172a;
-  letter-spacing: -0.015em;
-}
-
-.view-all-btn {
-  background: none;
-  border: none;
-  color: #6366f1;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.2s;
-  white-space: nowrap;
-}
-
-.view-all-btn:hover {
-  color: #4f46e5;
-  text-decoration: underline;
-}
-
-/* Schedule List */
-.schedule-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.schedule-item {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1rem;
-  border-radius: 12px;
-  background-color: #f8fafc;
-  border: 1px solid transparent;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.schedule-item:hover {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-.time-block {
-  display: flex;
-  flex-direction: column;
-  min-width: 80px;
-  align-items: flex-end;
-  border-right: 2px solid #e2e8f0;
-  padding-right: 1.5rem;
-  flex-shrink: 0;
-}
-
-.time-start {
-  font-weight: 600;
-  color: #0f172a;
-  font-size: 0.95rem;
-}
-
-.time-end {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  margin-top: 0.25rem;
-}
-
-.course-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.course-info h4 {
-  margin: 0 0 0.35rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e293b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.course-info p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #64748b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-badge {
-  padding: 0.35rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.status-badge.completed {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.status-badge.ongoing {
-  background-color: #e0e7ff;
-  color: #3730a3;
-  position: relative;
-}
-
-.status-badge.ongoing::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  background-color: #4f46e5;
-  border-radius: 50%;
-  margin-right: 6px;
-  margin-bottom: 1px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(79, 70, 229, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
-}
-
-.status-badge.upcoming {
-  background-color: #f1f5f9;
-  color: #475569;
-}
-
-
-/* Live Audit Logs */
-.audit-panel {
-  display: flex;
-  flex-direction: column;
-}
-
-.audit-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.audit-item {
-  background-color: #f8fafc;
-  padding: 1rem;
-  border-radius: 10px;
-  border-left: 3px solid #6366f1;
-  min-width: 0;
-}
-
-.audit-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.25rem;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.audit-action {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #0f172a;
-}
-
-.audit-time {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  white-space: nowrap;
-}
-
-.audit-details {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.85rem;
-  color: #475569;
-  line-height: 1.4;
-  word-break: break-word;
-}
-
-.audit-user {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.user-role {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  font-weight: 700;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-
-.user-role.system {
-  background-color: #f1f5f9;
-  color: #64748b;
-}
-
-.user-role.lecturer {
-  background-color: #e0e7ff;
-  color: #4338ca;
-}
-
-.user-role.student {
-  background-color: #dcfce7;
-  color: #15803d;
-}
-
-.user-name {
-  font-size: 0.8rem;
-  color: #64748b;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.empty-msg {
-  color: #94a3b8;
-  font-size: 0.85rem;
-  text-align: center;
-  padding: 1rem 0;
-}
-
-.full-width {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  margin-top: auto;
-}
-
-.full-width:hover {
-  background-color: #f1f5f9;
-  text-decoration: none;
-}
-
-/* ================================
-   RESPONSIVE BREAKPOINTS
-   Small laptop (≤1200px) → Tablet (≤1024px) → Tablet/large phone (≤768px)
-   → Mobile L (≤480px) → Mobile M (≤414px) → Mobile S (≤360px)
-   ================================ */
-
-@media (max-width: 1200px) {
-  .metrics-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-  }
-}
-
-@media (max-width: 1024px) {
-  .dashboard-content-split {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-container {
-    gap: 1.5rem;
-  }
-
-  .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-  }
-
-  .metrics-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-    gap: 1rem;
-  }
-
-  .metric-card {
-    padding: 1.25rem;
-  }
-
-  .schedule-panel,
-  .attendance-summary {
-    padding: 1.25rem;
-  }
-
-  .schedule-item {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-    padding: 1.25rem;
-  }
-
-  .time-block {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-    border-right: none;
-    border-bottom: 2px solid #e2e8f0;
-    padding-right: 0;
-    padding-bottom: 0.75rem;
-  }
-
-  .time-end {
-    margin-top: 0;
-  }
-
-  .status-badge {
-    align-self: flex-start;
-    margin-top: 0.5rem;
-  }
-}
-
-/* Mobile L (large phones, ~425-480px) */
-@media (max-width: 480px) {
-  .page-title {
-    font-size: 1.3rem;
-  }
-
-  .date-badge {
-    font-size: 0.8rem;
-    padding: 0.45rem 0.85rem;
-  }
-
-  .metrics-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .metric-icon-wrap {
-    width: 42px;
-    height: 42px;
-  }
-
-  .metric-icon {
-    width: 20px;
-    height: 20px;
-  }
-
-  .metric-value {
-    font-size: 1.5rem;
-  }
-
-  .panel-header h2 {
-    font-size: 1.1rem;
-  }
-
-  .time-block {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-
-  .audit-item {
-    padding: 0.85rem;
-  }
-}
-
-/* Mobile M (e.g. iPhone SE/12/13, ~375-414px) */
-@media (max-width: 414px) {
-  .metric-card {
-    padding: 1rem;
-    gap: 0.75rem;
-  }
-
-  .schedule-panel,
-  .attendance-summary {
-    padding: 1rem;
-  }
-
-  .schedule-item {
-    padding: 1rem;
-  }
-
-  .audit-item {
-    padding: 0.75rem;
-  }
-
-  .audit-action {
-    font-size: 0.85rem;
-  }
-
-  .audit-details {
-    font-size: 0.8rem;
-  }
-
-  .full-width {
-    padding: 0.65rem;
-    font-size: 0.85rem;
-  }
-}
-
-/* Mobile S (small phones, ≤360px) */
-@media (max-width: 360px) {
-  .page-title {
-    font-size: 1.15rem;
-  }
-
-  .date-badge span {
-    font-size: 0.75rem;
-  }
-
-  .metric-icon-wrap {
-    width: 38px;
-    height: 38px;
-  }
-
-  .metric-icon {
-    width: 18px;
-    height: 18px;
-  }
-
-  .metric-value {
-    font-size: 1.3rem;
-  }
-
-  .metric-title {
-    font-size: 0.8rem;
-  }
-
-  .metric-trend {
-    font-size: 0.68rem;
-  }
-
-  .course-info h4 {
-    font-size: 0.9rem;
-  }
-
-  .status-badge {
-    font-size: 0.68rem;
-    padding: 0.3rem 0.6rem;
-  }
-
-  .user-role {
-    font-size: 0.6rem;
-  }
-}
-</style>

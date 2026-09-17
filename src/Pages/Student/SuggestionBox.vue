@@ -1,149 +1,220 @@
 <template>
-  <div class="sb-container">
-
-    <!-- Header -->
-    <div class="sb-header">
-      <div class="sb-header-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
-      </div>
+  <div class="space-y-6 w-full max-w-4xl mx-auto">
+    <!-- Header with Blueprint Eyebrow -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <h1 class="sb-title">Suggestion Box</h1>
-        <p class="sb-subtitle">Submit complaints, suggestions or feedback — your voice matters.</p>
+        <div class="dim-eyebrow">
+          <span>STUDENT FORUM // INSTITUTIONAL FEEDBACK</span>
+          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+            <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+          Suggestion <span class="text-secondary dark:text-dark-secondary">Box</span>
+        </h1>
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+          Submit complaints, infrastructure suggestions or general feedback directly to university administration
+        </p>
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="sb-tabs">
-      <button :class="['sb-tab', { active: tab === 'submit' }]" @click="tab = 'submit'">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Submission
+    <!-- Navigation Tabs -->
+    <div class="flex items-center gap-2 border-b border-outline/30 dark:border-dark-outline/40 pb-3">
+      <button 
+        @click="tab = 'submit'"
+        class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer"
+        :class="tab === 'submit' 
+          ? 'bg-primary dark:bg-dark-secondary text-surface dark:text-primary shadow-xs font-bold' 
+          : 'bg-surface dark:bg-dark-surface border border-outline/40 text-foreground/70 hover:text-foreground'"
+      >
+        <PlusCircle class="w-4 h-4" />
+        <span>New Submission</span>
       </button>
-      <button :class="['sb-tab', { active: tab === 'history' }]" @click="tab = 'history'; loadMy()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4.5"/><polyline points="3 3 3 8 8 8"/></svg>
-        My Submissions
-        <span v-if="myList.length" class="tab-count">{{ myList.length }}</span>
+
+      <button 
+        @click="tab = 'history'; loadMy()"
+        class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer"
+        :class="tab === 'history' 
+          ? 'bg-primary dark:bg-dark-secondary text-surface dark:text-primary shadow-xs font-bold' 
+          : 'bg-surface dark:bg-dark-surface border border-outline/40 text-foreground/70 hover:text-foreground'"
+      >
+        <History class="w-4 h-4" />
+        <span>My Submissions</span>
+        <span v-if="myList.length" class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-secondary text-primary font-bold">
+          {{ myList.length }}
+        </span>
       </button>
     </div>
 
-    <!-- ── SUBMIT FORM ── -->
-    <div v-if="tab === 'submit'" class="sb-card">
-      <form @submit.prevent="handleSubmit" class="sb-form">
+    <!-- ── TAB 1: SUBMIT FORM ── -->
+    <div v-if="tab === 'submit'" class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6">
+      <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
+      <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
 
-        <!-- Category -->
-        <div class="field-group">
-          <label class="field-label">Type of Submission</label>
-          <div class="category-chips">
+      <form @submit.prevent="handleSubmit" class="space-y-5">
+        <!-- Category Selection -->
+        <div>
+          <label class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground uppercase tracking-wider mb-2">
+            Classification Type
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <label
               v-for="c in categories"
               :key="c.value"
-              class="cat-chip"
-              :class="{ selected: form.category === c.value, [`cat-${c.value}`]: true }"
+              class="p-3 rounded-xl border text-xs font-mono font-medium cursor-pointer transition-all flex items-center gap-2.5 select-none"
+              :class="form.category === c.value 
+                ? 'bg-secondary text-primary font-bold border-secondary shadow-xs' 
+                : 'bg-muted/20 dark:bg-dark-muted/20 border-outline/30 dark:border-dark-outline/40 text-foreground/70 hover:bg-muted/40'"
             >
-              <input type="radio" :value="c.value" v-model="form.category" />
-              {{ c.label }}
+              <input type="radio" :value="c.value" v-model="form.category" class="sr-only" />
+              <component :is="c.icon" class="w-4 h-4 shrink-0" />
+              <span>{{ c.label }}</span>
             </label>
           </div>
-          <p v-if="errors.category" class="field-err">{{ errors.category }}</p>
+          <p v-if="errors.category" class="text-[11px] font-mono text-error mt-1.5">{{ errors.category }}</p>
         </div>
 
         <!-- Subject -->
-        <div class="field-group">
-          <label class="field-label" for="sb-subject">Subject</label>
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground uppercase tracking-wider" for="sb-subject">
+              Subject Line
+            </label>
+            <span class="text-[10px] font-mono text-foreground/45">{{ form.subject.length }}/120</span>
+          </div>
           <input
             id="sb-subject"
             v-model="form.subject"
             type="text"
-            class="sb-input"
-            :class="{ 'input-err': errors.subject }"
-            placeholder="Brief title of your submission…"
             maxlength="120"
+            placeholder="Brief headline summarizing your topic…"
+            class="w-full px-3.5 py-2 text-xs sm:text-sm bg-muted/20 dark:bg-dark-muted/20 border rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono focus:border-secondary"
+            :class="errors.subject ? 'border-error/60' : 'border-outline/40 dark:border-dark-outline/40'"
           />
-          <div class="field-meta">
-            <p v-if="errors.subject" class="field-err">{{ errors.subject }}</p>
-            <span class="char-count">{{ form.subject.length }}/120</span>
-          </div>
+          <p v-if="errors.subject" class="text-[11px] font-mono text-error mt-1">{{ errors.subject }}</p>
         </div>
 
-        <!-- Message -->
-        <div class="field-group">
-          <label class="field-label" for="sb-message">Details</label>
+        <!-- Message Details -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground uppercase tracking-wider" for="sb-message">
+              Details & Context
+            </label>
+            <span class="text-[10px] font-mono text-foreground/45">{{ form.message.length }}/2000</span>
+          </div>
           <textarea
             id="sb-message"
             v-model="form.message"
-            class="sb-textarea"
-            :class="{ 'input-err': errors.message }"
-            placeholder="Describe your complaint, suggestion or feedback in detail…"
             rows="6"
             maxlength="2000"
+            placeholder="Provide granular details regarding locations, dates, or specific proposals…"
+            class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-muted/20 dark:bg-dark-muted/20 border rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono focus:border-secondary"
+            :class="errors.message ? 'border-error/60' : 'border-outline/40 dark:border-dark-outline/40'"
           ></textarea>
-          <div class="field-meta">
-            <p v-if="errors.message" class="field-err">{{ errors.message }}</p>
-            <span class="char-count">{{ form.message.length }}/2000</span>
-          </div>
+          <p v-if="errors.message" class="text-[11px] font-mono text-error mt-1">{{ errors.message }}</p>
         </div>
 
-        <!-- Anonymous toggle -->
-        <label class="anon-toggle">
-          <div class="anon-toggle-track" :class="{ on: form.isAnonymous }" @click="form.isAnonymous = !form.isAnonymous">
-            <div class="anon-toggle-thumb"></div>
+        <!-- Anonymous Toggle -->
+        <div class="p-3.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30 dark:border-dark-outline/40 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <Shield class="w-5 h-5 text-secondary shrink-0" />
+            <div>
+              <p class="text-xs font-bold text-foreground dark:text-dark-foreground">Submit Anonymously</p>
+              <p class="text-[11px] font-mono text-foreground/50">Your name and student ID will be redacted from administrators.</p>
+            </div>
           </div>
-          <div class="anon-info">
-            <span class="anon-label">Submit Anonymously</span>
-            <span class="anon-hint">Your name will be hidden from administrators when enabled.</span>
-          </div>
-        </label>
+          <button 
+            type="button" 
+            @click="form.isAnonymous = !form.isAnonymous"
+            class="w-10 h-5 rounded-full transition-colors relative cursor-pointer shrink-0"
+            :class="form.isAnonymous ? 'bg-secondary' : 'bg-muted dark:bg-dark-muted border border-outline/40'"
+          >
+            <span 
+              class="block w-3.5 h-3.5 bg-surface rounded-full shadow-xs transition-transform absolute top-0.75 left-0.75"
+              :class="{ 'translate-x-5': form.isAnonymous }"
+            ></span>
+          </button>
+        </div>
 
-        <!-- Success / Error banners -->
-        <transition name="fade">
-          <div v-if="successMsg" class="banner banner-success">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            {{ successMsg }}
-          </div>
-        </transition>
-        <transition name="fade">
-          <div v-if="submitError" class="banner banner-error">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            {{ submitError }}
-          </div>
-        </transition>
+        <!-- Success / Error Banners -->
+        <div v-if="successMsg" class="p-3.5 rounded-xl bg-success/10 border border-success/30 text-success text-xs font-mono flex items-center gap-2">
+          <CheckCircle2 class="w-4 h-4 shrink-0" />
+          <span>{{ successMsg }}</span>
+        </div>
+        <div v-if="submitError" class="p-3.5 rounded-xl bg-error/10 border border-error/30 text-error text-xs font-mono flex items-center gap-2">
+          <AlertTriangle class="w-4 h-4 shrink-0" />
+          <span>{{ submitError }}</span>
+        </div>
 
-        <button type="submit" class="sb-submit-btn" :disabled="isSubmitting">
-          <svg v-if="isSubmitting" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          {{ isSubmitting ? 'Submitting…' : 'Submit' }}
-        </button>
+        <!-- Submit Button -->
+        <div class="flex justify-end pt-2">
+          <button 
+            type="submit" 
+            :disabled="isSubmitting"
+            class="px-6 py-2.5 rounded-xl bg-primary dark:bg-dark-secondary text-surface dark:text-primary font-bold text-xs sm:text-sm shadow-md hover:opacity-90 active:scale-98 disabled:opacity-40 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <RefreshCw v-if="isSubmitting" class="w-4 h-4 animate-spin" />
+            <Send v-else class="w-4 h-4" />
+            <span>{{ isSubmitting ? 'Transmitting…' : 'Submit Feedback' }}</span>
+          </button>
+        </div>
       </form>
     </div>
 
-    <!-- ── MY SUBMISSIONS ── -->
-    <div v-else class="sb-history">
-      <div v-if="loadingMy" class="sb-loading">Loading your submissions…</div>
-
-      <div v-else-if="myList.length === 0" class="sb-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <p>You haven't submitted anything yet.</p>
+    <!-- ── TAB 2: MY SUBMISSIONS ── -->
+    <div v-else class="space-y-4">
+      <div v-if="loadingMy" class="py-16 text-center text-xs font-mono text-foreground/50 flex items-center justify-center gap-2">
+        <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
+        <span>Loading your submission records…</span>
       </div>
 
-      <div v-else class="history-list">
-        <div v-for="s in myList" :key="s.id" class="history-card">
-          <div class="hc-top">
-            <span class="hc-cat" :class="`cat-${s.category}`">{{ catIcon(s.category) }} {{ catLabel(s.category) }}</span>
-            <span class="hc-status" :class="`status-${s.status}`">{{ statusLabel(s.status) }}</span>
-            <span class="hc-date">{{ fmtDate(s.createdAt) }}</span>
+      <div v-else-if="myList.length === 0" class="py-16 text-center text-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl">
+        <MessageSquare class="w-8 h-8 mx-auto mb-2 text-foreground/30" />
+        <p class="text-sm font-medium text-foreground dark:text-dark-foreground">No submissions found</p>
+        <p class="text-xs font-mono mt-0.5">Your sent feedback and administrator responses will show here.</p>
+      </div>
+
+      <div v-else class="space-y-3">
+        <div 
+          v-for="s in myList" 
+          :key="s.id" 
+          class="p-5 rounded-2xl bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/50 shadow-2xs space-y-3"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded text-[11px] font-bold font-mono uppercase tracking-wider" :class="getCategoryStyle(s.category)">
+                {{ s.category }}
+              </span>
+              <span class="px-2 py-0.2 rounded text-[10px] font-mono border" :class="getStatusStyle(s.status)">
+                {{ s.status || 'Pending' }}
+              </span>
+            </div>
+            <span class="text-[10px] font-mono text-foreground/50">{{ fmtDate(s.createdAt) }}</span>
           </div>
-          <p class="hc-subject">{{ s.subject }}</p>
-          <p class="hc-msg">{{ s.message }}</p>
-          <div v-if="s.adminNote" class="hc-note">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span><strong>Response:</strong> {{ s.adminNote }}</span>
+
+          <div>
+            <h3 class="text-sm font-bold text-foreground dark:text-dark-foreground">{{ s.subject }}</h3>
+            <p class="text-xs text-foreground/70 dark:text-dark-foreground/70 mt-1 whitespace-pre-line leading-relaxed">
+              {{ s.message }}
+            </p>
           </div>
-          <span v-if="s.isAnonymous" class="hc-anon">Submitted anonymously</span>
+
+          <!-- Admin Response Note -->
+          <div v-if="s.adminNote" class="p-3.5 rounded-xl bg-secondary/10 border border-secondary/25 text-xs">
+            <div class="flex items-center gap-1.5 font-bold text-secondary text-[11px] font-mono uppercase tracking-wider mb-1">
+              <MessageCircle class="w-3.5 h-3.5" />
+              <span>Official Institutional Response:</span>
+            </div>
+            <p class="text-foreground/80 dark:text-dark-foreground/80 leading-relaxed">{{ s.adminNote }}</p>
+          </div>
+
+          <div v-if="s.isAnonymous" class="text-[10px] font-mono text-foreground/45 flex items-center gap-1">
+            <Shield class="w-3 h-3" />
+            <span>Submitted under anonymous protection</span>
+          </div>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -151,6 +222,19 @@
 import { ref, reactive } from 'vue';
 import { supabase } from '@/stores/supabase';
 import { useAuthStore } from '@/stores/authstore';
+import { 
+  PlusCircle, 
+  History, 
+  AlertTriangle, 
+  Lightbulb, 
+  MessageSquare, 
+  HelpCircle, 
+  Shield, 
+  CheckCircle2, 
+  RefreshCw, 
+  Send, 
+  MessageCircle 
+} from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const tab       = ref('submit');
@@ -161,10 +245,10 @@ const loadingMy    = ref(false);
 const myList       = ref([]);
 
 const categories = [
-  { value: 'complaint',   label: 'Complaint',   icon: '' },
-  { value: 'suggestion',  label: 'Suggestion',  icon: '' },
-  { value: 'feedback',    label: 'Feedback',    icon: '' },
-  { value: 'other',       label: 'Other',       icon: '' },
+  { value: 'complaint',   label: 'Complaint',   icon: AlertTriangle },
+  { value: 'suggestion',  label: 'Suggestion',  icon: Lightbulb },
+  { value: 'feedback',    label: 'Feedback',    icon: MessageSquare },
+  { value: 'other',       label: 'Other',       icon: HelpCircle },
 ];
 
 const form = reactive({
@@ -205,7 +289,7 @@ async function handleSubmit() {
     form.subject     = '';
     form.message     = '';
     form.isAnonymous = false;
-    myList.value = []; // reset cache so next history load is fresh
+    myList.value = [];
     setTimeout(() => (successMsg.value = ''), 5000);
   } catch (e) {
     submitError.value = e?.message || 'Failed to submit. Please try again.';
@@ -215,7 +299,7 @@ async function handleSubmit() {
 }
 
 async function loadMy() {
-  if (myList.value.length) return; // cache
+  if (myList.value.length) return;
   loadingMy.value = true;
   try {
     const studentId = authStore.profile?.id || authStore.user?.id;
@@ -240,274 +324,21 @@ async function loadMy() {
   }
 }
 
-const catIcon  = (v) => categories.find(c => c.value === v)?.icon  ?? '';
-const catLabel = (v) => categories.find(c => c.value === v)?.label ?? v;
-const statusLabel = (s) => ({ unread: 'Unread', reviewed: 'Reviewed', resolved: 'Resolved' })[s] ?? s;
-const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function getCategoryStyle(cat) {
+  if (cat === 'complaint') return 'bg-error/15 text-error border border-error/30';
+  if (cat === 'suggestion') return 'bg-amber-500/15 text-amber-500 border border-amber-500/30';
+  if (cat === 'feedback') return 'bg-blue-500/15 text-blue-500 border border-blue-500/30';
+  return 'bg-purple-500/15 text-purple-500 border border-purple-500/30';
+}
+
+function getStatusStyle(st) {
+  if (st === 'resolved') return 'bg-success/10 text-success border-success/30';
+  if (st === 'reviewed') return 'bg-info/10 text-info border-info/30';
+  return 'bg-muted text-foreground/50 border-outline/40';
+}
+
+function fmtDate(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 </script>
-
-
-<style scoped>
-* { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-.sb-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-  width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-/* Header */
-.sb-header {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-}
-.sb-header-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 8px 20px rgba(99,102,241,.3);
-}
-.sb-header-icon svg { width: 28px; height: 28px; color: #fff; }
-.sb-title    { margin: 0; font-size: 1.75rem; font-weight: 800; color: #0f172a; letter-spacing: -.025em; }
-.sb-subtitle { margin: .25rem 0 0; font-size: .9rem; color: #64748b; }
-
-/* Tabs */
-.sb-tabs { display: flex; gap: .75rem; }
-.sb-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: .45rem;
-  padding: .55rem 1.1rem;
-  border-radius: 10px;
-  border: 1.5px solid #e2e8f0;
-  background: #fff;
-  font-size: .875rem;
-  font-weight: 600;
-  color: #475569;
-  cursor: pointer;
-  transition: all .2s;
-}
-.sb-tab svg { width: 15px; height: 15px; }
-.sb-tab:hover   { border-color: #6366f1; color: #4f46e5; }
-.sb-tab.active  { background: #6366f1; border-color: #6366f1; color: #fff; }
-.tab-count {
-  background: rgba(255,255,255,.25);
-  color: #fff;
-  font-size: .7rem;
-  font-weight: 700;
-  padding: .1rem .45rem;
-  border-radius: 999px;
-}
-.sb-tab:not(.active) .tab-count {
-  background: #e0e7ff;
-  color: #4f46e5;
-}
-
-/* Form card */
-.sb-card {
-  background: #fff;
-  border-radius: 20px;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 4px 16px rgba(0,0,0,.05);
-  padding: 2rem;
-}
-.sb-form { display: flex; flex-direction: column; gap: 1.5rem; }
-
-.field-group  { display: flex; flex-direction: column; gap: .4rem; }
-.field-label  { font-size: .82rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .05em; }
-.field-meta   { display: flex; justify-content: space-between; align-items: center; min-height: 1.2rem; }
-.field-err    { margin: 0; font-size: .78rem; color: #ef4444; font-weight: 600; }
-.char-count   { font-size: .75rem; color: #94a3b8; margin-left: auto; }
-
-/* Category chips */
-.category-chips { display: flex; flex-wrap: wrap; gap: .6rem; }
-.cat-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem;
-  padding: .5rem 1rem;
-  border-radius: 999px;
-  border: 1.5px solid #e2e8f0;
-  background: #f8fafc;
-  font-size: .875rem;
-  font-weight: 600;
-  color: #475569;
-  cursor: pointer;
-  transition: all .15s;
-  user-select: none;
-}
-.cat-chip input { display: none; }
-.cat-chip:hover { border-color: #6366f1; color: #4338ca; }
-.cat-chip.selected { background: #6366f1; border-color: #6366f1; color: #fff; }
-
-/* Inputs */
-.sb-input, .sb-textarea {
-  width: 100%;
-  padding: .7rem 1rem;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: .9rem;
-  color: #334155;
-  outline: none;
-  transition: border-color .2s;
-  font-family: inherit;
-  background: #fafafa;
-}
-.sb-input:focus, .sb-textarea:focus { border-color: #6366f1; background: #fff; }
-.sb-textarea { resize: vertical; min-height: 130px; }
-.input-err { border-color: #fca5a5 !important; }
-
-/* Anonymous toggle */
-.anon-toggle {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  cursor: pointer;
-  padding: 1rem 1.25rem;
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
-  border-radius: 12px;
-  transition: background .15s;
-}
-.anon-toggle:hover { background: #f1f5f9; }
-.anon-toggle-track {
-  width: 44px;
-  height: 24px;
-  border-radius: 999px;
-  background: #cbd5e1;
-  position: relative;
-  transition: background .2s;
-  flex-shrink: 0;
-}
-.anon-toggle-track.on { background: #6366f1; }
-.anon-toggle-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,.15);
-  transition: transform .2s;
-}
-.anon-toggle-track.on .anon-toggle-thumb { transform: translateX(20px); }
-.anon-info { display: flex; flex-direction: column; gap: .1rem; }
-.anon-label { font-size: .875rem; font-weight: 700; color: #334155; }
-.anon-hint  { font-size: .78rem; color: #94a3b8; }
-
-/* Banners */
-.banner {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  padding: .85rem 1.1rem;
-  border-radius: 10px;
-  font-size: .875rem;
-  font-weight: 600;
-}
-.banner svg { width: 18px; height: 18px; flex-shrink: 0; }
-.banner-success { background: #dcfce7; color: #15803d; }
-.banner-error   { background: #fee2e2; color: #b91c1c; }
-
-/* Submit button */
-.sb-submit-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .6rem;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  color: #fff;
-  border: none;
-  padding: .85rem 2rem;
-  border-radius: 12px;
-  font-size: .95rem;
-  font-weight: 700;
-  cursor: pointer;
-  width: 100%;
-  box-shadow: 0 6px 16px rgba(99,102,241,.3);
-  transition: all .2s;
-}
-.sb-submit-btn svg { width: 18px; height: 18px; }
-.sb-submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(99,102,241,.4); }
-.sb-submit-btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-
-/* History */
-.sb-history { display: flex; flex-direction: column; gap: 1rem; }
-.sb-loading  { text-align: center; color: #94a3b8; padding: 3rem; }
-.sb-empty    { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 2rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 16px; text-align: center; }
-.sb-empty svg { width: 48px; height: 48px; color: #94a3b8; }
-.sb-empty p  { margin: 0; color: #64748b; }
-.history-list { display: flex; flex-direction: column; gap: 1rem; }
-
-.history-card {
-  background: #fff;
-  border-radius: 14px;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 2px 8px rgba(0,0,0,.04);
-  padding: 1.25rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: .6rem;
-}
-.hc-top  { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
-.hc-cat  { display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; }
-.hc-subject { margin: 0; font-size: .95rem; font-weight: 700; color: #0f172a; }
-.hc-msg     { margin: 0; font-size: .875rem; color: #475569; line-height: 1.5; }
-.hc-date    { font-size: .75rem; color: #94a3b8; margin-left: auto; white-space: nowrap; }
-.hc-anon    { font-size: .75rem; color: #94a3b8; }
-
-.hc-note {
-  display: flex;
-  align-items: flex-start;
-  gap: .6rem;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 10px;
-  padding: .75rem 1rem;
-  font-size: .85rem;
-  color: #1d4ed8;
-}
-.hc-note svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; }
-
-/* Category colour variants */
-.cat-complaint  { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
-.cat-suggestion { background: #fef9c3; color: #a16207; border-color: #fde68a; }
-.cat-feedback   { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
-.cat-other      { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
-.cat-chip.selected.cat-complaint  { background: #be123c; border-color: #be123c; color: #fff; }
-.cat-chip.selected.cat-suggestion { background: #a16207; border-color: #a16207; color: #fff; }
-.cat-chip.selected.cat-feedback   { background: #15803d; border-color: #15803d; color: #fff; }
-.cat-chip.selected.cat-other      { background: #6d28d9; border-color: #6d28d9; color: #fff; }
-
-/* Status badges */
-.hc-status { font-size: .72rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; }
-.status-unread   { background: #dbeafe; color: #1d4ed8; }
-.status-reviewed { background: #fef9c3; color: #a16207; }
-.status-resolved { background: #dcfce7; color: #15803d; }
-
-/* Transitions */
-.fade-enter-active, .fade-leave-active { transition: opacity .3s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-.spin { animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Responsive */
-@media (max-width: 600px) {
-  .sb-header { flex-direction: column; align-items: flex-start; gap: .75rem; }
-  .sb-header-icon { width: 48px; height: 48px; }
-  .sb-title { font-size: 1.4rem; }
-  .sb-card  { padding: 1.25rem; }
-  .sb-tabs  { flex-wrap: wrap; }
-  .category-chips { gap: .4rem; }
-}
-</style>

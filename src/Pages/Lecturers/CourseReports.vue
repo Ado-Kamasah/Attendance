@@ -1,245 +1,422 @@
 <template>
-  <div class="reports-container">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Detailed Course Reports</h1>
-        <p class="page-subtitle">View attendance analytics and student performance across your courses.</p>
+  <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
+    <!-- Header Section with Blueprint Aesthetics -->
+    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+      <!-- Decorative background grid -->
+      <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
+
+      <!-- Corner Registration Brackets -->
+      <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+      <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium tracking-wide uppercase bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
+              <FileText class="w-3 h-3" />
+              ANALYTICS // REPORTING
+            </span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
+            Course Performance & Audit Reports
+          </h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+            Detailed session logs, attendance ratios, and student participation audit for scheduled courses.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button
+            @click="exportReport"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-primary dark:hover:text-secondary hover:border-slate-300 dark:hover:border-slate-600 text-sm font-medium transition-all shadow-sm hover:shadow active:scale-95"
+          >
+            <Download class="w-4 h-4 text-secondary" />
+            <span>Export Report</span>
+          </button>
+        </div>
       </div>
-      <button class="export-btn" @click="exportReport">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Export PDF
-      </button>
     </div>
 
-    <!-- Loading -->
-    <div v-if="isLoading" class="loading-state page-loading">
-      <div class="spinner"></div>
-      <p>Loading attendance data…</p>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+      <Loader2 class="w-10 h-10 text-secondary animate-spin mb-4" />
+      <p class="text-sm font-mono text-slate-600 dark:text-slate-400">INDEXING SESSION AUDIT DATA...</p>
     </div>
 
     <template v-else>
-      <!-- Filters -->
-      <div class="filters-bar">
-        <div class="filter-field">
-          <label>Course</label>
-          <select v-model="filters.courseId">
-            <option value="">All courses</option>
-            <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} - {{ c.name }}</option>
-          </select>
+      <!-- Filter Bar -->
+      <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-2 text-xs font-mono font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+            <Filter class="w-3.5 h-3.5 text-secondary" />
+            FILTER AUDIT RECORDS
+          </div>
+          <button
+            v-if="hasActiveFilters"
+            @click="clearFilters"
+            class="inline-flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 font-medium transition-colors"
+          >
+            <RotateCcw class="w-3.5 h-3.5" />
+            Reset Filters
+          </button>
         </div>
 
-        <div class="filter-field">
-          <label>Level</label>
-          <select v-model="filters.level">
-            <option value="">All levels</option>
-            <option v-for="lvl in levelOptions" :key="lvl" :value="lvl">{{ lvl }}</option>
-          </select>
-        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+          <!-- Course -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Course</label>
+            <select
+              v-model="filters.courseId"
+              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+            >
+              <option value="">All Courses</option>
+              <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} - {{ c.name }}</option>
+            </select>
+          </div>
 
-        <div class="filter-field">
-          <label>Semester</label>
-          <select v-model="filters.semester">
-            <option value="">All semesters</option>
-            <option v-for="sem in semesterOptions" :key="sem" :value="sem">{{ sem }}</option>
-          </select>
-        </div>
+          <!-- Level -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Level</label>
+            <select
+              v-model="filters.level"
+              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+            >
+              <option value="">All Levels</option>
+              <option v-for="lvl in levelOptions" :key="lvl" :value="lvl">Level {{ lvl }}</option>
+            </select>
+          </div>
 
-        <div class="filter-field">
-          <label>Student</label>
-          <select v-model="filters.studentId">
-            <option value="">All students</option>
-            <option v-for="s in studentOptions" :key="s.id" :value="s.id">{{ s.name }} ({{ s.studentId }})</option>
-          </select>
-        </div>
+          <!-- Semester -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Semester</label>
+            <select
+              v-model="filters.semester"
+              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+            >
+              <option value="">All Semesters</option>
+              <option v-for="sem in semesterOptions" :key="sem" :value="sem">{{ sem }}</option>
+            </select>
+          </div>
 
-        <div class="filter-field">
-          <label>From</label>
-          <input type="date" v-model="filters.dateFrom" />
-        </div>
+          <!-- Student -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Student</label>
+            <select
+              v-model="filters.studentId"
+              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+            >
+              <option value="">All Students</option>
+              <option v-for="s in studentOptions" :key="s.id" :value="s.id">{{ s.name }} ({{ s.studentId }})</option>
+            </select>
+          </div>
 
-        <div class="filter-field">
-          <label>To</label>
-          <input type="date" v-model="filters.dateTo" />
-        </div>
+          <!-- From -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">From Date</label>
+            <input
+              type="date"
+              v-model="filters.dateFrom"
+              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+            />
+          </div>
 
-        <div class="filter-field">
-          <label>Session Code / PIN</label>
-          <input type="text" v-model="filters.pinSearch" placeholder="e.g. 4821" maxlength="8" />
-        </div>
+          <!-- To -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">To Date</label>
+            <input
+              type="date"
+              v-model="filters.dateTo"
+              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+            />
+          </div>
 
-        <button class="clear-filters-btn" @click="clearFilters" :disabled="!hasActiveFilters">
-          Clear Filters
+          <!-- PIN -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Session PIN</label>
+            <input
+              type="text"
+              v-model="filters.pinSearch"
+              placeholder="e.g. 4821"
+              maxlength="8"
+              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all font-mono"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        v-if="reportData.length === 0"
+        class="bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-sm"
+      >
+        <div class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-center mx-auto mb-4 text-slate-400">
+          <BookOpen class="w-8 h-8" />
+        </div>
+        <h3 class="text-lg font-display font-bold text-slate-900 dark:text-white">No Matching Reports Found</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+          No courses or sessions match the applied filter criteria. Try expanding the date range or clearing filters.
+        </p>
+        <button
+          v-if="hasActiveFilters"
+          @click="clearFilters"
+          class="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-all shadow-sm"
+        >
+          <RotateCcw class="w-3.5 h-3.5" />
+          Clear All Filters
         </button>
       </div>
 
-      <!-- Empty State for report cards -->
-      <div v-if="reportData.length === 0" class="empty-state">
-        <div class="icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-        </div>
-        <h2>No Reports Available</h2>
-        <p>No attendance data matches the current filters. Try widening your date range or clearing filters.</p>
-      </div>
+      <!-- Course Summary Cards Grid -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div
+          v-for="report in reportData"
+          :key="report.courseId"
+          class="group relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
+        >
+          <!-- Corner brackets -->
+          <div class="corner-tl absolute top-2 left-2 w-2 h-2 border-t border-l border-secondary/30 pointer-events-none"></div>
+          <div class="corner-br absolute bottom-2 right-2 w-2 h-2 border-b border-r border-secondary/30 pointer-events-none"></div>
 
-      <!-- Report Cards (only when there are courses with sessions) -->
-      <div v-else class="reports-content">
-        <div class="course-report-card" v-for="report in reportData" :key="report.courseId">
-          <div class="card-header">
-            <div class="course-info">
-              <span class="course-code">{{ report.code }}</span>
-              <span class="semester-tag">{{ report.semester }}</span>
-              <span class="semester-tag level-tag">{{ report.level }}</span>
-              <h3>{{ report.name }}</h3>
-            </div>
-            <div class="attendance-stat">
-              <span class="stat-value">{{ report.avgAttendance }}%</span>
-              <span class="stat-label">Avg. Attendance</span>
-            </div>
-          </div>
-
-          <div class="card-body">
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="label">Total Students</span>
-                <span class="value">{{ report.totalStudents }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="label">Sessions Held</span>
-                <span class="value">{{ report.sessionsHeld }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="label">Perfect Attendance</span>
-                <span class="value text-emerald">{{ report.perfectAttendance }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="label">At Risk (&lt; 50%)</span>
-                <span class="value text-rose">{{ report.atRisk }}</span>
-              </div>
-            </div>
-
-            <button class="view-details-btn" @click="openStudentList(report)">View Full Student List</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- History grouped by session — always visible when sessions exist -->
-      <div class="history-card" v-if="sessionGroups.length > 0 || filteredSessions.length > 0">
-        <div class="history-header">
           <div>
-            <h2>Attendance History</h2>
-            <p class="history-sub">{{ filteredSessions.length }} session{{ filteredSessions.length !== 1 ? 's' : '' }} · {{ historyRows.length }} record{{ historyRows.length !== 1 ? 's' : '' }}</p>
+            <!-- Top Tags & Rate -->
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div class="space-y-1.5">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
+                    {{ report.code }}
+                  </span>
+                  <span v-if="report.semester" class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    {{ report.semester }}
+                  </span>
+                  <span v-if="report.level" class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    L{{ report.level }}
+                  </span>
+                </div>
+                <h3 class="text-base font-display font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
+                  {{ report.name }}
+                </h3>
+              </div>
+
+              <!-- Avg Attendance Gauge -->
+              <div class="flex flex-col items-end flex-shrink-0">
+                <div
+                  class="text-2xl font-display font-extrabold"
+                  :class="report.avgAttendance >= 75 ? 'text-emerald-600 dark:text-emerald-400' : report.avgAttendance >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'"
+                >
+                  {{ report.avgAttendance }}%
+                </div>
+                <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400">AVG RATE</span>
+              </div>
+            </div>
+
+            <!-- Stats Matrix -->
+            <div class="grid grid-cols-2 gap-2.5 my-4 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div class="space-y-0.5">
+                <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Enrolled</div>
+                <div class="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Users class="w-3.5 h-3.5 text-slate-400" />
+                  {{ report.totalStudents }}
+                </div>
+              </div>
+
+              <div class="space-y-0.5">
+                <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Sessions</div>
+                <div class="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Calendar class="w-3.5 h-3.5 text-slate-400" />
+                  {{ report.sessionsHeld }}
+                </div>
+              </div>
+
+              <div class="space-y-0.5">
+                <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Perfect (100%)</div>
+                <div class="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 class="w-3.5 h-3.5 text-emerald-500" />
+                  {{ report.perfectAttendance }}
+                </div>
+              </div>
+
+              <div class="space-y-0.5">
+                <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400">At Risk (&lt;50%)</div>
+                <div class="text-sm font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                  <AlertTriangle class="w-3.5 h-3.5 text-rose-500" />
+                  {{ report.atRisk }}
+                </div>
+              </div>
+            </div>
           </div>
-          <span class="count-pill">{{ historyRows.length }} record{{ historyRows.length === 1 ? '' : 's' }}</span>
+
+          <!-- Action Button -->
+          <button
+            @click="openStudentList(report)"
+            class="w-full mt-2 py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-primary dark:hover:bg-secondary hover:text-white dark:hover:text-primary text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all flex items-center justify-center gap-2 group-hover:border-transparent"
+          >
+            <Users class="w-3.5 h-3.5" />
+            <span>View Student Roster ({{ report.totalStudents }})</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- History Grouped by Session -->
+      <div
+        v-if="sessionGroups.length > 0 || filteredSessions.length > 0"
+        class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden"
+      >
+        <!-- Corner Brackets -->
+        <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+        <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+
+        <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-lg font-display font-bold text-slate-900 dark:text-white">Detailed Attendance Log</h2>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                {{ filteredSessions.length }} Session{{ filteredSessions.length !== 1 ? 's' : '' }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Comprehensive chronological listing of class sessions, PINs, and attendee status.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1 rounded-lg text-xs font-mono bg-primary/5 dark:bg-secondary/10 border border-primary/20 dark:border-secondary/20 text-primary dark:text-secondary font-semibold">
+              {{ historyRows.length }} Records Total
+            </span>
+          </div>
         </div>
 
-        <div v-if="sessionGroups.length === 0" class="empty-students">
-          <p>No attendance records match the current filters.</p>
+        <div v-if="sessionGroups.length === 0" class="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+          No attendance records match the current filters.
         </div>
-        <div v-else class="students-table-wrapper">
-          <table class="students-table">
+
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr>
-                <th>Student</th>
-                <th>Course</th>
-                <th>Session PIN</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Status</th>
-                <th></th>
+              <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider text-[11px]">
+                <th class="py-3 px-4 font-semibold">Student</th>
+                <th class="py-3 px-4 font-semibold">Course</th>
+                <th class="py-3 px-4 font-semibold">Session PIN</th>
+                <th class="py-3 px-4 font-semibold">Date</th>
+                <th class="py-3 px-4 font-semibold">Time</th>
+                <th class="py-3 px-4 font-semibold">Status</th>
+                <th class="py-3 px-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
               <template v-for="group in sessionGroups" :key="group.sessionId">
-                <!-- Session group header row -->
-                <tr class="session-group-row">
-                  <td colspan="6" class="session-group-cell">
-                    <span class="sg-pin">PIN {{ group.pin }}</span>
-                    <span class="sg-course">{{ group.courseCode }} ~ {{ group.courseName }}</span>
-                    <span class="sg-date">{{ group.dateStr }}</span>
-                    <span class="sg-count">{{ group.rows.length }} student{{ group.rows.length !== 1 ? 's' : '' }}</span>
+                <!-- Group Header Row -->
+                <tr class="bg-slate-100/70 dark:bg-slate-800/40 border-t-2 border-b border-slate-200/80 dark:border-slate-800/80 font-mono">
+                  <td colspan="6" class="py-3 px-4">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                      <span class="px-2.5 py-1 rounded-md bg-secondary/15 text-secondary border border-secondary/30 font-bold text-xs">
+                        PIN {{ group.pin }}
+                      </span>
+                      <span class="font-bold text-slate-900 dark:text-white font-sans text-xs">
+                        {{ group.courseCode }} · {{ group.courseName }}
+                      </span>
+                      <span class="text-slate-400 text-[11px]">|</span>
+                      <span class="text-slate-500 dark:text-slate-400 text-[11px]">
+                        {{ group.dateStr }}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 text-[10px]">
+                        {{ group.rows.length }} Check-in{{ group.rows.length !== 1 ? 's' : '' }}
+                      </span>
+                    </div>
                   </td>
-                  <td class="session-delete-cell">
+                  <td class="py-3 px-4 text-right">
                     <button
-                      class="session-delete-btn"
                       @click="confirmDeleteSession(group)"
                       :disabled="deletingSessionId === group.sessionId"
                       title="Delete this session"
+                      class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      <svg v-if="deletingSessionId === group.sessionId" class="spin-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
-                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                        <path d="M10 11v6M14 11v6"/>
-                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                      </svg>
+                      <Loader2 v-if="deletingSessionId === group.sessionId" class="w-4 h-4 animate-spin" />
+                      <Trash2 v-else class="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
-                <!-- If session was held but has no student check-ins yet -->
-                <tr v-if="group.rows.length === 0" class="empty-session-row">
-                  <td colspan="7" class="empty-session-cell">
-                    Session held (PIN {{ group.pin }}) · No student attendance check-ins recorded yet.
+
+                <!-- If Session had no student check-ins -->
+                <tr v-if="group.rows.length === 0" class="bg-slate-50/40 dark:bg-slate-900/20">
+                  <td colspan="7" class="py-3.5 px-6 text-slate-400 font-mono text-[11px] italic">
+                    Session PIN {{ group.pin }} held on {{ group.dateStr }} — No student attendance check-ins recorded.
                   </td>
                 </tr>
-                <!-- Attendance rows for this session -->
-                <tr v-for="row in group.rows" :key="row.id" class="attendance-row">
-                  <td>
-                    <div class="student-cell">
-                      <div class="student-avatar">{{ row.studentName.charAt(0) }}</div>
-                      <span class="student-name">{{ row.studentName }}</span>
+
+                <!-- Student Rows -->
+                <tr
+                  v-for="row in group.rows"
+                  :key="row.id"
+                  class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
+                >
+                  <td class="py-3 px-4">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30 flex items-center justify-center font-bold text-xs uppercase">
+                        {{ row.studentName.charAt(0) }}
+                      </div>
+                      <span class="font-medium text-slate-900 dark:text-slate-100">{{ row.studentName }}</span>
                     </div>
                   </td>
-                  <td>{{ row.courseCode }} ~ {{ row.courseName }}</td>
-                  <td><span class="pin-chip">{{ row.pin }}</span></td>
-                  <td>{{ row.dateStr }}</td>
-                  <td>{{ row.timeStr }}</td>
-                  <td>
-                    <!-- Inline status editor — only reachable for pending/absent rows -->
-                    <div v-if="editingRowId === row.id" class="status-edit-wrap">
+                  <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
+                    {{ row.courseCode }}
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="font-mono text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {{ row.pin }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-slate-600 dark:text-slate-400 font-mono">{{ row.dateStr }}</td>
+                  <td class="py-3 px-4 text-slate-600 dark:text-slate-400 font-mono">{{ row.timeStr }}</td>
+                  <td class="py-3 px-4">
+                    <!-- Inline status editor -->
+                    <div v-if="editingRowId === row.id" class="flex items-center gap-1.5">
                       <select
-                        class="status-edit-select"
                         v-model="editingStatus"
                         :disabled="savingRowId === row.id"
                         @change="saveStatusEdit(row)"
+                        class="bg-white dark:bg-slate-900 border border-secondary rounded-lg px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none"
                       >
                         <option value="pending">Pending</option>
                         <option value="absent">Absent</option>
                         <option value="present">Present</option>
                       </select>
                       <button
-                        class="status-edit-cancel"
-                        title="Cancel"
-                        :disabled="savingRowId === row.id"
                         @click="cancelStatusEdit"
+                        :disabled="savingRowId === row.id"
+                        class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        title="Cancel"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <X class="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <span v-else class="attendance-badge" :class="badgeClass(row.status)">
+
+                    <!-- Static status badge -->
+                    <span
+                      v-else
+                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium"
+                      :class="{
+                        'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800': row.status === 'present',
+                        'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800': row.status === 'pending',
+                        'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800': row.status === 'absent' || !row.status
+                      }"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full" :class="{
+                        'bg-emerald-500': row.status === 'present',
+                        'bg-amber-500': row.status === 'pending',
+                        'bg-rose-500': row.status === 'absent' || !row.status
+                      }"></span>
                       {{ statusLabel(row.status) }}
                     </span>
                   </td>
-                  <td class="status-edit-cell">
-                    <!-- Editing is only offered for pending/absent rows — a confirmed
-                         'present' check-in (verified by OTP) stays locked here. -->
+                  <td class="py-3 px-4 text-right">
                     <button
                       v-if="editingRowId !== row.id && (row.status === 'pending' || row.status === 'absent')"
-                      class="status-edit-btn"
-                      title="Edit attendance status"
-                      :disabled="!!savingRowId"
                       @click="startStatusEdit(row)"
+                      :disabled="!!savingRowId"
+                      class="p-1.5 text-slate-400 hover:text-primary dark:hover:text-secondary rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      title="Edit attendance status"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      <Edit3 class="w-3.5 h-3.5" />
                     </button>
                   </td>
                 </tr>
@@ -250,45 +427,68 @@
       </div>
     </template>
 
+    <!-- Student Roster Modal -->
+    <div
+      v-if="isModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      @click.self="closeModal"
+    >
+      <div class="relative w-full max-w-2xl bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+        <!-- Corner Brackets -->
+        <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+        <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
-    <!-- Student List Modal -->
-    <div class="modal-backdrop" v-if="isModalOpen" @click.self="closeModal">
-      <div class="modal-card">
-        <div class="modal-header">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
           <div>
-            <h2>{{ selectedReport?.name }}</h2>
-            <p>Student Enrollment List</p>
+            <span class="text-[10px] font-mono uppercase tracking-wider text-secondary font-bold">COURSE ROSTER AUDIT</span>
+            <h2 class="text-xl font-display font-bold text-slate-900 dark:text-white">{{ selectedReport?.name }}</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {{ selectedReport?.code }} · {{ selectedReport?.sessionsHeld }} Session{{ selectedReport?.sessionsHeld !== 1 ? 's' : '' }} Held
+            </p>
           </div>
-          <button class="close-btn" @click="closeModal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <button
+            @click="closeModal"
+            class="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <X class="w-5 h-5" />
           </button>
         </div>
-        <div class="modal-body">
-          <div v-if="studentsList.length === 0" class="empty-students">
-            <p>No students are currently enrolled in this course.</p>
+
+        <div class="p-6 overflow-y-auto flex-1">
+          <div v-if="studentsList.length === 0" class="text-center py-10 text-slate-500 dark:text-slate-400 text-sm">
+            No students are currently enrolled in this course.
           </div>
-          <div v-else class="students-table-wrapper">
-            <table class="students-table">
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
               <thead>
-                <tr>
-                  <th>Student Name</th>
-                  <th>Student ID</th>
-                  <th>Program</th>
-                  <th>Attendance Rate</th>
+                <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-mono uppercase text-[10px]">
+                  <th class="py-2.5 px-3">Student Name</th>
+                  <th class="py-2.5 px-3">Student ID</th>
+                  <th class="py-2.5 px-3">Program</th>
+                  <th class="py-2.5 px-3 text-right">Attendance Rate</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr v-for="student in studentsList" :key="student.id">
-                  <td>
-                    <div class="student-cell">
-                      <div class="student-avatar">{{ student.name.charAt(0) }}</div>
-                      <span class="student-name">{{ student.name }}</span>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
+                <tr v-for="student in studentsList" :key="student.id" class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                  <td class="py-2.5 px-3 font-medium text-slate-900 dark:text-slate-100">
+                    <div class="flex items-center gap-2">
+                      <div class="w-6 h-6 rounded bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary flex items-center justify-center font-bold text-xs uppercase">
+                        {{ student.name.charAt(0) }}
+                      </div>
+                      <span>{{ student.name }}</span>
                     </div>
                   </td>
-                  <td>{{ student.studentId }}</td>
-                  <td>{{ student.program || 'N/A' }}</td>
-                  <td>
-                    <span class="attendance-badge" :class="getAttendanceClass(student.attendanceRate)">
+                  <td class="py-2.5 px-3 font-mono text-slate-600 dark:text-slate-400">{{ student.studentId }}</td>
+                  <td class="py-2.5 px-3 text-slate-600 dark:text-slate-400">{{ student.program || 'N/A' }}</td>
+                  <td class="py-2.5 px-3 text-right">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
+                      :class="{
+                        'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400': student.attendanceRate >= 80,
+                        'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400': student.attendanceRate >= 50 && student.attendanceRate < 80,
+                        'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400': student.attendanceRate < 50
+                      }"
+                    >
                       {{ student.attendanceRate }}%
                     </span>
                   </td>
@@ -299,37 +499,55 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Delete session confirm modal -->
-  <div class="modal-backdrop" v-if="sessionToDelete" @click.self="sessionToDelete = null">
-    <div class="modal-card delete-session-modal">
-      <div class="ds-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6M14 11v6"/>
-          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
-      </div>
-      <h2>Delete Session?</h2>
-      <p>This will permanently delete the session and all <strong>{{ sessionToDelete.rows.length }}</strong> attendance record{{ sessionToDelete.rows.length !== 1 ? 's' : '' }} for:</p>
-      <div class="ds-info">
-        <span class="pin-chip">PIN {{ sessionToDelete.pin }}</span>
-        <span class="ds-course">{{ sessionToDelete.courseCode }} — {{ sessionToDelete.courseName }}</span>
-        <span class="ds-date">{{ sessionToDelete.dateStr }}</span>
-      </div>
-      <p class="ds-warn">This action cannot be undone.</p>
-      <div class="ds-actions">
-        <button class="btn-cancel" @click="sessionToDelete = null" :disabled="!!deletingSessionId">Cancel</button>
-        <button class="btn-delete-confirm" @click="deleteSessionById" :disabled="!!deletingSessionId">
-          <svg v-if="deletingSessionId" class="spin-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31" stroke-dashoffset="10"/></svg>
-          {{ deletingSessionId ? 'Deleting…' : 'Delete Session' }}
-        </button>
+    <!-- Delete Session Confirmation Modal -->
+    <div
+      v-if="sessionToDelete"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      @click.self="sessionToDelete = null"
+    >
+      <div class="relative w-full max-w-md bg-white dark:bg-[#071328] border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 shadow-2xl">
+        <div class="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4">
+          <Trash2 class="w-6 h-6" />
+        </div>
+
+        <h3 class="text-lg font-display font-bold text-slate-900 dark:text-white">Permanently Delete Session?</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+          This will purge the session along with <strong class="text-slate-800 dark:text-slate-200">{{ sessionToDelete.rows.length }}</strong> attendance records:
+        </p>
+
+        <div class="my-4 p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
+          <div class="font-mono text-secondary font-bold">PIN: {{ sessionToDelete.pin }}</div>
+          <div class="text-slate-800 dark:text-slate-200 font-medium">{{ sessionToDelete.courseCode }} — {{ sessionToDelete.courseName }}</div>
+          <div class="text-slate-500 text-[11px]">{{ sessionToDelete.dateStr }}</div>
+        </div>
+
+        <p class="text-[11px] font-mono text-rose-600 dark:text-rose-400 font-semibold mb-6">
+          CAUTION: This action cannot be reversed.
+        </p>
+
+        <div class="flex items-center justify-end gap-3">
+          <button
+            @click="sessionToDelete = null"
+            :disabled="!!deletingSessionId"
+            class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            @click="deleteSessionById"
+            :disabled="!!deletingSessionId"
+            class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition-all inline-flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+          >
+            <Loader2 v-if="deletingSessionId" class="w-3.5 h-3.5 animate-spin" />
+            <span>{{ deletingSessionId ? 'Purging...' : 'Delete Session' }}</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -340,6 +558,21 @@ import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { supabase } from '@/stores/supabase';
+import {
+  Download,
+  BookOpen,
+  Users,
+  Calendar,
+  Filter,
+  X,
+  Trash2,
+  Edit3,
+  AlertTriangle,
+  CheckCircle2,
+  FileText,
+  RotateCcw,
+  Loader2
+} from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const coursesStore = useCoursesStore();
@@ -596,7 +829,6 @@ const reportData = computed(() => {
       if (c) {
         candidateCoursesMap.set(c.id, c);
       } else {
-        // Session references a course not in the store — build a minimal placeholder
         candidateCoursesMap.set(s.courseId, {
           id: s.courseId,
           code: s.courseCode ?? '—',
@@ -675,7 +907,6 @@ const reportData = computed(() => {
   return rows.sort((a, b) => (a.code ?? '').localeCompare(b.code ?? ''));
 });
 
-
 const openStudentList = (report) => {
   selectedReport.value = report;
   isModalOpen.value = true;
@@ -716,19 +947,13 @@ const closeModal = () => {
   studentsList.value = [];
 };
 
-const getAttendanceClass = (rate) => {
-  if (rate >= 85) return 'excellent';
-  if (rate >= 70) return 'good';
-  return 'poor';
-};
-
 const exportReport = () => {
-  alert('Report export feature will be implemented soon.');
+  window.print();
 };
 
 // ── Delete session ───────────────────────────────────────────────────────────
-const sessionToDelete  = ref(null);   // the group object from sessionGroups
-const deletingSessionId = ref(null);  // session id being deleted
+const sessionToDelete = ref(null);
+const deletingSessionId = ref(null);
 
 const confirmDeleteSession = (group) => {
   sessionToDelete.value = group;
@@ -739,11 +964,9 @@ const deleteSessionById = async () => {
   const sid = sessionToDelete.value.sessionId;
   deletingSessionId.value = sid;
   try {
-    // Delete all attendance records for this session first, then the session
     const { error: aErr } = await supabase.from('attendances').delete().eq('session_id', sid);
     if (aErr) throw aErr;
     await sessionsStore.deleteSession(sid);
-    // Reactively remove from local attendances store state
     attendancesStore.removeBySessionId?.(sid);
     sessionToDelete.value = null;
   } catch (e) {
@@ -753,25 +976,14 @@ const deleteSessionById = async () => {
   }
 };
 
-// ── Attendance status labels/classes (present / pending / absent) ───────────
+// ── Attendance status labels ────────────────────────────────────────────────
 const statusLabel = (status) => {
   if (status === 'present') return 'Present';
   if (status === 'pending') return 'Pending';
   return 'Absent';
 };
 
-const badgeClass = (status) => {
-  if (status === 'present') return 'excellent';
-  if (status === 'pending') return 'pending';
-  return 'poor';
-};
-
 // ── Edit attendance status (history table) ──────────────────────────────────
-// Editing is only ever offered for rows whose CURRENT status is 'pending' or
-// 'absent' — a row already 'present' (confirmed via the student's own PIN
-// entry) stays locked and shows no edit control at all. This mirrors the
-// intent that a lecturer can correct a no-show/no-response, but shouldn't
-// casually overwrite a verified check-in from the table.
 const editingRowId = ref(null);
 const editingStatus = ref('');
 const savingRowId = ref(null);
@@ -810,7 +1022,6 @@ const saveStatusEdit = async (row) => {
 const sessionGroups = computed(() => {
   const bySession = new Map();
 
-  // 1. Initialize from filteredSessions so every session held is listed in history
   for (const session of filteredSessions.value) {
     const course = coursesStore.getCourseById(session.courseId);
     const ts = session.date ? new Date(session.date) : (session.createdAt ? new Date(session.createdAt) : null);
@@ -825,7 +1036,6 @@ const sessionGroups = computed(() => {
     });
   }
 
-  // 2. Attach matching historyRows (attendance records) to each session group
   for (const row of historyRows.value) {
     const sid = row.sessionId;
     if (bySession.has(sid)) {
@@ -850,807 +1060,3 @@ const sessionGroups = computed(() => {
   });
 });
 </script>
-
-<style scoped>
-.reports-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.page-subtitle {
-  margin: 0.25rem 0 0 0;
-  font-size: 0.95rem;
-  color: #64748b;
-}
-
-.export-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #ffffff;
-  color: #334155;
-  border: 1px solid #cbd5e1;
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  white-space: nowrap;
-}
-
-.export-btn:hover {
-  background-color: #f8fafc;
-  color: #0f172a;
-  border-color: #94a3b8;
-}
-
-.export-btn svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-/* Page loading */
-.page-loading { padding: 4rem 0; }
-
-/* Filters */
-.filters-bar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  align-items: end;
-  gap: 1rem;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.25rem;
-}
-.filter-field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
-.filter-field label { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
-.filter-field select,
-.filter-field input {
-  padding: 0.55rem 0.7rem;
-  border-radius: 8px;
-  border: 1.5px solid #cbd5e1;
-  font-size: 0.85rem;
-  color: #0f172a;
-  background: #fff;
-  width: 100%;
-  height: 40px;
-  box-sizing: border-box;
-  appearance: none;
-  -webkit-appearance: none;
-}
-.filter-field select {
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.6rem center;
-  background-size: 16px;
-  padding-right: 2rem;
-}
-.filter-field select:focus,
-.filter-field input:focus { outline: none; border-color: #6366f1; }
-.clear-filters-btn {
-  padding: 0.55rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  background: transparent;
-  color: #475569;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  height: 40px;
-  align-self: end;
-}
-.clear-filters-btn:hover:not(:disabled) { background: #f1f5f9; color: #0f172a; }
-.clear-filters-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* Empty State */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6rem 1rem;
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px dashed #cbd5e1;
-  text-align: center;
-}
-
-.icon-wrap {
-  width: 80px;
-  height: 80px;
-  background-color: #f8fafc;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-  color: #94a3b8;
-}
-
-.icon-wrap svg {
-  width: 40px;
-  height: 40px;
-}
-
-.empty-state h2 {
-  margin: 0 0 0.5rem 0;
-  color: #0f172a;
-}
-
-.empty-state p {
-  color: #64748b;
-  margin: 0;
-  max-width: 400px;
-}
-
-/* Reports Content */
-.reports-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1.5rem;
-}
-
-.course-report-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid #e2e8f0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.card-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  background-color: #f8fafc;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.course-info { min-width: 0; }
-
-.course-info h3 {
-  margin: 0.75rem 0 0 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
-  word-break: break-word;
-}
-
-.course-code {
-  background-color: #e0e7ff;
-  color: #4338ca;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 6px;
-  margin-right: 0.5rem;
-  white-space: nowrap;
-}
-
-.semester-tag {
-  background-color: #f1f5f9;
-  color: #475569;
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
-  white-space: nowrap;
-}
-.level-tag { margin-left: 0.4rem; }
-
-.attendance-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex-shrink: 0;
-}
-
-.stat-value {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #10b981;
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  margin-top: 4px;
-  white-space: nowrap;
-}
-
-.card-body {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  flex: 1;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.stat-item .label {
-  font-size: 0.78rem;
-  color: #64748b;
-  font-weight: 500;
-  white-space: normal;
-  word-break: break-word;
-  line-height: 1.3;
-}
-
-.stat-item .value {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1e293b;
-  word-break: break-word;
-}
-
-.text-emerald { color: #10b981 !important; }
-.text-rose { color: #e11d48 !important; }
-
-.view-details-btn {
-  margin-top: auto;
-  width: 100%;
-  padding: 0.85rem;
-  background-color: transparent;
-  color: #6366f1;
-  border: 1px solid #6366f1;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.view-details-btn:hover {
-  background-color: #e0e7ff;
-}
-
-/* History section */
-.history-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  overflow: hidden;
-}
-.history-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f8fafc;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-.history-header h2 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; }
-.count-pill { font-size: 0.78rem; font-weight: 700; color: #4338ca; background: #e0e7ff; padding: 0.25rem 0.7rem; border-radius: 9999px; white-space: nowrap; }
-.pin-chip { font-family: 'Courier New', monospace; font-weight: 700; letter-spacing: 0.08em; background: #f1f5f9; color: #334155; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; white-space: nowrap; }
-
-/* Modal Styles */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(15, 23, 42, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-  padding: 1rem;
-  box-sizing: border-box;
-}
-
-.modal-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 700px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  animation: modalIn 0.3s ease;
-}
-
-@keyframes modalIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.modal-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: #0f172a;
-}
-
-.modal-header p {
-  margin: 0.25rem 0 0 0;
-  font-size: 0.9rem;
-  color: #64748b;
-}
-
-.close-btn {
-  background: #f1f5f9;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.close-btn:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-.close-btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.modal-body {
-  padding: 1.5rem;
-  overflow-y: auto;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 3rem 0;
-  color: #64748b;
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #6366f1;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.empty-students {
-  text-align: center;
-  padding: 3rem 0;
-  color: #64748b;
-  font-style: italic;
-}
-
-.students-table-wrapper {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-}
-
-.students-table {
-  width: 100%;
-  min-width: 620px;
-  border-collapse: collapse;
-}
-
-.students-table th {
-  background-color: #f8fafc;
-  padding: 0.75rem 1rem;
-  text-align: left;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  border-bottom: 1px solid #e2e8f0;
-  white-space: nowrap;
-}
-
-.students-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.9rem;
-  color: #1e293b;
-}
-
-.students-table tr:last-child td {
-  border-bottom: none;
-}
-
-.student-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.student-avatar {
-  width: 32px;
-  height: 32px;
-  background-color: #e0e7ff;
-  color: #4338ca;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-  flex-shrink: 0;
-}
-
-.student-name {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.attendance-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.attendance-badge.excellent { background-color: #dcfce7; color: #166534; }
-.attendance-badge.good { background-color: #fef9c3; color: #854d0e; }
-.attendance-badge.poor { background-color: #fee2e2; color: #991b1b; }
-.attendance-badge.pending { background-color: #fef9c3; color: #a16207; }
-
-/* History subtitle */
-.history-sub { margin: 2px 0 0; font-size: .8rem; color: #94a3b8; }
-
-/* Session group header band */
-.session-group-row > td { background: #f8fafc; border-top: 2px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: .6rem 1rem !important; }
-.session-group-cell { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
-.sg-pin { background: #e0e7ff; color: #4338ca; font-size: .72rem; font-weight: 800; padding: .2rem .55rem; border-radius: 6px; letter-spacing: .06em; white-space: nowrap; }
-.sg-course { font-weight: 600; color: #1e293b; font-size: .88rem; white-space: nowrap; }
-.sg-date { color: #64748b; font-size: .8rem; white-space: nowrap; }
-.sg-count { margin-left: auto; color: #94a3b8; font-size: .75rem; font-weight: 600; white-space: nowrap; }
-
-.attendance-row > td:first-child { padding-left: 1.5rem; }
-
-.session-delete-cell { text-align: right; padding: .4rem .8rem !important; }
-.session-delete-btn { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid #fecaca; border-radius: 7px; background: #fff5f5; color: #ef4444; cursor: pointer; transition: all .18s; }
-.session-delete-btn:hover:not(:disabled) { background: #ef4444; color: #fff; border-color: #ef4444; }
-.session-delete-btn:disabled { opacity: .5; cursor: not-allowed; }
-.session-delete-btn svg { width: 14px; height: 14px; }
-.spin-sm { animation: spinSm .7s linear infinite; }
-@keyframes spinSm { to { transform: rotate(360deg); } }
-
-/* Inline attendance status editor */
-.status-edit-cell { text-align: right; padding: .4rem .6rem !important; white-space: nowrap; }
-.status-edit-btn {
-  width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
-  border: 1.5px solid #c7d2fe; border-radius: 7px; background: #eef2ff; color: #4f46e5; cursor: pointer; transition: all .18s;
-}
-.status-edit-btn:hover:not(:disabled) { background: #4f46e5; color: #fff; border-color: #4f46e5; }
-.status-edit-btn:disabled { opacity: .5; cursor: not-allowed; }
-.status-edit-btn svg { width: 13px; height: 13px; }
-
-.status-edit-wrap { display: flex; align-items: center; gap: .4rem; }
-.status-edit-select {
-  padding: .3rem .5rem;
-  border-radius: 6px;
-  border: 1.5px solid #cbd5e1;
-  font-size: .78rem;
-  color: #0f172a;
-  background: #fff;
-  cursor: pointer;
-}
-.status-edit-select:focus { outline: none; border-color: #6366f1; }
-.status-edit-select:disabled { opacity: .6; cursor: not-allowed; }
-.status-edit-cancel {
-  width: 22px; height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
-  border: none; border-radius: 6px; background: transparent; color: #94a3b8; cursor: pointer; transition: all .15s;
-}
-.status-edit-cancel:hover:not(:disabled) { background: #f1f5f9; color: #475569; }
-.status-edit-cancel:disabled { opacity: .5; cursor: not-allowed; }
-.status-edit-cancel svg { width: 13px; height: 13px; }
-
-.delete-session-modal { max-width: 400px; text-align: center; padding: 2rem; }
-.ds-icon { width: 52px; height: 52px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
-.ds-icon svg { width: 24px; height: 24px; }
-.delete-session-modal h2 { margin: 0 0 .5rem; font-size: 1.1rem; color: #0f172a; }
-.delete-session-modal > p { margin: 0 0 1rem; font-size: .88rem; color: #64748b; }
-.ds-info { display: flex; flex-direction: column; gap: .3rem; align-items: flex-start; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: .85rem 1rem; margin: 0 0 .8rem; }
-.ds-course { font-weight: 600; color: #1e293b; font-size: .92rem; }
-.ds-date { font-size: .78rem; color: #64748b; }
-.ds-warn { font-size: .78rem; color: #f59e0b !important; margin-bottom: 1.25rem !important; }
-.ds-actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
-.btn-cancel { padding: .6rem 1.2rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 600; cursor: pointer; }
-.btn-cancel:hover:not(:disabled) { background: #f1f5f9; }
-.btn-cancel:disabled, .btn-delete-confirm:disabled { opacity: .6; cursor: not-allowed; }
-.btn-delete-confirm { padding: .6rem 1.4rem; border-radius: 8px; border: none; background: #ef4444; color: #fff; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem; }
-.btn-delete-confirm:hover:not(:disabled) { background: #dc2626; }
-
-/* ================================
-   RESPONSIVE BREAKPOINTS
-   Tablet (≤1024px) → Tablet/large phone (≤768px) → Mobile L (≤480px)
-   → Mobile M (≤414px) → Mobile S (≤360px)
-   ================================ */
-
-/* Tablet / small laptop */
-@media (max-width: 1024px) {
-  .reports-content {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .reports-container {
-    gap: 1.5rem;
-  }
-
-  .reports-content {
-    grid-template-columns: 1fr;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-  }
-
-  .export-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .filters-bar {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 1rem;
-  }
-  .clear-filters-btn { grid-column: 1 / -1; width: 100%; }
-
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .attendance-stat {
-    align-items: flex-start;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-
-  .modal-card {
-    max-height: 95vh;
-  }
-
-  .modal-header,
-  .modal-body {
-    padding: 1.25rem;
-  }
-
-  .ds-actions {
-    flex-direction: column-reverse;
-  }
-  .ds-actions button {
-    width: 100%;
-  }
-}
-
-/* Mobile L (large phones, ~425-480px) */
-@media (max-width: 480px) {
-  .page-title {
-    font-size: 1.3rem;
-  }
-  .page-subtitle {
-    font-size: 0.85rem;
-  }
-
-  .empty-state {
-    padding: 3.5rem 1rem;
-  }
-
-  .course-info h3 {
-    font-size: 1.05rem;
-  }
-  .stat-value {
-    font-size: 1.5rem;
-  }
-
-  .card-body {
-    padding: 1.25rem;
-    gap: 1.25rem;
-  }
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 0.85rem;
-  }
-
-  .history-header {
-    padding: 1rem 1.25rem;
-  }
-  .history-header h2 {
-    font-size: 1rem;
-  }
-
-  .session-group-cell {
-    gap: 0.5rem;
-  }
-  .sg-count {
-    margin-left: 0;
-  }
-
-  .students-table th,
-  .students-table td {
-    padding: 0.6rem 0.75rem;
-    font-size: 0.8rem;
-  }
-  .student-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 0.8rem;
-  }
-
-  .status-edit-select {
-    font-size: 0.72rem;
-    padding: 0.25rem 0.4rem;
-  }
-
-  .modal-header h2 {
-    font-size: 1.1rem;
-  }
-
-  .delete-session-modal {
-    padding: 1.5rem;
-  }
-}
-
-/* Mobile M (e.g. iPhone SE/12/13, ~375-414px) */
-@media (max-width: 414px) {
-  .filters-bar {
-    grid-template-columns: 1fr;
-    padding: 0.85rem;
-    gap: 0.75rem;
-  }
-  .filter-field select,
-  .filter-field input {
-    font-size: 0.8rem;
-    padding: 0.5rem 0.6rem;
-    height: 38px;
-  }
-
-  .card-header {
-    padding: 1.1rem;
-  }
-  .card-body {
-    padding: 1.1rem;
-  }
-
-  .view-details-btn {
-    padding: 0.7rem;
-    font-size: 0.88rem;
-  }
-
-  .students-table {
-    min-width: 560px;
-  }
-
-  .modal-header,
-  .modal-body {
-    padding: 1rem;
-  }
-}
-
-/* Mobile S (small phones, ≤360px) */
-@media (max-width: 360px) {
-  .page-title {
-    font-size: 1.15rem;
-  }
-  .export-btn {
-    font-size: 0.85rem;
-    padding: 0.65rem 1rem;
-  }
-
-  .course-code,
-  .semester-tag {
-    font-size: 0.65rem;
-    padding: 3px 6px;
-  }
-  .course-info h3 {
-    font-size: 0.95rem;
-  }
-
-  .stat-value {
-    font-size: 1.3rem;
-  }
-  .stat-label {
-    font-size: 0.68rem;
-  }
-
-  .students-table {
-    min-width: 500px;
-  }
-
-  .sg-pin, .sg-course, .sg-date {
-    font-size: 0.7rem;
-  }
-
-  .btn-cancel,
-  .btn-delete-confirm {
-    font-size: 0.85rem;
-    padding: 0.55rem 1rem;
-  }
-}
-
-.empty-session-row td.empty-session-cell {
-  text-align: center;
-  padding: 1.25rem 1rem;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  font-style: italic;
-  background: #f8fafc;
-}
-</style>

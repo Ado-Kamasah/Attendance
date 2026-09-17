@@ -1,155 +1,187 @@
 <template>
-  <div class="setup-container">
-    <header class="page-header">
-      <div class="header-content">
-        <h1 class="page-title">Semester Setup</h1>
-        <p class="page-subtitle">Configure academic calendars, terms, and active sessions.</p>
-      </div>
-    </header>
+  <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
-    <div class="setup-layout">
-      <!-- Left Column: Form to setup a new term -->
-      <div class="setup-column">
-        <div class="card form-card">
-          <div class="card-header">
-            <h2>{{ editingSemesterId ? 'Update Semester' : 'Configure New Semester' }}</h2>
-            <p>Define the dates and parameters for an academic term.</p>
-          </div>
-          
-          <form @submit.prevent="saveSemester" class="setup-form">
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Academic Year</label>
-                <div class="input-with-icon">
-                  <svg viewBox="0 0 24 24" fill="none" class="input-icon" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                  <select v-model="form.year" required class="form-control pl-10">
-                    <option disabled value="">Select Year</option>
-                    <option value="2023/2024">2023/2024</option>
-                    <option value="2024/2025">2024/2025</option>
-                    <option value="2025/2026">2025/2026</option>
-                    <option value="2026/2027">2026/2027</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label>Semester Term</label>
-                <div class="input-with-icon">
-                  <svg viewBox="0 0 24 24" fill="none" class="input-icon" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-                  <select v-model="form.term" required class="form-control pl-10">
-                    <option disabled value="">Select Semester</option>
-                    <option value="First Semester">First Semester</option>
-                    <option value="Second Semester">Second Semester</option>
-                    <option value="Summer Session">Summer Session</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Lectures Start Date</label>
-                  <input type="date" v-model="form.startDate" required class="form-control" />
-                </div>
-                <div class="form-group">
-                  <label>Lectures End Date</label>
-                  <input type="date" v-model="form.endDate" required class="form-control" />
-                </div>
-              </div>
-              
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Exams Start Date</label>
-                  <input type="date" v-model="form.examsStart" class="form-control" />
-                </div>
-                <div class="form-group">
-                  <label>Exams End Date</label>
-                  <input type="date" v-model="form.examsEnd" class="form-control" />
-                </div>
-              </div>
-              
-              <div class="checkbox-group">
-                <label class="custom-checkbox">
-                  <input type="checkbox" v-model="form.isCurrent">
-                  <span class="checkmark">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" v-if="form.isCurrent">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </span>
-                  <span class="checkbox-text ">Set as current active semester</span>
-                </label>
-                <p class="checkbox-hint">This will deactivate any currently active semester automatically.</p>
-              </div>
-            </div>
-            
-            <div class="form-actions">
-              <button type="submit" class="btn-primary" :disabled="semestersStore.isLoading">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                {{ editingSemesterId ? 'Update Configuration' : 'Save Configuration' }}
-              </button>
-              <button type="button" class="btn-ghost" @click="resetForm">{{ editingSemesterId ? 'Cancel' : 'Clear' }}</button>
-            </div>
-          </form>
+    <!-- Header -->
+    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+      <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
+      <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+      <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+
+      <div class="relative z-10">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium tracking-wide uppercase bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
+            <GraduationCap class="w-3 h-3" />
+            ADMIN // ACADEMIC CALENDAR
+          </span>
         </div>
+        <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Semester Setup</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure academic calendars, terms, and active sessions.</p>
       </div>
-      
-      <!-- Right Column: Summary / active semester -->
-      <div class="info-column">
-        <div class="card active-status-card" v-if="activeSemester">
-          <div class="card-bg-pattern"></div>
-          <div class="status-badge">CURRENTLY ACTIVE</div>
-          <h2 class="active-year">{{ activeSemester.year }}</h2>
-          <h3 class="active-term">{{ activeSemester.term }}</h3>
-          
-          <div class="timeline">
-            <div class="timeline-item">
-              <div class="timeline-dot start"></div>
-              <div class="timeline-content">
-                <span>Lectures Begin</span>
-                <strong>{{ formatDate(activeSemester.startDate) }}</strong>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+
+      <!-- LEFT: Configuration Form -->
+      <div class="lg:col-span-3 bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800">
+          <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">{{ editingSemesterId ? 'Update Semester' : 'Configure New Semester' }}</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Define the dates and parameters for an academic term.</p>
+        </div>
+
+        <form @submit.prevent="saveSemester" class="p-6 space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Academic Year -->
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Academic Year <span class="text-rose-500">*</span></label>
+              <select v-model="form.year" required
+                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                <option disabled value="">Select Year</option>
+                <option value="2023/2024">2023/2024</option>
+                <option value="2024/2025">2024/2025</option>
+                <option value="2025/2026">2025/2026</option>
+                <option value="2026/2027">2026/2027</option>
+              </select>
+            </div>
+
+            <!-- Semester Term -->
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Semester Term <span class="text-rose-500">*</span></label>
+              <select v-model="form.term" required
+                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                <option disabled value="">Select Semester</option>
+                <option value="First Semester">First Semester</option>
+                <option value="Second Semester">Second Semester</option>
+                <option value="Summer Session">Summer Session</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Lecture Dates -->
+          <div>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 block">Lecture Period <span class="text-rose-500">*</span></label>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-mono">Start Date</label>
+                <input type="date" v-model="form.startDate" required
+                  class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-mono">End Date</label>
+                <input type="date" v-model="form.endDate" required
+                  class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50" />
               </div>
             </div>
-            <div class="timeline-item">
-              <div class="timeline-dot end"></div>
-              <div class="timeline-content">
+          </div>
+
+          <!-- Exam Dates -->
+          <div>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 block">Exam Period (Optional)</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-mono">Exams Start</label>
+                <input type="date" v-model="form.examsStart"
+                  class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-mono">Exams End</label>
+                <input type="date" v-model="form.examsEnd"
+                  class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Active checkbox -->
+          <label class="flex items-start gap-3 cursor-pointer group">
+            <input type="checkbox" v-model="form.isCurrent"
+              class="w-4 h-4 mt-0.5 rounded border-slate-300 dark:border-slate-600 text-secondary focus:ring-secondary/40 accent-[#bc9333]" />
+            <div>
+              <div class="text-sm font-semibold text-slate-800 dark:text-slate-200">Set as current active semester</div>
+              <div class="text-xs text-slate-400 mt-0.5">This will deactivate any currently active semester automatically.</div>
+            </div>
+          </label>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-3 pt-2">
+            <button type="submit" :disabled="semestersStore.isLoading"
+              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md disabled:opacity-50 active:scale-95"
+            >
+              <Save class="w-4 h-4" />
+              {{ editingSemesterId ? 'Update Configuration' : 'Save Configuration' }}
+            </button>
+            <button type="button" @click="resetForm"
+              class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              {{ editingSemesterId ? 'Cancel' : 'Clear' }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- RIGHT: Active + History -->
+      <div class="lg:col-span-2 space-y-5">
+
+        <!-- Active Semester Card -->
+        <div v-if="activeSemester" class="relative bg-primary dark:bg-[#0a1f3d] border border-primary/80 dark:border-secondary/40 rounded-2xl p-5 shadow-md overflow-hidden">
+          <div class="absolute inset-0 bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.06] bg-[size:14px_14px] pointer-events-none"></div>
+          <div class="relative z-10">
+            <span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary/20 text-secondary border border-secondary/30 mb-3">
+              <span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+              CURRENTLY ACTIVE
+            </span>
+            <div class="text-2xl font-display font-extrabold text-white">{{ activeSemester.year }}</div>
+            <div class="text-sm font-bold text-secondary mt-1">{{ activeSemester.term }}</div>
+            <div class="mt-4 space-y-2">
+              <div class="flex items-center gap-2 text-xs text-white/70">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                <span>Lectures Begin</span>
+                <span class="ml-auto font-mono text-white font-bold">{{ formatDate(activeSemester.startDate) }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-white/70">
+                <div class="w-1.5 h-1.5 rounded-full bg-rose-400"></div>
                 <span>Semester Ends</span>
-                <strong>{{ activeSemester.examsEnd ? formatDate(activeSemester.examsEnd) : formatDate(activeSemester.endDate) }}</strong>
+                <span class="ml-auto font-mono text-white font-bold">{{ formatDate(activeSemester.examsEnd || activeSemester.endDate) }}</span>
               </div>
             </div>
           </div>
         </div>
-        
-        <div class="card history-card">
-          <div class="card-header border-bottom">
-            <h2>Saved Configurations</h2>
+
+        <!-- History List -->
+        <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 dark:border-slate-800">
+            <h2 class="text-sm font-display font-bold text-slate-900 dark:text-white">Saved Configurations</h2>
           </div>
-          <div class="history-list">
-            <div v-for="sem in sortedSemesters" :key="sem.id" class="history-item">
-              <div class="history-icon" :class="{ 'is-active': sem.isCurrent }">
-                <svg v-if="sem.isCurrent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                
-              </div>
-              <div class="history-details">
-                <div class="history-title">
-                  {{ sem.term }} <span class="history-year">({{ sem.year }})</span>
+
+          <div v-if="semesters.length === 0" class="p-8 text-center text-slate-400 text-sm">No semesters configured yet.</div>
+
+          <ul v-else class="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <li v-for="sem in sortedSemesters" :key="sem.id" class="px-5 py-4 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+              <div class="flex items-start gap-3">
+                <div :class="['w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
+                  sem.isCurrent ? 'bg-secondary/20 border border-secondary/30 text-secondary' : 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400'
+                ]">
+                  <Clock v-if="sem.isCurrent" class="w-3.5 h-3.5" />
+                  <CheckCircle2 v-else class="w-3.5 h-3.5" />
                 </div>
-                <div class="history-dates">{{ formatDate(sem.startDate) }} — {{ formatDate(sem.endDate) }}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    {{ sem.term }} <span class="text-slate-400 font-normal">({{ sem.year }})</span>
+                  </div>
+                  <div class="text-[11px] font-mono text-slate-400 mt-0.5">{{ formatDate(sem.startDate) }} — {{ formatDate(sem.endDate) }}</div>
+
+                  <div v-if="!sem.isCurrent" class="flex items-center gap-1.5 mt-2">
+                    <button @click="setActive(sem.id)" class="text-[10px] font-mono font-bold px-2 py-1 rounded-lg bg-secondary/10 text-secondary border border-secondary/30 hover:bg-secondary/20 transition-colors">
+                      Set Active
+                    </button>
+                    <button @click="editSemester(sem)" title="Edit" class="p-1.5 text-slate-400 hover:text-primary dark:hover:text-secondary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                      <Edit3 class="w-3 h-3" />
+                    </button>
+                    <button @click="deleteSemester(sem.id)" title="Delete" class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors">
+                      <Trash2 class="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="history-actions" v-if="!sem.isCurrent">
-                <button class="btn-activate" title="Set as Current" @click="setActive(sem.id)">Set Active</button>
-                <button class="btn-icon edit" title="Edit" @click="editSemester(sem)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                </button>
-                <button class="btn-icon" title="Delete" @click="deleteSemester(sem.id)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
-              </div>
-            </div>
-            
-            <div v-if="semesters.length === 0" class="empty-history">
-              No semesters configured yet.
-            </div>
-          </div>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -161,26 +193,16 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useSemestersStore } from '@/stores/semesters';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
+import { GraduationCap, Save, Clock, CheckCircle2, Edit3, Trash2 } from 'lucide-vue-next';
 
 const semestersStore = useSemestersStore();
 const auditLogsStore = useAuditLogsStore();
 
-const initialForm = {
-  year: '',
-  term: '',
-  startDate: '',
-  endDate: '',
-  examsStart: '',
-  examsEnd: '',
-  isCurrent: false
-};
-
+const initialForm = { year: '', term: '', startDate: '', endDate: '', examsStart: '', examsEnd: '', isCurrent: false };
 const form = ref({ ...initialForm });
 const editingSemesterId = ref(null);
 const currentUser = ref(null);
 
-// UI-shaped view over the store's semesters: derives year/term from `name`
-// ("2025/2026 - First Semester") and isCurrent from isActive.
 const semesters = computed(() =>
   semestersStore.semesters.map((s) => ({
     ...s,
@@ -193,25 +215,13 @@ const semesters = computed(() =>
 const loadCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
-
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, name, role')
-    .eq('id', user.id)
-    .single();
-
+  const { data, error } = await supabase.from('users').select('id, name, role').eq('id', user.id).single();
   if (!error) currentUser.value = data;
 };
 
 const logAudit = (action, details) => {
   if (!currentUser.value) return;
-  auditLogsStore.logAction({
-    action,
-    details,
-    userId: currentUser.value.id,
-    userRole: currentUser.value.role,
-    userName: currentUser.value.name,
-  });
+  auditLogsStore.logAction({ action, details, userId: currentUser.value.id, userRole: currentUser.value.role, userName: currentUser.value.name });
 };
 
 onMounted(async () => {
@@ -219,34 +229,22 @@ onMounted(async () => {
   semestersStore.subscribeToSemesters();
 });
 
-onUnmounted(() => {
-  semestersStore.unsubscribeFromSemesters();
-});
+onUnmounted(() => { semestersStore.unsubscribeFromSemesters(); });
 
-const activeSemester = computed(() => {
-  return semesters.value.find(s => s.isCurrent);
-});
-
-const sortedSemesters = computed(() => {
-  return [...semesters.value].sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-});
+const activeSemester = computed(() => semesters.value.find(s => s.isCurrent));
+const sortedSemesters = computed(() => [...semesters.value].sort((a, b) => new Date(b.startDate) - new Date(a.startDate)));
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const resetForm = () => {
-  form.value = { ...initialForm };
-  editingSemesterId.value = null;
-};
+const resetForm = () => { form.value = { ...initialForm }; editingSemesterId.value = null; };
 
 const editSemester = (sem) => {
   editingSemesterId.value = sem.id;
   form.value = {
-    year: sem.year,
-    term: sem.term,
+    year: sem.year, term: sem.term,
     startDate: sem.startDate ? sem.startDate.split('T')[0] : '',
     endDate: sem.endDate ? sem.endDate.split('T')[0] : '',
     examsStart: sem.examsStart ? sem.examsStart.split('T')[0] : '',
@@ -257,17 +255,9 @@ const editSemester = (sem) => {
 
 const saveSemester = async () => {
   const name = `${form.value.year} - ${form.value.term}`;
-  const payload = {
-    name,
-    startDate: form.value.startDate,
-    endDate: form.value.endDate,
-    examsStart: form.value.examsStart || null,
-    examsEnd: form.value.examsEnd || null,
-  };
-
+  const payload = { name, startDate: form.value.startDate, endDate: form.value.endDate, examsStart: form.value.examsStart || null, examsEnd: form.value.examsEnd || null };
   try {
     let semesterId = editingSemesterId.value;
-
     if (semesterId) {
       await semestersStore.updateSemester(semesterId, payload);
       logAudit('semester_updated', `Updated semester "${name}"`);
@@ -276,18 +266,12 @@ const saveSemester = async () => {
       semesterId = created.id;
       logAudit('semester_created', `Created semester "${name}"`);
     }
-
-    // setActiveSemester deactivates every other semester atomically, so at
-    // most one semester is ever marked active.
     if (form.value.isCurrent) {
       await semestersStore.setActiveSemester(semesterId);
       logAudit('semester_activated', `Set semester "${name}" as active`);
     }
-
     resetForm();
-  } catch (error) {
-    console.error('Error saving semester:', error);
-  }
+  } catch (error) { console.error('Error saving semester:', error); }
 };
 
 const setActive = async (id) => {
@@ -295,689 +279,15 @@ const setActive = async (id) => {
     const sem = semesters.value.find(s => s.id === id);
     await semestersStore.setActiveSemester(id);
     if (sem) logAudit('semester_activated', `Set semester "${sem.name}" as active`);
-  } catch (error) {
-    console.error('Error setting active semester:', error);
-  }
+  } catch (error) { console.error('Error setting active semester:', error); }
 };
 
 const deleteSemester = async (id) => {
   const sem = semesters.value.find(s => s.id === id);
   if (!confirm(`Delete semester "${sem?.name ?? ''}"? This cannot be undone.`)) return;
-
   try {
     await semestersStore.deleteSemester(id);
     logAudit('semester_deleted', `Deleted semester "${sem?.name ?? ''}"`);
-  } catch (error) {
-    console.error('Error deleting semester:', error);
-  }
+  } catch (error) { console.error('Error deleting semester:', error); }
 };
 </script>
-
-<style scoped>
-.setup-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* Header */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  background: white;
-  padding: 24px 32px;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-}
-
-.page-title {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.02em;
-}
-
-.page-subtitle {
-  color: #64748b;
-  margin: 0;
-  font-size: 1rem;
-}
-
-/* Layout Grid */
-.setup-layout {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-.setup-column, .info-column {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  min-width: 0;
-}
-
-/* Cards */
-.card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-  overflow: hidden;
-  border: 1px solid #f1f5f9;
-}
-
-.card-header {
-  padding: 24px 32px 16px;
-}
-
-.card-header.border-bottom {
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.card-header h2 {
-  margin: 0 0 6px 0;
-  font-size: 1.3rem;
-  color: #1e293b;
-  font-weight: 700;
-}
-
-.card-header p {
-  margin: 0;
-  color: #64748b;
-  font-size: 0.95rem;
-}
-
-/* Form Styles */
-.setup-form {
-  padding: 0 32px 32px;
-}
-
-.form-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.form-row {
-  display: flex;
-  gap: 20px;
-}
-
-.form-row .form-group {
-  flex: 1;
-  min-width: 0;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #475569;
-}
-
-.input-with-icon {
-  position: relative;
-}
-
-.input-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  color: #94a3b8;
-  pointer-events: none;
-}
-
-.form-control {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 12px 16px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: 0.95rem;
-  color: #0f172a;
-  outline: none;
-  transition: all 0.2s;
-  background: #fff;
-}
-
-.pl-10 {
-  padding-left: 42px !important;
-}
-
-.form-control:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.form-control::placeholder {
-  color: #94a3b8;
-}
-
-/* Custom Checkbox */
-.checkbox-group {
-  margin-top: 10px;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-}
-
-.custom-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  position: relative;
-}
-
-.custom-checkbox input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
-}
-
-.checkmark {
-  width: 22px;
-  height: 22px;
-  background: white;
-  border: 2px solid #cbd5e1;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.custom-checkbox input:checked ~ .checkmark {
-  background: #6366f1;
-  border-color: #6366f1;
-}
-
-.checkmark svg {
-  width: 14px;
-  height: 14px;
-  color: white;
-}
-
-.checkbox-text {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #334155;
-}
-
-.checkbox-hint {
-  margin: 6px 0 0 34px;
-  font-size: 0.8rem;
-  color: #64748b;
-}
-
-/* Buttons */
-.form-actions {
-  display: flex;
-  gap: 16px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #f1f5f9;
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  color: white;
-  border: none;
-  padding: 12px 28px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
-  flex: 1;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
-}
-
-.btn-primary svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.btn-primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-ghost:hover {
-  background: #f1f5f9;
-  color: #334155;
-}
-
-/* Active Status Card */
-.active-status-card {
-  position: relative;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  color: white;
-  padding: 32px;
-  border-radius: 16px;
-  overflow: hidden;
-  border: none;
-}
-
-.card-bg-pattern {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  opacity: 0.05;
-  background-image: radial-gradient(white 2px, transparent 2px);
-  background-size: 30px 30px;
-  pointer-events: none;
-}
-
-.status-badge {
-  display: inline-block;
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  margin-bottom: 16px;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-}
-
-.active-year {
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: 800;
-  line-height: 1.1;
-  color: #fff;
-}
-
-.active-term {
-  margin: 4px 0 24px 0;
-  font-size: 1.2rem;
-  font-weight: 500;
-  color: #94a3b8;
-}
-
-.timeline {
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  padding-left: 20px;
-}
-
-.timeline::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 7px;
-  width: 2px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 24px;
-}
-
-.timeline-item:last-child {
-  margin-bottom: 0;
-}
-
-.timeline-dot {
-  position: absolute;
-  left: -20px;
-  top: 6px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 3px solid #0f172a;
-}
-
-.timeline-dot.start {
-  background: #6366f1;
-}
-
-.timeline-dot.end {
-  background: #f43f5e;
-}
-
-.timeline-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.timeline-content span {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 2px;
-}
-
-.timeline-content strong {
-  font-size: 1.05rem;
-  color: #f8fafc;
-}
-
-/* History List */
-.history-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.history-item {
-  display: flex;
-  align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid #f1f5f9;
-  transition: background 0.2s;
-}
-
-.history-item:last-child {
-  border-bottom: none;
-}
-
-.history-item:hover {
-  background: #f8fafc;
-}
-
-.history-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #f1f5f9;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
-  flex-shrink: 0;
-}
-
-.history-icon.is-active {
-  background: #e0e7ff;
-  color: #4f46e5;
-}
-
-.history-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-.history-details {
-  flex: 1;
-  min-width: 0;
-}
-
-.history-title {
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 4px;
-  overflow-wrap: anywhere;
-}
-
-.history-year {
-  color: #64748b;
-  font-weight: 500;
-}
-
-.history-dates {
-  font-size: 0.85rem;
-  color: #94a3b8;
-}
-
-.history-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  flex-shrink: 0;
-}
-
-.history-item:hover .history-actions {
-  opacity: 1;
-}
-
-.btn-activate {
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.btn-activate:hover {
-  background: #e2e8f0;
-  color: #1e293b;
-}
-
-.btn-icon {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  padding: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.btn-icon.edit:hover {
-  color: #4f46e5;
-  background: #e0e7ff;
-}
-
-.btn-icon:hover:not(.edit) {
-  color: #ef4444;
-  background: #fee2e2;
-}
-
-.btn-icon svg {
-  width: 16px;
-  height: 16px;
-}
-
-.empty-history {
-  padding: 32px;
-  text-align: center;
-  color: #94a3b8;
-  font-size: 0.95rem;
-}
-
-/* ══════════════════════════════════════════════════════
-   RESPONSIVE BREAKPOINTS
-   S  : ≤ 375px   (small phones)
-   M  : 376–480px (large phones)
-   L  : 481–767px (phablets / small tablets, portrait)
-   Tab: 768–991px (tablets)
-   Lap: 992–1199px (small laptops)
-   ══════════════════════════════════════════════════════ */
-
-/* ── Small laptops (≤1199px): trim outer padding a touch ── */
-@media (max-width: 1199px) {
-  .page-header { padding: 22px 28px; }
-  .card-header { padding: 22px 28px 14px; }
-  .setup-form { padding: 0 28px 28px; }
-}
-
-/* ── Tablets (≤991px): stack the two-column layout ── */
-@media (max-width: 991px) {
-  .setup-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-}
-
-/* ── Large phones / small tablets, portrait (≤767px) ── */
-@media (max-width: 767px) {
-  .setup-container { gap: 18px; }
-
-  .page-header {
-    padding: 18px 20px;
-    border-radius: 12px;
-  }
-  .page-title { font-size: 1.4rem; margin-bottom: 4px; }
-  .page-subtitle { font-size: 0.9rem; }
-
-  .setup-column, .info-column { gap: 18px; }
-
-  .card { border-radius: 12px; }
-
-  .card-header { padding: 18px 20px 12px; }
-  .card-header h2 { font-size: 1.1rem; }
-  .card-header p { font-size: 0.85rem; }
-
-  .setup-form { padding: 0 20px 20px; }
-  .form-grid { gap: 16px; }
-
-  .form-row {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .form-control { padding: 11px 14px; font-size: 0.9rem; }
-  .pl-10 { padding-left: 40px !important; }
-
-  .checkbox-group { padding: 14px; }
-  .checkbox-hint { margin-left: 34px; }
-
-  .form-actions {
-    flex-direction: column-reverse;
-    gap: 10px;
-    margin-top: 24px;
-    padding-top: 18px;
-  }
-  .btn-primary, .btn-ghost {
-    width: 100%;
-    padding: 12px 20px;
-  }
-
-  .active-status-card { padding: 22px 20px; }
-  .active-year { font-size: 2rem; }
-  .active-term { font-size: 1.05rem; margin-bottom: 18px; }
-
-  .history-item {
-    padding: 14px 16px;
-    flex-wrap: wrap;
-    row-gap: 10px;
-  }
-
-  .history-actions {
-    opacity: 1;
-    width: 100%;
-    justify-content: flex-start;
-    margin-left: 56px;
-  }
-
-  .empty-history { padding: 24px; font-size: 0.9rem; }
-}
-
-/* ── Large phones (≤480px) ── */
-@media (max-width: 480px) {
-  .page-title { font-size: 1.2rem; }
-
-  .active-year { font-size: 1.6rem; }
-  .active-term { font-size: 0.95rem; }
-
-  .history-icon {
-    width: 34px;
-    height: 34px;
-    margin-right: 12px;
-  }
-  .history-icon svg { width: 16px; height: 16px; }
-
-  .history-title { font-size: 0.9rem; }
-  .history-dates { font-size: 0.78rem; }
-
-  .history-actions {
-    margin-left: 46px;
-    flex-wrap: wrap;
-  }
-
-  .btn-activate { font-size: 0.75rem; padding: 4px 8px; }
-  .btn-icon svg { width: 15px; height: 15px; }
-
-  .checkbox-text { font-size: 0.88rem; }
-  .checkbox-hint { font-size: 0.75rem; margin-left: 0; }
-}
-
-/* ── Small phones (≤375px) ── */
-@media (max-width: 375px) {
-  .page-header { padding: 16px; }
-  .card-header { padding: 16px 16px 10px; }
-  .setup-form { padding: 0 16px 16px; }
-
-  .form-control { padding: 10px 12px; font-size: 0.85rem; }
-  .pl-10 { padding-left: 36px !important; }
-  .input-icon { left: 12px; width: 16px; height: 16px; }
-
-  .active-status-card { padding: 18px 16px; }
-  .active-year { font-size: 1.4rem; }
-
-  .history-item { padding: 12px; }
-  .history-actions { margin-left: 0; }
-}
-</style>
