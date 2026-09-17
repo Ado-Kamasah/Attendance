@@ -16,8 +16,8 @@
       ]"
     >
       <!-- Blueprint Registration Marks -->
-      <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-      <div class="corner corner-bl !border-secondary/30 pointer-events-none"></div>
+      <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+      <div class="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-secondary/30 pointer-events-none"></div>
 
       <!-- Header / Logo -->
       <div class="h-18 px-4 flex items-center justify-between border-b border-[#162746] dark:border-[#0e1a30] shrink-0">

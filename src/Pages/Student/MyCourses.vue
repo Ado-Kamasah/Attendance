@@ -3,9 +3,9 @@
     <!-- Header with Blueprint Eyebrow -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <div class="dim-eyebrow">
+        <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
           <span>ENROLLED CURRICULUM // ATTENDANCE RECORDS</span>
-          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+          <svg class="text-secondary/40 w-20 h-2" viewBox="0 0 140 8" fill="none">
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
@@ -48,7 +48,7 @@
       <div 
         v-for="course in myCourses" 
         :key="course.id"
-        class="blueprint-card relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-5 flex flex-col justify-between group"
+        class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-5 flex flex-col justify-between group"
       >
         <div>
           <!-- Top Card Meta -->

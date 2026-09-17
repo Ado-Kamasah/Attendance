@@ -6,8 +6,8 @@
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
 
       <!-- Corner Registration Brackets -->
-      <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
-      <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+      <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+      <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
       <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -174,8 +174,8 @@
           class="group relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
         >
           <!-- Corner brackets -->
-          <div class="corner-tl absolute top-2 left-2 w-2 h-2 border-t border-l border-secondary/30 pointer-events-none"></div>
-          <div class="corner-br absolute bottom-2 right-2 w-2 h-2 border-b border-r border-secondary/30 pointer-events-none"></div>
+          <div class="absolute top-2 left-2 w-2 h-2 border-t border-l border-secondary/30 pointer-events-none"></div>
+          <div class="absolute bottom-2 right-2 w-2 h-2 border-b border-r border-secondary/30 pointer-events-none"></div>
 
           <div>
             <!-- Top Tags & Rate -->
@@ -262,8 +262,8 @@
         class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden"
       >
         <!-- Corner Brackets -->
-        <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
-        <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+        <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+        <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
         <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -435,8 +435,8 @@
     >
       <div class="relative w-full max-w-2xl bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
         <!-- Corner Brackets -->
-        <div class="corner-tl absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
-        <div class="corner-tr absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+        <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+        <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
         <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
           <div>

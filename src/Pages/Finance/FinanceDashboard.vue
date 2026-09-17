@@ -3,9 +3,9 @@
     <!-- Header with Blueprint Eyebrow -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <div class="dim-eyebrow">
+        <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
           <span>FINANCE AUDIT // CLAIMS & INSTRUCTION LOGS</span>
-          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+          <svg class="text-secondary/40 w-20 h-2" viewBox="0 0 140 8" fill="none">
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
@@ -38,7 +38,7 @@
       <!-- KPI Cards Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Total Lecturers -->
-        <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
+        <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
           <div class="flex items-center justify-between">
             <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
               Total Instructors
@@ -56,7 +56,7 @@
         </div>
 
         <!-- Total Sessions -->
-        <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
+        <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
           <div class="flex items-center justify-between">
             <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
               Total Sessions
@@ -74,7 +74,7 @@
         </div>
 
         <!-- Avg Attendance Rate -->
-        <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
+        <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
           <div class="flex items-center justify-between">
             <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
               Avg Turnout Rate
@@ -95,7 +95,7 @@
         </div>
 
         <!-- Courses Covered -->
-        <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
+        <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
           <div class="flex items-center justify-between">
             <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
               Courses Billed
@@ -115,8 +115,8 @@
 
       <!-- Top Lecturers by Sessions Table -->
       <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden">
-        <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-        <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
         <div class="p-4 sm:p-5 border-b border-outline/30 dark:border-dark-outline/40 flex items-center justify-between">
           <div>

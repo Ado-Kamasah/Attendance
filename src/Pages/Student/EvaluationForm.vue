@@ -5,8 +5,8 @@
       <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
         <div v-if="showPopup" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4" @click.self="showPopup = false">
           <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
-            <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-            <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+            <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+            <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
             <div class="w-12 h-12 rounded-2xl bg-secondary/15 text-secondary flex items-center justify-center">
               <Award class="w-6 h-6" />
@@ -66,9 +66,9 @@
     <!-- Header with Blueprint Eyebrow -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <div class="dim-eyebrow">
+        <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
           <span>ACADEMIC AUDIT // LECTURER APPRAISAL</span>
-          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+          <svg class="text-secondary/40 w-20 h-2" viewBox="0 0 140 8" fill="none">
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
@@ -95,8 +95,8 @@
     <template v-else>
       <!-- Course Selector Card -->
       <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl p-5 shadow-xs">
-        <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-        <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
         <label class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground uppercase tracking-wider mb-2" for="ef-course-select">
           Select Enrolled Module & Lecturer

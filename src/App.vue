@@ -122,7 +122,7 @@ const handleRegisterSuccess = () => {
               @switch-to-login="activeAuthView = 'login'" />
   </div>
 
-  <div v-else class="app-layout">
+  <div v-else class="flex h-screen w-full overflow-hidden bg-background text-foreground dark:bg-dark-background dark:text-dark-foreground">
     <AdminSidebar 
       v-if="userRole === 'Admin' || userRole === 'Super Admin'"
       @navigate="handleNavigationEvent" 
@@ -147,9 +147,9 @@ const handleRegisterSuccess = () => {
       :is-mobile-open="isMobileSidebarOpen"
       @close-mobile="isMobileSidebarOpen = false"
     />
-    <div class="main-wrapper">
+    <div class="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
       <Navbar @toggle-mobile-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen" @logout="handleLogout" @navigate="handleNavigationEvent" />
-      <main class="main-content">
+      <main class="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden min-w-0 min-h-0">
         <Dashboard v-if="currentRoute === '/'" @navigate="handleNavigationEvent" />
         <StudentDashboard v-else-if="currentRoute === '/student-dashboard'" @navigate="handleNavigationEvent" />
         <LecturerDashboard v-else-if="currentRoute === '/lecturer-dashboard'" @navigate="handleNavigationEvent" />
@@ -177,68 +177,11 @@ const handleRegisterSuccess = () => {
         <FinanceClaims      v-else-if="currentRoute === '/finance-claims'" />
         <Profile v-else-if="currentRoute === '/profile'" />
         <Notifications v-else-if="currentRoute === '/notifications'" />
-        <div v-else class="content-placeholder">
-          <h2>Page not implemented yet</h2>
-          <p>Navigated to {{ currentRoute }}</p>
+        <div v-else class="p-8 rounded-xl shadow-md bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 text-slate-700 dark:text-slate-300">
+          <h2 class="text-xl font-bold font-display text-slate-900 dark:text-white">Page not implemented yet</h2>
+          <p class="text-sm font-mono mt-1 text-slate-500 dark:text-slate-400">Navigated to {{ currentRoute }}</p>
         </div>
       </main>
     </div>
   </div>
 </template>
-
-<style>
-/* Reset basic margins so the app takes full screen */
-html, body, #app {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  font-family: 'Inter', sans-serif;
-  background-color: #f1f5f9; /* Light background for the main content area */
-}
-
-/* Base structural layout for the entire app */
-.app-layout {
-  display: flex;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
-}
-
-.main-wrapper {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.main-content {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-width: 0;
-  min-height: 0;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding: 1rem;
-  }
-}
-
-.content-placeholder {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  color: #334155;
-}
-
-.content-placeholder h2 {
-  margin-top: 0;
-  color: #0f172a;
-}
-</style>

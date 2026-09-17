@@ -3,9 +3,9 @@
     <!-- Header with Blueprint Eyebrow -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <div class="dim-eyebrow">
+        <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
           <span>EVENT STREAM // AUDIT & COMMUNICATIONS</span>
-          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+          <svg class="text-secondary/40 w-20 h-2" viewBox="0 0 140 8" fill="none">
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>

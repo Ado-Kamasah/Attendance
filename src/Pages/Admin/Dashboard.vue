@@ -5,7 +5,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-outline/40 dark:border-dark-outline/60">
       <div>
         <!-- Dimension Line Eyebrow -->
-        <div class="dim-eyebrow flex items-center gap-2 mb-1.5 text-secondary dark:text-dark-secondary">
+        <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold flex items-center gap-2 mb-1.5 text-secondary dark:text-dark-secondary">
           <svg class="w-8 h-[2px] text-secondary dark:text-dark-secondary" viewBox="0 0 32 2">
             <line x1="0" y1="1" x2="32" y2="1" stroke="currentColor" stroke-width="2" />
           </svg>
@@ -64,7 +64,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
       
       <!-- Metric 1: Total Students -->
-      <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+      <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
         <div class="flex items-start justify-between">
           <div class="space-y-1">
             <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
@@ -89,7 +89,7 @@
       </div>
 
       <!-- Metric 2: Average Attendance -->
-      <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+      <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
         <div class="flex items-start justify-between">
           <div class="space-y-1">
             <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
@@ -117,7 +117,7 @@
       </div>
 
       <!-- Metric 3: Active Courses -->
-      <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+      <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
         <div class="flex items-start justify-between">
           <div class="space-y-1">
             <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
@@ -142,7 +142,7 @@
       </div>
 
       <!-- Metric 4: Flagged Absences -->
-      <div class="blueprint-card relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+      <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
         <div class="flex items-start justify-between">
           <div class="space-y-1">
             <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
@@ -214,7 +214,7 @@
             <div
               v-for="course in filteredSchedule"
               :key="course.id"
-              class="blueprint-card p-4 rounded-xl border border-outline/60 dark:border-dark-outline/80 bg-background/50 dark:bg-dark-background/50 hover:bg-background dark:hover:bg-dark-background transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              class="p-4 rounded-xl border border-outline/60 dark:border-dark-outline/80 bg-background/50 dark:bg-dark-background/50 hover:bg-background dark:hover:bg-dark-background transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
             >
               <!-- Time Block & Course Info -->
               <div class="flex items-start gap-3.5">
@@ -399,10 +399,10 @@
         </div>
 
         <!-- Technical Specification / Architecture Title Block -->
-        <div class="title-block relative overflow-hidden bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl p-5">
+        <div class="relative overflow-hidden bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl p-5">
           <!-- Subtle corner marks -->
-          <div class="corner corner-tl"></div>
-          <div class="corner corner-tr"></div>
+          <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+          <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
           
           <div class="flex items-center gap-2 mb-3">
             <Sparkles class="w-4 h-4 text-secondary dark:text-dark-secondary" />
@@ -459,7 +459,7 @@
         @click.self="isAuditModalOpen = false"
       >
         <div
-          class="relative w-full max-w-3xl max-h-[85vh] flex flex-col bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden blueprint-card"
+          class="relative w-full max-w-3xl max-h-[85vh] flex flex-col bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden"
           role="dialog"
           aria-modal="true"
         >
@@ -515,7 +515,7 @@
           </div>
 
           <!-- Scrollable Log Table / List -->
-          <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2.5 scrollbar-thin">
+          <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2.5 [scrollbar-width:thin]">
             <div
               v-for="log in filteredModalAuditLogs"
               :key="log.id"

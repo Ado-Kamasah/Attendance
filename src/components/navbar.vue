@@ -81,8 +81,8 @@
           class="absolute right-0 top-full mt-2.5 w-84 sm:w-96 bg-surface dark:bg-dark-surface border border-outline/60 dark:border-dark-outline rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-150"
         >
           <!-- Blueprint corner marks -->
-          <div class="corner corner-tl !border-secondary/40"></div>
-          <div class="corner corner-tr !border-secondary/40"></div>
+          <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+          <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
           <!-- Panel Header -->
           <div class="p-3.5 px-4 bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/40 dark:border-dark-outline/40 flex items-center justify-between">
@@ -185,8 +185,8 @@
           v-if="showSettings"
           class="absolute right-0 top-full mt-2.5 w-76 sm:w-84 bg-surface dark:bg-dark-surface border border-outline/60 dark:border-dark-outline rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-150"
         >
-          <div class="corner corner-tl !border-secondary/40"></div>
-          <div class="corner corner-tr !border-secondary/40"></div>
+          <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+          <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
           <div class="p-3.5 px-4 bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/40 dark:border-dark-outline/40 flex items-center justify-between">
             <div class="flex items-center gap-2">

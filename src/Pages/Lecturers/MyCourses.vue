@@ -3,9 +3,9 @@
     <!-- Header with Blueprint Eyebrow -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <div class="dim-eyebrow">
+        <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
           <span>FACULTY ROSTER // ASSIGNED MODULE SECTIONS</span>
-          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+          <svg class="text-secondary/40 w-20 h-2" viewBox="0 0 140 8" fill="none">
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
@@ -37,7 +37,7 @@
       <div 
         v-for="course in lecturerCourses" 
         :key="course.id"
-        class="blueprint-card relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-5 flex flex-col justify-between group"
+        class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-5 flex flex-col justify-between group"
       >
         <div>
           <!-- Top Row -->
@@ -127,8 +127,8 @@
     <!-- Reschedule Modal -->
     <div v-if="editingCourse" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4" @click.self="cancelEdit">
       <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4">
-        <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-        <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
         <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-dark-foreground">
           Reschedule Lecture Section
@@ -177,8 +177,8 @@
     <!-- Class Roster Modal -->
     <div v-if="showingClassList" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4" @click.self="closeClassList">
       <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-        <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-        <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
         <div class="flex items-center justify-between pb-3 border-b border-outline/30 dark:border-dark-outline/40 shrink-0">
           <div>

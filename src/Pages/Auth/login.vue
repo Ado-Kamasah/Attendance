@@ -14,18 +14,18 @@
       <!-- ── Left Column: Blueprint Visual & Academic Showcase (5 cols on lg) ── -->
       <div class="relative lg:col-span-5 bg-primary dark:bg-[#071326] text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r border-outline/20 dark:border-dark-outline">
         
-        <!-- Registration corners from blueprint.css -->
-        <div class="corner corner-tl"></div>
-        <div class="corner corner-tr"></div>
-        <div class="corner corner-bl"></div>
-        <div class="corner corner-br"></div>
+        <!-- Decorative corners -->
+        <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+        <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+        <div class="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+        <div class="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
         <!-- Subtle drafting watermark grid -->
         <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
 
         <!-- Top branding -->
         <div class="relative z-10">
-          <div class="dim-eyebrow mb-4 text-secondary dark:text-dark-secondary flex items-center gap-2">
+          <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold mb-4 text-secondary dark:text-dark-secondary flex items-center gap-2">
             <svg class="w-8 h-[2px] text-secondary dark:text-dark-secondary" viewBox="0 0 32 2">
               <line x1="0" y1="1" x2="32" y2="1" stroke="currentColor" stroke-width="2" />
             </svg>
@@ -54,7 +54,7 @@
           </p>
         </div>
 
-        <!-- Middle: Title-block technical specifications panel -->
+        <!-- Middle: technical specifications panel -->
         <div class="relative z-10 my-8 bg-white/5 dark:bg-white/[0.03] border border-white/10 rounded-xl p-4.5 backdrop-blur-md">
           <div class="grid grid-cols-2 gap-3 text-xs">
             <div>
@@ -109,8 +109,8 @@
         <div class="max-w-md w-full mx-auto">
           
           <!-- Section Eyebrow -->
-          <div class="dim-eyebrow">
-            <svg class="dim-line w-10 h-[2px]" viewBox="0 0 40 2">
+          <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
+            <svg class="text-secondary/40 w-10 h-[2px]" viewBox="0 0 40 2">
               <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" stroke-width="2" />
             </svg>
             <span>SECURITY CREDENTIALS</span>
@@ -277,15 +277,15 @@
         @click.self="closeForgot"
       >
         <div
-          class="relative w-full max-w-md bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl shadow-2xl p-6 sm:p-8 overflow-hidden blueprint-card"
+          class="relative w-full max-w-md bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl shadow-2xl p-6 sm:p-8 overflow-hidden"
           role="dialog"
           aria-modal="true"
         >
           <!-- Blueprint corner accents -->
-          <div class="corner corner-tl"></div>
-          <div class="corner corner-tr"></div>
-          <div class="corner corner-bl"></div>
-          <div class="corner corner-br"></div>
+          <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+          <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+          <div class="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+          <div class="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
           <!-- Close Modal Button -->
           <button

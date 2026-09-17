@@ -24,9 +24,9 @@
             <ArrowLeft class="w-3.5 h-3.5" />
             <span>Back to Courses</span>
           </button>
-          <div class="dim-eyebrow">
+          <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
             <span>LIVE RECORDING // ATTENDANCE ROLL CALL</span>
-            <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+            <svg class="text-secondary/40 w-20 h-2" viewBox="0 0 140 8" fill="none">
               <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
             </svg>
           </div>
@@ -41,8 +41,8 @@
 
       <!-- RESULTS VIEW (Shown after submission) -->
       <div v-if="submissionResult" class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-        <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-        <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
         <div class="flex items-center gap-3.5 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
           <div class="w-12 h-12 rounded-2xl bg-success/15 text-success flex items-center justify-center shrink-0 shadow-xs">
@@ -144,8 +144,8 @@
 
       <!-- MARK ATTENDANCE FORM -->
       <div v-else class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-3xl p-6 sm:p-8 shadow-xs space-y-5">
-        <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-        <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
           <div>

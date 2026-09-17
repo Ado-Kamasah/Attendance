@@ -3,9 +3,9 @@
     <!-- Header with Blueprint Eyebrow -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
-        <div class="dim-eyebrow">
+        <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
           <span>INSTITUTIONAL REGISTRATION // IDENTITY CARD</span>
-          <svg class="dim-line w-20 h-2" viewBox="0 0 140 8" fill="none">
+          <svg class="text-secondary/40 w-20 h-2" viewBox="0 0 140 8" fill="none">
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
@@ -49,8 +49,8 @@
       <!-- Left: Identity Badge Card (4 cols) -->
       <div class="lg:col-span-4 space-y-4">
         <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6 text-center">
-          <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-          <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+          <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+          <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
           <!-- Avatar Monogram -->
           <div class="relative inline-block mx-auto mb-4">
@@ -105,8 +105,8 @@
         <div v-if="!isEditing" class="space-y-6">
           <!-- Information Card -->
           <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6">
-            <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-            <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+            <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+            <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
             <div class="flex items-center gap-2 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
               <User class="w-4 h-4 text-secondary" />
@@ -145,8 +145,8 @@
 
           <!-- Security & Credentials Card -->
           <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6">
-            <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-            <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+            <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+            <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
             <div class="flex items-center justify-between pb-4 border-b border-outline/30 dark:border-dark-outline/40">
               <div class="flex items-center gap-2">
@@ -245,8 +245,8 @@
 
         <!-- EDIT MODE -->
         <div v-else class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6 space-y-5">
-          <div class="corner corner-tl !border-secondary/30 pointer-events-none"></div>
-          <div class="corner corner-tr !border-secondary/30 pointer-events-none"></div>
+          <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+          <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
           <div class="flex items-center gap-2 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
             <Edit3 class="w-4 h-4 text-secondary" />
