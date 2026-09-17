@@ -326,6 +326,7 @@ export const useClassRepStore = defineStore('classRep', () => {
     verifySessionCode,
     fetchCourseSessions,
     markLecturerAttendance,
+    recordAttendance: markLecturerAttendance,
     fetchAttendanceHistory,
   };
 });
