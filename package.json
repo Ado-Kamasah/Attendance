@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.110.2",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.16.1",
+    "lucide-vue-next": "^1.0.0",
     "notivue": "^2.4.5",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.2.2",

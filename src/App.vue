@@ -150,7 +150,7 @@ const handleRegisterSuccess = () => {
     <div class="main-wrapper">
       <Navbar @toggle-mobile-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen" @logout="handleLogout" @navigate="handleNavigationEvent" />
       <main class="main-content">
-        <Dashboard v-if="currentRoute === '/'" />
+        <Dashboard v-if="currentRoute === '/'" @navigate="handleNavigationEvent" />
         <StudentDashboard v-else-if="currentRoute === '/student-dashboard'" @navigate="handleNavigationEvent" />
         <LecturerDashboard v-else-if="currentRoute === '/lecturer-dashboard'" @navigate="handleNavigationEvent" />
         <Courses v-else-if="currentRoute === '/courses'" />

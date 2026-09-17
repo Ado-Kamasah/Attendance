@@ -1,220 +1,373 @@
 <template>
-  <div class="register-container">
-    <div class="register-split">
+  <div class="min-h-screen w-full flex items-center justify-center bg-background dark:bg-dark-background text-foreground dark:text-dark-foreground relative overflow-hidden font-sans p-4 sm:p-6 lg:p-10">
+    
+    <!-- Blueprint architectural grid background -->
+    <div class="absolute inset-0 bg-[radial-gradient(#c2cde0_1px,transparent_1px)] dark:bg-[radial-gradient(#1e3560_1.2px,transparent_1.2px)] [background-size:28px_28px] opacity-70 pointer-events-none"></div>
+
+    <!-- Ambient glowing accents -->
+    <div class="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-secondary/10 dark:bg-dark-secondary/10 blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-primary/10 dark:bg-dark-primary/15 blur-3xl pointer-events-none"></div>
+
+    <!-- Main Dual-Column Architectural Container -->
+    <div class="relative z-10 w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 bg-surface/90 dark:bg-dark-surface/90 backdrop-blur-xl border border-outline dark:border-dark-outline rounded-3xl shadow-2xl shadow-primary/10 overflow-hidden">
       
-      <!-- Left side: Form -->
-      <div class="register-form-area">
-        <div class="form-wrapper">
-          <div class="form-header">
-            <h2>Create an account</h2>
-            <p>Join Southshore University College attendance system.</p>
+      <!-- ── Left Column: Registration Form (7 cols on lg) ── -->
+      <div class="lg:col-span-7 p-8 sm:p-12 lg:p-14 flex flex-col justify-center bg-surface dark:bg-dark-surface order-2 lg:order-1">
+        
+        <div class="max-w-lg w-full mx-auto">
+          
+          <!-- Section Eyebrow -->
+          <div class="dim-eyebrow">
+            <svg class="dim-line w-10 h-[2px]" viewBox="0 0 40 2">
+              <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" stroke-width="2" />
+            </svg>
+            <span>REGISTRATION GATEWAY // CAD-ID 02</span>
           </div>
 
-          <form @submit.prevent="handleRegister" class="auth-form">
+          <!-- Header -->
+          <div class="mb-6">
+            <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground dark:text-dark-foreground mb-1.5">
+              Create Your Academic Account
+            </h1>
+            <p class="text-sm text-foreground/60 dark:text-dark-foreground/60">
+              Join Southshore University College automated attendance & lecture portal.
+            </p>
+          </div>
+
+          <!-- Registration Form -->
+          <form @submit.prevent="handleRegister" class="space-y-4 sm:space-y-4.5">
+            
             <!-- Full Name -->
-            <div class="input-group">
-              <label for="fullName">Full Name</label>
-              <div class="input-wrapper">
-                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                <input type="text" id="fullName" v-model="form.fullName" placeholder="kwame" required />
+            <div class="space-y-1.5">
+              <label for="fullName" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                Full Name
+              </label>
+              <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                  <User class="w-4 h-4" />
+                </div>
+                <input
+                  type="text"
+                  id="fullName"
+                  v-model="form.fullName"
+                  placeholder="e.g. Kwame Mensah"
+                  required
+                  class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
+                />
               </div>
             </div>
 
-            <!-- Email Setup -->
-            <div class="input-group">
-              <label for="email">University Email</label>
-              <div class="input-wrapper">
-                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
+            <!-- University Email -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                  Institutional Email
+                </label>
+                <span class="text-[11px] font-mono text-secondary dark:text-dark-secondary">@southshore.edu.gh</span>
+              </div>
+              <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                  <Mail class="w-4 h-4" />
+                </div>
                 <input
                   type="email"
                   id="email"
                   v-model="form.email"
-                  placeholder="student@southshore.edu.gh"
                   @blur="validateEmailDomain"
+                  placeholder="student@southshore.edu.gh"
                   required
+                  class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:ring-4 transition-all shadow-sm"
+                  :class="emailDomainError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-outline dark:border-dark-outline focus:border-primary dark:focus:border-dark-secondary focus:ring-primary/10 dark:focus:ring-dark-secondary/10'"
                 />
               </div>
-              <p v-if="emailDomainError" class="field-hint">{{ emailDomainError }}</p>
+              <p v-if="emailDomainError" class="text-xs text-red-500 flex items-center gap-1.5 mt-1">
+                <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                <span>{{ emailDomainError }}</span>
+              </p>
             </div>
 
-            <!-- Role Selection 
-            <div class="input-group">
-              <label>I am a</label>
-              <div class="radio-group">
-                <label class="radio-card" :class="{ 'active': form.role === 'student' }">
-                  <input type="radio" v-model="form.role" value="student" name="role" />
-                  <span class="radio-content">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                    </svg>
-                    Student
-                  </span>
+            <!-- Two Columns on Tablet/Desktop: ID Number & Faculty/Program -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              <!-- ID Number -->
+              <div class="space-y-1.5">
+                <label for="idNumber" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                  Student / Staff ID
                 </label>
-                <label class="radio-card" :class="{ 'active': form.role === 'staff' }">
-                  <input type="radio" v-model="form.role" value="staff" name="role" />
-                  <span class="radio-content">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                    </svg>
-                    Staff / Faculty
-                  </span>
+                <div class="relative group">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                    <IdCard class="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    id="idNumber"
+                    v-model="form.idNumber"
+                    placeholder="e.g. SUC2025001"
+                    required
+                    class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
+                  />
+                </div>
+              </div>
+
+              <!-- Faculty / Program -->
+              <div class="space-y-1.5">
+                <label for="program" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                  Faculty / Programme
                 </label>
+                <div class="relative group">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                    <GraduationCap class="w-4 h-4" />
+                  </div>
+                  <select
+                    id="program"
+                    v-model="form.programId"
+                    required
+                    class="w-full pl-10 pr-9 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled selected>Select programme</option>
+                    <option v-for="programme in activeProgrammes" :key="programme.id" :value="programme.id">
+                      {{ programme.name }}
+                    </option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40">
+                    <ChevronDown class="w-4 h-4" />
+                  </div>
+                </div>
               </div>
-            </div>/ -->
 
-            <!-- ID number -->
-            <div class="input-group">
-              <label for="idNumber">{{ form.role === 'student' ? 'Student ID' : 'Staff ID' }}</label>
-              <div class="input-wrapper">
-                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <input type="text" id="idNumber" v-model="form.idNumber" placeholder="ID Number" required />
-              </div>
-              <p class="field-hint">You can use this ID number to sign in instead of your email.</p>
             </div>
 
-            <!-- Faculty / Program -->
-            <div class="input-group">
-              <label for="program">Faculty / Program</label>
-              <div class="input-wrapper">
-                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                  <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-                </svg>
-                <select id="program" v-model="form.programId" required>
-  <option value="" disabled>Select your faculty/program</option>
-  <option v-for="programme in activeProgrammes" :key="programme.id" :value="programme.id">
-    {{ programme.name }}
-  </option>
-</select>
-              </div>
-            </div>
-
-            <!-- Study Mode -->
-            <div class="input-group">
-              <label>Study Mode <span class="req">*</span></label>
-              <div class="mode-toggle-group">
+            <!-- Study Mode Selection -->
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                Study Mode <span class="text-secondary dark:text-dark-secondary">*</span>
+              </label>
+              <div class="grid grid-cols-2 gap-3">
+                
                 <button
                   type="button"
-                  class="mode-btn"
-                  :class="{ 'mode-btn-active-regular': form.mode === 'Regular' }"
-                  @click="form.mode = 'Regular'"
                   id="reg-mode-regular"
+                  @click="form.mode = 'Regular'"
+                  class="relative p-3 rounded-xl border text-left flex items-center gap-3 transition-all cursor-pointer focus:outline-none"
+                  :class="form.mode === 'Regular'
+                    ? 'border-primary bg-primary/5 dark:border-dark-secondary dark:bg-dark-secondary/10 ring-2 ring-primary/20 dark:ring-dark-secondary/30'
+                    : 'border-outline dark:border-dark-outline bg-background dark:bg-dark-background hover:border-outline/80'"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span class="mode-btn-label">Regular</span>
-                  <span class="mode-btn-sub">Mon – Fri</span>
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    :class="form.mode === 'Regular' ? 'bg-primary text-white dark:bg-dark-secondary dark:text-dark-background' : 'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-dark-foreground/60'">
+                    <CalendarDays class="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span class="block text-xs font-bold font-display text-foreground dark:text-dark-foreground">Regular</span>
+                    <span class="block text-[10px] text-foreground/50 dark:text-dark-foreground/50">Mon – Fri (Day)</span>
+                  </div>
                 </button>
+
                 <button
                   type="button"
-                  class="mode-btn"
-                  :class="{ 'mode-btn-active-weekend': form.mode === 'Weekend' }"
-                  @click="form.mode = 'Weekend'"
                   id="reg-mode-weekend"
+                  @click="form.mode = 'Weekend'"
+                  class="relative p-3 rounded-xl border text-left flex items-center gap-3 transition-all cursor-pointer focus:outline-none"
+                  :class="form.mode === 'Weekend'
+                    ? 'border-secondary bg-secondary/10 dark:border-dark-secondary dark:bg-dark-secondary/10 ring-2 ring-secondary/20 dark:ring-dark-secondary/30'
+                    : 'border-outline dark:border-dark-outline bg-background dark:bg-dark-background hover:border-outline/80'"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  <span class="mode-btn-label">Weekend</span>
-                  <span class="mode-btn-sub">Sat – Sun</span>
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    :class="form.mode === 'Weekend' ? 'bg-secondary text-white dark:bg-dark-secondary dark:text-dark-background' : 'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-dark-foreground/60'">
+                    <CalendarClock class="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span class="block text-xs font-bold font-display text-foreground dark:text-dark-foreground">Weekend</span>
+                    <span class="block text-[10px] text-foreground/50 dark:text-dark-foreground/50">Sat – Sun (Modular)</span>
+                  </div>
                 </button>
+
               </div>
-              <p v-if="modeError" class="field-hint field-hint-error">{{ modeError }}</p>
+              <p v-if="modeError" class="text-xs text-red-500 flex items-center gap-1.5 mt-1">
+                <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                <span>{{ modeError }}</span>
+              </p>
             </div>
 
             <!-- Password -->
-            <div class="input-group">
-              <label for="password">Password</label>
-              <div class="input-wrapper">
-                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-                <input :type="showPassword ? 'text' : 'password'" id="password" v-model="form.password" placeholder="Create a strong password" required minlength="8" />
-                <button type="button" class="password-toggle" @click="showPassword = !showPassword" aria-label="Toggle password visibility">
-                  <svg v-if="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
+            <div class="space-y-1.5">
+              <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                Create Secure Password
+              </label>
+              <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                  <Lock class="w-4 h-4" />
+                </div>
+                <input
+                  :type="showPassword ? 'text' : 'password'"
+                  id="password"
+                  v-model="form.password"
+                  placeholder="Min. 8 characters"
+                  required
+                  minlength="8"
+                  class="w-full pl-10 pr-11 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  tabindex="-1"
+                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-foreground/40 hover:text-foreground/70 dark:text-dark-foreground/40 dark:hover:text-dark-foreground/80 transition-colors focus:outline-none cursor-pointer"
+                  aria-label="Toggle password visibility"
+                >
+                  <Eye v-if="!showPassword" class="w-4 h-4" />
+                  <EyeOff v-else class="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <div v-if="errorMsg" class="error-message">
-              {{ errorMsg }}
+            <!-- Error Banner -->
+            <div
+              v-if="errorMsg"
+              class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex items-center gap-2.5"
+            >
+              <AlertCircle class="w-4 h-4 shrink-0" />
+              <span>{{ errorMsg }}</span>
             </div>
 
-            <button type="submit" class="submit-btn" :class="{ 'loading': isLoading }" :disabled="!!emailDomainError">
-              <span v-if="!isLoading">Create Account</span>
-              <svg v-else class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
-                <path d="M12 2a10 10 0 0 1 10 10"></path>
-              </svg>
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              :disabled="isLoading || !!emailDomainError"
+              class="w-full py-3.5 px-6 rounded-xl font-display font-semibold text-sm text-white bg-primary hover:bg-[#052b66] dark:bg-primary dark:hover:bg-[#0b295c] border border-primary/20 shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer pt-3"
+            >
+              <template v-if="!isLoading">
+                <span>Create Student Account</span>
+                <ArrowRight class="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </template>
+              <template v-else>
+                <Loader2 class="w-4 h-4 animate-spin" />
+                <span>Registering Account...</span>
+              </template>
             </button>
+
           </form>
 
-          <p class="login-prompt">
-            Already have an account? <a href="#" @click.prevent="$emit('switch-to-login')">Sign in here</a>
-          </p>
+          <!-- Back to Sign In Link -->
+          <div class="mt-6 pt-5 border-t border-outline/50 dark:border-dark-outline/50 text-center">
+            <p class="text-xs text-foreground/60 dark:text-dark-foreground/60">
+              Already have an active account?
+              <button
+                type="button"
+                @click="$emit('switch-to-login')"
+                class="font-semibold text-secondary hover:text-[#9e7a25] dark:text-dark-secondary dark:hover:text-[#e4bc5e] transition-colors ml-1 focus:outline-none cursor-pointer"
+              >
+                Sign in here
+              </button>
+            </p>
+          </div>
+
         </div>
+
       </div>
 
-      <!-- Right side: Visuals (Reversed from Login) -->
-      <div class="register-visual" role="presentation">
-        <div class="glass-panel">
-          <div class="feature-list">
-            <div class="feature-item">
-              <div class="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-              </div>
-              <div class="feature-text">
-                <h3>Instant Attendance</h3>
-                <p>Register once and check into classes seamlessly.</p>
-              </div>
+      <!-- ── Right Column: Visual Architectural Showcase (5 cols on lg) ── -->
+      <div class="relative lg:col-span-5 bg-primary dark:bg-[#071326] text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-l border-outline/20 dark:border-dark-outline order-1 lg:order-2">
+        
+        <!-- Registration corners from blueprint.css -->
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <!-- Drafting grid overlay -->
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+
+        <!-- Top branding -->
+        <div class="relative z-10">
+          <div class="dim-eyebrow mb-4 text-secondary dark:text-dark-secondary flex items-center gap-2">
+            <svg class="w-8 h-[2px] text-secondary dark:text-dark-secondary" viewBox="0 0 32 2">
+              <line x1="0" y1="1" x2="32" y2="1" stroke="currentColor" stroke-width="2" />
+            </svg>
+            <span class="tracking-widest font-semibold text-xs font-display">PORTAL // ADMISSIONS</span>
+          </div>
+
+          <div class="flex items-center gap-3.5 mb-6">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-secondary to-[#8c6b1f] dark:from-dark-secondary dark:to-[#8c6b1f] flex items-center justify-center text-white shadow-lg shadow-secondary/20 ring-2 ring-white/15">
+              <GraduationCap class="w-7 h-7" />
             </div>
-            
-            <div class="feature-item">
-              <div class="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-              </div>
-              <div class="feature-text">
-                <h3>Track Analytics</h3>
-                <p>Keep a real-time eye on your academic progress.</p>
-              </div>
+            <div>
+              <h2 class="font-display font-bold text-xl sm:text-2xl tracking-tight text-white leading-tight">
+                Southshore
+              </h2>
+              <p class="text-xs uppercase tracking-wider text-secondary dark:text-dark-secondary font-medium">
+                University College
+              </p>
             </div>
           </div>
-          
-          <div class="decorative-circles">
-            <div class="circle circle-1"></div>
-            <div class="circle circle-2"></div>
-          </div>
+
+          <h3 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-white mb-3 leading-snug">
+            Seamless Academic Onboarding
+          </h3>
+          <p class="text-white/75 text-sm leading-relaxed">
+            Register once using your official university email to access all departmental lecture schedules, attendance logs, and evaluation forms.
+          </p>
         </div>
+
+        <!-- Architectural Blueprint Feature Cards with CAD Hover Brackets -->
+        <div class="relative z-10 my-8 space-y-3.5">
+          
+          <div class="blueprint-card bg-white/5 dark:bg-white/[0.03] border border-white/10 rounded-xl p-4 transition-all hover:bg-white/10">
+            <div class="flex items-start gap-3.5">
+              <div class="w-9 h-9 rounded-lg bg-secondary/20 text-secondary dark:text-dark-secondary flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle2 class="w-5 h-5" />
+              </div>
+              <div>
+                <h4 class="text-sm font-semibold font-display text-white mb-0.5">Instant Check-In</h4>
+                <p class="text-xs text-white/70 leading-relaxed">
+                  Verify presence in lectures via class rep coordination, geofence, and biometric verification.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="blueprint-card bg-white/5 dark:bg-white/[0.03] border border-white/10 rounded-xl p-4 transition-all hover:bg-white/10">
+            <div class="flex items-start gap-3.5">
+              <div class="w-9 h-9 rounded-lg bg-secondary/20 text-secondary dark:text-dark-secondary flex items-center justify-center shrink-0 mt-0.5">
+                <BarChart3 class="w-5 h-5" />
+              </div>
+              <div>
+                <h4 class="text-sm font-semibold font-display text-white mb-0.5">Real-Time Analytics</h4>
+                <p class="text-xs text-white/70 leading-relaxed">
+                  Monitor semester attendance rates, lecture participation thresholds, and exam eligibility.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="blueprint-card bg-white/5 dark:bg-white/[0.03] border border-white/10 rounded-xl p-4 transition-all hover:bg-white/10">
+            <div class="flex items-start gap-3.5">
+              <div class="w-9 h-9 rounded-lg bg-secondary/20 text-secondary dark:text-dark-secondary flex items-center justify-center shrink-0 mt-0.5">
+                <ShieldCheck class="w-5 h-5" />
+              </div>
+              <div>
+                <h4 class="text-sm font-semibold font-display text-white mb-0.5">Secure Institutional Gateway</h4>
+                <p class="text-xs text-white/70 leading-relaxed">
+                  Directly synced with official faculty registries and university department archives.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom Technical Badge -->
+        <div class="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
+          <span class="font-mono text-[10px] uppercase">SYS: SUC-AUTH-V2.4</span>
+          <span class="inline-flex items-center gap-1.5 text-white/80">
+            <span class="w-2 h-2 rounded-full bg-secondary dark:bg-dark-secondary"></span>
+            Admissions Open
+          </span>
+        </div>
+
       </div>
 
     </div>
+
   </div>
 </template>
 
@@ -223,6 +376,24 @@ import { ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/authstore';
 import { useProgrammesStore } from '@/stores/programmes';
 import { storeToRefs } from 'pinia';
+import {
+  GraduationCap,
+  ShieldCheck,
+  User,
+  Mail,
+  IdCard,
+  Lock,
+  Eye,
+  EyeOff,
+  CalendarDays,
+  CalendarClock,
+  ArrowRight,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  BarChart3,
+  ChevronDown
+} from 'lucide-vue-next';
 
 const ALLOWED_DOMAIN = 'southshore.edu.gh';
 
@@ -234,6 +405,7 @@ const showPassword = ref(false);
 const isLoading = ref(false);
 const errorMsg = ref('');
 const emailDomainError = ref('');
+const modeError = ref('');
 
 onMounted(async () => {
   try {
@@ -253,8 +425,6 @@ const form = reactive({
   password: '',
 });
 
-const modeError = ref('');
-
 const emit = defineEmits(['register-success', 'switch-to-login']);
 
 const validateEmailDomain = () => {
@@ -265,7 +435,7 @@ const validateEmailDomain = () => {
   const domain = form.email.trim().toLowerCase().split('@')[1];
   emailDomainError.value = domain === ALLOWED_DOMAIN
     ? ''
-    : `Please use your @${ALLOWED_DOMAIN} email address`;
+    : `Please use your official @${ALLOWED_DOMAIN} university address`;
 };
 
 const handleRegister = async () => {
@@ -274,7 +444,7 @@ const handleRegister = async () => {
 
   modeError.value = '';
   if (!form.mode) {
-    modeError.value = 'Please select a study mode.';
+    modeError.value = 'Please select your study mode (Regular or Weekend).';
     return;
   }
 
@@ -297,421 +467,3 @@ const handleRegister = async () => {
   }
 };
 </script>
-
-<style scoped>
-.register-container {
-  min-height: 100vh;
-  width: 100%;
-  display: flex;
-  background-color: #f1f5f9;
-  font-family: 'Inter', sans-serif;
-}
-
-.error-message {
-  color: #ef4444;
-  background: #fef2f2;
-  border-left: 4px solid #ef4444;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  margin-top: 10px;
-  margin-bottom: 5px;
-}
-
-.field-hint {
-  margin: 6px 2px 0;
-  font-size: 0.8rem;
-  color: #64748b;
-}
-
-.register-split {
-  display: flex;
-  width: 100%;
-  min-height: 100vh;
-}
-
-/* LEFT SIDE: Form (opposite of login) */
-.register-form-area {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #ffffff;
-  padding: 2rem;
-}
-
-@media (max-width: 480px) {
-  .register-form-area {
-    padding: 1.25rem;
-  }
-}
-
-.form-wrapper {
-  width: 100%;
-  max-width: 440px;
-  animation: fadeIn 0.5s ease-out forwards;
-  padding-top: 2rem;
-  padding-bottom: 2rem;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.form-header {
-  margin-bottom: 2.5rem;
-}
-
-.form-header h2 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -0.025em;
-}
-
-.form-header p {
-  color: #64748b;
-  margin: 0;
-  font-size: 1rem;
-}
-
-.input-group {
-  margin-bottom: 1.25rem;
-}
-
-.input-group label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #334155;
-  margin-bottom: 0.5rem;
-}
-
-.input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.input-icon {
-  position: absolute;
-  left: 14px;
-  width: 18px;
-  height: 18px;
-  color: #94a3b8;
-  pointer-events: none;
-}
-
-.input-wrapper input,
-.input-wrapper select {
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  font-size: 0.95rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  background-color: #ffffff;
-  color: #0f172a;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  box-sizing: border-box;
-}
-
-.input-wrapper select {
-  appearance: none;
-  cursor: pointer;
-}
-
-.input-wrapper input:focus,
-.input-wrapper select:focus {
-  outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-}
-
-.input-wrapper input::placeholder {
-  color: #94a3b8;
-}
-
-.password-toggle {
-  position: absolute;
-  right: 12px;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s;
-}
-
-.password-toggle:hover {
-  color: #475569;
-}
-
-.password-toggle svg {
-  width: 18px;
-  height: 18px;
-}
-
-/* Radio Group styling */
-.radio-group {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.radio-card {
-  position: relative;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  padding: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.radio-card input[type="radio"] {
-  position: absolute;
-  opacity: 0;
-}
-
-.radio-card:hover {
-  border-color: #94a3b8;
-  background: #f8fafc;
-}
-
-.radio-card.active {
-  border-color: #6366f1;
-  background: rgba(99, 102, 241, 0.05);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
-}
-
-.radio-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #475569;
-}
-
-.radio-card.active .radio-content {
-  color: #4f46e5;
-}
-
-.radio-content svg {
-  width: 18px;
-  height: 18px;
-}
-
-/* Submit Button */
-.submit-btn {
-  width: 100%;
-  padding: 0.875rem;
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -2px rgba(79, 70, 229, 0.2);
-  margin-top: 2rem;
-}
-
-.submit-btn:hover {
-  background-color: #4338ca;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -4px rgba(79, 70, 229, 0.3);
-}
-
-.submit-btn:active {
-  transform: translateY(0);
-}
-
-.submit-btn.loading,
-.submit-btn:disabled {
-  background-color: #818cf8;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.login-prompt {
-  margin-top: 2rem;
-  text-align: center;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.login-prompt a {
-  color: #6366f1;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.login-prompt a:hover {
-  text-decoration: underline;
-}
-
-/* Mode toggle */
-.mode-toggle-group { display: flex; gap: 0.75rem; }
-.mode-btn {
-  flex: 1;
-  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
-  padding: 0.75rem 0.5rem;
-  border: 1.5px solid #cbd5e1; border-radius: 12px;
-  background: #fff; color: #475569;
-  font-size: 0.85rem; font-weight: 600; font-family: inherit;
-  cursor: pointer; transition: all 0.2s;
-}
-.mode-btn svg { width: 18px; height: 18px; }
-.mode-btn:hover { border-color: #94a3b8; background: #f8fafc; }
-.mode-btn-label { font-size: 0.9rem; font-weight: 600; }
-.mode-btn-sub { font-size: 0.72rem; font-weight: 400; color: #94a3b8; }
-.mode-btn-active-regular { border-color: #3b82f6 !important; background: #eff6ff !important; color: #1e40af !important; }
-.mode-btn-active-regular .mode-btn-sub { color: #3b82f6; }
-.mode-btn-active-weekend { border-color: #f59e0b !important; background: #fefce8 !important; color: #a16207 !important; }
-.mode-btn-active-weekend .mode-btn-sub { color: #f59e0b; }
-.req { color: #ef4444; }
-.field-hint-error { color: #ef4444 !important; }
-
-
-/* RIGHT SIDE: Visuals */
-.register-visual {
-  flex: 1;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem;
-  overflow: hidden;
-  color: white;
-}
-
-@media (max-width: 900px) {
-  .register-visual {
-    display: none;
-  }
-}
-
-.glass-panel {
-  position: relative;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 3rem;
-  max-width: 480px;
-  width: 100%;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
-  transform: translateY(0);
-  animation: float 6s ease-in-out infinite reverse;
-}
-
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-
-.feature-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.feature-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.feature-icon {
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  background-color: rgba(99, 102, 241, 0.2);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #818cf8;
-}
-
-.feature-icon svg {
-  width: 24px;
-  height: 24px;
-}
-
-.feature-text h3 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #f8fafc;
-}
-
-.feature-text p {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #94a3b8;
-  line-height: 1.5;
-}
-
-.decorative-circles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.circle {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 70%);
-}
-
-.circle-1 {
-  width: 600px;
-  height: 600px;
-  top: -150px;
-  right: -150px;
-}
-
-.circle-2 {
-  width: 400px;
-  height: 400px;
-  bottom: -100px;
-  left: -50px;
-  background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0) 70%);
-}
-</style>
