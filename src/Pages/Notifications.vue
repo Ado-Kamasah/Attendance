@@ -119,10 +119,11 @@
           :key="n.id"
           class="p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition-all"
           :class="[
-            n.type === 'ineligible' ? 'bg-error/10 border-error/30' : '',
-            n.type === 'warning_2' ? 'bg-error/5 border-error/30' : '',
-            n.type === 'warning_1' ? 'bg-warning/10 border-warning/30' : '',
-            n.type === 'eval_open' ? 'bg-secondary/10 border-secondary/30' : '',
+            n.type === 'attendance_absent'   ? 'bg-error/10 border-error/30' : '',
+            n.type === 'attendance_warning'  ? 'bg-warning/10 border-warning/30' : '',
+            n.type === 'suggestion_resolved' ? 'bg-success/10 border-success/30' : '',
+            n.type === 'suggestion_reply'    ? 'bg-secondary/10 border-secondary/30' : '',
+            n.type === 'eval_open'           ? 'bg-secondary/10 border-secondary/30' : '',
             { 'opacity-65': n.isRead }
           ]"
           @click="studentNotifStore.markRead(n.id)"
@@ -130,14 +131,17 @@
           <div 
             class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold font-mono text-sm"
             :class="[
-              n.type === 'ineligible' ? 'bg-error text-white' : '',
-              n.type === 'warning_2' ? 'bg-error/20 text-error' : '',
-              n.type === 'warning_1' ? 'bg-warning/20 text-warning' : '',
-              n.type === 'eval_open' ? 'bg-secondary/20 text-secondary' : ''
+              n.type === 'attendance_absent'   ? 'bg-error text-white' : '',
+              n.type === 'attendance_warning'  ? 'bg-warning/20 text-warning' : '',
+              n.type === 'suggestion_resolved' ? 'bg-success/20 text-success' : '',
+              n.type === 'suggestion_reply'    ? 'bg-secondary/20 text-secondary' : '',
+              n.type === 'eval_open'           ? 'bg-secondary/20 text-secondary' : ''
             ]"
           >
-            <AlertOctagon v-if="n.type === 'ineligible'" class="w-4 h-4" />
-            <AlertTriangle v-else-if="n.type === 'warning_2' || n.type === 'warning_1'" class="w-4 h-4" />
+            <AlertOctagon v-if="n.type === 'attendance_absent'" class="w-4 h-4" />
+            <AlertTriangle v-else-if="n.type === 'attendance_warning'" class="w-4 h-4" />
+            <CheckCircle2 v-else-if="n.type === 'suggestion_resolved'" class="w-4 h-4" />
+            <MessageCircle v-else-if="n.type === 'suggestion_reply'" class="w-4 h-4" />
             <Award v-else class="w-4 h-4" />
           </div>
 
@@ -145,7 +149,10 @@
             <div class="flex items-center justify-between gap-2">
               <span 
                 class="text-xs font-bold font-mono uppercase"
-                :class="n.type === 'ineligible' || n.type === 'warning_2' ? 'text-error' : n.type === 'eval_open' ? 'text-secondary' : 'text-warning'"
+                :class="n.type === 'attendance_absent' || n.type === 'attendance_warning' ? 'text-error'
+                : n.type === 'suggestion_resolved' ? 'text-success'
+                : n.type === 'suggestion_reply' ? 'text-secondary'
+                : 'text-secondary'"
               >
                 {{ absenceLabel(n.type) }}
               </span>
@@ -282,7 +289,9 @@ import {
   BellOff, 
   PlusCircle, 
   Trash2, 
-  Info 
+  Info,
+  CheckCircle2,
+  MessageCircle
 } from 'lucide-vue-next';
 
 const auditStore = useAuditLogsStore();
@@ -307,17 +316,24 @@ onMounted(async () => {
   await auditStore.fetchLogs();
   auditStore.subscribeToLogs();
   if (profile.value?.role === 'Student') {
-    await studentNotifStore.fetchNotifications();
+    const studentId = profile.value?.id;
+    await studentNotifStore.fetchNotifications(studentId);
+    studentNotifStore.subscribeToAttendance(studentId);
   }
 });
 
-onUnmounted(() => auditStore.unsubscribeFromLogs());
+onUnmounted(() => {
+  auditStore.unsubscribeFromLogs();
+  studentNotifStore.unsubscribe();
+});
 
 function absenceLabel(type) {
-  if (type === 'ineligible') return 'Exam Ineligible';
-  if (type === 'warning_2')  return 'Critical Warning';
-  if (type === 'eval_open')  return 'Evaluation Open';
-  return 'Attendance Warning';
+  if (type === 'attendance_absent')    return 'Absent Mark';
+  if (type === 'attendance_warning')   return 'Attendance Warning';
+  if (type === 'suggestion_resolved')  return 'Suggestion Resolved';
+  if (type === 'suggestion_reply')     return 'Admin Reply';
+  if (type === 'eval_open')            return 'Evaluation Open';
+  return 'Notice';
 }
 
 const roleSubtitle = computed(() => {
@@ -356,12 +372,21 @@ const visibleLogs = computed(() => {
       }));
   }
 
+  // Students see their own attendance alerts, suggestion replies, and broad
+  // academic events (schedules, sessions, evaluations, enrollments)
+  const studentActions = [
+    'schedule_created', 'schedule_updated', 'schedule_deleted', 'schedule_conflict_rejected',
+    'session_started', 'session_ended',
+    'attendance_check_initiated', 'attendance_view_initiated',
+    'enrollment_created', 'enrollment_deleted',
+  ];
   return enrichedLogs.value
     .filter(l =>
-      ['schedule_created', 'schedule_updated', 'schedule_deleted',
-       'schedule_conflict_rejected'].includes(l.action)
+      l.userId === uid ||
+      studentActions.includes(l.action) ||
+      (l.details && l.details.toLowerCase().includes(name))
     )
-    .map(l => ({ ...l, relevance: 'Timetable update' }));
+    .map(l => ({ ...l, relevance: l.userId === uid ? 'Your action' : 'Affects you' }));
 });
 
 const filteredLogs = computed(() => {
