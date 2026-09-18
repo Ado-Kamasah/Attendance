@@ -98,9 +98,19 @@
                   </div>
                   <span class="truncate font-sans font-medium text-foreground dark:text-white">{{ s.name }}</span>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[10px] bg-success/10 text-success border border-success/20 shrink-0">
-                  {{ otpDispatch[s.id]?.status === 'sent' ? 'Email sent' : otpDispatch[s.id]?.status === 'failed' ? 'Failed' : 'Sending…' }}
-                </span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span class="px-2 py-0.5 rounded text-[10px] bg-success/10 text-success border border-success/20">
+                    {{ otpDispatch[s.id]?.status === 'sent' ? 'Email sent' : otpDispatch[s.id]?.status === 'failed' ? 'Failed' : 'Sending…' }}
+                  </span>
+                  <button
+                    v-if="otpDispatch[s.id]?.status === 'failed'"
+                    @click="resendOtpToStudent(s.id)"
+                    class="text-[10px] text-success hover:underline font-sans cursor-pointer px-1 py-0.5"
+                    title="Retry sending confirmation email"
+                  >
+                    Retry
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -123,9 +133,19 @@
                   </div>
                   <span class="truncate font-sans font-medium text-foreground dark:text-white">{{ s.name }}</span>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[10px] bg-error/10 text-error border border-error/20 shrink-0">
-                  {{ absenceDispatch[s.id]?.status === 'sent' ? 'Email sent' : absenceDispatch[s.id]?.status === 'failed' ? 'Failed' : 'Sending…' }}
-                </span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span class="px-2 py-0.5 rounded text-[10px] bg-error/10 text-error border border-error/20">
+                    {{ absenceDispatch[s.id]?.status === 'sent' ? 'Email sent' : absenceDispatch[s.id]?.status === 'failed' ? 'Failed' : 'Sending…' }}
+                  </span>
+                  <button
+                    v-if="absenceDispatch[s.id]?.status === 'failed'"
+                    @click="resendAbsenceToStudent(s.id)"
+                    class="text-[10px] text-error hover:underline font-sans cursor-pointer px-1 py-0.5"
+                    title="Retry sending absence email"
+                  >
+                    Retry
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -356,7 +376,7 @@ const submitAttendance = async () => {
     };
 
     sendPresentConfirmations(created.id, created.pin, presentStudents);
-    sendAbsenceNotifications(created.id, absentStudents);
+    sendAbsenceNotifications(created.id, created.pin, absentStudents);
   } catch (e) {
     startError.value = e.message || 'Failed to record attendance.';
   } finally {
@@ -382,13 +402,13 @@ const sendPresentConfirmations = async (sessionId, pin, presentStudents) => {
         students: targets.map(s => ({ studentId: s.id, email: s.email, name: s.name })),
       }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     const byId = Object.fromEntries((data.results || []).map(r => [r.studentId, r]));
     const next = {};
     for (const s of targets) {
       if (!s.email) { next[s.id] = { status: 'failed' }; continue; }
       const r = byId[s.id];
-      next[s.id] = { status: r?.success ? 'sent' : 'failed' };
+      next[s.id] = { status: (r?.success || (res.ok && data.sent > 0)) ? 'sent' : 'failed' };
     }
     otpDispatch.value = next;
   } catch {
@@ -398,35 +418,123 @@ const sendPresentConfirmations = async (sessionId, pin, presentStudents) => {
   }
 };
 
-const sendAbsenceNotifications = async (sessionId, absentStudents) => {
+const sendAbsenceNotifications = async (sessionId, pin, absentStudents) => {
   const targets = absentStudents.filter(s => !!s.email);
   if (targets.length === 0) return;
 
   absenceDispatch.value = Object.fromEntries(targets.map(s => [s.id, { status: 'sending' }]));
   try {
-    const res = await fetch(`${OTP_API_BASE}/api/otp/send-absence-bulk`, {
+    // Try dedicated absence endpoint first; if not deployed (404), fallback to send-bulk with isAbsence flag
+    let res = await fetch(`${OTP_API_BASE}/api/otp/send-absence-bulk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId,
+        otp: pin,
+        isAbsence: true,
         courseCode: courseCode.value,
         courseName: courseName.value,
         students: targets.map(s => ({ studentId: s.id, email: s.email, name: s.name })),
       }),
     });
-    const data = await res.json();
+
+    if (!res.ok && res.status === 404) {
+      res = await fetch(`${OTP_API_BASE}/api/otp/send-bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          otp: pin,
+          isAbsence: true,
+          isConfirmation: false,
+          courseCode: courseCode.value,
+          courseName: courseName.value,
+          students: targets.map(s => ({ studentId: s.id, email: s.email, name: s.name })),
+        }),
+      });
+    }
+
+    const data = await res.json().catch(() => ({}));
     const byId = Object.fromEntries((data.results || []).map(r => [r.studentId, r]));
     const next = {};
     for (const s of targets) {
       if (!s.email) { next[s.id] = { status: 'failed' }; continue; }
       const r = byId[s.id];
-      next[s.id] = { status: r?.success ? 'sent' : 'failed' };
+      next[s.id] = { status: (r?.success || (res.ok && data.sent > 0)) ? 'sent' : 'failed' };
     }
     absenceDispatch.value = next;
   } catch {
     const next = {};
     for (const s of targets) next[s.id] = { status: 'failed' };
     absenceDispatch.value = next;
+  }
+};
+
+const resendOtpToStudent = async (studentId) => {
+  const student = enrolledStudents.value.find((s) => s.id === studentId);
+  const sessionId = submissionResult.value?.sessionId;
+  const pin = submissionResult.value?.pin;
+  if (!student?.email || !sessionId) return;
+
+  otpDispatch.value = { ...otpDispatch.value, [studentId]: { status: 'sending' } };
+  try {
+    const res = await fetch(`${OTP_API_BASE}/api/otp/resend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        studentId,
+        email: student.email,
+        otp: pin,
+        name: student.name,
+      }),
+    });
+    otpDispatch.value = { ...otpDispatch.value, [studentId]: { status: res.ok ? 'sent' : 'failed' } };
+  } catch {
+    otpDispatch.value = { ...otpDispatch.value, [studentId]: { status: 'failed' } };
+  }
+};
+
+const resendAbsenceToStudent = async (studentId) => {
+  const student = enrolledStudents.value.find((s) => s.id === studentId);
+  const sessionId = submissionResult.value?.sessionId;
+  const pin = submissionResult.value?.pin;
+  if (!student?.email || !sessionId) return;
+
+  absenceDispatch.value = { ...absenceDispatch.value, [studentId]: { status: 'sending' } };
+  try {
+    let res = await fetch(`${OTP_API_BASE}/api/otp/send-absence-bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        otp: pin,
+        isAbsence: true,
+        courseCode: courseCode.value,
+        courseName: courseName.value,
+        students: [{ studentId: student.id, email: student.email, name: student.name }],
+      }),
+    });
+    if (!res.ok && res.status === 404) {
+      res = await fetch(`${OTP_API_BASE}/api/otp/send-bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          otp: pin,
+          isAbsence: true,
+          isConfirmation: false,
+          courseCode: courseCode.value,
+          courseName: courseName.value,
+          students: [{ studentId: student.id, email: student.email, name: student.name }],
+        }),
+      });
+    }
+    const data = await res.json().catch(() => ({}));
+    const success = res.ok && (data.sent > 0 || data.results?.[0]?.success || data.results?.[0]?.status === 'sent');
+    absenceDispatch.value = { ...absenceDispatch.value, [studentId]: { status: success ? 'sent' : 'failed' } };
+  } catch {
+    absenceDispatch.value = { ...absenceDispatch.value, [studentId]: { status: 'failed' } };
   }
 };
 </script>
