@@ -2,7 +2,7 @@
   <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
-    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+    <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
@@ -16,14 +16,14 @@
             </span>
           </div>
           <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">User Management</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Provision, inspect, update, and manage access roles across the institution.</p>
+          <p class="text-sm text-slate-500 dark:text-white/75 mt-1">Provision, inspect, update, and manage access roles across the institution.</p>
         </div>
 
         <div class="flex items-center gap-3">
           <button
             @click="fetchUsers"
             :disabled="isLoading"
-            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-secondary text-sm font-medium transition-all shadow-sm disabled:opacity-50"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted text-slate-600 dark:text-white/90 hover:text-primary dark:hover:text-secondary text-sm font-medium transition-all shadow-sm disabled:opacity-50"
           >
             <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
             <span>Refresh</span>
@@ -48,8 +48,8 @@
         @click="roleFilter = kpiItem.filter"
         :class="['relative group rounded-2xl p-4 border text-left transition-all shadow-sm hover:shadow-md focus:outline-none',
           roleFilter === kpiItem.filter
-            ? 'bg-primary dark:bg-[#071328] border-primary/80 dark:border-secondary/60 ring-2 ring-primary/30 dark:ring-secondary/30'
-            : 'bg-white dark:bg-[#071328] border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+            ? 'bg-primary dark:bg-dark-surface border-primary/80 dark:border-secondary/60 ring-2 ring-primary/30 dark:ring-secondary/30'
+            : 'bg-white dark:bg-dark-surface border-slate-200 dark:border-dark-outline hover:border-slate-300 dark:hover:border-dark-outline'
         ]"
       >
         <div :class="['w-9 h-9 rounded-xl flex items-center justify-center mb-3', roleFilter === kpiItem.filter ? 'bg-white/20' : kpiItem.iconBg]">
@@ -66,7 +66,7 @@
     </div>
 
     <!-- Search & Filter Bar -->
-    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+    <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-5 shadow-sm">
       <div class="flex flex-col sm:flex-row gap-3">
         <!-- Search -->
         <div class="flex-1 relative">
@@ -76,7 +76,7 @@
             v-model="searchQuery"
             id="user-search-input"
             placeholder="Search by name, email, or user ID..."
-            class="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all placeholder:text-slate-400"
+            class="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all placeholder:text-slate-400"
           />
           <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
             <X class="w-4 h-4" />
@@ -87,7 +87,7 @@
         <select
           v-model="roleFilter"
           id="user-role-filter"
-          class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 min-w-[180px]"
+          class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 min-w-[180px]"
         >
           <option value="all">All Roles ({{ stats.total }})</option>
           <option value="SUPER_ADMIN">Super Admins ({{ stats.superAdmins }})</option>
@@ -100,7 +100,7 @@
         <!-- Sort -->
         <select
           v-model="sortBy"
-          class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 min-w-[160px]"
+          class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 min-w-[160px]"
         >
           <option value="newest">Newest First</option>
           <option value="oldest">Oldest First</option>
@@ -136,20 +136,20 @@
     </transition>
 
     <!-- Users Table -->
-    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl shadow-sm overflow-hidden">
       <!-- Loading -->
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
         <Loader2 class="w-10 h-10 text-secondary animate-spin mb-4" />
-        <p class="text-sm font-mono text-slate-500 dark:text-slate-400">LOADING USER ACCOUNTS...</p>
+        <p class="text-sm font-mono text-slate-500 dark:text-white/75">LOADING USER ACCOUNTS...</p>
       </div>
 
       <!-- Empty -->
       <div v-else-if="filteredUsers.length === 0" class="p-12 text-center">
-        <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 text-slate-400">
+        <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-dark-muted flex items-center justify-center mx-auto mb-4 text-slate-400">
           <UserX class="w-7 h-7" />
         </div>
         <h3 class="font-display font-bold text-slate-900 dark:text-white text-base">No Users Found</h3>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        <p class="text-sm text-slate-500 dark:text-white/75 mt-1">
           {{ searchQuery || roleFilter !== 'all' ? 'No accounts matched your filters.' : 'No accounts created yet.' }}
         </p>
         <button v-if="searchQuery || roleFilter !== 'all'" @click="resetFilters"
@@ -168,7 +168,7 @@
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
-            <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-mono uppercase text-[11px] tracking-wider">
+            <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-dark-outline text-slate-500 dark:text-white/75 font-mono uppercase text-[11px] tracking-wider">
               <th class="py-3 px-4 font-semibold">User</th>
               <th class="py-3 px-4 font-semibold">Email</th>
               <th class="py-3 px-4 font-semibold">Role</th>
@@ -186,14 +186,14 @@
                     {{ getInitials(user.name) }}
                   </div>
                   <div>
-                    <div class="font-semibold text-slate-900 dark:text-slate-100 text-xs">{{ user.name }}</div>
+                    <div class="font-semibold text-slate-900 dark:text-white text-xs">{{ user.name }}</div>
                     <div class="text-[10px] text-slate-400 font-mono truncate max-w-[120px]" :title="user.id">{{ user.displayId }}</div>
                   </div>
                 </div>
               </td>
 
               <!-- Email -->
-              <td class="py-3.5 px-4 text-slate-600 dark:text-slate-400 text-xs">{{ user.email }}</td>
+              <td class="py-3.5 px-4 text-slate-600 dark:text-white/75 text-xs">{{ user.email }}</td>
 
               <!-- Role -->
               <td class="py-3.5 px-4">
@@ -209,10 +209,10 @@
               </td>
 
               <!-- Program -->
-              <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-xs max-w-[140px] truncate">{{ user.program || '—' }}</td>
+              <td class="py-3.5 px-4 text-slate-500 dark:text-white/75 text-xs max-w-[140px] truncate">{{ user.program || '—' }}</td>
 
               <!-- Date -->
-              <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">{{ formatDate(user.createdAt) }}</td>
+              <td class="py-3.5 px-4 text-slate-500 dark:text-white/75 font-mono text-[11px]">{{ formatDate(user.createdAt) }}</td>
 
               <!-- Actions -->
               <td class="py-3.5 px-4">
@@ -230,7 +230,7 @@
                     @click="openEditModal(user)"
                     :id="'btn-edit-' + user.id"
                     title="Edit User"
-                    class="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-secondary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    class="p-1.5 text-slate-500 dark:text-white/75 hover:text-primary dark:hover:text-secondary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                   >
                     <Edit3 class="w-3.5 h-3.5" />
                   </button>
@@ -250,8 +250,8 @@
         </table>
 
         <!-- Footer -->
-        <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 font-mono">
-          Showing <strong class="text-slate-700 dark:text-slate-300">{{ filteredUsers.length }}</strong> of <strong class="text-slate-700 dark:text-slate-300">{{ users.length }}</strong> users
+        <div class="px-4 py-3 border-t border-slate-100 dark:border-dark-outline text-xs text-slate-500 dark:text-white/75 font-mono">
+          Showing <strong class="text-slate-700 dark:text-white/90">{{ filteredUsers.length }}</strong> of <strong class="text-slate-700 dark:text-white/90">{{ users.length }}</strong> users
         </div>
       </div>
     </div>
@@ -262,12 +262,12 @@
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       @click.self="closeModal"
     >
-      <div class="relative w-full max-w-2xl bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="relative w-full max-w-2xl bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
         <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
         <!-- Header -->
-        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
+        <div class="p-6 border-b border-slate-100 dark:border-dark-outline flex items-start justify-between gap-4">
           <div class="flex items-start gap-3">
             <div :class="['w-10 h-10 rounded-xl flex items-center justify-center', isEditing ? 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400' : 'bg-primary/10 dark:bg-secondary/15 border border-primary/20 dark:border-secondary/30 text-primary dark:text-secondary']">
               <UserPlus v-if="!isEditing" class="w-5 h-5" />
@@ -280,7 +280,7 @@
               <h2 class="text-xl font-display font-bold text-slate-900 dark:text-white">
                 {{ isEditing ? 'Edit User Profile' : 'Add New User' }}
               </h2>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p class="text-xs text-slate-500 dark:text-white/75 mt-0.5">
                 {{ isEditing ? `Updating account for ${userForm.name}` : 'Provision a new student, lecturer, or admin account.' }}
               </p>
             </div>
@@ -300,7 +300,7 @@
 
           <!-- Role Selector -->
           <div class="space-y-2">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">User Role <span class="text-rose-500">*</span></label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">User Role <span class="text-rose-500">*</span></label>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               <button
                 v-for="r in availableRoles"
@@ -309,12 +309,12 @@
                 @click="userForm.role = r.value"
                 :class="['relative rounded-xl border p-3 text-left transition-all focus:outline-none text-xs',
                   userForm.role === r.value
-                    ? 'border-secondary bg-primary dark:bg-[#0d1f3c] ring-2 ring-secondary/40'
-                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-600'
+                    ? 'border-secondary bg-primary dark:bg-dark-muted ring-2 ring-secondary/40'
+                    : 'border-slate-200 dark:border-dark-outline/70 bg-slate-50 dark:bg-dark-muted/70 hover:border-slate-300 dark:hover:border-slate-600'
                 ]"
               >
-                <div :class="['font-bold mb-0.5', userForm.role === r.value ? 'text-secondary' : 'text-slate-900 dark:text-slate-100']">{{ r.label }}</div>
-                <div :class="['text-[10px] leading-tight', userForm.role === r.value ? 'text-white/60 dark:text-slate-400' : 'text-slate-400']">{{ r.description }}</div>
+                <div :class="['font-bold mb-0.5', userForm.role === r.value ? 'text-secondary' : 'text-slate-900 dark:text-white']">{{ r.label }}</div>
+                <div :class="['text-[10px] leading-tight', userForm.role === r.value ? 'text-white/60 dark:text-white/75' : 'text-slate-400']">{{ r.description }}</div>
                 <div v-if="userForm.role === r.value" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary"></div>
               </button>
             </div>
@@ -323,21 +323,21 @@
           <!-- Name & Email -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label for="user-full-name" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Full Name <span class="text-rose-500">*</span></label>
+              <label for="user-full-name" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Full Name <span class="text-rose-500">*</span></label>
               <input
                 type="text" id="user-full-name" v-model="userForm.name"
                 placeholder="e.g. Dr. Jane Mensah or Kofi Owusu"
                 required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
               />
             </div>
             <div class="space-y-1.5">
-              <label for="user-email" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Email Address <span class="text-rose-500">*</span></label>
+              <label for="user-email" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Email Address <span class="text-rose-500">*</span></label>
               <input
                 type="email" id="user-email" v-model="userForm.email"
                 placeholder="e.g. name@southshore.edu.gh"
                 required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
               />
             </div>
           </div>
@@ -345,7 +345,7 @@
           <!-- ID & Program -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label for="user-id" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <label for="user-id" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">
                 User ID / Student ID
                 <span v-if="!isEditing" class="normal-case text-slate-400"> (auto-generated if empty)</span>
               </label>
@@ -353,30 +353,30 @@
                 type="text" id="user-id" v-model="userForm.id"
                 :placeholder="isEditing ? '' : 'e.g. BSC/CSM/2026/02'"
                 :disabled="isEditing"
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <p v-if="isEditing" class="text-[10px] text-slate-400 font-mono">User ID is fixed and cannot be changed.</p>
             </div>
             <div class="space-y-1.5">
-              <label for="user-program" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <label for="user-program" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">
                 {{ userForm.role === 'STUDENT' ? 'Academic Programme' : 'Department / Specialization' }}
               </label>
               <select v-if="userForm.role === 'STUDENT'" id="user-program" v-model="userForm.program"
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
               >
                 <option value="">— Select Programme —</option>
                 <option v-for="prog in availableProgrammes" :key="prog.id" :value="prog.name">{{ prog.name }}</option>
               </select>
               <input v-else type="text" id="user-dept" v-model="userForm.program"
                 placeholder="e.g. School of Computing"
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all"
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all"
               />
             </div>
           </div>
 
           <!-- Password -->
           <div class="space-y-1.5">
-            <label for="user-password" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <label for="user-password" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">
               {{ isEditing ? 'Change Password' : 'Password' }}
               <span v-if="!isEditing" class="text-rose-500"> *</span>
               <span v-else class="normal-case text-slate-400"> (leave blank to keep current)</span>
@@ -388,7 +388,7 @@
                 v-model="userForm.password"
                 :placeholder="isEditing ? 'Enter new password to update...' : 'Minimum 6 characters'"
                 :required="!isEditing"
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 pr-10 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 pr-10 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
               />
               <button type="button" @click="showModalPassword = !showModalPassword" tabindex="-1"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
@@ -401,7 +401,7 @@
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 pt-2">
             <button type="button" @click="closeModal"
-              class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
               Cancel
             </button>
             <button type="submit" :disabled="isSaving" id="btn-save-user"
@@ -421,15 +421,15 @@
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       @click.self="closeDeleteModal"
     >
-      <div class="w-full max-w-md bg-white dark:bg-[#071328] border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 shadow-2xl">
+      <div class="w-full max-w-md bg-white dark:bg-dark-surface border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 shadow-2xl">
         <div class="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4">
           <Trash2 class="w-6 h-6" />
         </div>
 
         <h3 class="text-lg font-display font-bold text-slate-900 dark:text-white">Delete User Account?</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
-          Permanently delete <strong class="text-slate-800 dark:text-slate-200">{{ userToDelete?.name }}</strong>
-          (<code class="font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">{{ userToDelete?.id }}</code>)?
+        <p class="text-xs text-slate-500 dark:text-white/75 mt-2">
+          Permanently delete <strong class="text-slate-800 dark:text-white">{{ userToDelete?.name }}</strong>
+          (<code class="font-mono text-[11px] bg-slate-100 dark:bg-dark-muted px-1 py-0.5 rounded">{{ userToDelete?.id }}</code>)?
         </p>
 
         <div class="mt-4 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-400 font-mono">
@@ -438,7 +438,7 @@
 
         <div class="flex items-center justify-end gap-3 mt-6">
           <button @click="closeDeleteModal" :disabled="isDeleting"
-            class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50">
+            class="px-4 py-2 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50">
             Cancel
           </button>
           <button @click="confirmDeleteUser" :disabled="isDeleting" id="btn-confirm-delete"

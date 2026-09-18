@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           Welcome back, <span class="text-secondary dark:text-dark-secondary">{{ firstName }}</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           {{ currentDate }} &bull; Matriculated Cohort
         </p>
       </div>
@@ -22,8 +22,8 @@
           @click="$emit('navigate', '/attendance')"
           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary dark:bg-dark-secondary text-surface dark:text-primary font-semibold text-xs sm:text-sm shadow-md hover:opacity-90 active:scale-98 transition-all cursor-pointer"
         >
-          <CheckCircle2 class="w-4 h-4" />
-          <span>Mark Attendance</span>
+          <Eye class="w-4 h-4" />
+          <span>View Attendance</span>
         </button>
       </div>
     </div>
@@ -33,7 +33,7 @@
       <!-- Enrolled Courses -->
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
             Enrolled Courses
           </span>
           <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center justify-center">
@@ -41,17 +41,17 @@
           </div>
         </div>
         <div class="mt-3 flex items-baseline gap-2">
-          <span class="text-3xl font-extrabold font-display text-foreground dark:text-dark-foreground">
+          <span class="text-3xl font-extrabold font-display text-foreground dark:text-white">
             {{ enrolledCourseIds.length }}
           </span>
-          <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Active</span>
+          <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Active</span>
         </div>
       </div>
 
       <!-- Attendance Rate -->
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
             Overall Rate
           </span>
           <div 
@@ -68,14 +68,14 @@
           >
             {{ overallRate }}%
           </span>
-          <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Min 75% target</span>
+          <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Min 75% target</span>
         </div>
       </div>
 
       <!-- Classes Attended -->
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
             Classes Attended
           </span>
           <div class="w-9 h-9 rounded-xl bg-secondary/10 text-secondary border border-secondary/20 flex items-center justify-center">
@@ -83,17 +83,17 @@
           </div>
         </div>
         <div class="mt-3 flex items-baseline gap-2">
-          <span class="text-3xl font-extrabold font-display text-foreground dark:text-dark-foreground">
+          <span class="text-3xl font-extrabold font-display text-foreground dark:text-white">
             {{ presentCount }}
           </span>
-          <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Sessions logged</span>
+          <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Sessions logged</span>
         </div>
       </div>
 
       <!-- Classes Missed -->
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
             Classes Missed
           </span>
           <div class="w-9 h-9 rounded-xl bg-error/10 text-error border border-error/20 flex items-center justify-center">
@@ -104,7 +104,7 @@
           <span class="text-3xl font-extrabold font-display text-error">
             {{ absentCount }}
           </span>
-          <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Absences</span>
+          <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Absences</span>
         </div>
       </div>
     </div>
@@ -121,7 +121,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-outline/30 dark:border-dark-outline/40">
             <div class="flex items-center gap-2">
               <Calendar class="w-4 h-4 text-secondary" />
-              <h2 class="text-sm sm:text-base font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+              <h2 class="text-sm sm:text-base font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                 Today's Schedule
               </h2>
             </div>
@@ -136,14 +136,14 @@
 
           <!-- Schedule List -->
           <div class="pt-4">
-            <div v-if="isLoading" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-dark-foreground/50 flex items-center justify-center gap-2">
+            <div v-if="isLoading" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
               <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
               <span>Loading today's schedule…</span>
             </div>
 
-            <div v-else-if="todayClasses.length === 0" class="py-12 text-center text-foreground/50 dark:text-dark-foreground/50">
-              <CalendarX2 class="w-8 h-8 mx-auto mb-2 text-foreground/30 dark:text-dark-foreground/30" />
-              <p class="text-sm font-medium text-foreground dark:text-dark-foreground">No classes today</p>
+            <div v-else-if="todayClasses.length === 0" class="py-12 text-center text-foreground/50 dark:text-white/65">
+              <CalendarX2 class="w-8 h-8 mx-auto mb-2 text-foreground/30 dark:text-white/40" />
+              <p class="text-sm font-medium text-foreground dark:text-white">No classes today</p>
               <p class="text-xs font-mono mt-0.5">You have no scheduled lectures for {{ todayName }}.</p>
             </div>
 
@@ -159,10 +159,10 @@
                 <div class="flex items-start gap-3">
                   <!-- Time pillar -->
                   <div class="px-3 py-1.5 rounded-lg bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 text-center shrink-0">
-                    <span class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground">
+                    <span class="block text-xs font-bold font-mono text-foreground dark:text-white">
                       {{ formatTime(cls.startTime) }}
                     </span>
-                    <span class="block text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45">
+                    <span class="block text-[10px] font-mono text-foreground/45 dark:text-white/55">
                       {{ formatTime(cls.endTime) }}
                     </span>
                   </div>
@@ -181,10 +181,10 @@
                         LIVE
                       </span>
                     </div>
-                    <h3 class="text-xs sm:text-sm font-semibold text-foreground dark:text-dark-foreground truncate mt-0.5">
+                    <h3 class="text-xs sm:text-sm font-semibold text-foreground dark:text-white truncate mt-0.5">
                       {{ cls.courseName }}
                     </h3>
-                    <p class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50 mt-0.5">
+                    <p class="text-[11px] font-mono text-foreground/50 dark:text-white/65 mt-0.5">
                       {{ cls.lecturer }} &bull; {{ cls.venue }}
                     </p>
                   </div>
@@ -215,7 +215,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-outline/30 dark:border-dark-outline/40">
             <div class="flex items-center gap-2">
               <Activity class="w-4 h-4 text-secondary" />
-              <h2 class="text-sm sm:text-base font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+              <h2 class="text-sm sm:text-base font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                 Course Attendance
               </h2>
             </div>
@@ -228,14 +228,14 @@
           </div>
 
           <div class="pt-4">
-            <div v-if="isLoading" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-dark-foreground/50 flex items-center justify-center gap-2">
+            <div v-if="isLoading" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
               <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
               <span>Calculating metrics…</span>
             </div>
 
-            <div v-else-if="courseStats.length === 0" class="py-12 text-center text-foreground/50 dark:text-dark-foreground/50">
-              <Activity class="w-8 h-8 mx-auto mb-2 text-foreground/30 dark:text-dark-foreground/30" />
-              <p class="text-sm font-medium text-foreground dark:text-dark-foreground">No records logged</p>
+            <div v-else-if="courseStats.length === 0" class="py-12 text-center text-foreground/50 dark:text-white/65">
+              <Activity class="w-8 h-8 mx-auto mb-2 text-foreground/30 dark:text-white/40" />
+              <p class="text-sm font-medium text-foreground dark:text-white">No records logged</p>
               <p class="text-xs font-mono mt-0.5">Attendance records will show here once lectures commence.</p>
             </div>
 
@@ -250,7 +250,7 @@
                     <span class="text-[11px] font-bold font-mono text-secondary dark:text-dark-secondary">
                       {{ stat.code }}
                     </span>
-                    <p class="text-xs font-semibold text-foreground dark:text-dark-foreground truncate">
+                    <p class="text-xs font-semibold text-foreground dark:text-white truncate">
                       {{ stat.name }}
                     </p>
                   </div>
@@ -270,7 +270,7 @@
                   ></div>
                 </div>
 
-                <div class="flex items-center justify-between text-[10px] font-mono text-foreground/60 dark:text-dark-foreground/60">
+                <div class="flex items-center justify-between text-[10px] font-mono text-foreground/60 dark:text-white/70">
                   <span>✓ {{ stat.present }} present</span>
                   <span>✗ {{ stat.absent }} absent</span>
                   <span>{{ stat.total }} total</span>
@@ -287,7 +287,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <AlertTriangle class="w-4 h-4 text-warning" />
-          <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+          <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
             Academic Alerts & Notices
           </h2>
           <span v-if="notifUnreadCount > 0" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-error/15 text-error border border-error/30">
@@ -316,12 +316,12 @@
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-bold text-foreground dark:text-dark-foreground">Evaluations Now Open</p>
-              <span class="text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45 shrink-0">
+              <p class="text-xs font-bold text-foreground dark:text-white">Evaluations Now Open</p>
+              <span class="text-[10px] font-mono text-foreground/45 dark:text-white/55 shrink-0">
                 {{ new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}
               </span>
             </div>
-            <p class="text-[11px] text-foreground/70 dark:text-dark-foreground/70 mt-0.5">{{ n.message }}</p>
+            <p class="text-[11px] text-foreground/70 dark:text-white/80 mt-0.5">{{ n.message }}</p>
           </div>
           <span v-if="!n.isRead" class="w-2 h-2 rounded-full bg-secondary shrink-0 mt-1"></span>
         </div>
@@ -340,11 +340,11 @@
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-2">
               <p class="text-xs font-bold text-error">Exam Ineligibility – {{ n.courseCode }}</p>
-              <span class="text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45 shrink-0">
+              <span class="text-[10px] font-mono text-foreground/45 dark:text-white/55 shrink-0">
                 {{ new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}
               </span>
             </div>
-            <p class="text-[11px] text-foreground/70 dark:text-dark-foreground/70 mt-0.5">{{ n.message }}</p>
+            <p class="text-[11px] text-foreground/70 dark:text-white/80 mt-0.5">{{ n.message }}</p>
           </div>
           <span v-if="!n.isRead" class="w-2 h-2 rounded-full bg-error shrink-0 mt-1"></span>
         </div>
@@ -373,11 +373,11 @@
               <p class="text-xs font-bold" :class="n.type === 'warning_2' ? 'text-error' : 'text-warning'">
                 {{ n.type === 'warning_2' ? 'Critical Warning' : 'Attendance Warning' }} – {{ n.courseCode }}
               </p>
-              <span class="text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45 shrink-0">
+              <span class="text-[10px] font-mono text-foreground/45 dark:text-white/55 shrink-0">
                 {{ new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}
               </span>
             </div>
-            <p class="text-[11px] text-foreground/70 dark:text-dark-foreground/70 mt-0.5">{{ n.message }}</p>
+            <p class="text-[11px] text-foreground/70 dark:text-white/80 mt-0.5">{{ n.message }}</p>
           </div>
           <span v-if="!n.isRead" class="w-2 h-2 rounded-full bg-secondary shrink-0 mt-1"></span>
         </div>
@@ -386,7 +386,7 @@
 
     <!-- Quick Actions Grid -->
     <div class="space-y-3">
-      <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+      <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
         Quick Action Modules
       </h2>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -395,10 +395,10 @@
           class="p-4 rounded-xl bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 hover:border-secondary/40 shadow-xs hover:shadow-md transition-all flex flex-col items-center text-center gap-2.5 group cursor-pointer"
         >
           <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 text-primary dark:text-dark-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-            <CheckCircle2 class="w-5 h-5" />
+            <Eye class="w-5 h-5" />
           </div>
-          <span class="text-xs font-semibold text-foreground dark:text-dark-foreground group-hover:text-secondary transition-colors">
-            Mark Attendance
+          <span class="text-xs font-semibold text-foreground dark:text-white group-hover:text-secondary transition-colors">
+            View Attendance
           </span>
         </button>
 
@@ -409,7 +409,7 @@
           <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
             <BookOpen class="w-5 h-5" />
           </div>
-          <span class="text-xs font-semibold text-foreground dark:text-dark-foreground group-hover:text-secondary transition-colors">
+          <span class="text-xs font-semibold text-foreground dark:text-white group-hover:text-secondary transition-colors">
             My Courses
           </span>
         </button>
@@ -421,7 +421,7 @@
           <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
             <Plus class="w-5 h-5" />
           </div>
-          <span class="text-xs font-semibold text-foreground dark:text-dark-foreground group-hover:text-secondary transition-colors">
+          <span class="text-xs font-semibold text-foreground dark:text-white group-hover:text-secondary transition-colors">
             Register Course
           </span>
         </button>
@@ -433,7 +433,7 @@
           <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
             <Bell class="w-5 h-5" />
           </div>
-          <span class="text-xs font-semibold text-foreground dark:text-dark-foreground group-hover:text-secondary transition-colors">
+          <span class="text-xs font-semibold text-foreground dark:text-white group-hover:text-secondary transition-colors">
             Notifications
           </span>
           <span 
@@ -472,7 +472,8 @@ import {
   AlertTriangle, 
   Award, 
   Plus, 
-  Bell 
+  Bell,
+  Eye
 } from 'lucide-vue-next';
 
 const emit = defineEmits(['navigate']);

@@ -3,7 +3,7 @@
     <!-- Left: Mobile Toggle & Greeting -->
     <div class="flex items-center gap-3 sm:gap-4 min-w-0">
       <button 
-        class="lg:hidden p-2 rounded-lg text-foreground/70 dark:text-dark-foreground/70 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border border-outline/40 dark:border-dark-outline/40 transition-colors"
+        class="lg:hidden p-2 rounded-lg text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border border-outline/40 dark:border-dark-outline/40 transition-colors"
         @click="$emit('toggle-mobile-sidebar')" 
         aria-label="Open Navigation Menu"
       >
@@ -12,7 +12,7 @@
 
       <div class="min-w-0">
         <div class="flex items-center gap-2">
-          <h2 class="text-base sm:text-lg font-bold font-display tracking-tight text-foreground dark:text-dark-foreground truncate">
+          <h2 class="text-base sm:text-lg font-bold font-display tracking-tight text-foreground dark:text-white truncate">
             Welcome back, <span class="text-secondary dark:text-dark-secondary">{{ firstName }}</span>
           </h2>
         </div>
@@ -21,7 +21,7 @@
             <component :is="roleIcon" class="w-3 h-3 shrink-0" />
             <span>{{ roleLabel }}</span>
           </span>
-          <span class="hidden md:inline-flex items-center text-[11px] text-foreground/50 dark:text-dark-foreground/50 font-mono">
+          <span class="hidden md:inline-flex items-center text-[11px] text-foreground/50 dark:text-white/65 font-mono">
             ● Southshore OS v2.4
           </span>
         </div>
@@ -32,15 +32,15 @@
     <div class="flex items-center gap-2 sm:gap-3">
       <!-- Search Input -->
       <div class="relative hidden sm:block">
-        <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 dark:text-dark-foreground/40 pointer-events-none" />
+        <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 dark:text-white/50 pointer-events-none" />
         <input 
           type="text" 
           v-model="searchQuery"
           @keydown.enter="handleSearch"
           placeholder="Search modules, records... [ / ]" 
-          class="w-44 md:w-60 lg:w-72 pl-9 pr-8 py-1.5 text-xs bg-muted/40 dark:bg-dark-muted/40 hover:bg-muted/70 dark:hover:bg-dark-muted/70 focus:bg-surface dark:focus:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 focus:border-secondary dark:focus:border-dark-secondary rounded-lg outline-hidden text-foreground dark:text-dark-foreground placeholder:text-foreground/40 dark:placeholder:text-dark-foreground/40 transition-all font-mono"
+          class="w-44 md:w-60 lg:w-72 pl-9 pr-8 py-1.5 text-xs bg-muted/40 dark:bg-dark-muted/40 hover:bg-muted/70 dark:hover:bg-dark-muted/70 focus:bg-surface dark:focus:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 focus:border-secondary dark:focus:border-dark-secondary rounded-lg outline-hidden text-foreground dark:text-white placeholder:text-foreground/40 dark:placeholder:text-white/40 transition-all font-mono"
         />
-        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-foreground/40 dark:text-dark-foreground/40 border border-outline/40 dark:border-dark-outline/40 px-1 rounded">
+        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-foreground/40 dark:text-white/50 border border-outline/40 dark:border-dark-outline/40 px-1 rounded">
           /
         </span>
       </div>
@@ -48,7 +48,7 @@
       <!-- Instant Theme Toggle -->
       <button 
         @click="toggleThemeQuick"
-        class="p-2 rounded-lg text-foreground/70 dark:text-dark-foreground/70 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border border-outline/40 dark:border-dark-outline/40 transition-all duration-200"
+        class="p-2 rounded-lg text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border border-outline/40 dark:border-dark-outline/40 transition-all duration-200"
         :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
         aria-label="Toggle Theme"
       >
@@ -62,7 +62,7 @@
           class="relative p-2 rounded-lg border transition-all duration-200"
           :class="showNotifications 
             ? 'bg-secondary/15 dark:bg-dark-secondary/20 text-secondary dark:text-dark-secondary border-secondary/40 dark:border-dark-secondary/40' 
-            : 'text-foreground/70 dark:text-dark-foreground/70 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border-outline/40 dark:border-dark-outline/40'"
+            : 'text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border-outline/40 dark:border-dark-outline/40'"
           aria-label="Notifications" 
           @click="toggleNotifications"
         >
@@ -87,7 +87,7 @@
           <!-- Panel Header -->
           <div class="p-3.5 px-4 bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/40 dark:border-dark-outline/40 flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold font-display tracking-wider uppercase text-foreground dark:text-dark-foreground">
+              <span class="text-xs font-bold font-display tracking-wider uppercase text-foreground dark:text-white">
                 Audit Feed & Alerts
               </span>
               <span v-if="unreadCount > 0" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary/15 text-secondary dark:text-dark-secondary border border-secondary/30">
@@ -106,13 +106,13 @@
 
           <!-- Panel Body (Scrollable List) -->
           <div class="max-h-80 overflow-y-auto divide-y divide-outline/20 dark:divide-dark-outline/30">
-            <div v-if="isLoadingLogs" class="p-6 text-center text-xs font-mono text-foreground/50 dark:text-dark-foreground/50 flex items-center justify-center gap-2">
+            <div v-if="isLoadingLogs" class="p-6 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
               <RefreshCw class="w-3.5 h-3.5 animate-spin text-secondary" />
               <span>Streaming activity logs…</span>
             </div>
-            <div v-else-if="recentLogs.length === 0" class="p-8 text-center text-xs text-foreground/50 dark:text-dark-foreground/50">
+            <div v-else-if="recentLogs.length === 0" class="p-8 text-center text-xs text-foreground/50 dark:text-white/65">
               <CheckCheck class="w-6 h-6 mx-auto mb-2 text-secondary/60" />
-              <p class="font-medium text-foreground dark:text-dark-foreground">All caught up</p>
+              <p class="font-medium text-foreground dark:text-white">All caught up</p>
               <p class="text-[11px] mt-0.5">No recent activity logs recorded.</p>
             </div>
             <div
@@ -136,17 +136,17 @@
 
               <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between gap-2">
-                  <p class="text-xs font-semibold text-foreground dark:text-dark-foreground truncate">
+                  <p class="text-xs font-semibold text-foreground dark:text-white truncate">
                     {{ notif.actionLabel }}
                   </p>
-                  <span class="text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45 shrink-0">
+                  <span class="text-[10px] font-mono text-foreground/45 dark:text-white/55 shrink-0">
                     {{ notif.relativeTime }}
                   </span>
                 </div>
-                <p class="text-[11px] text-foreground/70 dark:text-dark-foreground/70 mt-0.5 line-clamp-2">
+                <p class="text-[11px] text-foreground/70 dark:text-white/80 mt-0.5 line-clamp-2">
                   {{ notif.details }}
                 </p>
-                <div class="flex items-center gap-2 mt-1 text-[10px] font-mono text-foreground/40 dark:text-dark-foreground/40">
+                <div class="flex items-center gap-2 mt-1 text-[10px] font-mono text-foreground/40 dark:text-white/50">
                   <span>By: {{ notif.userName }}</span>
                   <span v-if="!readIds.has(notif.id)" class="inline-block w-1.5 h-1.5 rounded-full bg-secondary"></span>
                 </div>
@@ -173,7 +173,7 @@
           class="p-2 rounded-lg border transition-all duration-200"
           :class="showSettings 
             ? 'bg-secondary/15 dark:bg-dark-secondary/20 text-secondary dark:text-dark-secondary border-secondary/40 dark:border-dark-secondary/40' 
-            : 'text-foreground/70 dark:text-dark-foreground/70 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border-outline/40 dark:border-dark-outline/40'"
+            : 'text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border-outline/40 dark:border-dark-outline/40'"
           aria-label="Settings" 
           @click="toggleSettings"
         >
@@ -191,7 +191,7 @@
           <div class="p-3.5 px-4 bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/40 dark:border-dark-outline/40 flex items-center justify-between">
             <div class="flex items-center gap-2">
               <Sliders class="w-3.5 h-3.5 text-secondary" />
-              <span class="text-xs font-bold font-display tracking-wider uppercase text-foreground dark:text-dark-foreground">
+              <span class="text-xs font-bold font-display tracking-wider uppercase text-foreground dark:text-white">
                 Preferences
               </span>
             </div>
@@ -200,19 +200,19 @@
           <div class="p-4 space-y-3.5 text-xs">
             <!-- Theme selection -->
             <div class="flex items-center justify-between gap-4">
-              <span class="font-medium text-foreground dark:text-dark-foreground">Color Mode</span>
+              <span class="font-medium text-foreground dark:text-white">Color Mode</span>
               <div class="inline-flex p-0.5 rounded-lg bg-muted dark:bg-dark-muted border border-outline/40 dark:border-dark-outline/40">
                 <button 
                   @click="setTheme('Light')" 
                   class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all"
-                  :class="userSettings.theme === 'Light' ? 'bg-surface text-primary shadow-xs' : 'text-foreground/60 dark:text-dark-foreground/60 hover:text-foreground'"
+                  :class="userSettings.theme === 'Light' ? 'bg-surface text-primary shadow-xs' : 'text-foreground/60 dark:text-white/70 hover:text-foreground'"
                 >
                   Light
                 </button>
                 <button 
                   @click="setTheme('Dark')" 
                   class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all"
-                  :class="userSettings.theme === 'Dark' ? 'bg-dark-surface text-dark-secondary shadow-xs' : 'text-foreground/60 dark:text-dark-foreground/60 hover:text-foreground'"
+                  :class="userSettings.theme === 'Dark' ? 'bg-dark-surface text-dark-secondary shadow-xs' : 'text-foreground/60 dark:text-white/70 hover:text-foreground'"
                 >
                   Dark
                 </button>
@@ -221,10 +221,10 @@
 
             <!-- Language selection -->
             <div class="flex items-center justify-between gap-4">
-              <span class="font-medium text-foreground dark:text-dark-foreground">Language</span>
+              <span class="font-medium text-foreground dark:text-white">Language</span>
               <select 
                 v-model="userSettings.language" 
-                class="bg-muted/50 dark:bg-dark-muted/50 border border-outline/40 dark:border-dark-outline/40 rounded-lg px-2.5 py-1 text-xs text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary"
+                class="bg-muted/50 dark:bg-dark-muted/50 border border-outline/40 dark:border-dark-outline/40 rounded-lg px-2.5 py-1 text-xs text-foreground dark:text-white font-mono outline-hidden focus:border-secondary"
               >
                 <option value="English">English (EN-US)</option>
               </select>
@@ -233,8 +233,8 @@
             <!-- Email Alerts Toggle -->
             <div class="flex items-center justify-between gap-4 pt-1">
               <div>
-                <p class="font-medium text-foreground dark:text-dark-foreground">Email Alerts</p>
-                <p class="text-[10px] text-foreground/50 dark:text-dark-foreground/50 font-mono">Digest of critical schedules</p>
+                <p class="font-medium text-foreground dark:text-white">Email Alerts</p>
+                <p class="text-[10px] text-foreground/50 dark:text-white/65 font-mono">Digest of critical schedules</p>
               </div>
               <button 
                 type="button" 
@@ -252,8 +252,8 @@
             <!-- SMS Alerts Toggle -->
             <div class="flex items-center justify-between gap-4">
               <div>
-                <p class="font-medium text-foreground dark:text-dark-foreground">SMS Alerts</p>
-                <p class="text-[10px] text-foreground/50 dark:text-dark-foreground/50 font-mono">Urgent session cancellations</p>
+                <p class="font-medium text-foreground dark:text-white">SMS Alerts</p>
+                <p class="text-[10px] text-foreground/50 dark:text-white/65 font-mono">Urgent session cancellations</p>
               </div>
               <button 
                 type="button" 
@@ -286,7 +286,7 @@
 
       <!-- Logout Button -->
       <button 
-        class="p-2 rounded-lg text-foreground/70 dark:text-dark-foreground/70 hover:text-error dark:hover:text-dark-error hover:bg-error/10 dark:hover:bg-dark-error/15 border border-outline/40 dark:border-dark-outline/40 hover:border-error/30 transition-all duration-200 cursor-pointer"
+        class="p-2 rounded-lg text-foreground/70 dark:text-white/80 hover:text-error dark:hover:text-dark-error hover:bg-error/10 dark:hover:bg-dark-error/15 border border-outline/40 dark:border-dark-outline/40 hover:border-error/30 transition-all duration-200 cursor-pointer"
         aria-label="Logout" 
         @click="$emit('logout')" 
         title="Sign Out"

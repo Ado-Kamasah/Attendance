@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           System <span class="text-secondary dark:text-dark-secondary">Notifications</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           {{ roleSubtitle }}
         </p>
       </div>
@@ -22,7 +22,7 @@
         <select 
           v-model="filterAction" 
           id="notif-action-filter"
-          class="bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-xl px-3 py-1.5 text-xs text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary shadow-2xs"
+          class="bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-xl px-3 py-1.5 text-xs text-foreground dark:text-white font-mono outline-hidden focus:border-secondary shadow-2xs"
         >
           <option value="">All Actions</option>
           <option v-for="a in availableActions" :key="a" :value="a">{{ formatAction(a) }}</option>
@@ -32,7 +32,7 @@
           v-if="isAdmin"
           v-model="filterRole" 
           id="notif-role-filter"
-          class="bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-xl px-3 py-1.5 text-xs text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary shadow-2xs"
+          class="bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-xl px-3 py-1.5 text-xs text-foreground dark:text-white font-mono outline-hidden focus:border-secondary shadow-2xs"
         >
           <option value="">All Roles</option>
           <option value="Admin">Admin</option>
@@ -48,7 +48,7 @@
             type="text" 
             placeholder="Search feed…" 
             id="notif-search"
-            class="pl-8 pr-3 py-1.5 text-xs bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono placeholder:text-foreground/40 w-44 sm:w-52 shadow-2xs"
+            class="pl-8 pr-3 py-1.5 text-xs bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono placeholder:text-foreground/40 w-44 sm:w-52 shadow-2xs"
           />
         </div>
 
@@ -66,7 +66,7 @@
     <!-- Stats Pill Strip -->
     <div v-if="!isLoading && visibleLogs.length > 0" class="flex flex-wrap items-center gap-2">
       <div class="px-3 py-1.5 rounded-xl bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 flex items-center gap-2 text-xs shadow-2xs">
-        <span class="font-extrabold font-mono text-foreground dark:text-dark-foreground">{{ visibleLogs.length }}</span>
+        <span class="font-extrabold font-mono text-foreground dark:text-white">{{ visibleLogs.length }}</span>
         <span class="text-[11px] font-mono text-foreground/50">Total</span>
       </div>
 
@@ -96,7 +96,7 @@
       <div class="flex items-center justify-between pb-2 border-b border-outline/30 dark:border-dark-outline/40">
         <div class="flex items-center gap-2">
           <AlertTriangle class="w-4 h-4 text-warning" />
-          <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+          <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
             Academic Status Notices
           </h2>
           <span v-if="studentNotifStore.unreadCount > 0" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-error/15 text-error border border-error/30">
@@ -153,10 +153,10 @@
                 {{ relativeTime(n.createdAt) }}
               </span>
             </div>
-            <p v-if="n.courseCode" class="text-xs font-semibold text-foreground dark:text-dark-foreground mt-0.5">
+            <p v-if="n.courseCode" class="text-xs font-semibold text-foreground dark:text-white mt-0.5">
               {{ n.courseCode }} &bull; {{ n.courseName }}
             </p>
-            <p class="text-[11px] text-foreground/70 dark:text-dark-foreground/70 mt-0.5">
+            <p class="text-[11px] text-foreground/70 dark:text-white/80 mt-0.5">
               {{ n.message }}
             </p>
           </div>
@@ -167,15 +167,15 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-dark-foreground/50 flex items-center justify-center gap-2">
+    <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
       <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
       <span>Streaming notification ledger…</span>
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="filteredLogs.length === 0" class="py-16 text-center text-foreground/50 dark:text-dark-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-2xl">
+    <div v-else-if="filteredLogs.length === 0" class="py-16 text-center text-foreground/50 dark:text-white/65 bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-2xl">
       <BellOff class="w-8 h-8 mx-auto mb-2 text-foreground/30" />
-      <p class="text-sm font-medium text-foreground dark:text-dark-foreground">No events recorded</p>
+      <p class="text-sm font-medium text-foreground dark:text-white">No events recorded</p>
       <p class="text-xs font-mono mt-0.5">There are no notification logs matching your active filters.</p>
     </div>
 
@@ -184,7 +184,7 @@
       <div v-for="group in paginatedGroups" :key="group.label" class="space-y-3">
         <!-- Date Marker -->
         <div class="flex items-center gap-3">
-          <span class="text-xs font-bold font-mono uppercase tracking-wider text-foreground/60 dark:text-dark-foreground/60 bg-muted/40 dark:bg-dark-muted/40 px-3 py-1 rounded-lg border border-outline/30 dark:border-dark-outline/40">
+          <span class="text-xs font-bold font-mono uppercase tracking-wider text-foreground/60 dark:text-white/70 bg-muted/40 dark:bg-dark-muted/40 px-3 py-1 rounded-lg border border-outline/30 dark:border-dark-outline/40">
             {{ group.label }}
           </span>
           <div class="h-px flex-1 bg-outline/30 dark:bg-dark-outline/40"></div>
@@ -213,15 +213,15 @@
             <!-- Content -->
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-bold text-foreground dark:text-dark-foreground">
+                <span class="text-xs font-bold text-foreground dark:text-white">
                   {{ formatAction(log.action) }}
                 </span>
-                <span class="text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45 shrink-0">
+                <span class="text-[10px] font-mono text-foreground/45 dark:text-white/55 shrink-0">
                   {{ log.relativeTime }}
                 </span>
               </div>
 
-              <p class="text-xs text-foreground/75 dark:text-dark-foreground/75 mt-0.5 leading-relaxed">
+              <p class="text-xs text-foreground/75 dark:text-white/88 mt-0.5 leading-relaxed">
                 {{ log.details }}
               </p>
 
@@ -250,7 +250,7 @@
         :disabled="page === 1" 
         @click="page--" 
         id="notif-prev-btn"
-        class="px-3.5 py-1.5 rounded-lg border border-outline/40 dark:border-dark-outline/40 bg-surface dark:bg-dark-surface text-foreground dark:text-dark-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/40 cursor-pointer"
+        class="px-3.5 py-1.5 rounded-lg border border-outline/40 dark:border-dark-outline/40 bg-surface dark:bg-dark-surface text-foreground dark:text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/40 cursor-pointer"
       >
         Previous
       </button>
@@ -259,7 +259,7 @@
         :disabled="page === totalPages" 
         @click="page++" 
         id="notif-next-btn"
-        class="px-3.5 py-1.5 rounded-lg border border-outline/40 dark:border-dark-outline/40 bg-surface dark:bg-dark-surface text-foreground dark:text-dark-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/40 cursor-pointer"
+        class="px-3.5 py-1.5 rounded-lg border border-outline/40 dark:border-dark-outline/40 bg-surface dark:bg-dark-surface text-foreground dark:text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/40 cursor-pointer"
       >
         Next
       </button>

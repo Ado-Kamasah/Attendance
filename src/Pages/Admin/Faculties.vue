@@ -2,7 +2,7 @@
   <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
-    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+    <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
@@ -15,12 +15,12 @@
           </span>
         </div>
         <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Faculty Management</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Add and manage faculties for student and staff registration.</p>
+        <p class="text-sm text-slate-500 dark:text-white/75 mt-1">Add and manage faculties for student and staff registration.</p>
       </div>
     </div>
 
     <!-- Add / Edit Form -->
-    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm">
+    <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 shadow-sm">
       <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
         <component :is="editingFacultyId ? Edit3 : Plus" class="w-4 h-4 text-secondary" />
         {{ editingFacultyId ? 'Update Faculty' : 'Add New Faculty' }}
@@ -32,11 +32,11 @@
             v-model="newFacultyName"
             :placeholder="editingFacultyId ? 'Update faculty name...' : 'e.g., School of Medicine'"
             required
-            class="flex-1 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all placeholder:text-slate-400"
+            class="flex-1 bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all placeholder:text-slate-400"
           />
           <div class="flex gap-2">
             <button v-if="editingFacultyId" type="button" @click="cancelEdit"
-              class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap">
+              class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap">
               Cancel
             </button>
             <button type="submit" :disabled="isAdding"
@@ -58,8 +58,8 @@
     </div>
 
     <!-- Faculties List -->
-    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
-      <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+    <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-slate-100 dark:border-dark-outline flex items-center justify-between">
         <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Registered Faculties</h3>
         <span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-primary/5 dark:bg-secondary/10 border border-primary/20 dark:border-secondary/20 text-primary dark:text-secondary font-semibold">
           {{ faculties.length }} Total
@@ -69,7 +69,7 @@
       <!-- Loading -->
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-16">
         <Loader2 class="w-8 h-8 text-secondary animate-spin mb-3" />
-        <span class="text-xs font-mono text-slate-500 dark:text-slate-400">LOADING FACULTIES...</span>
+        <span class="text-xs font-mono text-slate-500 dark:text-white/75">LOADING FACULTIES...</span>
       </div>
 
       <!-- Empty -->
@@ -90,7 +90,7 @@
             <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-secondary/15 border border-primary/20 dark:border-secondary/30 text-primary dark:text-secondary flex items-center justify-center font-bold text-xs uppercase">
               {{ faculty.name.charAt(0) }}
             </div>
-            <span class="font-medium text-sm text-slate-900 dark:text-slate-100">{{ faculty.name }}</span>
+            <span class="font-medium text-sm text-slate-900 dark:text-white">{{ faculty.name }}</span>
             <span v-if="editingFacultyId === faculty.id" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary/15 text-secondary">Editing</span>
           </div>
           <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

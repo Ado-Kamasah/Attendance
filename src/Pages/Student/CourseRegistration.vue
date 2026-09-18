@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           Course <span class="text-secondary dark:text-dark-secondary">Registration</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           Select and confirm accredited modules for the active semester &bull; {{ currentUserProgram }}
         </p>
       </div>
@@ -47,7 +47,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
             <div class="flex items-center gap-2">
               <BookOpen class="w-4 h-4 text-secondary" />
-              <h2 class="text-xs sm:text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+              <h2 class="text-xs sm:text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                 Available Courses ({{ filteredCourses.length }})
               </h2>
             </div>
@@ -55,7 +55,7 @@
             <div class="flex flex-wrap items-center gap-2">
               <select 
                 v-model="semesterFilter" 
-                class="bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 rounded-xl px-2.5 py-1 text-xs text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary"
+                class="bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 rounded-xl px-2.5 py-1 text-xs text-foreground dark:text-white font-mono outline-hidden focus:border-secondary"
               >
                 <option value="all">All Semesters</option>
                 <option value="Semester 1">Semester 1</option>
@@ -64,7 +64,7 @@
 
               <select 
                 v-model="levelFilter" 
-                class="bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 rounded-xl px-2.5 py-1 text-xs text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary"
+                class="bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 rounded-xl px-2.5 py-1 text-xs text-foreground dark:text-white font-mono outline-hidden focus:border-secondary"
               >
                 <option value="all">All Levels</option>
                 <option value="100">Level 100</option>
@@ -79,7 +79,7 @@
                   type="text" 
                   v-model="searchQuery" 
                   placeholder="Filter courses…" 
-                  class="pl-7 pr-3 py-1 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono placeholder:text-foreground/40 w-32 sm:w-40"
+                  class="pl-7 pr-3 py-1 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono placeholder:text-foreground/40 w-32 sm:w-40"
                 />
               </div>
             </div>
@@ -87,9 +87,9 @@
 
           <!-- Courses List -->
           <div class="pt-4">
-            <div v-if="filteredCourses.length === 0" class="py-16 text-center text-foreground/50 dark:text-dark-foreground/50">
+            <div v-if="filteredCourses.length === 0" class="py-16 text-center text-foreground/50 dark:text-white/65">
               <BookOpen class="w-8 h-8 mx-auto mb-2 text-foreground/30" />
-              <p class="text-sm font-medium text-foreground dark:text-dark-foreground">No available courses found</p>
+              <p class="text-sm font-medium text-foreground dark:text-white">No available courses found</p>
               <p class="text-xs font-mono mt-0.5">There are no unpublished modules matching your filters.</p>
             </div>
 
@@ -129,10 +129,10 @@
                     </span>
                   </div>
 
-                  <h3 class="text-xs sm:text-sm font-semibold text-foreground dark:text-dark-foreground truncate mt-1">
+                  <h3 class="text-xs sm:text-sm font-semibold text-foreground dark:text-white truncate mt-1">
                     {{ course.name }}
                   </h3>
-                  <p class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50 mt-0.5">
+                  <p class="text-[11px] font-mono text-foreground/50 dark:text-white/65 mt-0.5">
                     Faculty Instructor: {{ course.lecturer }}
                   </p>
                 </div>
@@ -151,7 +151,7 @@
           <div>
             <div class="flex items-center gap-2 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
               <ClipboardList class="w-4 h-4 text-secondary" />
-              <h2 class="text-xs sm:text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+              <h2 class="text-xs sm:text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                 Registration Summary
               </h2>
             </div>
@@ -159,8 +159,8 @@
             <!-- Credits Meter -->
             <div class="pt-4 space-y-2">
               <div class="flex items-center justify-between text-xs font-mono">
-                <span class="text-foreground/60 dark:text-dark-foreground/60">Credit Load</span>
-                <span class="font-bold" :class="totalSelectedCredits > maxCredits ? 'text-error font-extrabold' : 'text-foreground dark:text-dark-foreground'">
+                <span class="text-foreground/60 dark:text-white/70">Credit Load</span>
+                <span class="font-bold" :class="totalSelectedCredits > maxCredits ? 'text-error font-extrabold' : 'text-foreground dark:text-white'">
                   {{ totalSelectedCredits }} / {{ maxCredits }} Max
                 </span>
               </div>
@@ -181,7 +181,7 @@
 
             <!-- Selected Courses List -->
             <div class="pt-5 space-y-3">
-              <h3 class="text-xs font-bold font-mono text-foreground/70 dark:text-dark-foreground/70 uppercase tracking-wider">
+              <h3 class="text-xs font-bold font-mono text-foreground/70 dark:text-white/80 uppercase tracking-wider">
                 Selected Modules ({{ selectedCourses.length }})
               </h3>
 
@@ -196,7 +196,7 @@
                   class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30 dark:border-dark-outline/40 flex items-center justify-between gap-2"
                 >
                   <div class="min-w-0">
-                    <p class="text-xs font-bold text-foreground dark:text-dark-foreground truncate">
+                    <p class="text-xs font-bold text-foreground dark:text-white truncate">
                       {{ course.code }} &bull; {{ course.name }}
                     </p>
                     <span class="text-[10px] font-mono text-secondary dark:text-dark-secondary">

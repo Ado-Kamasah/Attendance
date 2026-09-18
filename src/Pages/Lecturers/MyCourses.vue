@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           Assigned <span class="text-secondary dark:text-dark-secondary">Courses</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           Instructional syllabus management, class rosters, and timetable rescheduling
         </p>
       </div>
@@ -26,9 +26,9 @@
     </div>
 
     <!-- Empty State -->
-    <div v-if="lecturerCourses.length === 0" class="py-16 text-center text-foreground/50 dark:text-dark-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl max-w-md mx-auto p-8">
+    <div v-if="lecturerCourses.length === 0" class="py-16 text-center text-foreground/50 dark:text-white/65 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl max-w-md mx-auto p-8">
       <BookOpen class="w-10 h-10 mx-auto mb-2 text-foreground/30" />
-      <h3 class="text-base font-bold font-display text-foreground dark:text-dark-foreground">No Courses Assigned</h3>
+      <h3 class="text-base font-bold font-display text-foreground dark:text-white">No Courses Assigned</h3>
       <p class="text-xs font-mono mt-1">You haven't been assigned to teach any course sections for the current academic term.</p>
     </div>
 
@@ -52,12 +52,12 @@
           </div>
 
           <!-- Course Name -->
-          <h3 class="text-sm sm:text-base font-bold text-foreground dark:text-dark-foreground mt-3 line-clamp-2">
+          <h3 class="text-sm sm:text-base font-bold text-foreground dark:text-white mt-3 line-clamp-2">
             {{ course.name }}
           </h3>
 
           <!-- Schedule & Venue Details -->
-          <div class="mt-3.5 space-y-1.5 text-xs font-mono text-foreground/60 dark:text-dark-foreground/60">
+          <div class="mt-3.5 space-y-1.5 text-xs font-mono text-foreground/60 dark:text-white/70">
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2 truncate">
                 <Clock class="w-3.5 h-3.5 text-foreground/40 shrink-0" />
@@ -83,8 +83,8 @@
         <div class="mt-5 pt-4 border-t border-outline/30 dark:border-dark-outline/40 space-y-3">
           <div>
             <div class="flex items-center justify-between text-xs font-mono mb-1.5">
-              <span class="text-foreground/60 dark:text-dark-foreground/60">Average Turnout</span>
-              <span class="font-bold text-foreground dark:text-dark-foreground">{{ course.avgAttendance }}%</span>
+              <span class="text-foreground/60 dark:text-white/70">Average Turnout</span>
+              <span class="font-bold text-foreground dark:text-white">{{ course.avgAttendance }}%</span>
             </div>
             <div class="h-2 w-full bg-muted/70 dark:bg-dark-muted/70 rounded-full overflow-hidden">
               <div 
@@ -130,7 +130,7 @@
         <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
         <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
-        <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-dark-foreground">
+        <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-white">
           Reschedule Lecture Section
         </h2>
         <p class="text-xs font-mono text-foreground/60">
@@ -140,7 +140,7 @@
         <div class="space-y-3 text-xs font-mono pt-2">
           <div>
             <label class="block text-[11px] text-foreground/70 mb-1">Day of Week</label>
-            <select v-model="editForm.day" class="w-full bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl px-3 py-2 text-foreground dark:text-dark-foreground outline-hidden focus:border-secondary">
+            <select v-model="editForm.day" class="w-full bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl px-3 py-2 text-foreground dark:text-white outline-hidden focus:border-secondary">
               <option value="Monday">Monday</option>
               <option value="Tuesday">Tuesday</option>
               <option value="Wednesday">Wednesday</option>
@@ -154,11 +154,11 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] text-foreground/70 mb-1">Start Time</label>
-              <input type="time" v-model="editForm.startTime" class="w-full bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl px-3 py-2 text-foreground dark:text-dark-foreground outline-hidden focus:border-secondary" />
+              <input type="time" v-model="editForm.startTime" class="w-full bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl px-3 py-2 text-foreground dark:text-white outline-hidden focus:border-secondary" />
             </div>
             <div>
               <label class="block text-[11px] text-foreground/70 mb-1">End Time</label>
-              <input type="time" v-model="editForm.endTime" class="w-full bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl px-3 py-2 text-foreground dark:text-dark-foreground outline-hidden focus:border-secondary" />
+              <input type="time" v-model="editForm.endTime" class="w-full bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl px-3 py-2 text-foreground dark:text-white outline-hidden focus:border-secondary" />
             </div>
           </div>
         </div>
@@ -182,7 +182,7 @@
 
         <div class="flex items-center justify-between pb-3 border-b border-outline/30 dark:border-dark-outline/40 shrink-0">
           <div>
-            <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-dark-foreground">
+            <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-white">
               {{ activeCourse?.name }}
             </h2>
             <p class="text-xs font-mono text-secondary dark:text-dark-secondary">
@@ -215,7 +215,7 @@
             <tbody class="divide-y divide-outline/20">
               <tr v-for="student in studentsList" :key="student.id" class="hover:bg-muted/20">
                 <td class="py-2.5 px-3">
-                  <div class="flex items-center gap-2 font-sans font-semibold text-foreground dark:text-dark-foreground">
+                  <div class="flex items-center gap-2 font-sans font-semibold text-foreground dark:text-white">
                     <div class="w-6 h-6 rounded-md bg-secondary/15 text-secondary font-mono font-bold text-[10px] flex items-center justify-center shrink-0">
                       {{ student.name.charAt(0) }}
                     </div>
@@ -237,7 +237,7 @@
         <div class="w-12 h-12 rounded-2xl bg-error/15 text-error flex items-center justify-center">
           <Trash2 class="w-6 h-6" />
         </div>
-        <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-dark-foreground">
+        <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-white">
           Remove Section Assignment?
         </h2>
         <p class="text-xs font-mono text-foreground/70">

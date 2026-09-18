@@ -11,10 +11,10 @@
           </svg>
           <span class="tracking-widest font-semibold text-xs font-display">OPERATIONAL HUB // CAD-ADMIN 01</span>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground dark:text-white">
           Dashboard Overview
         </h1>
-        <p class="text-xs sm:text-sm text-foreground/60 dark:text-dark-foreground/60 mt-0.5">
+        <p class="text-xs sm:text-sm text-foreground/60 dark:text-white/70 mt-0.5">
           Real-time institutional attendance analytics, active schedules, and live system audit streams.
         </p>
       </div>
@@ -23,10 +23,10 @@
       <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
         
         <!-- Live Calendar / Clock Chip -->
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline shadow-sm text-xs font-medium text-foreground/80 dark:text-dark-foreground/80">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline shadow-sm text-xs font-medium text-foreground/80 dark:text-white/90">
           <Calendar class="w-3.5 h-3.5 text-secondary dark:text-dark-secondary" />
           <span>{{ currentDate }}</span>
-          <span class="text-foreground/30 dark:text-dark-foreground/30">•</span>
+          <span class="text-foreground/30 dark:text-white/40">•</span>
           <span class="font-mono text-primary dark:text-dark-secondary font-semibold">{{ currentTimeString }}</span>
         </div>
 
@@ -41,7 +41,7 @@
           type="button"
           @click="refreshData"
           :disabled="isRefreshing"
-          class="p-2 rounded-xl bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline hover:border-primary dark:hover:border-dark-secondary text-foreground/70 dark:text-dark-foreground/70 hover:text-primary dark:hover:text-dark-secondary transition-all shadow-sm focus:outline-none cursor-pointer disabled:opacity-50"
+          class="p-2 rounded-xl bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline hover:border-primary dark:hover:border-dark-secondary text-foreground/70 dark:text-white/80 hover:text-primary dark:hover:text-dark-secondary transition-all shadow-sm focus:outline-none cursor-pointer disabled:opacity-50"
           title="Refresh Dashboard Data"
         >
           <RotateCw class="w-4 h-4" :class="{ 'animate-spin': isRefreshing }" />
@@ -67,10 +67,10 @@
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
         <div class="flex items-start justify-between">
           <div class="space-y-1">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-white/65 font-display">
               Total Students
             </span>
-            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-dark-foreground">
+            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-white">
               {{ totalStudents }}
             </div>
           </div>
@@ -84,7 +84,7 @@
             <ArrowUpRight class="w-3.5 h-3.5" />
             <span>+5%</span>
           </span>
-          <span class="text-foreground/45 dark:text-dark-foreground/45 text-[11px]">from last week</span>
+          <span class="text-foreground/45 dark:text-white/55 text-[11px]">from last week</span>
         </div>
       </div>
 
@@ -92,10 +92,10 @@
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
         <div class="flex items-start justify-between">
           <div class="space-y-1">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-white/65 font-display">
               Avg Attendance
             </span>
-            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-dark-foreground">
+            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-white">
               {{ averageAttendance }}%
             </div>
           </div>
@@ -120,10 +120,10 @@
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
         <div class="flex items-start justify-between">
           <div class="space-y-1">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-white/65 font-display">
               Active Courses
             </span>
-            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-dark-foreground">
+            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-white">
               {{ activeCoursesCount }}
             </div>
           </div>
@@ -137,7 +137,7 @@
             <ArrowUpRight class="w-3.5 h-3.5" />
             <span>+12%</span>
           </span>
-          <span class="text-foreground/45 dark:text-dark-foreground/45 text-[11px]">in current semester</span>
+          <span class="text-foreground/45 dark:text-white/55 text-[11px]">in current semester</span>
         </div>
       </div>
 
@@ -145,10 +145,10 @@
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
         <div class="flex items-start justify-between">
           <div class="space-y-1">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-dark-foreground/50 font-display">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-foreground/50 dark:text-white/65 font-display">
               Flagged Absences
             </span>
-            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-dark-foreground">
+            <div class="text-2xl sm:text-3xl font-bold font-display text-foreground dark:text-white">
               {{ flaggedAbsences }}
             </div>
           </div>
@@ -162,7 +162,7 @@
             <ArrowDownRight class="w-3.5 h-3.5" />
             <span>-4%</span>
           </span>
-          <span class="text-foreground/45 dark:text-dark-foreground/45 text-[11px]">needs attention</span>
+          <span class="text-foreground/45 dark:text-white/55 text-[11px]">needs attention</span>
         </div>
       </div>
 
@@ -183,10 +183,10 @@
                 <Clock class="w-4 h-4" />
               </div>
               <div>
-                <h2 class="font-display font-bold text-lg text-foreground dark:text-dark-foreground">
+                <h2 class="font-display font-bold text-lg text-foreground dark:text-white">
                   Today's Schedule
                 </h2>
-                <span class="text-xs text-foreground/50 dark:text-dark-foreground/50">
+                <span class="text-xs text-foreground/50 dark:text-white/65">
                   {{ currentDayName }} • {{ todaySchedule.length }} lecture{{ todaySchedule.length === 1 ? '' : 's' }} scheduled
                 </span>
               </div>
@@ -201,7 +201,7 @@
                 class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer"
                 :class="activeScheduleFilter === tab.id
                   ? 'bg-surface dark:bg-dark-surface text-primary dark:text-dark-secondary shadow-xs font-semibold'
-                  : 'text-foreground/60 dark:text-dark-foreground/60 hover:text-foreground dark:hover:text-dark-foreground'"
+                  : 'text-foreground/60 dark:text-white/70 hover:text-foreground dark:hover:text-dark-foreground'"
               >
                 {{ tab.label }}
               </button>
@@ -223,7 +223,7 @@
                   <span class="block text-xs font-bold font-mono text-primary dark:text-dark-secondary">
                     {{ course.startTime || 'TBD' }}
                   </span>
-                  <span class="block text-[10px] text-foreground/50 dark:text-dark-foreground/50 font-mono">
+                  <span class="block text-[10px] text-foreground/50 dark:text-white/65 font-mono">
                     {{ course.endTime || '' }}
                   </span>
                 </div>
@@ -231,18 +231,18 @@
                 <!-- Course Description -->
                 <div>
                   <div class="flex items-center gap-2">
-                    <h3 class="font-display font-bold text-sm text-foreground dark:text-dark-foreground">
+                    <h3 class="font-display font-bold text-sm text-foreground dark:text-white">
                       {{ course.name }}
                     </h3>
                   </div>
-                  <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-foreground/60 dark:text-dark-foreground/60">
+                  <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-foreground/60 dark:text-white/70">
                     <span class="inline-flex items-center gap-1">
                       <GraduationCap class="w-3.5 h-3.5 text-secondary dark:text-dark-secondary" />
                       {{ course.lecturer || 'Faculty Lecturer' }}
                     </span>
                     <span>•</span>
                     <span class="inline-flex items-center gap-1">
-                      <MapPin class="w-3.5 h-3.5 text-foreground/40 dark:text-dark-foreground/40" />
+                      <MapPin class="w-3.5 h-3.5 text-foreground/40 dark:text-white/50" />
                       {{ course.room || 'Room TBD' }}
                     </span>
                   </div>
@@ -257,7 +257,7 @@
                   :class="{
                     'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30': course.status === 'ongoing',
                     'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30': course.status === 'upcoming',
-                    'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-dark-foreground/60 border border-outline/40': course.status === 'completed',
+                    'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-white/70 border border-outline/40': course.status === 'completed',
                   }"
                 >
                   <span
@@ -288,13 +288,13 @@
               v-if="filteredSchedule.length === 0"
               class="py-10 px-4 text-center rounded-xl border border-dashed border-outline dark:border-dark-outline bg-background/30 dark:bg-dark-background/30 space-y-2"
             >
-              <div class="w-10 h-10 rounded-full bg-muted dark:bg-dark-muted text-foreground/40 dark:text-dark-foreground/40 flex items-center justify-center mx-auto">
+              <div class="w-10 h-10 rounded-full bg-muted dark:bg-dark-muted text-foreground/40 dark:text-white/50 flex items-center justify-center mx-auto">
                 <CalendarCheck class="w-5 h-5" />
               </div>
-              <p class="text-sm font-display font-medium text-foreground/80 dark:text-dark-foreground/80">
+              <p class="text-sm font-display font-medium text-foreground/80 dark:text-white/90">
                 No lectures found for this filter.
               </p>
-              <p class="text-xs text-foreground/50 dark:text-dark-foreground/50 max-w-xs mx-auto">
+              <p class="text-xs text-foreground/50 dark:text-white/65 max-w-xs mx-auto">
                 {{ todaySchedule.length === 0 ? "There are no academic sessions scheduled for today (" + currentDayName + ")." : "Try switching to another tab to view scheduled sessions." }}
               </p>
             </div>
@@ -303,7 +303,7 @@
 
           <!-- Bottom Schedule Action Footer -->
           <div class="mt-4 pt-4 border-t border-outline/40 dark:border-dark-outline/60 flex items-center justify-between text-xs">
-            <span class="text-foreground/50 dark:text-dark-foreground/50 font-mono text-[11px]">
+            <span class="text-foreground/50 dark:text-white/65 font-mono text-[11px]">
               UPDATED LIVE EVERY 30 SECONDS
             </span>
             <button
@@ -331,7 +331,7 @@
               <div class="w-7 h-7 rounded-lg bg-secondary/15 dark:bg-dark-secondary/20 text-secondary dark:text-dark-secondary flex items-center justify-center">
                 <History class="w-4 h-4" />
               </div>
-              <h2 class="font-display font-bold text-base text-foreground dark:text-dark-foreground">
+              <h2 class="font-display font-bold text-base text-foreground dark:text-white">
                 Live Audit Stream
               </h2>
             </div>
@@ -352,14 +352,14 @@
               class="p-3 rounded-xl bg-background/60 dark:bg-dark-background/60 border border-outline/40 dark:border-dark-outline/60 hover:border-outline dark:hover:border-dark-outline transition-all"
             >
               <div class="flex items-center justify-between text-xs mb-1">
-                <span class="font-display font-semibold text-foreground dark:text-dark-foreground">
+                <span class="font-display font-semibold text-foreground dark:text-white">
                   {{ log.action }}
                 </span>
-                <span class="text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45">
+                <span class="text-[10px] font-mono text-foreground/45 dark:text-white/55">
                   {{ log.timestamp }}
                 </span>
               </div>
-              <p class="text-xs text-foreground/70 dark:text-dark-foreground/70 line-clamp-2 leading-relaxed mb-2">
+              <p class="text-xs text-foreground/70 dark:text-white/80 line-clamp-2 leading-relaxed mb-2">
                 {{ log.details }}
               </p>
               <div class="flex items-center justify-between text-[11px]">
@@ -370,7 +370,7 @@
                   >
                     {{ log.role }}
                   </span>
-                  <span class="text-foreground/60 dark:text-dark-foreground/60 font-medium">
+                  <span class="text-foreground/60 dark:text-white/70 font-medium">
                     {{ log.user }}
                   </span>
                 </div>
@@ -380,7 +380,7 @@
             <!-- Empty Audit Logs -->
             <div
               v-if="systemAuditLogs.length === 0"
-              class="py-8 text-center text-xs text-foreground/50 dark:text-dark-foreground/50"
+              class="py-8 text-center text-xs text-foreground/50 dark:text-white/65"
             >
               No system activity logs recorded yet.
             </div>
@@ -390,7 +390,7 @@
           <button
             type="button"
             @click="isAuditModalOpen = true"
-            class="w-full mt-4 py-2.5 px-4 rounded-xl border border-outline/70 dark:border-dark-outline text-xs font-display font-semibold text-foreground/80 dark:text-dark-foreground/80 hover:bg-background dark:hover:bg-dark-background transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            class="w-full mt-4 py-2.5 px-4 rounded-xl border border-outline/70 dark:border-dark-outline text-xs font-display font-semibold text-foreground/80 dark:text-white/90 hover:bg-background dark:hover:bg-dark-background transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <ShieldCheck class="w-3.5 h-3.5 text-secondary dark:text-dark-secondary" />
             <span>Open Complete Audit Trail</span>
@@ -406,33 +406,33 @@
           
           <div class="flex items-center gap-2 mb-3">
             <Sparkles class="w-4 h-4 text-secondary dark:text-dark-secondary" />
-            <h3 class="text-xs font-bold uppercase tracking-wider text-foreground/70 dark:text-dark-foreground/70 font-display">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-foreground/70 dark:text-white/80 font-display">
               Infrastructure Specifications
             </h3>
           </div>
 
           <div class="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-dark-foreground/45 block mb-0.5">Database Tier</span>
-              <span class="font-medium text-foreground dark:text-dark-foreground flex items-center gap-1">
+              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-white/55 block mb-0.5">Database Tier</span>
+              <span class="font-medium text-foreground dark:text-white flex items-center gap-1">
                 <Database class="w-3 h-3 text-emerald-500" />
                 Supabase PG-15
               </span>
             </div>
             <div>
-              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-dark-foreground/45 block mb-0.5">Attendance Ledger</span>
-              <span class="font-medium font-mono text-foreground dark:text-dark-foreground">
+              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-white/55 block mb-0.5">Attendance Ledger</span>
+              <span class="font-medium font-mono text-foreground dark:text-white">
                 {{ attendances.length }} logs logged
               </span>
             </div>
             <div>
-              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-dark-foreground/45 block mb-0.5">Enrollment Count</span>
-              <span class="font-medium font-mono text-foreground dark:text-dark-foreground">
+              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-white/55 block mb-0.5">Enrollment Count</span>
+              <span class="font-medium font-mono text-foreground dark:text-white">
                 {{ enrollments.length }} records
               </span>
             </div>
             <div>
-              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-dark-foreground/45 block mb-0.5">Active Session</span>
+              <span class="text-[10px] font-mono uppercase text-foreground/45 dark:text-white/55 block mb-0.5">Active Session</span>
               <span class="font-medium text-secondary dark:text-dark-secondary">
                 Semester 2 (2025)
               </span>
@@ -470,10 +470,10 @@
                 <ShieldCheck class="w-5 h-5" />
               </div>
               <div>
-                <h2 class="text-lg font-bold font-display text-foreground dark:text-dark-foreground">
+                <h2 class="text-lg font-bold font-display text-foreground dark:text-white">
                   Complete System Audit Trail
                 </h2>
-                <p class="text-xs text-foreground/50 dark:text-dark-foreground/50">
+                <p class="text-xs text-foreground/50 dark:text-white/65">
                   Comprehensive append-only record of administrative, faculty, and student operations.
                 </p>
               </div>
@@ -481,7 +481,7 @@
             <button
               type="button"
               @click="isAuditModalOpen = false"
-              class="p-2 rounded-xl text-foreground/40 hover:text-foreground dark:text-dark-foreground/40 dark:hover:text-dark-foreground hover:bg-background dark:hover:bg-dark-background transition-colors cursor-pointer"
+              class="p-2 rounded-xl text-foreground/40 hover:text-foreground dark:text-white/50 dark:hover:text-dark-foreground hover:bg-background dark:hover:bg-dark-background transition-colors cursor-pointer"
             >
               <X class="w-5 h-5" />
             </button>
@@ -490,16 +490,16 @@
           <!-- Search & Filter Bar -->
           <div class="p-4 bg-background/50 dark:bg-dark-background/50 border-b border-outline/40 dark:border-dark-outline/40 flex flex-col sm:flex-row items-center gap-3 shrink-0">
             <div class="relative w-full sm:flex-1">
-              <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/40 dark:text-dark-foreground/40" />
+              <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/40 dark:text-white/50" />
               <input
                 type="text"
                 v-model="auditSearchQuery"
                 placeholder="Search audit actions, details, or users..."
-                class="w-full pl-10 pr-4 py-2 bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-xl text-xs text-foreground dark:text-dark-foreground focus:outline-none focus:border-primary dark:focus:border-dark-secondary"
+                class="w-full pl-10 pr-4 py-2 bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-xl text-xs text-foreground dark:text-white focus:outline-none focus:border-primary dark:focus:border-dark-secondary"
               />
             </div>
             <div class="flex items-center gap-1 text-xs self-start sm:self-auto">
-              <span class="text-foreground/50 dark:text-dark-foreground/50 mr-1">Role:</span>
+              <span class="text-foreground/50 dark:text-white/65 mr-1">Role:</span>
               <button
                 v-for="role in ['All', 'Admin', 'Lecturer', 'Student', 'System']"
                 :key="role"
@@ -507,7 +507,7 @@
                 class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
                 :class="selectedAuditRole === role
                   ? 'bg-primary dark:bg-dark-secondary text-white dark:text-dark-background font-semibold'
-                  : 'text-foreground/60 dark:text-dark-foreground/60 hover:bg-background dark:hover:bg-dark-background'"
+                  : 'text-foreground/60 dark:text-white/70 hover:bg-background dark:hover:bg-dark-background'"
               >
                 {{ role }}
               </button>
@@ -523,7 +523,7 @@
             >
               <div class="space-y-1 flex-1">
                 <div class="flex items-center gap-2">
-                  <span class="font-semibold font-display text-foreground dark:text-dark-foreground">
+                  <span class="font-semibold font-display text-foreground dark:text-white">
                     {{ log.action }}
                   </span>
                   <span
@@ -533,16 +533,16 @@
                     {{ log.role }}
                   </span>
                 </div>
-                <p class="text-foreground/75 dark:text-dark-foreground/75 leading-relaxed">
+                <p class="text-foreground/75 dark:text-white/88 leading-relaxed">
                   {{ log.details }}
                 </p>
               </div>
 
               <div class="sm:text-right shrink-0">
-                <span class="block font-medium text-foreground dark:text-dark-foreground text-[11px]">
+                <span class="block font-medium text-foreground dark:text-white text-[11px]">
                   {{ log.user }}
                 </span>
-                <span class="block font-mono text-[10px] text-foreground/45 dark:text-dark-foreground/45">
+                <span class="block font-mono text-[10px] text-foreground/45 dark:text-white/55">
                   {{ log.timestamp }}
                 </span>
               </div>
@@ -550,7 +550,7 @@
 
             <div
               v-if="filteredModalAuditLogs.length === 0"
-              class="py-12 text-center text-xs text-foreground/50 dark:text-dark-foreground/50"
+              class="py-12 text-center text-xs text-foreground/50 dark:text-white/65"
             >
               No matching audit records found.
             </div>
@@ -558,7 +558,7 @@
 
           <!-- Modal Footer -->
           <div class="p-4 border-t border-outline/50 dark:border-dark-outline/50 bg-background/30 dark:bg-dark-background/30 flex items-center justify-between text-xs shrink-0">
-            <span class="text-foreground/50 dark:text-dark-foreground/50">
+            <span class="text-foreground/50 dark:text-white/65">
               Showing {{ filteredModalAuditLogs.length }} of {{ systemAuditLogs.length }} entries
             </span>
             <button

@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           Finance <span class="text-secondary dark:text-dark-secondary">Office Ledger</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           {{ today }} &bull; Teaching Hours & Session Verification
         </p>
       </div>
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-dark-foreground/50 flex items-center justify-center gap-2">
+    <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
       <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
       <span>Loading financial records…</span>
     </div>
@@ -40,7 +40,7 @@
         <!-- Total Lecturers -->
         <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+            <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
               Total Instructors
             </span>
             <div class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-500 border border-sky-500/20 flex items-center justify-center">
@@ -48,17 +48,17 @@
             </div>
           </div>
           <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-3xl font-extrabold font-display text-foreground dark:text-dark-foreground">
+            <span class="text-3xl font-extrabold font-display text-foreground dark:text-white">
               {{ totalLecturers }}
             </span>
-            <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Active Faculty</span>
+            <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Active Faculty</span>
           </div>
         </div>
 
         <!-- Total Sessions -->
         <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+            <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
               Total Sessions
             </span>
             <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 flex items-center justify-center">
@@ -66,17 +66,17 @@
             </div>
           </div>
           <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-3xl font-extrabold font-display text-foreground dark:text-dark-foreground">
+            <span class="text-3xl font-extrabold font-display text-foreground dark:text-white">
               {{ totalSessions }}
             </span>
-            <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Conducted</span>
+            <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Conducted</span>
           </div>
         </div>
 
         <!-- Avg Attendance Rate -->
         <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+            <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
               Avg Turnout Rate
             </span>
             <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center">
@@ -90,14 +90,14 @@
             >
               {{ avgAttendance }}%
             </span>
-            <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Student Turnout</span>
+            <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Student Turnout</span>
           </div>
         </div>
 
         <!-- Courses Covered -->
         <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+            <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
               Courses Billed
             </span>
             <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center justify-center">
@@ -105,10 +105,10 @@
             </div>
           </div>
           <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-3xl font-extrabold font-display text-foreground dark:text-dark-foreground">
+            <span class="text-3xl font-extrabold font-display text-foreground dark:text-white">
               {{ totalCourses }}
             </span>
-            <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Distinct Units</span>
+            <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Distinct Units</span>
           </div>
         </div>
       </div>
@@ -120,10 +120,10 @@
 
         <div class="p-4 sm:p-5 border-b border-outline/30 dark:border-dark-outline/40 flex items-center justify-between">
           <div>
-            <h2 class="text-sm sm:text-base font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+            <h2 class="text-sm sm:text-base font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
               Teaching Volume & Turnout Ranking
             </h2>
-            <p class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50 mt-0.5">
+            <p class="text-[11px] font-mono text-foreground/50 dark:text-white/65 mt-0.5">
               Top instructors ranked by verified sessions conducted
             </p>
           </div>
@@ -139,7 +139,7 @@
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs sm:text-sm">
             <thead>
-              <tr class="bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/30 dark:border-dark-outline/40 font-mono text-[11px] uppercase tracking-wider text-foreground/60 dark:text-dark-foreground/60">
+              <tr class="bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/30 dark:border-dark-outline/40 font-mono text-[11px] uppercase tracking-wider text-foreground/60 dark:text-white/70">
                 <th class="py-3 px-4 w-12 text-center">#</th>
                 <th class="py-3 px-4">Faculty Member</th>
                 <th class="py-3 px-4 hidden md:table-cell">Contact Email</th>
@@ -153,7 +153,7 @@
                 :key="lec.lecturerId"
                 class="hover:bg-muted/20 dark:hover:bg-dark-muted/20 transition-colors"
               >
-                <td class="py-3.5 px-4 font-mono font-bold text-center text-foreground/40 dark:text-dark-foreground/40">
+                <td class="py-3.5 px-4 font-mono font-bold text-center text-foreground/40 dark:text-white/50">
                   {{ i + 1 }}
                 </td>
                 <td class="py-3.5 px-4">
@@ -162,7 +162,7 @@
                       {{ lec.lecturerName.charAt(0) }}
                     </div>
                     <div class="min-w-0">
-                      <p class="font-semibold text-foreground dark:text-dark-foreground truncate">
+                      <p class="font-semibold text-foreground dark:text-white truncate">
                         {{ lec.lecturerName }}
                       </p>
                       <p class="text-[11px] font-mono text-foreground/50 md:hidden truncate">
@@ -171,7 +171,7 @@
                     </div>
                   </div>
                 </td>
-                <td class="py-3.5 px-4 font-mono text-xs text-foreground/60 dark:text-dark-foreground/60 hidden md:table-cell">
+                <td class="py-3.5 px-4 font-mono text-xs text-foreground/60 dark:text-white/70 hidden md:table-cell">
                   {{ lec.lecturerEmail }}
                 </td>
                 <td class="py-3.5 px-4 text-center">
@@ -197,7 +197,7 @@
                 </td>
               </tr>
               <tr v-if="topLecturers.length === 0">
-                <td colspan="5" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-dark-foreground/50">
+                <td colspan="5" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/65">
                   No instructor session data found.
                 </td>
               </tr>

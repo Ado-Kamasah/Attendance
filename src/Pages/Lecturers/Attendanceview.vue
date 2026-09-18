@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-6 w-full max-w-6xl mx-auto">
     <!-- No Course Selected -->
-    <div v-if="!courseId" class="py-16 text-center text-foreground/50 dark:text-dark-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl max-w-md mx-auto p-8">
+    <div v-if="!courseId" class="py-16 text-center text-foreground/50 dark:text-white/65 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl max-w-md mx-auto p-8">
       <BookOpen class="w-10 h-10 mx-auto mb-2 text-foreground/30" />
-      <h2 class="text-base font-bold font-display text-foreground dark:text-dark-foreground">No Course Selected</h2>
+      <h2 class="text-base font-bold font-display text-foreground dark:text-white">No Course Selected</h2>
       <p class="text-xs font-mono mt-1">Please select an assigned course from your courses roster to begin taking attendance.</p>
       <button 
         @click="$emit('navigate', '/lecturer-courses')"
@@ -30,10 +30,10 @@
               <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
             </svg>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+          <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
             {{ courseCode }} &bull; <span class="text-secondary dark:text-dark-secondary">{{ courseName }}</span>
           </h1>
-          <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+          <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
             {{ courseSemester }} &bull; {{ courseMode }} Section &bull; {{ todayLabel }}
           </p>
         </div>
@@ -49,7 +49,7 @@
             <CheckCircle2 class="w-7 h-7" />
           </div>
           <div>
-            <h2 class="text-lg font-bold font-display text-foreground dark:text-dark-foreground">
+            <h2 class="text-lg font-bold font-display text-foreground dark:text-white">
               Attendance Recorded Successfully
             </h2>
             <p class="text-xs font-mono text-foreground/50">
@@ -69,7 +69,7 @@
             <span class="block text-[10px] font-mono text-error/80 uppercase">Absent</span>
           </div>
           <div class="p-3.5 rounded-2xl bg-muted/40 border border-outline/30 text-center">
-            <span class="block text-2xl font-bold font-display text-foreground dark:text-dark-foreground">{{ submissionResult.total }}</span>
+            <span class="block text-2xl font-bold font-display text-foreground dark:text-white">{{ submissionResult.total }}</span>
             <span class="block text-[10px] font-mono text-foreground/50 uppercase">Total Enrolled</span>
           </div>
           <div class="p-3.5 rounded-2xl bg-primary/10 dark:bg-primary/20 border border-primary/25 text-center">
@@ -96,7 +96,7 @@
                   <div class="w-6 h-6 rounded-md bg-success/15 text-success font-bold text-[10px] flex items-center justify-center shrink-0">
                     {{ s.name.charAt(0) }}
                   </div>
-                  <span class="truncate font-sans font-medium text-foreground dark:text-dark-foreground">{{ s.name }}</span>
+                  <span class="truncate font-sans font-medium text-foreground dark:text-white">{{ s.name }}</span>
                 </div>
                 <span class="px-2 py-0.5 rounded text-[10px] bg-success/10 text-success border border-success/20 shrink-0">
                   {{ otpDispatch[s.id]?.status === 'sent' ? 'Email sent' : otpDispatch[s.id]?.status === 'failed' ? 'Failed' : 'Sending…' }}
@@ -121,7 +121,7 @@
                   <div class="w-6 h-6 rounded-md bg-error/15 text-error font-bold text-[10px] flex items-center justify-center shrink-0">
                     {{ s.name.charAt(0) }}
                   </div>
-                  <span class="truncate font-sans font-medium text-foreground dark:text-dark-foreground">{{ s.name }}</span>
+                  <span class="truncate font-sans font-medium text-foreground dark:text-white">{{ s.name }}</span>
                 </div>
                 <span class="px-2 py-0.5 rounded text-[10px] bg-error/10 text-error border border-error/20 shrink-0">
                   {{ absenceDispatch[s.id]?.status === 'sent' ? 'Email sent' : absenceDispatch[s.id]?.status === 'failed' ? 'Failed' : 'Sending…' }}
@@ -149,7 +149,7 @@
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
           <div>
-            <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-dark-foreground">
+            <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-white">
               Physical Roster Verification
             </h2>
             <p class="text-xs font-mono text-foreground/50">
@@ -194,7 +194,7 @@
               {{ student.name.charAt(0) }}
             </div>
             <div class="min-w-0 flex-1 text-xs">
-              <p class="font-semibold text-foreground dark:text-dark-foreground truncate">{{ student.name }}</p>
+              <p class="font-semibold text-foreground dark:text-white truncate">{{ student.name }}</p>
               <p class="text-[10px] font-mono text-foreground/50">{{ student.studentId }}</p>
             </div>
           </label>

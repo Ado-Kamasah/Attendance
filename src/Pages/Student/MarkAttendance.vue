@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           Attendance <span class="text-secondary dark:text-dark-secondary">Status & Radar</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           Real-time synchronized attendance feed from faculty instructors
         </p>
       </div>
@@ -36,7 +36,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-outline/30 dark:border-dark-outline/40">
             <div class="flex items-center gap-2">
               <Radio class="w-4 h-4 text-secondary animate-pulse" />
-              <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+              <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                 Current Active Session
               </h2>
             </div>
@@ -51,7 +51,7 @@
 
           <div class="pt-4">
             <!-- Loading -->
-            <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-dark-foreground/50 flex items-center justify-center gap-2">
+            <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
               <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
               <span>Scanning for active lecture sessions…</span>
             </div>
@@ -61,7 +61,7 @@
               <div class="w-14 h-14 rounded-2xl bg-success/15 text-success mx-auto flex items-center justify-center shadow-lg shadow-success/20">
                 <CheckCircle2 class="w-8 h-8" />
               </div>
-              <h3 class="text-lg font-bold font-display text-foreground dark:text-dark-foreground">Attendance Confirmed</h3>
+              <h3 class="text-lg font-bold font-display text-foreground dark:text-white">Attendance Confirmed</h3>
               <p class="text-xs text-foreground/70">You are recorded as <strong>present</strong> for</p>
               <div class="inline-block px-3 py-1 rounded-lg bg-secondary/15 text-secondary font-bold font-mono text-xs border border-secondary/30">
                 {{ markedCourseName }}
@@ -76,10 +76,10 @@
             </div>
 
             <!-- No Active Class -->
-            <div v-else-if="!activeClass" class="py-16 text-center text-foreground/50 dark:text-dark-foreground/50 space-y-3">
-              <Clock class="w-10 h-10 mx-auto text-foreground/30 dark:text-dark-foreground/30" />
+            <div v-else-if="!activeClass" class="py-16 text-center text-foreground/50 dark:text-white/65 space-y-3">
+              <Clock class="w-10 h-10 mx-auto text-foreground/30 dark:text-white/40" />
               <div>
-                <h3 class="text-sm font-bold text-foreground dark:text-dark-foreground">No Live Classes Active</h3>
+                <h3 class="text-sm font-bold text-foreground dark:text-white">No Live Classes Active</h3>
                 <p class="text-xs font-mono mt-1 max-w-sm mx-auto">
                   No attendance session is running for your enrolled modules. The feed updates automatically.
                 </p>
@@ -109,10 +109,10 @@
                     {{ activeClass.semester }}
                   </span>
                 </div>
-                <h3 class="text-base font-bold text-foreground dark:text-dark-foreground">
+                <h3 class="text-base font-bold text-foreground dark:text-white">
                   {{ activeClass.name }}
                 </h3>
-                <p class="text-xs font-mono text-foreground/60 dark:text-dark-foreground/60">
+                <p class="text-xs font-mono text-foreground/60 dark:text-white/70">
                   {{ activeClass.lecturer }} &bull; Live Session Synchronized
                 </p>
               </div>
@@ -143,7 +143,7 @@
                     {{ mySessionStatus === 'present' ? "You're Marked Present ✓" : mySessionStatus === 'absent' ? 'Marked Absent' : 'Awaiting Attendance' }}
                   </h4>
 
-                  <p class="text-foreground/70 dark:text-dark-foreground/70 mt-1 leading-relaxed">
+                  <p class="text-foreground/70 dark:text-white/80 mt-1 leading-relaxed">
                     <template v-if="mySessionStatus === 'present'">
                       Your presence for <strong>{{ activeClass.code }}</strong> has been confirmed by the instructor.
                     </template>
@@ -169,13 +169,13 @@
 
           <div class="flex items-center gap-2 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
             <History class="w-4 h-4 text-secondary" />
-            <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+            <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
               Recent Roll History
             </h2>
           </div>
 
           <div class="pt-4">
-            <div v-if="attendanceHistory.length === 0" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-dark-foreground/50">
+            <div v-if="attendanceHistory.length === 0" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/65">
               No recent attendance logs recorded yet.
             </div>
 
@@ -194,7 +194,7 @@
                     <AlertOctagon v-else class="w-3.5 h-3.5" />
                   </div>
                   <div class="min-w-0">
-                    <p class="font-semibold text-foreground dark:text-dark-foreground truncate">
+                    <p class="font-semibold text-foreground dark:text-white truncate">
                       {{ record.course }}
                     </p>
                     <p class="text-[10px] font-mono text-foreground/50">

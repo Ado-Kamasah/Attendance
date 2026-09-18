@@ -31,7 +31,7 @@
     </div>
 
     <!-- Page Header -->
-    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+    <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
@@ -47,13 +47,13 @@
           <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
             Attendance Analytics
           </h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1" v-if="isAdmin && selectedLecturer">
-            Showing analytics for <strong class="text-slate-700 dark:text-slate-300">{{ selectedLecturer.name }}</strong>
+          <p class="text-sm text-slate-500 dark:text-white/75 mt-1" v-if="isAdmin && selectedLecturer">
+            Showing analytics for <strong class="text-slate-700 dark:text-white/90">{{ selectedLecturer.name }}</strong>
           </p>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1" v-else-if="isAdmin">
+          <p class="text-sm text-slate-500 dark:text-white/75 mt-1" v-else-if="isAdmin">
             Select a lecturer above to view their analytics
           </p>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1" v-else>
+          <p class="text-sm text-slate-500 dark:text-white/75 mt-1" v-else>
             Deep insights into student attendance across all your courses
           </p>
         </div>
@@ -62,7 +62,7 @@
           <select
             v-model="selectedCourseFilter"
             :disabled="isAdmin && !selectedLecturerId"
-            class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 disabled:opacity-40"
+            class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 disabled:opacity-40"
           >
             <option value="all">All Courses</option>
             <option v-for="c in myCourses" :key="c.id" :value="c.id">{{ c.code }} — {{ c.name }}</option>
@@ -79,27 +79,27 @@
     <!-- Admin: No Lecturer Selected State -->
     <div
       v-if="isAdmin && !selectedLecturerId"
-      class="bg-white dark:bg-[#071328] border border-dashed border-primary/30 dark:border-secondary/30 rounded-2xl p-14 text-center"
+      class="bg-white dark:bg-dark-surface border border-dashed border-primary/30 dark:border-secondary/30 rounded-2xl p-14 text-center"
     >
       <div class="w-16 h-16 rounded-2xl bg-primary/5 dark:bg-secondary/10 border border-primary/20 dark:border-secondary/20 flex items-center justify-center mx-auto mb-4">
         <Users class="w-8 h-8 text-primary dark:text-secondary" />
       </div>
       <h3 class="text-lg font-display font-bold text-slate-900 dark:text-white">Select a Lecturer</h3>
-      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+      <p class="text-sm text-slate-500 dark:text-white/75 mt-1 max-w-sm mx-auto">
         Choose a lecturer from the dropdown above to view their detailed attendance analytics.
       </p>
     </div>
 
     <!-- Loading Skeletons -->
     <div v-else-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      <div v-for="i in 4" :key="i" class="h-32 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
+      <div v-for="i in 4" :key="i" class="h-32 rounded-2xl bg-slate-100 dark:bg-dark-muted animate-pulse"></div>
     </div>
 
     <template v-else-if="!isAdmin || selectedLecturerId">
       <!-- KPI Tiles -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <!-- Sessions Held -->
-        <div class="relative bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all overflow-hidden">
+        <div class="relative bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-5 shadow-sm hover:shadow-md transition-all overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-primary/40 dark:from-secondary dark:to-secondary/30"></div>
           <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-secondary/15 border border-primary/20 dark:border-secondary/20 flex items-center justify-center text-primary dark:text-secondary mb-3">
             <Calendar class="w-5 h-5" />
@@ -112,20 +112,20 @@
         </div>
 
         <!-- Avg Rate -->
-        <div class="relative bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all overflow-hidden">
+        <div class="relative bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-5 shadow-sm hover:shadow-md transition-all overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-emerald-400/40"></div>
           <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3">
             <TrendingUp class="w-5 h-5" />
           </div>
           <div class="text-3xl font-display font-extrabold text-slate-900 dark:text-white">{{ kpi.avgRate }}%</div>
           <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">Avg Attendance Rate</div>
-          <div class="mt-2 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div class="mt-2 h-1.5 bg-slate-100 dark:bg-dark-muted rounded-full overflow-hidden">
             <div class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700" :style="{ width: kpi.avgRate + '%' }"></div>
           </div>
         </div>
 
         <!-- At Risk -->
-        <div class="relative bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all overflow-hidden">
+        <div class="relative bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-5 shadow-sm hover:shadow-md transition-all overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 to-amber-400/40"></div>
           <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-3">
             <AlertTriangle class="w-5 h-5" />
@@ -138,7 +138,7 @@
         </div>
 
         <!-- Perfect -->
-        <div class="relative bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all overflow-hidden">
+        <div class="relative bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-5 shadow-sm hover:shadow-md transition-all overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-violet-400/40"></div>
           <div class="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-900 flex items-center justify-center text-violet-600 dark:text-violet-400 mb-3">
             <CheckCircle2 class="w-5 h-5" />
@@ -154,7 +154,7 @@
       <!-- Charts Row -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Course Breakdown Bar Chart -->
-        <div class="lg:col-span-2 bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+        <div class="lg:col-span-2 bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-6 shadow-sm">
           <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">Course Attendance Breakdown</h2>
           <p class="text-xs text-slate-400 mt-0.5 mb-5">Average attendance rate per course</p>
 
@@ -168,14 +168,14 @@
                   <span class="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary flex-shrink-0">
                     {{ c.code }}
                   </span>
-                  <span class="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{{ c.name }}</span>
+                  <span class="text-sm font-medium text-slate-700 dark:text-white/90 truncate">{{ c.name }}</span>
                 </div>
                 <span
                   class="text-sm font-bold flex-shrink-0"
                   :class="c.rate >= 75 ? 'text-emerald-600 dark:text-emerald-400' : c.rate >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'"
                 >{{ c.rate }}%</span>
               </div>
-              <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-2 bg-slate-100 dark:bg-dark-muted rounded-full overflow-hidden">
                 <div
                   class="h-full rounded-full transition-all duration-700"
                   :class="c.rate >= 75 ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : c.rate >= 50 ? 'bg-gradient-to-r from-amber-500 to-amber-400' : 'bg-gradient-to-r from-rose-500 to-rose-400'"
@@ -188,7 +188,7 @@
         </div>
 
         <!-- Sparkline Trend -->
-        <div class="bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+        <div class="bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-6 shadow-sm">
           <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">Attendance Trend</h2>
           <p class="text-xs text-slate-400 mt-0.5 mb-5">Rate per session (last 10)</p>
 
@@ -220,8 +220,8 @@
       </div>
 
       <!-- At-Risk Students Table -->
-      <div v-if="atRiskStudents.length > 0" class="bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-        <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+      <div v-if="atRiskStudents.length > 0" class="bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-dark-outline flex items-center justify-between gap-4">
           <div>
             <h2 class="text-base font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <AlertTriangle class="w-4 h-4 text-amber-500" />
@@ -236,7 +236,7 @@
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-mono uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr class="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-white/75 font-mono uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-dark-outline">
                 <th class="py-3 px-4 font-semibold">Student</th>
                 <th class="py-3 px-4 font-semibold">Course</th>
                 <th class="py-3 px-4 font-semibold text-center">Attended</th>
@@ -252,7 +252,7 @@
                       {{ (s.name || '?').charAt(0) }}
                     </div>
                     <div>
-                      <div class="font-semibold text-slate-900 dark:text-slate-100">{{ s.name }}</div>
+                      <div class="font-semibold text-slate-900 dark:text-white">{{ s.name }}</div>
                       <div class="text-[10px] text-slate-400 font-mono">{{ s.idNumber }}</div>
                     </div>
                   </div>
@@ -260,10 +260,10 @@
                 <td class="py-3 px-4">
                   <span class="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary">{{ s.courseCode }}</span>
                 </td>
-                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700 dark:text-slate-300">{{ s.attended }} / {{ s.total }}</td>
+                <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700 dark:text-white/90">{{ s.attended }} / {{ s.total }}</td>
                 <td class="py-3 px-4">
                   <div class="flex items-center gap-2">
-                    <div class="w-14 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div class="w-14 h-1.5 bg-slate-100 dark:bg-dark-muted rounded-full overflow-hidden">
                       <div
                         class="h-full rounded-full"
                         :class="s.rate >= 75 ? 'bg-emerald-500' : s.rate >= 50 ? 'bg-amber-500' : 'bg-rose-500'"
@@ -291,8 +291,8 @@
       </div>
 
       <!-- Session History Table -->
-      <div class="bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-        <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+      <div class="bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-dark-outline flex items-center justify-between gap-4">
           <div>
             <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">Session History</h2>
             <p class="text-xs text-slate-400 mt-0.5">All recorded student attendance sessions</p>
@@ -308,7 +308,7 @@
         <div v-else class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-mono uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr class="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-white/75 font-mono uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-dark-outline">
                 <th class="py-3 px-4 font-semibold">Date & Time</th>
                 <th class="py-3 px-4 font-semibold">Course</th>
                 <th class="py-3 px-4 font-semibold">Mode</th>
@@ -321,13 +321,13 @@
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
               <tr v-for="s in filteredSessions" :key="s.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
                 <td class="py-3 px-4">
-                  <div class="font-semibold text-slate-900 dark:text-slate-100">{{ formatDate(s.createdAt) }}</div>
+                  <div class="font-semibold text-slate-900 dark:text-white">{{ formatDate(s.createdAt) }}</div>
                   <div class="text-[10px] text-slate-400 font-mono">{{ formatTime(s.createdAt) }}</div>
                 </td>
                 <td class="py-3 px-4">
                   <div class="flex flex-col gap-0.5">
                     <span class="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary w-fit">{{ s.courseCode }}</span>
-                    <span class="text-slate-500 dark:text-slate-400 text-[11px] max-w-[140px] truncate">{{ s.courseName }}</span>
+                    <span class="text-slate-500 dark:text-white/75 text-[11px] max-w-[140px] truncate">{{ s.courseName }}</span>
                   </div>
                 </td>
                 <td class="py-3 px-4">
@@ -342,7 +342,7 @@
                 <td class="py-3 px-4 text-center font-bold text-rose-600 dark:text-rose-400 font-mono">{{ s.absentCount }}</td>
                 <td class="py-3 px-4">
                   <div class="flex items-center gap-2">
-                    <div class="w-10 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div class="w-10 h-1.5 bg-slate-100 dark:bg-dark-muted rounded-full overflow-hidden">
                       <div
                         class="h-full rounded-full"
                         :class="s.rate >= 75 ? 'bg-emerald-500' : s.rate >= 50 ? 'bg-amber-500' : 'bg-rose-500'"
@@ -362,8 +362,8 @@
       </div>
 
       <!-- Class Rep Lecturer Attendance -->
-      <div class="bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-        <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+      <div class="bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-dark-outline flex items-center justify-between gap-4">
           <div>
             <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">Class Rep Attendance Reports</h2>
             <p class="text-xs text-slate-400 mt-0.5">Lecturer attendance marked by class representatives</p>
@@ -379,7 +379,7 @@
         <div v-else class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-mono uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr class="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-white/75 font-mono uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-dark-outline">
                 <th class="py-3 px-4 font-semibold">Date & Time</th>
                 <th class="py-3 px-4 font-semibold">Course</th>
                 <th class="py-3 px-4 font-semibold">Status</th>
@@ -390,13 +390,13 @@
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
               <tr v-for="r in filteredLecturerAttendances" :key="r.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
                 <td class="py-3 px-4">
-                  <div class="font-semibold text-slate-900 dark:text-slate-100">{{ formatDate(r.date + 'T00:00:00') }}</div>
+                  <div class="font-semibold text-slate-900 dark:text-white">{{ formatDate(r.date + 'T00:00:00') }}</div>
                   <div class="text-[10px] text-slate-400 font-mono">{{ r.time }}</div>
                 </td>
                 <td class="py-3 px-4">
                   <div class="flex flex-col gap-0.5">
                     <span class="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary w-fit">{{ r.courseCode }}</span>
-                    <span class="text-slate-500 dark:text-slate-400 text-[11px]">{{ r.courseName }}</span>
+                    <span class="text-slate-500 dark:text-white/75 text-[11px]">{{ r.courseName }}</span>
                   </div>
                 </td>
                 <td class="py-3 px-4">
@@ -417,12 +417,12 @@
                       {{ (r.markedByName || '?').charAt(0) }}
                     </div>
                     <div>
-                      <div class="font-semibold text-slate-900 dark:text-slate-100">{{ r.markedByName }}</div>
+                      <div class="font-semibold text-slate-900 dark:text-white">{{ r.markedByName }}</div>
                       <div class="text-[10px] text-slate-400">Class Rep</div>
                     </div>
                   </div>
                 </td>
-                <td class="py-3 px-4 text-slate-500 dark:text-slate-400 max-w-[200px] truncate">{{ r.notes || '—' }}</td>
+                <td class="py-3 px-4 text-slate-500 dark:text-white/75 max-w-[200px] truncate">{{ r.notes || '—' }}</td>
               </tr>
             </tbody>
           </table>

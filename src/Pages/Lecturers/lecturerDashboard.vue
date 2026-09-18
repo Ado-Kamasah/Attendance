@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           Academic Overview &bull; <span class="text-secondary dark:text-dark-secondary">{{ lecturerName || 'Faculty Member' }}</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           {{ currentDate }} &bull; Today's Instruction Schedule
         </p>
       </div>
@@ -33,7 +33,7 @@
       <!-- Total Active Courses -->
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
             Active Courses
           </span>
           <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 flex items-center justify-center">
@@ -41,17 +41,17 @@
           </div>
         </div>
         <div class="mt-3 flex items-baseline gap-2">
-          <span class="text-3xl font-extrabold font-display text-foreground dark:text-dark-foreground">
+          <span class="text-3xl font-extrabold font-display text-foreground dark:text-white">
             {{ totalActiveCourses }}
           </span>
-          <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Current Term</span>
+          <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Current Term</span>
         </div>
       </div>
 
       <!-- Total Students Taught -->
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
             Students Taught
           </span>
           <div class="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-500 border border-pink-500/20 flex items-center justify-center">
@@ -59,17 +59,17 @@
           </div>
         </div>
         <div class="mt-3 flex items-baseline gap-2">
-          <span class="text-3xl font-extrabold font-display text-foreground dark:text-dark-foreground">
+          <span class="text-3xl font-extrabold font-display text-foreground dark:text-white">
             {{ totalStudentsTaught }}
           </span>
-          <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Total Enrolled</span>
+          <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Total Enrolled</span>
         </div>
       </div>
 
       <!-- Average Attendance Rate -->
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden group">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-dark-foreground/60 uppercase tracking-wider">
+          <span class="text-xs font-mono font-medium text-foreground/60 dark:text-white/70 uppercase tracking-wider">
             Avg Turnout Rate
           </span>
           <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center">
@@ -83,7 +83,7 @@
           >
             {{ averageAttendanceRate }}%
           </span>
-          <span class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50">Cross-Cohort</span>
+          <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Cross-Cohort</span>
         </div>
       </div>
     </div>
@@ -99,7 +99,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-outline/30 dark:border-dark-outline/40">
             <div class="flex items-center gap-2">
               <Calendar class="w-4 h-4 text-secondary" />
-              <h2 class="text-sm sm:text-base font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+              <h2 class="text-sm sm:text-base font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                 Classes Scheduled Today
               </h2>
             </div>
@@ -113,9 +113,9 @@
           </div>
 
           <div class="pt-4">
-            <div v-if="todaySchedule.length === 0" class="py-12 text-center text-foreground/50 dark:text-dark-foreground/50">
-              <CalendarX2 class="w-8 h-8 mx-auto mb-2 text-foreground/30 dark:text-dark-foreground/30" />
-              <p class="text-sm font-medium text-foreground dark:text-dark-foreground">No lectures scheduled today</p>
+            <div v-if="todaySchedule.length === 0" class="py-12 text-center text-foreground/50 dark:text-white/65">
+              <CalendarX2 class="w-8 h-8 mx-auto mb-2 text-foreground/30 dark:text-white/40" />
+              <p class="text-sm font-medium text-foreground dark:text-white">No lectures scheduled today</p>
               <p class="text-xs font-mono mt-0.5">Prepare materials for upcoming sessions or review past attendance records.</p>
             </div>
 
@@ -131,10 +131,10 @@
                 <div class="flex items-start gap-3">
                   <!-- Time pillar -->
                   <div class="px-3 py-1.5 rounded-lg bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 text-center shrink-0">
-                    <span class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground">
+                    <span class="block text-xs font-bold font-mono text-foreground dark:text-white">
                       {{ cls.startTime }}
                     </span>
-                    <span class="block text-[10px] font-mono text-foreground/45 dark:text-dark-foreground/45">
+                    <span class="block text-[10px] font-mono text-foreground/45 dark:text-white/55">
                       {{ cls.endTime }}
                     </span>
                   </div>
@@ -158,10 +158,10 @@
                       </span>
                     </div>
 
-                    <h3 class="text-xs sm:text-sm font-semibold text-foreground dark:text-dark-foreground truncate mt-0.5">
+                    <h3 class="text-xs sm:text-sm font-semibold text-foreground dark:text-white truncate mt-0.5">
                       {{ cls.name }}
                     </h3>
-                    <p class="text-[11px] font-mono text-foreground/50 dark:text-dark-foreground/50 mt-0.5">
+                    <p class="text-[11px] font-mono text-foreground/50 dark:text-white/65 mt-0.5">
                       Venue: <strong>{{ cls.venue }}</strong> &bull; {{ cls.students }} Students Registered
                     </p>
                   </div>
@@ -188,7 +188,7 @@
         <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-5">
           <div class="flex items-center gap-2 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
             <Sparkles class="w-4 h-4 text-secondary" />
-            <h2 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+            <h2 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
               Teaching Tools
             </h2>
           </div>
@@ -202,10 +202,10 @@
                 <BookOpen class="w-4 h-4" />
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-semibold text-foreground dark:text-dark-foreground group-hover:text-secondary transition-colors">
+                <p class="text-xs font-semibold text-foreground dark:text-white group-hover:text-secondary transition-colors">
                   My Assigned Courses
                 </p>
-                <p class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50">
+                <p class="text-[10px] font-mono text-foreground/50 dark:text-white/65">
                   Course details & rosters
                 </p>
               </div>
@@ -219,10 +219,10 @@
                 <ClipboardCheck class="w-4 h-4" />
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-semibold text-foreground dark:text-dark-foreground group-hover:text-secondary transition-colors">
+                <p class="text-xs font-semibold text-foreground dark:text-white group-hover:text-secondary transition-colors">
                   Roll Call Manager
                 </p>
-                <p class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50">
+                <p class="text-[10px] font-mono text-foreground/50 dark:text-white/65">
                   Record & edit session marks
                 </p>
               </div>
@@ -236,10 +236,10 @@
                 <FileSpreadsheet class="w-4 h-4" />
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-semibold text-foreground dark:text-dark-foreground group-hover:text-secondary transition-colors">
+                <p class="text-xs font-semibold text-foreground dark:text-white group-hover:text-secondary transition-colors">
                   Detailed Course Reports
                 </p>
-                <p class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50">
+                <p class="text-[10px] font-mono text-foreground/50 dark:text-white/65">
                   Export CSV & eligibility lists
                 </p>
               </div>
@@ -251,7 +251,7 @@
         <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-5">
           <div class="flex items-center gap-2 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
             <Bell class="w-4 h-4 text-secondary" />
-            <h2 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+            <h2 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
               Faculty Bulletins
             </h2>
           </div>
@@ -260,8 +260,8 @@
             <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5">
               <AlertTriangle class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <div class="min-w-0">
-                <p class="text-xs font-bold text-foreground dark:text-dark-foreground">Mid-Semester Audit</p>
-                <p class="text-[11px] text-foreground/70 dark:text-dark-foreground/70 mt-0.5">
+                <p class="text-xs font-bold text-foreground dark:text-white">Mid-Semester Audit</p>
+                <p class="text-[11px] text-foreground/70 dark:text-white/80 mt-0.5">
                   Verify attendance counts before the exam eligibility deadline.
                 </p>
               </div>
@@ -270,8 +270,8 @@
             <div class="p-3 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30 dark:border-dark-outline/40 flex items-start gap-2.5">
               <CheckCircle2 class="w-4 h-4 text-success shrink-0 mt-0.5" />
               <div class="min-w-0">
-                <p class="text-xs font-bold text-foreground dark:text-dark-foreground">All Submissions Synced</p>
-                <p class="text-[11px] text-foreground/70 dark:text-dark-foreground/70 mt-0.5">
+                <p class="text-xs font-bold text-foreground dark:text-white">All Submissions Synced</p>
+                <p class="text-[11px] text-foreground/70 dark:text-white/80 mt-0.5">
                   Previous week's attendance records have been registered.
                 </p>
               </div>

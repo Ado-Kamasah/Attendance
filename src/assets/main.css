@@ -22,19 +22,19 @@
   --color-info: #06b6d4;          /* Cyan */
 
   /* 🌙 Dark Mode */
-  --color-dark-primary: #4a7abf;      /* Lightened Navy */
-  --color-dark-secondary: #d4a94a;    /* Brightened Gold */
-  --color-dark-background: #080f1e;   /* Deep Midnight Navy */
-  --color-dark-foreground: #dde4f0;   /* Soft Blue-White */
+  --color-dark-primary: #6b9fd4;      /* Accessible light navy blue */
+  --color-dark-secondary: #e2b84a;    /* Bright warm gold */
+  --color-dark-background: #111827;   /* Visible dark (gray-900) */
+  --color-dark-foreground: #ffffff;   /* Pure white text */
 
-  --color-dark-surface: #0f1d35;      /* Dark Navy Card */
-  --color-dark-outline: #1e3560;      /* Muted Deep Navy Border */
-  --color-dark-muted: #162847;        /* Deep Navy Slate */
+  --color-dark-surface: #1e293b;      /* Slate-800: visible cards */
+  --color-dark-outline: #334155;      /* Slate-700: visible borders */
+  --color-dark-muted: #273347;        /* Slightly lighter than surface */
 
-  --color-dark-success: #059669;      /* Deep Emerald */
-  --color-dark-warning: #d97706;      /* Deep Amber */
-  --color-dark-error: #dc2626;        /* Deep Red */
-  --color-dark-info: #0891b2;         /* Deep Cyan */
+  --color-dark-success: #34d399;      /* Bright emerald */
+  --color-dark-warning: #fbbf24;      /* Bright amber */
+  --color-dark-error: #f87171;        /* Bright red */
+  --color-dark-info: #38bdf8;         /* Bright cyan */
 }
 
 @layer base {
@@ -76,5 +76,36 @@
   }
   .dark ::selection {
     background-color: color-mix(in srgb, var(--color-dark-secondary) 35%, transparent);
+  }
+
+  /* ── Dark Mode: force all text white by default ── */
+  .dark {
+    color: #ffffff;
+  }
+  .dark p,
+  .dark span,
+  .dark label,
+  .dark li,
+  .dark td,
+  .dark th,
+  .dark caption,
+  .dark figcaption,
+  .dark small,
+  .dark strong,
+  .dark em {
+    color: inherit;
+  }
+  .dark input,
+  .dark textarea,
+  .dark select {
+    color: #ffffff;
+  }
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+  }
+  .dark option {
+    color: #ffffff;
+    background-color: #1e293b;
   }
 }

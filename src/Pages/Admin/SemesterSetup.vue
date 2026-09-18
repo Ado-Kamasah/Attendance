@@ -2,7 +2,7 @@
   <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
-    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+    <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
@@ -15,26 +15,26 @@
           </span>
         </div>
         <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Semester Setup</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure academic calendars, terms, and active sessions.</p>
+        <p class="text-sm text-slate-500 dark:text-white/75 mt-1">Configure academic calendars, terms, and active sessions.</p>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
 
       <!-- LEFT: Configuration Form -->
-      <div class="lg:col-span-3 bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-slate-100 dark:border-slate-800">
+      <div class="lg:col-span-3 bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100 dark:border-dark-outline">
           <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">{{ editingSemesterId ? 'Update Semester' : 'Configure New Semester' }}</h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Define the dates and parameters for an academic term.</p>
+          <p class="text-xs text-slate-500 dark:text-white/75 mt-0.5">Define the dates and parameters for an academic term.</p>
         </div>
 
         <form @submit.prevent="saveSemester" class="p-6 space-y-5">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <!-- Academic Year -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Academic Year <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Academic Year <span class="text-rose-500">*</span></label>
               <select v-model="form.year" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
                 <option disabled value="">Select Year</option>
                 <option value="2023/2024">2023/2024</option>
                 <option value="2024/2025">2024/2025</option>
@@ -45,9 +45,9 @@
 
             <!-- Semester Term -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Semester Term <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Semester Term <span class="text-rose-500">*</span></label>
               <select v-model="form.term" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
                 <option disabled value="">Select Semester</option>
                 <option value="First Semester">First Semester</option>
                 <option value="Second Semester">Second Semester</option>
@@ -58,34 +58,34 @@
 
           <!-- Lecture Dates -->
           <div>
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 block">Lecture Period <span class="text-rose-500">*</span></label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 mb-2 block">Lecture Period <span class="text-rose-500">*</span></label>
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-mono">Start Date</label>
                 <input type="date" v-model="form.startDate" required
-                  class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50" />
+                  class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50" />
               </div>
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-mono">End Date</label>
                 <input type="date" v-model="form.endDate" required
-                  class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50" />
+                  class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50" />
               </div>
             </div>
           </div>
 
           <!-- Exam Dates -->
           <div>
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 block">Exam Period (Optional)</label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 mb-2 block">Exam Period (Optional)</label>
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-mono">Exams Start</label>
                 <input type="date" v-model="form.examsStart"
-                  class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50" />
+                  class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50" />
               </div>
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-mono">Exams End</label>
                 <input type="date" v-model="form.examsEnd"
-                  class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50" />
+                  class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50" />
               </div>
             </div>
           </div>
@@ -95,7 +95,7 @@
             <input type="checkbox" v-model="form.isCurrent"
               class="w-4 h-4 mt-0.5 rounded border-slate-300 dark:border-slate-600 text-secondary focus:ring-secondary/40 accent-[#bc9333]" />
             <div>
-              <div class="text-sm font-semibold text-slate-800 dark:text-slate-200">Set as current active semester</div>
+              <div class="text-sm font-semibold text-slate-800 dark:text-white">Set as current active semester</div>
               <div class="text-xs text-slate-400 mt-0.5">This will deactivate any currently active semester automatically.</div>
             </div>
           </label>
@@ -109,7 +109,7 @@
               {{ editingSemesterId ? 'Update Configuration' : 'Save Configuration' }}
             </button>
             <button type="button" @click="resetForm"
-              class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
               {{ editingSemesterId ? 'Cancel' : 'Clear' }}
             </button>
           </div>
@@ -145,8 +145,8 @@
         </div>
 
         <!-- History List -->
-        <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
-          <div class="p-5 border-b border-slate-100 dark:border-slate-800">
+        <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 dark:border-dark-outline">
             <h2 class="text-sm font-display font-bold text-slate-900 dark:text-white">Saved Configurations</h2>
           </div>
 
@@ -162,7 +162,7 @@
                   <CheckCircle2 v-else class="w-3.5 h-3.5" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <div class="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white">
                     {{ sem.term }} <span class="text-slate-400 font-normal">({{ sem.year }})</span>
                   </div>
                   <div class="text-[11px] font-mono text-slate-400 mt-0.5">{{ formatDate(sem.startDate) }} — {{ formatDate(sem.endDate) }}</div>

@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
     <!-- Header with Blueprint Eyebrow -->
-    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-6 sm:p-8 shadow-sm">
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 p-6 sm:p-8 shadow-sm">
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff_1px,transparent_1px)] bg-[size:16px_16px] opacity-[0.03] dark:opacity-[0.02] pointer-events-none"></div>
       
       <!-- Blueprint Corner Accents -->
@@ -19,7 +19,7 @@
           <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white">
             Session <span class="text-secondary">Analytics</span>
           </h1>
-          <p class="text-xs sm:text-sm font-mono text-slate-500 dark:text-slate-400 mt-1">
+          <p class="text-xs sm:text-sm font-mono text-slate-500 dark:text-white/75 mt-1">
             Real-time verification telemetry and historical rollcall records
           </p>
         </div>
@@ -38,7 +38,7 @@
           <select 
             v-model="courseFilter" 
             id="sa-course-filter"
-            class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-secondary shadow-2xs"
+            class="bg-slate-50 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline rounded-xl px-3 py-1.5 text-xs font-mono text-slate-800 dark:text-white focus:outline-hidden focus:border-secondary shadow-2xs"
           >
             <option value="">All Courses</option>
             <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} – {{ c.name }}</option>
@@ -48,7 +48,7 @@
           <select 
             v-model="statusFilter" 
             id="sa-status-filter"
-            class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-secondary shadow-2xs"
+            class="bg-slate-50 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline rounded-xl px-3 py-1.5 text-xs font-mono text-slate-800 dark:text-white focus:outline-hidden focus:border-secondary shadow-2xs"
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -61,13 +61,13 @@
     <!-- KPI Strip -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Total Sessions -->
-      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 p-5 shadow-sm group hover:border-secondary/40 transition-all">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
             <Calendar class="w-6 h-6" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Total Sessions</p>
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-white/75 font-semibold tracking-wider">Total Sessions</p>
             <h3 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
               {{ sessions.length }}
             </h3>
@@ -76,13 +76,13 @@
       </div>
 
       <!-- Active Now -->
-      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 p-5 shadow-sm group hover:border-secondary/40 transition-all">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Activity class="w-6 h-6" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Active Now</p>
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-white/75 font-semibold tracking-wider">Active Now</p>
             <h3 class="text-2xl font-black font-display text-emerald-600 dark:text-emerald-400 tracking-tight mt-0.5">
               {{ activeSessions.length }}
             </h3>
@@ -91,13 +91,13 @@
       </div>
 
       <!-- Total Attendances -->
-      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 p-5 shadow-sm group hover:border-secondary/40 transition-all">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
             <Users class="w-6 h-6" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Total Check-ins</p>
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-white/75 font-semibold tracking-wider">Total Check-ins</p>
             <h3 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
               {{ attendances.length }}
             </h3>
@@ -106,13 +106,13 @@
       </div>
 
       <!-- Avg Attendance Rate -->
-      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm group hover:border-secondary/40 transition-all">
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 p-5 shadow-sm group hover:border-secondary/40 transition-all">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <Percent class="w-6 h-6" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400 font-semibold tracking-wider">Avg Check-in Rate</p>
+            <p class="text-[11px] font-mono uppercase text-slate-500 dark:text-white/75 font-semibold tracking-wider">Avg Check-in Rate</p>
             <h3 class="text-2xl font-black font-display text-slate-900 dark:text-white tracking-tight mt-0.5">
               {{ avgRate }}%
             </h3>
@@ -122,7 +122,7 @@
     </div>
 
     <!-- Active Live Sessions Section -->
-    <div v-if="activeSessions.length > 0" class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 p-6 shadow-sm">
+    <div v-if="activeSessions.length > 0" class="relative overflow-hidden rounded-2xl bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 p-6 shadow-sm">
       <div class="flex items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
         <div class="flex items-center gap-2.5">
           <span class="relative flex h-2.5 w-2.5">
@@ -154,7 +154,7 @@
                   LIVE
                 </span>
               </div>
-              <div class="text-xs font-mono text-slate-600 dark:text-slate-300">
+              <div class="text-xs font-mono text-slate-600 dark:text-white/90">
                 PIN: <span class="font-bold text-slate-900 dark:text-white tracking-wider">{{ s.pin }}</span>
               </div>
             </div>
@@ -166,7 +166,7 @@
 
           <div>
             <!-- Stats -->
-            <div class="grid grid-cols-3 gap-2 text-center py-2.5 px-3 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 mb-3">
+            <div class="grid grid-cols-3 gap-2 text-center py-2.5 px-3 rounded-lg bg-white/80 dark:bg-dark-muted/70 border border-slate-200/60 dark:border-slate-800/60 mb-3">
               <div>
                 <span class="text-base font-black font-display text-emerald-600 dark:text-emerald-400">{{ s.presentCount }}</span>
                 <p class="text-[10px] font-mono uppercase text-slate-400 mt-0.5">Present</p>
@@ -182,7 +182,7 @@
             </div>
 
             <!-- Progress bar -->
-            <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
+            <div class="w-full h-1.5 bg-slate-200 dark:bg-dark-muted rounded-full overflow-hidden mb-2">
               <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" :style="{ width: s.rate + '%' }"></div>
             </div>
 
@@ -196,11 +196,11 @@
     </div>
 
     <!-- All Sessions Table Panel -->
-    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-slate-200/80 dark:border-slate-800/80">
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-slate-200/80 dark:border-dark-outline/60">
         <div>
           <h2 class="text-base font-bold font-display text-slate-900 dark:text-white">Session Registry Ledger</h2>
-          <p class="text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5">Complete record of lecture sessions and verified logs</p>
+          <p class="text-xs font-mono text-slate-500 dark:text-white/75 mt-0.5">Complete record of lecture sessions and verified logs</p>
         </div>
 
         <div class="relative min-w-[240px]">
@@ -210,14 +210,14 @@
             type="text" 
             placeholder="Search code, course, or date…" 
             id="sa-search"
-            class="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-hidden focus:border-secondary shadow-2xs"
+            class="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline rounded-xl text-xs font-mono text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-secondary shadow-2xs"
           />
         </div>
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-xs text-left text-slate-600 dark:text-slate-400" id="sa-sessions-table">
-          <thead class="text-[11px] font-mono uppercase bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800/80">
+        <table class="w-full text-xs text-left text-slate-600 dark:text-white/75" id="sa-sessions-table">
+          <thead class="text-[11px] font-mono uppercase bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-white/75 border-b border-slate-200/80 dark:border-dark-outline/60">
             <tr>
               <th scope="col" @click="sortBy('date')" class="px-5 py-3.5 cursor-pointer select-none hover:text-slate-900 dark:hover:text-white transition-colors">
                 <div class="flex items-center gap-1.5">
@@ -260,7 +260,7 @@
               :key="s.id"
               class="hover:bg-slate-50/70 dark:hover:bg-slate-900/30 transition-colors"
             >
-              <td class="px-5 py-4 font-mono font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+              <td class="px-5 py-4 font-mono font-medium text-slate-800 dark:text-white whitespace-nowrap">
                 {{ s.dateFormatted }}
               </td>
               <td class="px-5 py-4">
@@ -268,12 +268,12 @@
                   <span class="px-1.5 py-0.5 rounded bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-mono font-bold shrink-0">
                     {{ s.courseCode }}
                   </span>
-                  <span class="font-medium text-slate-800 dark:text-slate-200 truncate max-w-xs">
+                  <span class="font-medium text-slate-800 dark:text-white truncate max-w-xs">
                     {{ s.courseName }}
                   </span>
                 </div>
               </td>
-              <td class="px-5 py-4 font-mono font-bold text-slate-700 dark:text-slate-300">
+              <td class="px-5 py-4 font-mono font-bold text-slate-700 dark:text-white/90">
                 {{ s.pin }}
               </td>
               <td class="px-5 py-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">
@@ -299,14 +299,14 @@
                   class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider"
                   :class="s.isActive 
                     ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'"
+                    : 'bg-slate-100 dark:bg-dark-muted text-slate-500 dark:text-white/75 border border-slate-200 dark:border-dark-outline/70'"
                 >
                   <span v-if="s.isActive" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   <span>{{ s.isActive ? 'Active' : 'Closed' }}</span>
                 </span>
               </td>
               <td class="px-5 py-4">
-                <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="w-full h-1.5 bg-slate-100 dark:bg-dark-muted rounded-full overflow-hidden">
                   <div 
                     class="h-full rounded-full transition-all duration-500" 
                     :style="{ width: s.rate + '%', backgroundColor: rateColor(s.rate) }"
@@ -319,26 +319,26 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="flex items-center justify-between gap-4 p-4 sm:p-5 border-t border-slate-200/80 dark:border-slate-800/80 text-xs font-mono">
+      <div v-if="totalPages > 1" class="flex items-center justify-between gap-4 p-4 sm:p-5 border-t border-slate-200/80 dark:border-dark-outline/60 text-xs font-mono">
         <button 
           :disabled="page === 1" 
           @click="page--" 
           id="sa-prev-btn"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-secondary transition-colors cursor-pointer"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-dark-outline bg-white dark:bg-dark-muted text-slate-700 dark:text-white/90 disabled:opacity-40 disabled:cursor-not-allowed hover:border-secondary transition-colors cursor-pointer"
         >
           <ChevronLeft class="w-3.5 h-3.5" />
           <span>Previous</span>
         </button>
 
-        <span class="text-slate-500 dark:text-slate-400">
-          Page <strong class="text-slate-800 dark:text-slate-200">{{ page }}</strong> of <strong class="text-slate-800 dark:text-slate-200">{{ totalPages }}</strong>
+        <span class="text-slate-500 dark:text-white/75">
+          Page <strong class="text-slate-800 dark:text-white">{{ page }}</strong> of <strong class="text-slate-800 dark:text-white">{{ totalPages }}</strong>
         </span>
 
         <button 
           :disabled="page === totalPages" 
           @click="page++" 
           id="sa-next-btn"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:border-secondary transition-colors cursor-pointer"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-dark-outline bg-white dark:bg-dark-muted text-slate-700 dark:text-white/90 disabled:opacity-40 disabled:cursor-not-allowed hover:border-secondary transition-colors cursor-pointer"
         >
           <span>Next</span>
           <ChevronRight class="w-3.5 h-3.5" />

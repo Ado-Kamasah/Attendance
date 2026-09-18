@@ -2,7 +2,7 @@
   <div class="space-y-6 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
-    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+    <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
@@ -16,7 +16,7 @@
             </span>
           </div>
           <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Master Schedule</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage lecture timings, venues, and instructor assignments.</p>
+          <p class="text-sm text-slate-500 dark:text-white/75 mt-1">Manage lecture timings, venues, and instructor assignments.</p>
         </div>
         <button @click="openAddModal"
           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg active:scale-95 flex-shrink-0"
@@ -28,42 +28,42 @@
     </div>
 
     <!-- Filters Panel -->
-    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-4">
+    <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-5 shadow-sm space-y-4">
       <!-- Semester pills -->
       <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
-        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">Semester</span>
+        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-bold flex-shrink-0">Semester</span>
         <div class="flex flex-wrap gap-2">
           <button v-for="sem in ['All', 'Semester 1', 'Semester 2']" :key="sem"
             @click="selectedSemester = sem"
             :class="['px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border transition-all',
               selectedSemester === sem
                 ? 'bg-primary text-white border-primary dark:bg-secondary dark:border-secondary dark:text-primary'
-                : 'bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                : 'bg-slate-50 dark:bg-dark-muted/70 text-slate-600 dark:text-white/75 border-slate-200 dark:border-dark-outline/70 hover:border-slate-300 dark:hover:border-slate-600'
             ]">{{ sem }}
           </button>
         </div>
       </div>
       <!-- Level + Mode pills -->
       <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
-        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold flex-shrink-0">Level</span>
+        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-bold flex-shrink-0">Level</span>
         <div class="flex flex-wrap gap-2">
           <button v-for="level in levels" :key="level"
             @click="selectedLevel = level"
             :class="['px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border transition-all',
               selectedLevel === level
                 ? 'bg-primary text-white border-primary dark:bg-secondary dark:border-secondary dark:text-primary'
-                : 'bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                : 'bg-slate-50 dark:bg-dark-muted/70 text-slate-600 dark:text-white/75 border-slate-200 dark:border-dark-outline/70 hover:border-slate-300 dark:hover:border-slate-600'
             ]">Level {{ level }}
           </button>
         </div>
-        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold sm:ml-4 flex-shrink-0">Mode</span>
+        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-bold sm:ml-4 flex-shrink-0">Mode</span>
         <div class="flex flex-wrap gap-2">
           <button v-for="mode in modes" :key="mode"
             @click="selectedMode = mode"
             :class="['px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border transition-all',
               selectedMode === mode
                 ? 'bg-primary text-white border-primary dark:bg-secondary dark:border-secondary dark:text-primary'
-                : 'bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                : 'bg-slate-50 dark:bg-dark-muted/70 text-slate-600 dark:text-white/75 border-slate-200 dark:border-dark-outline/70 hover:border-slate-300 dark:hover:border-slate-600'
             ]">{{ mode }}
           </button>
         </div>
@@ -80,8 +80,8 @@
           @click="selectedDay = day"
           :class="['relative px-3 py-3 rounded-xl border text-left text-xs font-mono font-semibold transition-all',
             selectedDay === day
-              ? 'bg-primary dark:bg-[#071328] border-primary/80 dark:border-secondary/60 text-white shadow-md ring-2 ring-primary/20 dark:ring-secondary/20'
-              : 'bg-white dark:bg-[#071328] border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm'
+              ? 'bg-primary dark:bg-dark-surface border-primary/80 dark:border-secondary/60 text-white shadow-md ring-2 ring-primary/20 dark:ring-secondary/20'
+              : 'bg-white dark:bg-dark-surface border-slate-200 dark:border-dark-outline text-slate-600 dark:text-white/75 hover:border-slate-300 dark:hover:border-dark-outline shadow-sm'
           ]"
         >
           <div>{{ day }}</div>
@@ -97,9 +97,9 @@
       <div class="min-w-0">
         <!-- Empty -->
         <div v-if="filteredClasses.length === 0"
-          class="bg-white dark:bg-[#071328] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center gap-4"
+          class="bg-white dark:bg-dark-surface border border-dashed border-slate-200 dark:border-dark-outline rounded-2xl p-12 text-center flex flex-col items-center gap-4"
         >
-          <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+          <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-dark-muted flex items-center justify-center text-slate-400">
             <CalendarDays class="w-7 h-7" />
           </div>
           <h3 class="font-display font-bold text-slate-900 dark:text-white text-base">No classes scheduled</h3>
@@ -114,13 +114,13 @@
           <div
             v-for="cls in filteredClasses"
             :key="cls.id"
-            class="group flex gap-5 bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
+            class="group flex gap-5 bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
           >
             <!-- Time column -->
             <div class="flex flex-col items-center gap-1 min-w-[70px] text-center flex-shrink-0">
-              <span class="text-xs font-mono font-bold text-slate-900 dark:text-slate-100">{{ formatTime(cls.startTime) }}</span>
+              <span class="text-xs font-mono font-bold text-slate-900 dark:text-white">{{ formatTime(cls.startTime) }}</span>
               <div class="w-px h-4 bg-gradient-to-b from-secondary to-transparent"></div>
-              <span class="text-xs font-mono font-bold text-slate-900 dark:text-slate-100">{{ formatTime(cls.endTime) }}</span>
+              <span class="text-xs font-mono font-bold text-slate-900 dark:text-white">{{ formatTime(cls.endTime) }}</span>
               <span class="text-[10px] font-mono text-slate-400 mt-1">{{ getDuration(cls.startTime, cls.endTime) }}h</span>
             </div>
 
@@ -134,7 +134,7 @@
                 <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900">{{ cls.semester || 'Semester 1' }}</span>
               </div>
               <h3 class="text-sm font-bold text-slate-900 dark:text-white">{{ cls.courseTitle }}</h3>
-              <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-white/75">
                 <span class="flex items-center gap-1"><UserIcon class="w-3.5 h-3.5" /> {{ cls.lecturer }}</span>
                 <span class="flex items-center gap-1"><MapPin class="w-3.5 h-3.5" /> {{ cls.venue }}</span>
               </div>
@@ -158,11 +158,11 @@
 
     <!-- Add/Edit Schedule Modal -->
     <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" @click.self="closeModal">
-      <div class="relative w-full max-w-lg bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+      <div class="relative w-full max-w-lg bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden">
         <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
         <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
-        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div class="p-6 border-b border-slate-100 dark:border-dark-outline flex items-center justify-between">
           <div>
             <span class="text-[10px] font-mono uppercase tracking-wider text-secondary font-bold">{{ editingScheduleId ? 'EDIT CLASS' : 'NEW CLASS' }}</span>
             <h2 class="text-xl font-display font-bold text-slate-900 dark:text-white">{{ editingScheduleId ? 'Edit Class' : 'Add New Class' }}</h2>
@@ -175,9 +175,9 @@
         <form @submit.prevent="saveClass" class="p-6 space-y-4">
           <!-- Course -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Course <span class="text-rose-500">*</span></label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Select Course <span class="text-rose-500">*</span></label>
             <select v-model="newClass.courseId" required
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
               <option disabled value="">Choose a course</option>
               <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.code }} — {{ course.name }}</option>
             </select>
@@ -186,9 +186,9 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <!-- Lecturer -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Lecturer <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Lecturer <span class="text-rose-500">*</span></label>
               <select v-model="newClass.lecturer" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
                 <option disabled value="">Select lecturer</option>
                 <option v-for="l in lecturers" :key="l.id" :value="l.name">{{ l.name }}</option>
               </select>
@@ -197,37 +197,37 @@
 
             <!-- Venue -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Venue <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Venue <span class="text-rose-500">*</span></label>
               <input type="text" v-model="newClass.venue" placeholder="Hall / Room" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <!-- Day -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Day <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Day <span class="text-rose-500">*</span></label>
               <select v-model="newClass.day" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
                 <option v-for="d in activeDays" :key="d" :value="d">{{ d }}</option>
               </select>
             </div>
             <!-- Start -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Start Time <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Start Time <span class="text-rose-500">*</span></label>
               <input type="time" v-model="newClass.startTime" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
             </div>
             <!-- End -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">End Time <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">End Time <span class="text-rose-500">*</span></label>
               <input type="time" v-model="newClass.endTime" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
             </div>
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-2">
-            <button type="button" @click="closeModal" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+            <button type="button" @click="closeModal" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
             <button type="submit"
               class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md active:scale-95">
               {{ editingScheduleId ? 'Update Schedule' : 'Save Schedule' }}

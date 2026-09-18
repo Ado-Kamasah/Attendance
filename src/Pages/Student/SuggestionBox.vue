@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           Suggestion <span class="text-secondary dark:text-dark-secondary">Box</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           Submit complaints, infrastructure suggestions or general feedback directly to university administration
         </p>
       </div>
@@ -25,7 +25,7 @@
         class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer"
         :class="tab === 'submit' 
           ? 'bg-primary dark:bg-dark-secondary text-surface dark:text-primary shadow-xs font-bold' 
-          : 'bg-surface dark:bg-dark-surface border border-outline/40 text-foreground/70 hover:text-foreground'"
+          : 'bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/50 text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-white'"
       >
         <PlusCircle class="w-4 h-4" />
         <span>New Submission</span>
@@ -36,7 +36,7 @@
         class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer"
         :class="tab === 'history' 
           ? 'bg-primary dark:bg-dark-secondary text-surface dark:text-primary shadow-xs font-bold' 
-          : 'bg-surface dark:bg-dark-surface border border-outline/40 text-foreground/70 hover:text-foreground'"
+          : 'bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/50 text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-white'"
       >
         <History class="w-4 h-4" />
         <span>My Submissions</span>
@@ -54,7 +54,7 @@
       <form @submit.prevent="handleSubmit" class="space-y-5">
         <!-- Category Selection -->
         <div>
-          <label class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground uppercase tracking-wider mb-2">
+          <label class="block text-xs font-bold font-mono text-foreground dark:text-white uppercase tracking-wider mb-2">
             Classification Type
           </label>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -64,7 +64,7 @@
               class="p-3 rounded-xl border text-xs font-mono font-medium cursor-pointer transition-all flex items-center gap-2.5 select-none"
               :class="form.category === c.value 
                 ? 'bg-secondary text-primary font-bold border-secondary shadow-xs' 
-                : 'bg-muted/20 dark:bg-dark-muted/20 border-outline/30 dark:border-dark-outline/40 text-foreground/70 hover:bg-muted/40'"
+                : 'bg-muted/20 dark:bg-dark-muted/40 border-outline/30 dark:border-dark-outline/50 text-foreground/70 dark:text-white/80 hover:bg-muted/40 dark:hover:bg-dark-muted/60'"
             >
               <input type="radio" :value="c.value" v-model="form.category" class="sr-only" />
               <component :is="c.icon" class="w-4 h-4 shrink-0" />
@@ -77,10 +77,10 @@
         <!-- Subject -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground uppercase tracking-wider" for="sb-subject">
+            <label class="block text-xs font-bold font-mono text-foreground dark:text-white uppercase tracking-wider" for="sb-subject">
               Subject Line
             </label>
-            <span class="text-[10px] font-mono text-foreground/45">{{ form.subject.length }}/120</span>
+            <span class="text-[10px] font-mono text-foreground/45 dark:text-white/55">{{ form.subject.length }}/120</span>
           </div>
           <input
             id="sb-subject"
@@ -88,7 +88,7 @@
             type="text"
             maxlength="120"
             placeholder="Brief headline summarizing your topic…"
-            class="w-full px-3.5 py-2 text-xs sm:text-sm bg-muted/20 dark:bg-dark-muted/20 border rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono focus:border-secondary"
+            class="w-full px-3.5 py-2 text-xs sm:text-sm bg-muted/20 dark:bg-dark-muted/20 border rounded-xl outline-hidden text-foreground dark:text-white font-mono focus:border-secondary"
             :class="errors.subject ? 'border-error/60' : 'border-outline/40 dark:border-dark-outline/40'"
           />
           <p v-if="errors.subject" class="text-[11px] font-mono text-error mt-1">{{ errors.subject }}</p>
@@ -97,10 +97,10 @@
         <!-- Message Details -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground uppercase tracking-wider" for="sb-message">
+            <label class="block text-xs font-bold font-mono text-foreground dark:text-white uppercase tracking-wider" for="sb-message">
               Details & Context
             </label>
-            <span class="text-[10px] font-mono text-foreground/45">{{ form.message.length }}/2000</span>
+            <span class="text-[10px] font-mono text-foreground/45 dark:text-white/55">{{ form.message.length }}/2000</span>
           </div>
           <textarea
             id="sb-message"
@@ -108,7 +108,7 @@
             rows="6"
             maxlength="2000"
             placeholder="Provide granular details regarding locations, dates, or specific proposals…"
-            class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-muted/20 dark:bg-dark-muted/20 border rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono focus:border-secondary"
+            class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-muted/20 dark:bg-dark-muted/20 border rounded-xl outline-hidden text-foreground dark:text-white font-mono focus:border-secondary"
             :class="errors.message ? 'border-error/60' : 'border-outline/40 dark:border-dark-outline/40'"
           ></textarea>
           <p v-if="errors.message" class="text-[11px] font-mono text-error mt-1">{{ errors.message }}</p>
@@ -119,8 +119,8 @@
           <div class="flex items-center gap-3">
             <Shield class="w-5 h-5 text-secondary shrink-0" />
             <div>
-              <p class="text-xs font-bold text-foreground dark:text-dark-foreground">Submit Anonymously</p>
-              <p class="text-[11px] font-mono text-foreground/50">Your name and student ID will be redacted from administrators.</p>
+              <p class="text-xs font-bold text-foreground dark:text-white">Submit Anonymously</p>
+              <p class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Your name and student ID will be redacted from administrators.</p>
             </div>
           </div>
           <button 
@@ -163,14 +163,14 @@
 
     <!-- ── TAB 2: MY SUBMISSIONS ── -->
     <div v-else class="space-y-4">
-      <div v-if="loadingMy" class="py-16 text-center text-xs font-mono text-foreground/50 flex items-center justify-center gap-2">
+      <div v-if="loadingMy" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-white/70 flex items-center justify-center gap-2">
         <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
         <span>Loading your submission records…</span>
       </div>
 
-      <div v-else-if="myList.length === 0" class="py-16 text-center text-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl">
-        <MessageSquare class="w-8 h-8 mx-auto mb-2 text-foreground/30" />
-        <p class="text-sm font-medium text-foreground dark:text-dark-foreground">No submissions found</p>
+      <div v-else-if="myList.length === 0" class="py-16 text-center text-foreground/50 dark:text-white/70 bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/50 rounded-2xl">
+        <MessageSquare class="w-8 h-8 mx-auto mb-2 text-foreground/30 dark:text-white/40" />
+        <p class="text-sm font-medium text-foreground dark:text-white">No submissions found</p>
         <p class="text-xs font-mono mt-0.5">Your sent feedback and administrator responses will show here.</p>
       </div>
 
@@ -189,12 +189,12 @@
                 {{ s.status || 'Pending' }}
               </span>
             </div>
-            <span class="text-[10px] font-mono text-foreground/50">{{ fmtDate(s.createdAt) }}</span>
+            <span class="text-[10px] font-mono text-foreground/50 dark:text-white/60">{{ fmtDate(s.createdAt) }}</span>
           </div>
 
           <div>
-            <h3 class="text-sm font-bold text-foreground dark:text-dark-foreground">{{ s.subject }}</h3>
-            <p class="text-xs text-foreground/70 dark:text-dark-foreground/70 mt-1 whitespace-pre-line leading-relaxed">
+            <h3 class="text-sm font-bold text-foreground dark:text-white">{{ s.subject }}</h3>
+            <p class="text-xs text-foreground/70 dark:text-white/80 mt-1 whitespace-pre-line leading-relaxed">
               {{ s.message }}
             </p>
           </div>
@@ -205,10 +205,10 @@
               <MessageCircle class="w-3.5 h-3.5" />
               <span>Official Institutional Response:</span>
             </div>
-            <p class="text-foreground/80 dark:text-dark-foreground/80 leading-relaxed">{{ s.adminNote }}</p>
+            <p class="text-foreground/80 dark:text-white/90 leading-relaxed">{{ s.adminNote }}</p>
           </div>
 
-          <div v-if="s.isAnonymous" class="text-[10px] font-mono text-foreground/45 flex items-center gap-1">
+          <div v-if="s.isAnonymous" class="text-[10px] font-mono text-foreground/45 dark:text-white/55 flex items-center gap-1">
             <Shield class="w-3 h-3" />
             <span>Submitted under anonymous protection</span>
           </div>
@@ -325,16 +325,16 @@ async function loadMy() {
 }
 
 function getCategoryStyle(cat) {
-  if (cat === 'complaint') return 'bg-error/15 text-error border border-error/30';
-  if (cat === 'suggestion') return 'bg-amber-500/15 text-amber-500 border border-amber-500/30';
-  if (cat === 'feedback') return 'bg-blue-500/15 text-blue-500 border border-blue-500/30';
-  return 'bg-purple-500/15 text-purple-500 border border-purple-500/30';
+  if (cat === 'complaint')  return 'bg-red-500/20 text-red-400 dark:text-red-300 border border-red-500/40';
+  if (cat === 'suggestion') return 'bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40';
+  if (cat === 'feedback')   return 'bg-blue-500/20 text-blue-600 dark:text-blue-300 border border-blue-500/40';
+  return 'bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40';
 }
 
 function getStatusStyle(st) {
-  if (st === 'resolved') return 'bg-success/10 text-success border-success/30';
-  if (st === 'reviewed') return 'bg-info/10 text-info border-info/30';
-  return 'bg-muted text-foreground/50 border-outline/40';
+  if (st === 'resolved') return 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/40';
+  if (st === 'reviewed') return 'bg-sky-500/20 text-sky-600 dark:text-sky-300 border-sky-500/40';
+  return 'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-white/70 border-outline/40 dark:border-dark-outline/50';
 }
 
 function fmtDate(ts) {

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full flex items-center justify-center bg-background dark:bg-dark-background text-foreground dark:text-dark-foreground relative overflow-hidden font-sans p-4 sm:p-6 lg:p-10">
+  <div class="min-h-screen w-full flex items-center justify-center bg-background dark:bg-dark-background text-foreground dark:text-white relative overflow-hidden font-sans p-4 sm:p-6 lg:p-10">
     
     <!-- Blueprint architectural grid background -->
     <div class="absolute inset-0 bg-[radial-gradient(#c2cde0_1px,transparent_1px)] dark:bg-[radial-gradient(#1e3560_1.2px,transparent_1.2px)] [background-size:28px_28px] opacity-70 pointer-events-none"></div>
@@ -26,10 +26,10 @@
 
           <!-- Header -->
           <div class="mb-6">
-            <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground dark:text-dark-foreground mb-1.5">
+            <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground dark:text-white mb-1.5">
               Create Your Academic Account
             </h1>
-            <p class="text-sm text-foreground/60 dark:text-dark-foreground/60">
+            <p class="text-sm text-foreground/60 dark:text-white/70">
               Join Southshore University College automated attendance & lecture portal.
             </p>
           </div>
@@ -39,11 +39,11 @@
             
             <!-- Full Name -->
             <div class="space-y-1.5">
-              <label for="fullName" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+              <label for="fullName" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                 Full Name
               </label>
               <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
                   <User class="w-4 h-4" />
                 </div>
                 <input
@@ -52,7 +52,7 @@
                   v-model="form.fullName"
                   placeholder="e.g. Kwame Mensah"
                   required
-                  class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
+                  class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
                 />
               </div>
             </div>
@@ -60,13 +60,13 @@
             <!-- University Email -->
             <div class="space-y-1.5">
               <div class="flex items-center justify-between">
-                <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                   Institutional Email
                 </label>
                 <span class="text-[11px] font-mono text-secondary dark:text-dark-secondary">@southshore.edu.gh</span>
               </div>
               <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
                   <Mail class="w-4 h-4" />
                 </div>
                 <input
@@ -76,7 +76,7 @@
                   @blur="validateEmailDomain"
                   placeholder="student@southshore.edu.gh"
                   required
-                  class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:ring-4 transition-all shadow-sm"
+                  class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border rounded-xl text-sm text-foreground dark:text-white placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:ring-4 transition-all shadow-sm"
                   :class="emailDomainError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-outline dark:border-dark-outline focus:border-primary dark:focus:border-dark-secondary focus:ring-primary/10 dark:focus:ring-dark-secondary/10'"
                 />
               </div>
@@ -91,11 +91,11 @@
               
               <!-- ID Number -->
               <div class="space-y-1.5">
-                <label for="idNumber" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                <label for="idNumber" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                   Student / Staff ID
                 </label>
                 <div class="relative group">
-                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
                     <IdCard class="w-4 h-4" />
                   </div>
                   <input
@@ -104,32 +104,32 @@
                     v-model="form.idNumber"
                     placeholder="e.g. SUC2025001"
                     required
-                    class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
+                    class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
                   />
                 </div>
               </div>
 
               <!-- Faculty / Program -->
               <div class="space-y-1.5">
-                <label for="program" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                <label for="program" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                   Faculty / Programme
                 </label>
                 <div class="relative group">
-                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
                     <GraduationCap class="w-4 h-4" />
                   </div>
                   <select
                     id="program"
                     v-model="form.programId"
                     required
-                    class="w-full pl-10 pr-9 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm appearance-none cursor-pointer"
+                    class="w-full pl-10 pr-9 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm appearance-none cursor-pointer"
                   >
                     <option value="" disabled selected>Select programme</option>
                     <option v-for="programme in activeProgrammes" :key="programme.id" :value="programme.id">
                       {{ programme.name }}
                     </option>
                   </select>
-                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40">
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-foreground/40 dark:text-white/50">
                     <ChevronDown class="w-4 h-4" />
                   </div>
                 </div>
@@ -139,7 +139,7 @@
 
             <!-- Study Mode Selection -->
             <div class="space-y-1.5">
-              <label class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                 Study Mode <span class="text-secondary dark:text-dark-secondary">*</span>
               </label>
               <div class="grid grid-cols-2 gap-3">
@@ -154,12 +154,12 @@
                     : 'border-outline dark:border-dark-outline bg-background dark:bg-dark-background hover:border-outline/80'"
                 >
                   <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    :class="form.mode === 'Regular' ? 'bg-primary text-white dark:bg-dark-secondary dark:text-dark-background' : 'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-dark-foreground/60'">
+                    :class="form.mode === 'Regular' ? 'bg-primary text-white dark:bg-dark-secondary dark:text-dark-background' : 'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-white/70'">
                     <CalendarDays class="w-4 h-4" />
                   </div>
                   <div>
-                    <span class="block text-xs font-bold font-display text-foreground dark:text-dark-foreground">Regular</span>
-                    <span class="block text-[10px] text-foreground/50 dark:text-dark-foreground/50">Mon – Fri (Day)</span>
+                    <span class="block text-xs font-bold font-display text-foreground dark:text-white">Regular</span>
+                    <span class="block text-[10px] text-foreground/50 dark:text-white/65">Mon – Fri (Day)</span>
                   </div>
                 </button>
 
@@ -173,12 +173,12 @@
                     : 'border-outline dark:border-dark-outline bg-background dark:bg-dark-background hover:border-outline/80'"
                 >
                   <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    :class="form.mode === 'Weekend' ? 'bg-secondary text-white dark:bg-dark-secondary dark:text-dark-background' : 'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-dark-foreground/60'">
+                    :class="form.mode === 'Weekend' ? 'bg-secondary text-white dark:bg-dark-secondary dark:text-dark-background' : 'bg-muted dark:bg-dark-muted text-foreground/60 dark:text-white/70'">
                     <CalendarClock class="w-4 h-4" />
                   </div>
                   <div>
-                    <span class="block text-xs font-bold font-display text-foreground dark:text-dark-foreground">Weekend</span>
-                    <span class="block text-[10px] text-foreground/50 dark:text-dark-foreground/50">Sat – Sun (Modular)</span>
+                    <span class="block text-xs font-bold font-display text-foreground dark:text-white">Weekend</span>
+                    <span class="block text-[10px] text-foreground/50 dark:text-white/65">Sat – Sun (Modular)</span>
                   </div>
                 </button>
 
@@ -191,11 +191,11 @@
 
             <!-- Password -->
             <div class="space-y-1.5">
-              <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+              <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                 Create Secure Password
               </label>
               <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
                   <Lock class="w-4 h-4" />
                 </div>
                 <input
@@ -205,13 +205,13 @@
                   placeholder="Min. 8 characters"
                   required
                   minlength="8"
-                  class="w-full pl-10 pr-11 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
+                  class="w-full pl-10 pr-11 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
                 />
                 <button
                   type="button"
                   @click="showPassword = !showPassword"
                   tabindex="-1"
-                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-foreground/40 hover:text-foreground/70 dark:text-dark-foreground/40 dark:hover:text-dark-foreground/80 transition-colors focus:outline-none cursor-pointer"
+                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-foreground/40 hover:text-foreground/70 dark:text-white/50 dark:hover:text-dark-foreground/80 transition-colors focus:outline-none cursor-pointer"
                   aria-label="Toggle password visibility"
                 >
                   <Eye v-if="!showPassword" class="w-4 h-4" />
@@ -249,7 +249,7 @@
 
           <!-- Back to Sign In Link -->
           <div class="mt-6 pt-5 border-t border-outline/50 dark:border-dark-outline/50 text-center">
-            <p class="text-xs text-foreground/60 dark:text-dark-foreground/60">
+            <p class="text-xs text-foreground/60 dark:text-white/70">
               Already have an active account?
               <button
                 type="button"
@@ -266,7 +266,7 @@
       </div>
 
       <!-- ── Right Column: Visual Architectural Showcase (5 cols on lg) ── -->
-      <div class="relative lg:col-span-5 bg-primary dark:bg-[#071326] text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-l border-outline/20 dark:border-dark-outline order-1 lg:order-2">
+      <div class="relative lg:col-span-5 bg-primary dark:bg-dark-surface text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-l border-outline/20 dark:border-dark-outline order-1 lg:order-2">
         
         <!-- Decorative corners -->
         <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>

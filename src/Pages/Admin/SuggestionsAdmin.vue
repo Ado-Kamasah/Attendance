@@ -2,7 +2,7 @@
   <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
-    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+    <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
@@ -15,7 +15,7 @@
           </span>
         </div>
         <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Suggestion Box</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Review complaints, suggestions and feedback submitted by students.</p>
+        <p class="text-sm text-slate-500 dark:text-white/75 mt-1">Review complaints, suggestions and feedback submitted by students.</p>
       </div>
     </div>
 
@@ -36,21 +36,21 @@
     </div>
 
     <!-- Filters -->
-    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row flex-wrap gap-3">
+    <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row flex-wrap gap-3">
       <div class="flex-1 relative min-w-[200px]">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input v-model="search" type="text" placeholder="Search subject or message…"
-          class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
+          class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
       </div>
       <select v-model="filterStatus"
-        class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+        class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
         <option value="">All Statuses</option>
         <option value="unread">Unread</option>
         <option value="reviewed">Reviewed</option>
         <option value="resolved">Resolved</option>
       </select>
       <select v-model="filterCategory"
-        class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+        class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
         <option value="">All Categories</option>
         <option value="complaint">Complaint</option>
         <option value="suggestion">Suggestion</option>
@@ -58,7 +58,7 @@
         <option value="other">Other</option>
       </select>
       <button @click="load" :disabled="isLoading"
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-secondary text-sm font-medium transition-all shadow-sm disabled:opacity-50 whitespace-nowrap"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted text-slate-600 dark:text-white/90 hover:text-primary dark:hover:text-secondary text-sm font-medium transition-all shadow-sm disabled:opacity-50 whitespace-nowrap"
       >
         <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
         Refresh
@@ -68,12 +68,12 @@
     <!-- Loading -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
       <Loader2 class="w-10 h-10 text-secondary animate-spin mb-4" />
-      <p class="text-sm font-mono text-slate-500 dark:text-slate-400">LOADING SUBMISSIONS...</p>
+      <p class="text-sm font-mono text-slate-500 dark:text-white/75">LOADING SUBMISSIONS...</p>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="filtered.length === 0" class="bg-white dark:bg-[#071328] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-14 text-center">
-      <MessageSquare class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+    <div v-else-if="filtered.length === 0" class="bg-white dark:bg-dark-surface border border-dashed border-slate-200 dark:border-dark-outline rounded-2xl p-14 text-center">
+      <MessageSquare class="w-12 h-12 text-slate-300 dark:text-white/40 mx-auto mb-4" />
       <p class="text-sm text-slate-400">No submissions found.</p>
     </div>
 
@@ -82,7 +82,7 @@
       <div
         v-for="s in filtered"
         :key="s.id"
-        :class="['bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border-l-4', getCategoryBorder(s.category)]"
+        :class="['bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-5 shadow-sm hover:shadow-md transition-all border-l-4', getCategoryBorder(s.category)]"
       >
         <!-- Top row -->
         <div class="flex flex-wrap items-center gap-2 mb-3">
@@ -105,7 +105,7 @@
               {{ (s.studentName || '?').charAt(0).toUpperCase() }}
             </div>
             <div>
-              <div class="text-xs font-bold text-slate-900 dark:text-slate-100">{{ s.studentName }}</div>
+              <div class="text-xs font-bold text-slate-900 dark:text-white">{{ s.studentName }}</div>
               <div v-if="s.idNumber" class="text-[10px] font-mono text-slate-400">{{ s.idNumber }}</div>
             </div>
           </template>
@@ -113,7 +113,7 @@
 
         <!-- Subject + Message -->
         <p class="font-bold text-sm text-slate-900 dark:text-white mb-1">{{ s.subject }}</p>
-        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ s.message }}</p>
+        <p class="text-xs text-slate-500 dark:text-white/75 leading-relaxed">{{ s.message }}</p>
 
         <!-- Admin note -->
         <div v-if="s.adminNote" class="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs text-sky-700 dark:text-sky-400">
@@ -122,7 +122,7 @@
         </div>
 
         <!-- Actions -->
-        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-dark-outline flex flex-wrap items-center gap-2">
           <div class="flex gap-1.5 flex-wrap">
             <button v-for="st in statusOptions" :key="st.value"
               @click="changeStatus(s, st.value)"
@@ -130,12 +130,12 @@
               :class="['px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold border transition-all disabled:cursor-not-allowed',
                 s.status === st.value
                   ? getStatusActiveCls(st.value)
-                  : 'bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 opacity-60 hover:opacity-100'
+                  : 'bg-slate-50 dark:bg-dark-muted text-slate-500 dark:text-white/75 border-slate-200 dark:border-dark-outline/70 hover:border-slate-300 opacity-60 hover:opacity-100'
               ]"
             >{{ st.label }}</button>
           </div>
           <button @click="openNote(s)"
-            class="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary transition-all"
+            class="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted text-xs font-semibold text-slate-600 dark:text-white/90 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary transition-all"
           >
             <MessageSquare class="w-3.5 h-3.5" />
             {{ s.adminNote ? 'Edit Note' : 'Add Note' }}
@@ -148,7 +148,7 @@
     <Teleport to="body">
       <transition name="fade">
         <div v-if="noteModal.open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="noteModal.open = false">
-          <div class="relative w-full max-w-md bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+          <div class="relative w-full max-w-md bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-2xl p-6 space-y-4">
             <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
             <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
@@ -159,17 +159,17 @@
               </button>
             </div>
 
-            <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">Re: {{ noteModal.subject }}</p>
+            <p class="text-xs text-slate-500 dark:text-white/75 font-mono">Re: {{ noteModal.subject }}</p>
 
             <textarea
               v-model="noteModal.note"
               rows="5"
               placeholder="Write your internal note or response here…"
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 resize-y transition-all"
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 resize-y transition-all"
             ></textarea>
 
             <div class="flex items-center justify-end gap-3">
-              <button @click="noteModal.open = false" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+              <button @click="noteModal.open = false" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
               <button @click="saveNote" :disabled="noteModal.saving"
                 class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md inline-flex items-center gap-2 disabled:opacity-50 active:scale-95"
               >

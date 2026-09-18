@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
     <!-- Header Section with Blueprint Aesthetics -->
-    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+    <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
       <!-- Decorative background grid -->
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
 
@@ -20,7 +20,7 @@
           <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
             Course Performance & Audit Reports
           </h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+          <p class="text-sm text-slate-500 dark:text-white/75 mt-1 max-w-2xl">
             Detailed session logs, attendance ratios, and student participation audit for scheduled courses.
           </p>
         </div>
@@ -28,7 +28,7 @@
         <div class="flex items-center gap-3">
           <button
             @click="exportReport"
-            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-primary dark:hover:text-secondary hover:border-slate-300 dark:hover:border-slate-600 text-sm font-medium transition-all shadow-sm hover:shadow active:scale-95"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted text-slate-700 dark:text-white hover:text-primary dark:hover:text-secondary hover:border-slate-300 dark:hover:border-slate-600 text-sm font-medium transition-all shadow-sm hover:shadow active:scale-95"
           >
             <Download class="w-4 h-4 text-secondary" />
             <span>Export Report</span>
@@ -38,16 +38,16 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-dark-muted/60 rounded-2xl border border-dashed border-slate-200 dark:border-dark-outline">
       <Loader2 class="w-10 h-10 text-secondary animate-spin mb-4" />
-      <p class="text-sm font-mono text-slate-600 dark:text-slate-400">INDEXING SESSION AUDIT DATA...</p>
+      <p class="text-sm font-mono text-slate-600 dark:text-white/75">INDEXING SESSION AUDIT DATA...</p>
     </div>
 
     <template v-else>
       <!-- Filter Bar -->
-      <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div class="flex items-center gap-2 text-xs font-mono font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+      <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-dark-outline">
+          <div class="flex items-center gap-2 text-xs font-mono font-semibold uppercase text-slate-500 dark:text-white/75 tracking-wider">
             <Filter class="w-3.5 h-3.5 text-secondary" />
             FILTER AUDIT RECORDS
           </div>
@@ -64,10 +64,10 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
           <!-- Course -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Course</label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Course</label>
             <select
               v-model="filters.courseId"
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
             >
               <option value="">All Courses</option>
               <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} - {{ c.name }}</option>
@@ -76,10 +76,10 @@
 
           <!-- Level -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Level</label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Level</label>
             <select
               v-model="filters.level"
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
             >
               <option value="">All Levels</option>
               <option v-for="lvl in levelOptions" :key="lvl" :value="lvl">Level {{ lvl }}</option>
@@ -88,10 +88,10 @@
 
           <!-- Semester -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Semester</label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Semester</label>
             <select
               v-model="filters.semester"
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
             >
               <option value="">All Semesters</option>
               <option v-for="sem in semesterOptions" :key="sem" :value="sem">{{ sem }}</option>
@@ -100,10 +100,10 @@
 
           <!-- Student -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Student</label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Student</label>
             <select
               v-model="filters.studentId"
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
             >
               <option value="">All Students</option>
               <option v-for="s in studentOptions" :key="s.id" :value="s.id">{{ s.name }} ({{ s.studentId }})</option>
@@ -112,33 +112,33 @@
 
           <!-- From -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">From Date</label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">From Date</label>
             <input
               type="date"
               v-model="filters.dateFrom"
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
             />
           </div>
 
           <!-- To -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">To Date</label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">To Date</label>
             <input
               type="date"
               v-model="filters.dateTo"
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
             />
           </div>
 
           <!-- PIN -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Session PIN</label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Session PIN</label>
             <input
               type="text"
               v-model="filters.pinSearch"
               placeholder="e.g. 4821"
               maxlength="8"
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all font-mono"
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all font-mono"
             />
           </div>
         </div>
@@ -147,13 +147,13 @@
       <!-- Empty State -->
       <div
         v-if="reportData.length === 0"
-        class="bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-sm"
+        class="bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-12 text-center shadow-sm"
       >
-        <div class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-center mx-auto mb-4 text-slate-400">
+        <div class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-dark-muted/60 border border-slate-200 dark:border-dark-outline/70/60 flex items-center justify-center mx-auto mb-4 text-slate-400">
           <BookOpen class="w-8 h-8" />
         </div>
         <h3 class="text-lg font-display font-bold text-slate-900 dark:text-white">No Matching Reports Found</h3>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+        <p class="text-sm text-slate-500 dark:text-white/75 mt-1 max-w-md mx-auto">
           No courses or sessions match the applied filter criteria. Try expanding the date range or clearing filters.
         </p>
         <button
@@ -171,7 +171,7 @@
         <div
           v-for="report in reportData"
           :key="report.courseId"
-          class="group relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
+          class="group relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-dark-outline transition-all flex flex-col justify-between"
         >
           <!-- Corner brackets -->
           <div class="absolute top-2 left-2 w-2 h-2 border-t border-l border-secondary/30 pointer-events-none"></div>
@@ -185,10 +185,10 @@
                   <span class="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
                     {{ report.code }}
                   </span>
-                  <span v-if="report.semester" class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                  <span v-if="report.semester" class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-muted text-slate-600 dark:text-white/75">
                     {{ report.semester }}
                   </span>
-                  <span v-if="report.level" class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                  <span v-if="report.level" class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-muted text-slate-600 dark:text-white/75">
                     L{{ report.level }}
                   </span>
                 </div>
@@ -210,10 +210,10 @@
             </div>
 
             <!-- Stats Matrix -->
-            <div class="grid grid-cols-2 gap-2.5 my-4 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div class="grid grid-cols-2 gap-2.5 my-4 p-3 bg-slate-50 dark:bg-dark-muted/70 rounded-xl border border-slate-100 dark:border-dark-outline">
               <div class="space-y-0.5">
                 <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Enrolled</div>
-                <div class="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <div class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                   <Users class="w-3.5 h-3.5 text-slate-400" />
                   {{ report.totalStudents }}
                 </div>
@@ -221,7 +221,7 @@
 
               <div class="space-y-0.5">
                 <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Sessions</div>
-                <div class="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <div class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                   <Calendar class="w-3.5 h-3.5 text-slate-400" />
                   {{ report.sessionsHeld }}
                 </div>
@@ -248,7 +248,7 @@
           <!-- Action Button -->
           <button
             @click="openStudentList(report)"
-            class="w-full mt-2 py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-primary dark:hover:bg-secondary hover:text-white dark:hover:text-primary text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all flex items-center justify-center gap-2 group-hover:border-transparent"
+            class="w-full mt-2 py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-dark-muted/80 hover:bg-primary dark:hover:bg-secondary hover:text-white dark:hover:text-primary text-slate-700 dark:text-white/90 text-xs font-semibold transition-all flex items-center justify-center gap-2 group-hover:border-transparent"
           >
             <Users class="w-3.5 h-3.5" />
             <span>View Student Roster ({{ report.totalStudents }})</span>
@@ -259,21 +259,21 @@
       <!-- History Grouped by Session -->
       <div
         v-if="sessionGroups.length > 0 || filteredSessions.length > 0"
-        class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden"
+        class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl shadow-sm overflow-hidden"
       >
         <!-- Corner Brackets -->
         <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
         <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
-        <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-dark-outline flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-2">
               <h2 class="text-lg font-display font-bold text-slate-900 dark:text-white">Detailed Attendance Log</h2>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-slate-100 dark:bg-dark-muted text-slate-600 dark:text-white/75">
                 {{ filteredSessions.length }} Session{{ filteredSessions.length !== 1 ? 's' : '' }}
               </span>
             </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p class="text-xs text-slate-500 dark:text-white/75 mt-0.5">
               Comprehensive chronological listing of class sessions, PINs, and attendee status.
             </p>
           </div>
@@ -285,14 +285,14 @@
           </div>
         </div>
 
-        <div v-if="sessionGroups.length === 0" class="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+        <div v-if="sessionGroups.length === 0" class="p-8 text-center text-slate-500 dark:text-white/75 text-sm">
           No attendance records match the current filters.
         </div>
 
         <div v-else class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider text-[11px]">
+              <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-dark-outline text-slate-500 dark:text-white/75 font-mono uppercase tracking-wider text-[11px]">
                 <th class="py-3 px-4 font-semibold">Student</th>
                 <th class="py-3 px-4 font-semibold">Course</th>
                 <th class="py-3 px-4 font-semibold">Session PIN</th>
@@ -305,7 +305,7 @@
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
               <template v-for="group in sessionGroups" :key="group.sessionId">
                 <!-- Group Header Row -->
-                <tr class="bg-slate-100/70 dark:bg-slate-800/40 border-t-2 border-b border-slate-200/80 dark:border-slate-800/80 font-mono">
+                <tr class="bg-slate-100/70 dark:bg-slate-800/40 border-t-2 border-b border-slate-200/80 dark:border-dark-outline/60 font-mono">
                   <td colspan="6" class="py-3 px-4">
                     <div class="flex flex-wrap items-center gap-2.5">
                       <span class="px-2.5 py-1 rounded-md bg-secondary/15 text-secondary border border-secondary/30 font-bold text-xs">
@@ -315,10 +315,10 @@
                         {{ group.courseCode }} · {{ group.courseName }}
                       </span>
                       <span class="text-slate-400 text-[11px]">|</span>
-                      <span class="text-slate-500 dark:text-slate-400 text-[11px]">
+                      <span class="text-slate-500 dark:text-white/75 text-[11px]">
                         {{ group.dateStr }}
                       </span>
-                      <span class="px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 text-[10px]">
+                      <span class="px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-slate-700/60 text-slate-600 dark:text-white/90 text-[10px]">
                         {{ group.rows.length }} Check-in{{ group.rows.length !== 1 ? 's' : '' }}
                       </span>
                     </div>
@@ -354,19 +354,19 @@
                       <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30 flex items-center justify-center font-bold text-xs uppercase">
                         {{ row.studentName.charAt(0) }}
                       </div>
-                      <span class="font-medium text-slate-900 dark:text-slate-100">{{ row.studentName }}</span>
+                      <span class="font-medium text-slate-900 dark:text-white">{{ row.studentName }}</span>
                     </div>
                   </td>
-                  <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
+                  <td class="py-3 px-4 text-slate-600 dark:text-white/75">
                     {{ row.courseCode }}
                   </td>
                   <td class="py-3 px-4">
-                    <span class="font-mono text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    <span class="font-mono text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-muted text-slate-700 dark:text-white/90">
                       {{ row.pin }}
                     </span>
                   </td>
-                  <td class="py-3 px-4 text-slate-600 dark:text-slate-400 font-mono">{{ row.dateStr }}</td>
-                  <td class="py-3 px-4 text-slate-600 dark:text-slate-400 font-mono">{{ row.timeStr }}</td>
+                  <td class="py-3 px-4 text-slate-600 dark:text-white/75 font-mono">{{ row.dateStr }}</td>
+                  <td class="py-3 px-4 text-slate-600 dark:text-white/75 font-mono">{{ row.timeStr }}</td>
                   <td class="py-3 px-4">
                     <!-- Inline status editor -->
                     <div v-if="editingRowId === row.id" class="flex items-center gap-1.5">
@@ -374,7 +374,7 @@
                         v-model="editingStatus"
                         :disabled="savingRowId === row.id"
                         @change="saveStatusEdit(row)"
-                        class="bg-white dark:bg-slate-900 border border-secondary rounded-lg px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none"
+                        class="bg-white dark:bg-dark-muted border border-secondary rounded-lg px-2 py-1 text-xs text-slate-800 dark:text-white focus:outline-none"
                       >
                         <option value="pending">Pending</option>
                         <option value="absent">Absent</option>
@@ -433,16 +433,16 @@
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       @click.self="closeModal"
     >
-      <div class="relative w-full max-w-2xl bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+      <div class="relative w-full max-w-2xl bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
         <!-- Corner Brackets -->
         <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
         <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
-        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
+        <div class="p-6 border-b border-slate-100 dark:border-dark-outline flex items-start justify-between gap-4">
           <div>
             <span class="text-[10px] font-mono uppercase tracking-wider text-secondary font-bold">COURSE ROSTER AUDIT</span>
             <h2 class="text-xl font-display font-bold text-slate-900 dark:text-white">{{ selectedReport?.name }}</h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p class="text-xs text-slate-500 dark:text-white/75 mt-0.5">
               {{ selectedReport?.code }} · {{ selectedReport?.sessionsHeld }} Session{{ selectedReport?.sessionsHeld !== 1 ? 's' : '' }} Held
             </p>
           </div>
@@ -455,13 +455,13 @@
         </div>
 
         <div class="p-6 overflow-y-auto flex-1">
-          <div v-if="studentsList.length === 0" class="text-center py-10 text-slate-500 dark:text-slate-400 text-sm">
+          <div v-if="studentsList.length === 0" class="text-center py-10 text-slate-500 dark:text-white/75 text-sm">
             No students are currently enrolled in this course.
           </div>
           <div v-else class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
-                <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-mono uppercase text-[10px]">
+                <tr class="border-b border-slate-200 dark:border-dark-outline text-slate-500 dark:text-white/75 font-mono uppercase text-[10px]">
                   <th class="py-2.5 px-3">Student Name</th>
                   <th class="py-2.5 px-3">Student ID</th>
                   <th class="py-2.5 px-3">Program</th>
@@ -470,7 +470,7 @@
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
                 <tr v-for="student in studentsList" :key="student.id" class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                  <td class="py-2.5 px-3 font-medium text-slate-900 dark:text-slate-100">
+                  <td class="py-2.5 px-3 font-medium text-slate-900 dark:text-white">
                     <div class="flex items-center gap-2">
                       <div class="w-6 h-6 rounded bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary flex items-center justify-center font-bold text-xs uppercase">
                         {{ student.name.charAt(0) }}
@@ -478,8 +478,8 @@
                       <span>{{ student.name }}</span>
                     </div>
                   </td>
-                  <td class="py-2.5 px-3 font-mono text-slate-600 dark:text-slate-400">{{ student.studentId }}</td>
-                  <td class="py-2.5 px-3 text-slate-600 dark:text-slate-400">{{ student.program || 'N/A' }}</td>
+                  <td class="py-2.5 px-3 font-mono text-slate-600 dark:text-white/75">{{ student.studentId }}</td>
+                  <td class="py-2.5 px-3 text-slate-600 dark:text-white/75">{{ student.program || 'N/A' }}</td>
                   <td class="py-2.5 px-3 text-right">
                     <span
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
@@ -506,19 +506,19 @@
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       @click.self="sessionToDelete = null"
     >
-      <div class="relative w-full max-w-md bg-white dark:bg-[#071328] border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 shadow-2xl">
+      <div class="relative w-full max-w-md bg-white dark:bg-dark-surface border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 shadow-2xl">
         <div class="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4">
           <Trash2 class="w-6 h-6" />
         </div>
 
         <h3 class="text-lg font-display font-bold text-slate-900 dark:text-white">Permanently Delete Session?</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
-          This will purge the session along with <strong class="text-slate-800 dark:text-slate-200">{{ sessionToDelete.rows.length }}</strong> attendance records:
+        <p class="text-xs text-slate-500 dark:text-white/75 mt-2">
+          This will purge the session along with <strong class="text-slate-800 dark:text-white">{{ sessionToDelete.rows.length }}</strong> attendance records:
         </p>
 
-        <div class="my-4 p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
+        <div class="my-4 p-3.5 bg-slate-50 dark:bg-dark-muted/70 rounded-xl border border-slate-200 dark:border-dark-outline space-y-1 text-xs">
           <div class="font-mono text-secondary font-bold">PIN: {{ sessionToDelete.pin }}</div>
-          <div class="text-slate-800 dark:text-slate-200 font-medium">{{ sessionToDelete.courseCode }} — {{ sessionToDelete.courseName }}</div>
+          <div class="text-slate-800 dark:text-white font-medium">{{ sessionToDelete.courseCode }} — {{ sessionToDelete.courseName }}</div>
           <div class="text-slate-500 text-[11px]">{{ sessionToDelete.dateStr }}</div>
         </div>
 
@@ -530,7 +530,7 @@
           <button
             @click="sessionToDelete = null"
             :disabled="!!deletingSessionId"
-            class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            class="px-4 py-2 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-xs font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             Cancel
           </button>

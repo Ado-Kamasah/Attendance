@@ -13,10 +13,10 @@
             </div>
 
             <div>
-              <h2 class="text-xl font-bold font-display text-foreground dark:text-dark-foreground">
+              <h2 class="text-xl font-bold font-display text-foreground dark:text-white">
                 Faculty Instructional Evaluation
               </h2>
-              <p class="text-xs font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+              <p class="text-xs font-mono text-foreground/60 dark:text-white/70 mt-1">
                 Your direct appraisal improves institutional curriculum delivery.
               </p>
             </div>
@@ -35,7 +35,7 @@
             </div>
 
             <!-- Rules List -->
-            <ul class="text-xs space-y-2 text-foreground/70 dark:text-dark-foreground/70 border-y border-outline/30 dark:border-dark-outline/40 py-3 font-mono">
+            <ul class="text-xs space-y-2 text-foreground/70 dark:text-white/80 border-y border-outline/30 dark:border-dark-outline/40 py-3 font-mono">
               <li class="flex items-start gap-2">
                 <span class="text-secondary font-bold">&bull;</span>
                 <span>Select the specific course and lecturer from the dropdown list.</span>
@@ -72,10 +72,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           Lecturer <span class="text-secondary dark:text-dark-secondary">Evaluation</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           Confidential feedback survey on teaching effectiveness and course delivery
         </p>
       </div>
@@ -98,7 +98,7 @@
         <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
         <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
 
-        <label class="block text-xs font-bold font-mono text-foreground dark:text-dark-foreground uppercase tracking-wider mb-2" for="ef-course-select">
+        <label class="block text-xs font-bold font-mono text-foreground dark:text-white uppercase tracking-wider mb-2" for="ef-course-select">
           Select Enrolled Module & Lecturer
         </label>
 
@@ -115,7 +115,7 @@
           v-else 
           id="ef-course-select" 
           v-model="selectedEnrollment" 
-          class="w-full bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 dark:border-dark-outline/40 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-foreground dark:text-dark-foreground font-mono outline-hidden focus:border-secondary"
+          class="w-full bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 dark:border-dark-outline/40 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-foreground dark:text-white font-mono outline-hidden focus:border-secondary"
         >
           <option value="">— Choose a course & instructor —</option>
           <option v-for="e in eligibleEnrollments" :key="e.key" :value="e.key">
@@ -145,7 +145,7 @@
                 Q{{ idx + 1 }}
               </span>
               <div class="min-w-0 flex-1">
-                <p class="text-xs sm:text-sm font-semibold text-foreground dark:text-dark-foreground">
+                <p class="text-xs sm:text-sm font-semibold text-foreground dark:text-white">
                   {{ q.text }}
                 </p>
 
@@ -178,7 +178,7 @@
                 Q17
               </span>
               <div class="min-w-0 flex-1">
-                <p class="text-xs sm:text-sm font-semibold text-foreground dark:text-dark-foreground">
+                <p class="text-xs sm:text-sm font-semibold text-foreground dark:text-white">
                   Constructive Comments & Observations (Optional)
                 </p>
                 <textarea
@@ -186,7 +186,7 @@
                   rows="4"
                   id="ef-comments"
                   placeholder="Share additional perspectives regarding instructional clarity, lecture pacing, or course structure…"
-                  class="mt-3 w-full px-3.5 py-2.5 text-xs sm:text-sm bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono"
+                  class="mt-3 w-full px-3.5 py-2.5 text-xs sm:text-sm bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono"
                 ></textarea>
               </div>
             </div>

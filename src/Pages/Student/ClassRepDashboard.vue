@@ -13,11 +13,11 @@
           <span class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-secondary text-primary uppercase tracking-wider">
             Class Rep
           </span>
-          <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+          <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
             Representative <span class="text-secondary dark:text-dark-secondary">Panel</span>
           </h1>
         </div>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           {{ currentDate }} &bull; Verify faculty lecture delivery, session PINs, and turnout
         </p>
       </div>
@@ -32,7 +32,7 @@
     <!-- No Roles Assigned -->
     <div v-else-if="store.myRoles.length === 0" class="py-16 text-center text-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl max-w-md mx-auto p-8">
       <UserCheck class="w-10 h-10 mx-auto mb-2 text-foreground/30" />
-      <h3 class="text-base font-bold font-display text-foreground dark:text-dark-foreground">No Class Rep Appointments</h3>
+      <h3 class="text-base font-bold font-display text-foreground dark:text-white">No Class Rep Appointments</h3>
       <p class="text-xs font-mono mt-1">
         You are not assigned as an active class representative for any course cohorts. Contact your department administrator if you were nominated.
       </p>
@@ -65,7 +65,7 @@
             <div class="pb-3 border-b border-outline/30 dark:border-dark-outline/40">
               <div class="flex items-center gap-2">
                 <CheckSquare class="w-4 h-4 text-secondary" />
-                <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+                <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                   Record Lecturer Arrival
                 </h2>
               </div>
@@ -90,7 +90,7 @@
               <!-- Session Code / PIN Auto-Verification -->
               <div class="p-4 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40 space-y-3">
                 <div>
-                  <label class="block font-mono font-bold text-foreground dark:text-dark-foreground uppercase tracking-wider text-[11px] mb-1">
+                  <label class="block font-mono font-bold text-foreground dark:text-white uppercase tracking-wider text-[11px] mb-1">
                     Lecture Session Code / PIN *
                   </label>
                   <p class="text-[10px] font-mono text-foreground/50">
@@ -108,7 +108,7 @@
                       placeholder="e.g. 482913"
                       @input="onSessionCodeInput"
                       @keyup.enter.prevent="handleVerifySession"
-                      class="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl font-mono text-foreground dark:text-dark-foreground outline-hidden"
+                      class="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl font-mono text-foreground dark:text-white outline-hidden"
                     />
                     <button 
                       v-if="form.sessionCode" 
@@ -171,13 +171,13 @@
                   <label class="block font-mono text-[11px] text-foreground/70 mb-1" for="att-date">
                     Session Date *
                   </label>
-                  <input type="date" id="att-date" v-model="form.date" :max="todayStr" required class="w-full px-3 py-2 text-xs bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl font-mono text-foreground dark:text-dark-foreground outline-hidden focus:border-secondary" />
+                  <input type="date" id="att-date" v-model="form.date" :max="todayStr" required class="w-full px-3 py-2 text-xs bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl font-mono text-foreground dark:text-white outline-hidden focus:border-secondary" />
                 </div>
                 <div>
                   <label class="block font-mono text-[11px] text-foreground/70 mb-1" for="att-time">
                     Arrival Time *
                   </label>
-                  <input type="time" id="att-time" v-model="form.time" required class="w-full px-3 py-2 text-xs bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl font-mono text-foreground dark:text-dark-foreground outline-hidden focus:border-secondary" />
+                  <input type="time" id="att-time" v-model="form.time" required class="w-full px-3 py-2 text-xs bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl font-mono text-foreground dark:text-white outline-hidden focus:border-secondary" />
                 </div>
               </div>
 
@@ -211,7 +211,7 @@
                   v-model="form.notes" 
                   rows="2" 
                   placeholder="Record lecture topics covered or reason for instructor tardiness/absence…" 
-                  class="w-full px-3 py-2 text-xs bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl font-mono text-foreground dark:text-dark-foreground outline-hidden focus:border-secondary"
+                  class="w-full px-3 py-2 text-xs bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl font-mono text-foreground dark:text-white outline-hidden focus:border-secondary"
                 ></textarea>
               </div>
 
@@ -246,7 +246,7 @@
 
             <div class="flex items-center gap-2 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
               <History class="w-4 h-4 text-secondary" />
-              <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+              <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                 Attendance Logbook
               </h2>
             </div>
@@ -289,7 +289,7 @@
                   class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40 space-y-1.5 text-xs"
                 >
                   <div class="flex items-center justify-between">
-                    <span class="font-bold font-mono text-foreground dark:text-dark-foreground">
+                    <span class="font-bold font-mono text-foreground dark:text-white">
                       {{ formatDate(rec.date) }} &bull; {{ formatTime(rec.time) }}
                     </span>
                     <span 
@@ -300,7 +300,7 @@
                     </span>
                   </div>
 
-                  <p v-if="rec.notes" class="text-[11px] text-foreground/70 dark:text-dark-foreground/70 italic">
+                  <p v-if="rec.notes" class="text-[11px] text-foreground/70 dark:text-white/80 italic">
                     "{{ rec.notes }}"
                   </p>
 

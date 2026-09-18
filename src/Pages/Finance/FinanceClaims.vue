@@ -2,7 +2,7 @@
   <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
-    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+    <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
@@ -18,7 +18,7 @@
           <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
             Lecturer Claims Report
           </h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p class="text-sm text-slate-500 dark:text-white/75 mt-1">
             Session-based claims for all lecturers — filter by lecturer, date range, and download as CSV.
           </p>
         </div>
@@ -36,7 +36,7 @@
     </div>
 
     <!-- Filters Bar -->
-    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+    <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-5 shadow-sm">
       <div class="flex flex-col sm:flex-row flex-wrap gap-3 items-end">
         <!-- Search -->
         <div class="flex-1 min-w-[200px]">
@@ -47,7 +47,7 @@
               v-model="search"
               type="text"
               placeholder="Search lecturer or course..."
-              class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary"
+              class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary"
             />
           </div>
         </div>
@@ -57,7 +57,7 @@
           <label class="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5">Lecturer</label>
           <select
             v-model="filterLecturer"
-            class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+            class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
           >
             <option value="">All Lecturers</option>
             <option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option>
@@ -70,7 +70,7 @@
           <input
             type="date"
             v-model="fromDate"
-            class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+            class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
           />
         </div>
 
@@ -80,7 +80,7 @@
           <input
             type="date"
             v-model="toDate"
-            class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50"
+            class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
           />
         </div>
 
@@ -94,7 +94,7 @@
           </button>
           <button
             @click="resetFilters"
-            class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+            class="px-4 py-2 border border-slate-200 dark:border-dark-outline/70 text-slate-600 dark:text-white/90 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
             Reset
           </button>
@@ -104,7 +104,7 @@
 
     <!-- Summary Pills -->
     <div v-if="!isLoading && filtered.length" class="flex flex-wrap gap-2">
-      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-slate-100 dark:bg-dark-muted text-slate-600 dark:text-white/90 border border-slate-200 dark:border-dark-outline/70">
         <FileSpreadsheet class="w-3 h-3" />
         {{ filtered.length }} claim rows
       </span>
@@ -123,29 +123,29 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-dark-muted/60 rounded-2xl border border-dashed border-slate-200 dark:border-dark-outline">
       <Loader2 class="w-10 h-10 text-secondary animate-spin mb-4" />
-      <p class="text-sm font-mono text-slate-500 dark:text-slate-400">LOADING CLAIMS DATA...</p>
+      <p class="text-sm font-mono text-slate-500 dark:text-white/75">LOADING CLAIMS DATA...</p>
     </div>
 
     <!-- Empty State -->
     <div
       v-else-if="filtered.length === 0"
-      class="bg-white dark:bg-[#071328] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-14 text-center"
+      class="bg-white dark:bg-dark-surface border border-dashed border-slate-200 dark:border-dark-outline rounded-2xl p-14 text-center"
     >
-      <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-4 text-slate-400">
+      <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-dark-muted border border-slate-200 dark:border-dark-outline/70 flex items-center justify-center mx-auto mb-4 text-slate-400">
         <BarChart3 class="w-7 h-7" />
       </div>
       <h3 class="text-base font-display font-bold text-slate-900 dark:text-white">No Claims Data Found</h3>
-      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">No claims data matches the selected filters. Try adjusting dates or clearing filters.</p>
+      <p class="text-sm text-slate-500 dark:text-white/75 mt-1">No claims data matches the selected filters. Try adjusting dates or clearing filters.</p>
     </div>
 
     <!-- Claims Table -->
-    <div v-else class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
+    <div v-else class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
-            <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-mono uppercase text-[11px] tracking-wider">
+            <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-dark-outline text-slate-500 dark:text-white/75 font-mono uppercase text-[11px] tracking-wider">
               <th
                 @click="sortBy('lecturerName')"
                 class="py-3 px-4 font-semibold cursor-pointer select-none hover:text-primary dark:hover:text-secondary transition-colors"
@@ -200,7 +200,7 @@
                     {{ c.lecturerName.charAt(0) }}
                   </div>
                   <div>
-                    <p class="font-semibold text-slate-900 dark:text-slate-100 text-xs">{{ c.lecturerName }}</p>
+                    <p class="font-semibold text-slate-900 dark:text-white text-xs">{{ c.lecturerName }}</p>
                     <p class="text-[10px] text-slate-400">{{ c.lecturerEmail }}</p>
                   </div>
                 </div>
@@ -208,7 +208,7 @@
 
               <!-- Course -->
               <td class="py-3.5 px-4">
-                <p class="font-bold text-slate-900 dark:text-slate-100 text-xs">{{ c.courseCode }}</p>
+                <p class="font-bold text-slate-900 dark:text-white text-xs">{{ c.courseCode }}</p>
                 <p class="text-[10px] text-slate-400">{{ c.courseName }}</p>
               </td>
 
@@ -220,10 +220,10 @@
               </td>
 
               <!-- Sessions -->
-              <td class="py-3.5 px-4 text-center font-bold font-mono text-slate-700 dark:text-slate-300">{{ c.totalSessions }}</td>
+              <td class="py-3.5 px-4 text-center font-bold font-mono text-slate-700 dark:text-white/90">{{ c.totalSessions }}</td>
 
               <!-- Student Slots -->
-              <td class="py-3.5 px-4 text-center font-bold font-mono text-slate-700 dark:text-slate-300">{{ c.totalStudentSlots }}</td>
+              <td class="py-3.5 px-4 text-center font-bold font-mono text-slate-700 dark:text-white/90">{{ c.totalStudentSlots }}</td>
 
               <!-- Total Present -->
               <td class="py-3.5 px-4 text-center font-bold font-mono text-emerald-600 dark:text-emerald-400">{{ c.totalPresent }}</td>
@@ -231,7 +231,7 @@
               <!-- Rate -->
               <td class="py-3.5 px-4">
                 <div class="flex items-center gap-2.5">
-                  <div class="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex-shrink-0">
+                  <div class="w-16 h-1.5 bg-slate-100 dark:bg-dark-muted rounded-full overflow-hidden flex-shrink-0">
                     <div
                       class="h-full rounded-full transition-all duration-700"
                       :class="c.attendanceRate >= 70 ? 'bg-emerald-500' : c.attendanceRate >= 45 ? 'bg-amber-500' : 'bg-rose-500'"
@@ -255,17 +255,17 @@
       <button
         :disabled="page === 1"
         @click="page--"
-        class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        class="px-4 py-2 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-xs font-semibold text-slate-600 dark:text-white/90 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
       >
         ← Prev
       </button>
-      <span class="text-sm font-mono text-slate-500 dark:text-slate-400">
+      <span class="text-sm font-mono text-slate-500 dark:text-white/75">
         Page {{ page }} of {{ totalPages }}
       </span>
       <button
         :disabled="page === totalPages"
         @click="page++"
-        class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        class="px-4 py-2 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-xs font-semibold text-slate-600 dark:text-white/90 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
       >
         Next →
       </button>

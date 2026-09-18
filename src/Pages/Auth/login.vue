@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full flex items-center justify-center bg-background dark:bg-dark-background text-foreground dark:text-dark-foreground relative overflow-hidden font-sans p-4 sm:p-6 lg:p-10">
+  <div class="min-h-screen w-full flex items-center justify-center bg-background dark:bg-dark-background text-foreground dark:text-white relative overflow-hidden font-sans p-4 sm:p-6 lg:p-10">
     
     <!-- Blueprint architectural grid background -->
     <div class="absolute inset-0 bg-[radial-gradient(#c2cde0_1px,transparent_1px)] dark:bg-[radial-gradient(#1e3560_1.2px,transparent_1.2px)] [background-size:28px_28px] opacity-70 pointer-events-none"></div>
@@ -12,7 +12,7 @@
     <div class="relative z-10 w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 bg-surface/90 dark:bg-dark-surface/90 backdrop-blur-xl border border-outline dark:border-dark-outline rounded-3xl shadow-2xl shadow-primary/10 overflow-hidden">
       
       <!-- ── Left Column: Blueprint Visual & Academic Showcase (5 cols on lg) ── -->
-      <div class="relative lg:col-span-5 bg-primary dark:bg-[#071326] text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r border-outline/20 dark:border-dark-outline">
+      <div class="relative lg:col-span-5 bg-primary dark:bg-dark-surface text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r border-outline/20 dark:border-dark-outline">
         
         <!-- Decorative corners -->
         <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
@@ -118,10 +118,10 @@
 
           <!-- Header -->
           <div class="mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground dark:text-dark-foreground mb-2">
+            <h1 class="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground dark:text-white mb-2">
               Sign In to Your Account
             </h1>
-            <p class="text-sm text-foreground/60 dark:text-dark-foreground/60">
+            <p class="text-sm text-foreground/60 dark:text-white/70">
               Access your institutional attendance records and academic console.
             </p>
           </div>
@@ -131,11 +131,11 @@
             
             <!-- Login ID / Email -->
             <div class="space-y-1.5">
-              <label for="loginId" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+              <label for="loginId" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                 Institutional ID or Email
               </label>
               <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
                   <User class="w-4 h-4" />
                 </div>
                 <input
@@ -146,7 +146,7 @@
                   @blur="isEmailFocused = false"
                   placeholder="Student ID, Staff ID, or university email"
                   required
-                  class="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
+                  class="w-full pl-10 pr-4 py-3 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
                 />
               </div>
             </div>
@@ -154,7 +154,7 @@
             <!-- Password -->
             <div class="space-y-1.5">
               <div class="flex items-center justify-between">
-                <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                   Password
                 </label>
                 <button
@@ -166,7 +166,7 @@
                 </button>
               </div>
               <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
                   <Lock class="w-4 h-4" />
                 </div>
                 <input
@@ -177,13 +177,13 @@
                   @blur="isPasswordFocused = false"
                   placeholder="••••••••••••"
                   required
-                  class="w-full pl-10 pr-11 py-3 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
+                  class="w-full pl-10 pr-11 py-3 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
                 />
                 <button
                   type="button"
                   @click="showPassword = !showPassword"
                   tabindex="-1"
-                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-foreground/40 hover:text-foreground/70 dark:text-dark-foreground/40 dark:hover:text-dark-foreground/80 transition-colors focus:outline-none cursor-pointer"
+                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-foreground/40 hover:text-foreground/70 dark:text-white/50 dark:hover:text-dark-foreground/80 transition-colors focus:outline-none cursor-pointer"
                   aria-label="Toggle password visibility"
                 >
                   <Eye v-if="!showPassword" class="w-4 h-4" />
@@ -194,7 +194,7 @@
 
             <!-- Remember me checkbox -->
             <div class="flex items-center">
-              <label class="flex items-center gap-2.5 cursor-pointer text-xs text-foreground/70 dark:text-dark-foreground/70 select-none">
+              <label class="flex items-center gap-2.5 cursor-pointer text-xs text-foreground/70 dark:text-white/80 select-none">
                 <input
                   type="checkbox"
                   v-model="rememberMe"
@@ -244,7 +244,7 @@
 
           <!-- Divider & Register Link -->
           <div class="mt-8 pt-6 border-t border-outline/50 dark:border-dark-outline/50 text-center">
-            <p class="text-xs text-foreground/60 dark:text-dark-foreground/60">
+            <p class="text-xs text-foreground/60 dark:text-white/70">
               Don't have an academic account yet?
               <button
                 type="button"
@@ -290,7 +290,7 @@
           <!-- Close Modal Button -->
           <button
             @click="closeForgot"
-            class="absolute top-4 right-4 p-1.5 rounded-lg text-foreground/50 hover:text-foreground dark:text-dark-foreground/50 dark:hover:text-dark-foreground bg-background dark:bg-dark-background border border-outline/60 dark:border-dark-outline transition-colors focus:outline-none z-10 cursor-pointer"
+            class="absolute top-4 right-4 p-1.5 rounded-lg text-foreground/50 hover:text-foreground dark:text-white/65 dark:hover:text-dark-foreground bg-background dark:bg-dark-background border border-outline/60 dark:border-dark-outline transition-colors focus:outline-none z-10 cursor-pointer"
             aria-label="Close"
           >
             <X class="w-4 h-4" />
@@ -302,21 +302,21 @@
               <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-dark-primary/20 text-primary dark:text-dark-secondary flex items-center justify-center mb-3">
                 <Mail class="w-5 h-5" />
               </div>
-              <h2 class="text-xl font-bold font-display tracking-tight text-foreground dark:text-dark-foreground">
+              <h2 class="text-xl font-bold font-display tracking-tight text-foreground dark:text-white">
                 Reset Portal Password
               </h2>
-              <p class="text-xs text-foreground/60 dark:text-dark-foreground/60 mt-1">
+              <p class="text-xs text-foreground/60 dark:text-white/70 mt-1">
                 Enter your registered Southshore email and we'll send a 6-digit verification code.
               </p>
             </div>
 
             <div class="space-y-4">
               <div class="space-y-1">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                   University Email Address
                 </label>
                 <div class="relative group">
-                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50">
                     <Mail class="w-4 h-4" />
                   </div>
                   <input
@@ -324,7 +324,7 @@
                     v-model="fpEmail"
                     placeholder="you@southshore.edu.gh"
                     @keyup.enter="sendFpOtp"
-                    class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all"
+                    class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all"
                   />
                 </div>
               </div>
@@ -353,11 +353,11 @@
               <div class="w-10 h-10 rounded-xl bg-secondary/15 dark:bg-dark-secondary/20 text-secondary dark:text-dark-secondary flex items-center justify-center mb-3">
                 <KeyRound class="w-5 h-5" />
               </div>
-              <h2 class="text-xl font-bold font-display tracking-tight text-foreground dark:text-dark-foreground">
+              <h2 class="text-xl font-bold font-display tracking-tight text-foreground dark:text-white">
                 Enter Verification Code
               </h2>
-              <p class="text-xs text-foreground/60 dark:text-dark-foreground/60 mt-1">
-                We sent a 6-digit one-time code to <strong class="text-foreground dark:text-dark-foreground">{{ fpEmail }}</strong>.
+              <p class="text-xs text-foreground/60 dark:text-white/70 mt-1">
+                We sent a 6-digit one-time code to <strong class="text-foreground dark:text-white">{{ fpEmail }}</strong>.
               </p>
             </div>
 
@@ -374,7 +374,7 @@
                   @input="onFpOtpInput(i, $event)"
                   @keydown.backspace="onFpOtpBack(i, $event)"
                   :ref="el => { if (el) fpOtpRefs[i] = el }"
-                  class="w-11 h-12 text-center text-lg font-bold font-mono bg-background dark:bg-dark-background border-2 rounded-xl text-foreground dark:text-dark-foreground transition-all focus:outline-none focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10"
+                  class="w-11 h-12 text-center text-lg font-bold font-mono bg-background dark:bg-dark-background border-2 rounded-xl text-foreground dark:text-white transition-all focus:outline-none focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10"
                   :class="fpOtp[i] ? 'border-secondary dark:border-dark-secondary shadow-sm' : 'border-outline dark:border-dark-outline'"
                 />
               </div>
@@ -396,7 +396,7 @@
               </button>
 
               <!-- Resend / Change Email actions -->
-              <div class="pt-2 flex items-center justify-between text-xs text-foreground/60 dark:text-dark-foreground/60 border-t border-outline/50 dark:border-dark-outline/50">
+              <div class="pt-2 flex items-center justify-between text-xs text-foreground/60 dark:text-white/70 border-t border-outline/50 dark:border-dark-outline/50">
                 <span v-if="fpResendCountdown > 0" class="font-mono text-[11px]">
                   Resend in <strong>{{ fpResendCountdown }}s</strong>
                 </span>
@@ -414,7 +414,7 @@
                 <button
                   type="button"
                   @click="forgotStep = 1; fpError = ''"
-                  class="hover:underline text-foreground/75 dark:text-dark-foreground/75 cursor-pointer"
+                  class="hover:underline text-foreground/75 dark:text-white/88 cursor-pointer"
                 >
                   Change email
                 </button>
@@ -428,33 +428,33 @@
               <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
                 <Lock class="w-5 h-5" />
               </div>
-              <h2 class="text-xl font-bold font-display tracking-tight text-foreground dark:text-dark-foreground">
+              <h2 class="text-xl font-bold font-display tracking-tight text-foreground dark:text-white">
                 Set New Password
               </h2>
-              <p class="text-xs text-foreground/60 dark:text-dark-foreground/60 mt-1">
+              <p class="text-xs text-foreground/60 dark:text-white/70 mt-1">
                 Choose a robust password of at least 8 characters.
               </p>
             </div>
 
             <div class="space-y-4">
               <div class="space-y-1">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                   New Password
                 </label>
                 <div class="relative group">
-                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50">
                     <Lock class="w-4 h-4" />
                   </div>
                   <input
                     :type="fpShowPw ? 'text' : 'password'"
                     v-model="fpNewPw"
                     placeholder="At least 8 characters"
-                    class="w-full pl-10 pr-10 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all"
+                    class="w-full pl-10 pr-10 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all"
                   />
                   <button
                     type="button"
                     @click="fpShowPw = !fpShowPw"
-                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-foreground/40 hover:text-foreground/70 dark:text-dark-foreground/40 cursor-pointer"
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-foreground/40 hover:text-foreground/70 dark:text-white/50 cursor-pointer"
                   >
                     <Eye v-if="!fpShowPw" class="w-4 h-4" />
                     <EyeOff v-else class="w-4 h-4" />
@@ -463,18 +463,18 @@
               </div>
 
               <div class="space-y-1">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-dark-foreground/75 font-display">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
                   Confirm Password
                 </label>
                 <div class="relative group">
-                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-dark-foreground/40">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50">
                     <Lock class="w-4 h-4" />
                   </div>
                   <input
                     :type="fpShowPw ? 'text' : 'password'"
                     v-model="fpConfirmPw"
                     placeholder="Repeat password"
-                    class="w-full pl-10 pr-10 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-dark-foreground focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all"
+                    class="w-full pl-10 pr-10 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all"
                   />
                 </div>
               </div>
@@ -502,10 +502,10 @@
             <div class="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto mb-4 ring-8 ring-emerald-500/5">
               <CheckCircle2 class="w-8 h-8" />
             </div>
-            <h2 class="text-xl font-bold font-display tracking-tight text-foreground dark:text-dark-foreground mb-2">
+            <h2 class="text-xl font-bold font-display tracking-tight text-foreground dark:text-white mb-2">
               Password Successfully Updated
             </h2>
-            <p class="text-xs text-foreground/60 dark:text-dark-foreground/60 mb-6 max-w-xs mx-auto">
+            <p class="text-xs text-foreground/60 dark:text-white/70 mb-6 max-w-xs mx-auto">
               Your security credentials have been updated. You can now authenticate with your new credentials.
             </p>
             <button

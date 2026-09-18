@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           My <span class="text-secondary dark:text-dark-secondary">Enrolled Courses</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           Active semester courses, lecture venues, and individual attendance records
         </p>
       </div>
@@ -29,11 +29,11 @@
     </div>
 
     <!-- Empty State -->
-    <div v-if="myCourses.length === 0" class="py-16 text-center text-foreground/50 dark:text-dark-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-2xl p-8 max-w-md mx-auto">
+    <div v-if="myCourses.length === 0" class="py-16 text-center text-foreground/50 dark:text-white/65 bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 rounded-2xl p-8 max-w-md mx-auto">
       <div class="w-12 h-12 rounded-2xl bg-secondary/15 text-secondary mx-auto mb-3 flex items-center justify-center">
         <BookOpen class="w-6 h-6" />
       </div>
-      <h3 class="text-base font-bold font-display text-foreground dark:text-dark-foreground">No Enrolled Courses</h3>
+      <h3 class="text-base font-bold font-display text-foreground dark:text-white">No Enrolled Courses</h3>
       <p class="text-xs font-mono mt-1">You haven't registered for any modules for the active semester yet.</p>
       <button 
         @click="$emit('navigate', '/registration')"
@@ -74,7 +74,7 @@
           </div>
 
           <!-- Course Title -->
-          <h3 class="text-sm sm:text-base font-bold text-foreground dark:text-dark-foreground mt-3 line-clamp-2">
+          <h3 class="text-sm sm:text-base font-bold text-foreground dark:text-white mt-3 line-clamp-2">
             {{ course.name }}
           </h3>
 
@@ -86,13 +86,13 @@
             >
               {{ getInitials(course.lecturer) }}
             </div>
-            <span class="font-medium text-foreground/80 dark:text-dark-foreground/80 truncate">
+            <span class="font-medium text-foreground/80 dark:text-white/90 truncate">
               {{ course.lecturer }}
             </span>
           </div>
 
           <!-- Schedule & Venue -->
-          <div class="mt-3.5 space-y-1.5 text-xs font-mono text-foreground/60 dark:text-dark-foreground/60">
+          <div class="mt-3.5 space-y-1.5 text-xs font-mono text-foreground/60 dark:text-white/70">
             <div class="flex items-center gap-2">
               <Clock class="w-3.5 h-3.5 text-foreground/40 shrink-0" />
               <span class="truncate">{{ course.schedule }}</span>
@@ -108,7 +108,7 @@
         <div class="mt-5 pt-4 border-t border-outline/30 dark:border-dark-outline/40 space-y-3">
           <div>
             <div class="flex items-center justify-between text-xs font-mono mb-1.5">
-              <span class="text-foreground/60 dark:text-dark-foreground/60">Turnout Record</span>
+              <span class="text-foreground/60 dark:text-white/70">Turnout Record</span>
               <span 
                 class="font-bold"
                 :class="course.attendance >= 75 ? 'text-success' : 'text-error'"
@@ -130,8 +130,8 @@
             class="w-full py-2 rounded-xl text-surface font-semibold text-xs shadow-xs hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             :style="{ backgroundColor: course.color }"
           >
-            <CheckCircle2 class="w-3.5 h-3.5" />
-            <span>Mark Attendance</span>
+            <Eye class="w-3.5 h-3.5" />
+            <span>View Attendance</span>
           </button>
         </div>
       </div>
@@ -156,7 +156,8 @@ import {
   Clock, 
   MapPin, 
   CheckCircle2, 
-  RefreshCw 
+  RefreshCw,
+  Eye
 } from 'lucide-vue-next';
 
 const emit = defineEmits(['navigate']);

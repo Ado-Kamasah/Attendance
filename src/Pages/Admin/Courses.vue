@@ -2,7 +2,7 @@
   <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
-    <div class="relative bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
+    <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
@@ -16,7 +16,7 @@
             </span>
           </div>
           <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Course Management</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage all university courses, assign lecturers, and track academic schedules.</p>
+          <p class="text-sm text-slate-500 dark:text-white/75 mt-1">Manage all university courses, assign lecturers, and track academic schedules.</p>
         </div>
         <button @click="openModal"
           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg active:scale-95 flex-shrink-0"
@@ -28,14 +28,14 @@
     </div>
 
     <!-- Search & Filter -->
-    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row gap-3">
+    <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row gap-3">
       <div class="flex-1 relative">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" v-model="searchQuery" placeholder="Search course code or name..."
-          class="w-full pl-10 py-2.5 pr-4 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" />
+          class="w-full pl-10 py-2.5 pr-4 bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" />
       </div>
       <select v-model="levelFilter"
-        class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+        class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
         <option value="all">All Levels</option>
         <option value="100">Level 100</option>
         <option value="200">Level 200</option>
@@ -43,7 +43,7 @@
         <option value="400">Level 400</option>
       </select>
       <select v-model="statusFilter"
-        class="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+        class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
         <option value="all">All Statuses</option>
         <option value="active">Active</option>
         <option value="archived">Archived</option>
@@ -56,11 +56,11 @@
     </div>
 
     <!-- Courses Table -->
-    <div class="bg-white dark:bg-[#071328] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
-            <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-mono uppercase text-[11px] tracking-wider">
+            <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-dark-outline text-slate-500 dark:text-white/75 font-mono uppercase text-[11px] tracking-wider">
               <th class="py-3 px-4 font-semibold">Course Code</th>
               <th class="py-3 px-4 font-semibold">Course Name</th>
               <th class="py-3 px-4 font-semibold">Semester</th>
@@ -93,24 +93,24 @@
               <td class="py-3.5 px-4">
                 <span class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary">{{ course.code }}</span>
               </td>
-              <td class="py-3.5 px-4 font-medium text-slate-900 dark:text-slate-100">{{ course.name }}</td>
-              <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">{{ course.semester || 'Semester 1' }}</td>
+              <td class="py-3.5 px-4 font-medium text-slate-900 dark:text-white">{{ course.name }}</td>
+              <td class="py-3.5 px-4 text-slate-500 dark:text-white/75">{{ course.semester || 'Semester 1' }}</td>
               <td class="py-3.5 px-4">
-                <span class="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">L{{ course.level }}</span>
+                <span class="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-muted text-slate-600 dark:text-white/75">L{{ course.level }}</span>
               </td>
               <td class="py-3.5 px-4">
                 <div class="flex items-center gap-2">
                   <div v-if="course.lecturer" class="w-6 h-6 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-400 flex items-center justify-center text-[10px] font-bold uppercase">
                     {{ course.lecturer.charAt(0) }}
                   </div>
-                  <span class="text-slate-600 dark:text-slate-400 text-xs">{{ course.lecturer || 'No Lecturer Assigned' }}</span>
+                  <span class="text-slate-600 dark:text-white/75 text-xs">{{ course.lecturer || 'No Lecturer Assigned' }}</span>
                 </div>
               </td>
               <td class="py-3.5 px-4">
                 <span :class="['inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border',
                   course.status === 'active'
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
-                    : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                    : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-dark-muted dark:text-white/75 dark:border-dark-outline/70'
                 ]">
                   <span class="w-1.5 h-1.5 rounded-full" :class="course.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'"></span>
                   {{ course.status === 'active' ? 'Active' : 'Archived' }}
@@ -134,18 +134,18 @@
       </div>
 
       <!-- Footer -->
-      <div v-if="!isLoading" class="px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 font-mono">
-        Showing <strong class="text-slate-700 dark:text-slate-300">{{ filteredCourses.length }}</strong> of <strong class="text-slate-700 dark:text-slate-300">{{ courses.length }}</strong> courses
+      <div v-if="!isLoading" class="px-4 py-3 border-t border-slate-100 dark:border-dark-outline text-xs text-slate-500 dark:text-white/75 font-mono">
+        Showing <strong class="text-slate-700 dark:text-white/90">{{ filteredCourses.length }}</strong> of <strong class="text-slate-700 dark:text-white/90">{{ courses.length }}</strong> courses
       </div>
     </div>
 
     <!-- Add/Edit Course Modal -->
     <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" @click.self="closeModal">
-      <div class="relative w-full max-w-lg bg-white dark:bg-[#071328] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+      <div class="relative w-full max-w-lg bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden">
         <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
         <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
-        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div class="p-6 border-b border-slate-100 dark:border-dark-outline flex items-center justify-between">
           <div>
             <span class="text-[10px] font-mono uppercase tracking-wider text-secondary font-bold">{{ editingCourseId ? 'EDIT COURSE' : 'NEW COURSE' }}</span>
             <h2 class="text-xl font-display font-bold text-slate-900 dark:text-white">{{ editingCourseId ? 'Edit Course' : 'Add New Course' }}</h2>
@@ -158,27 +158,27 @@
         <form @submit.prevent="saveCourse" class="p-6 space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Course Code <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Course Code <span class="text-rose-500">*</span></label>
               <input type="text" v-model="newCourse.code" placeholder="e.g. CSC 101" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
             </div>
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Credits <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Credits <span class="text-rose-500">*</span></label>
               <input type="number" v-model.number="newCourse.credits" placeholder="e.g. 3" required min="1"
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
             </div>
           </div>
 
           <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Course Name <span class="text-rose-500">*</span></label>
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Course Name <span class="text-rose-500">*</span></label>
             <input type="text" v-model="newCourse.name" placeholder="e.g. Intro to Computer Science" required
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
           </div>
 
           <div class="space-y-1.5">
-            <label for="programme" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Faculty / Program <span class="text-rose-500">*</span></label>
+            <label for="programme" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Faculty / Program <span class="text-rose-500">*</span></label>
             <select id="programme" v-model="newCourse.programId" required
-              class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
               <option value="" disabled>Select your faculty/program</option>
               <option v-for="programme in programmes" :key="programme.id" :value="programme.id">{{ programme.name }}</option>
             </select>
@@ -186,17 +186,17 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Semester <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Semester <span class="text-rose-500">*</span></label>
               <select v-model="newCourse.semester" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
                 <option value="Semester 1">Semester 1</option>
                 <option value="Semester 2">Semester 2</option>
               </select>
             </div>
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">Level <span class="text-rose-500">*</span></label>
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Level <span class="text-rose-500">*</span></label>
               <select v-model="newCourse.level" required
-                class="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
                 <option value="100">100</option>
                 <option value="200">200</option>
                 <option value="300">300</option>
@@ -206,7 +206,7 @@
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-2">
-            <button type="button" @click="closeModal" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+            <button type="button" @click="closeModal" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
             <button type="submit" :disabled="isSavingCourse"
               class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md inline-flex items-center gap-2 disabled:opacity-50 active:scale-95">
               <Loader2 v-if="isSavingCourse" class="w-4 h-4 animate-spin" />

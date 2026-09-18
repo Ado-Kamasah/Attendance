@@ -9,10 +9,10 @@
             <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
           </svg>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-dark-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
           My Account <span class="text-secondary dark:text-dark-secondary">Profile</span>
         </h1>
-        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-dark-foreground/60 mt-1">
+        <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
           Institutional credentials and authentication security
         </p>
       </div>
@@ -63,10 +63,10 @@
             <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-surface dark:ring-dark-surface"></span>
           </div>
 
-          <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-dark-foreground truncate">
+          <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-white truncate">
             {{ profile?.name || '—' }}
           </h2>
-          <p class="text-xs font-mono text-foreground/50 dark:text-dark-foreground/50 truncate mt-0.5">
+          <p class="text-xs font-mono text-foreground/50 dark:text-white/65 truncate mt-0.5">
             {{ profile?.email || '—' }}
           </p>
 
@@ -78,22 +78,22 @@
           <!-- Institutional Metadata List -->
           <div class="mt-6 pt-4 border-t border-outline/30 dark:border-dark-outline/40 text-left space-y-3 text-xs font-mono">
             <div class="flex items-center justify-between">
-              <span class="text-foreground/50 dark:text-dark-foreground/50">User ID</span>
-              <span class="font-bold text-foreground dark:text-dark-foreground">{{ profile?.id_number || '—' }}</span>
+              <span class="text-foreground/50 dark:text-white/65">User ID</span>
+              <span class="font-bold text-foreground dark:text-white">{{ profile?.id_number || '—' }}</span>
             </div>
             <div v-if="profile?.program" class="flex items-center justify-between">
-              <span class="text-foreground/50 dark:text-dark-foreground/50">Program</span>
-              <span class="font-bold text-foreground dark:text-dark-foreground truncate max-w-40 text-right">{{ profile.program }}</span>
+              <span class="text-foreground/50 dark:text-white/65">Program</span>
+              <span class="font-bold text-foreground dark:text-white truncate max-w-40 text-right">{{ profile.program }}</span>
             </div>
             <div v-if="profile?.mode" class="flex items-center justify-between">
-              <span class="text-foreground/50 dark:text-dark-foreground/50">Study Mode</span>
+              <span class="text-foreground/50 dark:text-white/65">Study Mode</span>
               <span class="px-2 py-0.5 rounded text-[10px] font-bold" :class="profile.mode === 'Weekend' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'">
                 {{ profile.mode }}
               </span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-foreground/50 dark:text-dark-foreground/50">Member Since</span>
-              <span class="font-bold text-foreground dark:text-dark-foreground">{{ joinDate }}</span>
+              <span class="text-foreground/50 dark:text-white/65">Member Since</span>
+              <span class="font-bold text-foreground dark:text-white">{{ joinDate }}</span>
             </div>
           </div>
         </div>
@@ -110,35 +110,35 @@
 
             <div class="flex items-center gap-2 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
               <User class="w-4 h-4 text-secondary" />
-              <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+              <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                 Institutional Records
               </h3>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-xs">
               <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
-                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">Full Name</span>
-                <p class="font-bold text-sm text-foreground dark:text-dark-foreground mt-0.5">{{ profile?.name || '—' }}</p>
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Full Name</span>
+                <p class="font-bold text-sm text-foreground dark:text-white mt-0.5">{{ profile?.name || '—' }}</p>
               </div>
 
               <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
-                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">Email Address</span>
-                <p class="font-bold text-sm text-foreground dark:text-dark-foreground mt-0.5 truncate">{{ profile?.email || '—' }}</p>
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Email Address</span>
+                <p class="font-bold text-sm text-foreground dark:text-white mt-0.5 truncate">{{ profile?.email || '—' }}</p>
               </div>
 
               <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
-                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">System Role</span>
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">System Role</span>
                 <p class="font-bold text-sm text-secondary dark:text-dark-secondary mt-0.5">{{ profile?.role || '—' }}</p>
               </div>
 
               <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
-                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">ID Number</span>
-                <p class="font-bold text-sm font-mono text-foreground dark:text-dark-foreground mt-0.5">{{ profile?.id_number || '—' }}</p>
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">ID Number</span>
+                <p class="font-bold text-sm font-mono text-foreground dark:text-white mt-0.5">{{ profile?.id_number || '—' }}</p>
               </div>
 
               <div v-if="profile?.program" class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40 sm:col-span-2">
-                <span class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50 uppercase">Academic Program</span>
-                <p class="font-bold text-sm text-foreground dark:text-dark-foreground mt-0.5">{{ profile.program }}</p>
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Academic Program</span>
+                <p class="font-bold text-sm text-foreground dark:text-white mt-0.5">{{ profile.program }}</p>
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@
             <div class="flex items-center justify-between pb-4 border-b border-outline/30 dark:border-dark-outline/40">
               <div class="flex items-center gap-2">
                 <Lock class="w-4 h-4 text-secondary" />
-                <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+                <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
                   Security & Access
                 </h3>
               </div>
@@ -167,8 +167,8 @@
             <div class="pt-4">
               <div v-if="!showPasswordSection" class="flex items-center justify-between text-xs">
                 <div>
-                  <p class="font-medium text-foreground dark:text-dark-foreground">Password Authentication</p>
-                  <p class="text-[10px] font-mono text-foreground/50 dark:text-dark-foreground/50">Protected via Supabase Auth</p>
+                  <p class="font-medium text-foreground dark:text-white">Password Authentication</p>
+                  <p class="text-[10px] font-mono text-foreground/50 dark:text-white/65">Protected via Supabase Auth</p>
                 </div>
                 <span class="font-mono tracking-widest text-foreground/40">••••••••••••</span>
               </div>
@@ -177,7 +177,7 @@
               <div v-else class="space-y-4 pt-2">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <label class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+                    <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
                       New Password (Min. 8 chars)
                     </label>
                     <div class="relative">
@@ -186,7 +186,7 @@
                         v-model="pwForm.newPassword" 
                         placeholder="••••••••" 
                         id="new-password-input"
-                        class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono"
+                        class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono"
                       />
                       <button 
                         type="button" 
@@ -200,7 +200,7 @@
                   </div>
 
                   <div>
-                    <label class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+                    <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
                       Confirm New Password
                     </label>
                     <div class="relative">
@@ -209,7 +209,7 @@
                         v-model="pwForm.confirmPassword" 
                         placeholder="••••••••" 
                         id="confirm-password-input"
-                        class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground font-mono"
+                        class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono"
                       />
                       <button 
                         type="button" 
@@ -250,14 +250,14 @@
 
           <div class="flex items-center gap-2 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
             <Edit3 class="w-4 h-4 text-secondary" />
-            <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-dark-foreground">
+            <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
               Edit Account Information
             </h3>
           </div>
 
           <div class="space-y-4 text-xs">
             <div>
-              <label for="edit-name" class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+              <label for="edit-name" class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
                 Full Legal Name <span class="text-error">*</span>
               </label>
               <input 
@@ -265,24 +265,24 @@
                 type="text" 
                 v-model="editForm.name" 
                 placeholder="Enter full name" 
-                class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground"
+                class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white"
               />
             </div>
 
             <div>
-              <label class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+              <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
                 Institutional Email (Immutable)
               </label>
               <input 
                 type="email" 
                 :value="profile?.email" 
                 disabled 
-                class="w-full px-3.5 py-2 text-xs bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40 rounded-xl text-foreground/50 dark:text-dark-foreground/50 cursor-not-allowed font-mono"
+                class="w-full px-3.5 py-2 text-xs bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40 rounded-xl text-foreground/50 dark:text-white/65 cursor-not-allowed font-mono"
               />
             </div>
 
             <div v-if="roleLower === 'student'">
-              <label for="edit-program" class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1">
+              <label for="edit-program" class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
                 Academic Programme
               </label>
               <input 
@@ -290,12 +290,12 @@
                 type="text" 
                 v-model="editForm.program" 
                 placeholder="e.g. B.Sc. Computer Science" 
-                class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-dark-foreground"
+                class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white"
               />
             </div>
 
             <div>
-              <label class="block font-mono text-[11px] text-foreground/70 dark:text-dark-foreground/70 mb-1.5">
+              <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1.5">
                 Study Track Mode
               </label>
               <div class="grid grid-cols-2 gap-3" id="edit-mode-group">

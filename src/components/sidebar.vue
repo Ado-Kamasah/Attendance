@@ -149,7 +149,7 @@ import {
   CalendarDays, 
   CalendarRange, 
   ClipboardCheck, 
-  CheckCheck 
+  Eye
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -195,7 +195,7 @@ const navGroups = [
     items: [
       { name: 'My Courses', path: '/my-courses', icon: BookOpen },
       { name: 'Registration', path: '/registration', icon: ClipboardCheck },
-      { name: 'Mark Attendance', path: '/attendance', icon: CheckCheck }
+      { name: 'View Attendance', path: '/attendance', icon: Eye }
     ]
   }
 ];

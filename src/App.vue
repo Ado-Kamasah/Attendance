@@ -122,7 +122,7 @@ const handleRegisterSuccess = () => {
               @switch-to-login="activeAuthView = 'login'" />
   </div>
 
-  <div v-else class="flex h-screen w-full overflow-hidden bg-background text-foreground dark:bg-dark-background dark:text-dark-foreground">
+  <div v-else class="flex h-screen w-full overflow-hidden bg-background text-foreground dark:bg-dark-background dark:text-white">
     <AdminSidebar 
       v-if="userRole === 'Admin' || userRole === 'Super Admin'"
       @navigate="handleNavigationEvent" 
@@ -177,9 +177,9 @@ const handleRegisterSuccess = () => {
         <FinanceClaims      v-else-if="currentRoute === '/finance-claims'" />
         <Profile v-else-if="currentRoute === '/profile'" />
         <Notifications v-else-if="currentRoute === '/notifications'" />
-        <div v-else class="p-8 rounded-xl shadow-md bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 text-slate-700 dark:text-slate-300">
+        <div v-else class="p-8 rounded-xl shadow-md bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/40 text-slate-700 dark:text-white/90">
           <h2 class="text-xl font-bold font-display text-slate-900 dark:text-white">Page not implemented yet</h2>
-          <p class="text-sm font-mono mt-1 text-slate-500 dark:text-slate-400">Navigated to {{ currentRoute }}</p>
+          <p class="text-sm font-mono mt-1 text-slate-500 dark:text-white/75">Navigated to {{ currentRoute }}</p>
         </div>
       </main>
     </div>
