@@ -1,6 +1,135 @@
 <template>
-  <div class="space-y-6 w-full max-w-7xl mx-auto">
-    <!-- Header with Blueprint Eyebrow -->
+
+    <!-- ── COURSE-SPECIFIC VIEW (opened from My Courses) ── -->
+    <template v-if="courseId">
+      <div class="space-y-6 w-full max-w-7xl mx-auto">
+      <!-- Back button + Course Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
+        <div class="flex items-center gap-3">
+          <button
+            @click="$emit('back')"
+            class="p-2 rounded-xl bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-white hover:border-secondary/40 transition-all cursor-pointer"
+            title="Back to My Courses"
+          >
+            <ArrowLeft class="w-4 h-4" />
+          </button>
+          <div>
+            <div class="flex items-center gap-2 mb-1 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
+              <span>ATTENDANCE RECORD // {{ filteredCourseCode }}</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
+              {{ filteredCourseName }}
+            </h1>
+            <p class="text-xs font-mono text-foreground/60 dark:text-white/70 mt-0.5">Your full attendance log for this course</p>
+          </div>
+        </div>
+
+        <!-- Live indicator -->
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold font-mono bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 self-start sm:self-auto">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Live Sync
+        </span>
+      </div>
+
+      <!-- Summary KPI cards -->
+      <div v-if="!isLoading" class="grid grid-cols-3 gap-4">
+        <div class="p-4 rounded-2xl bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 shadow-xs text-center">
+          <div class="text-2xl font-extrabold font-display text-success">{{ courseSummary.present }}</div>
+          <div class="text-[11px] font-mono uppercase tracking-wider text-foreground/60 dark:text-white/65 mt-1">Present</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 shadow-xs text-center">
+          <div class="text-2xl font-extrabold font-display text-error">{{ courseSummary.absent }}</div>
+          <div class="text-[11px] font-mono uppercase tracking-wider text-foreground/60 dark:text-white/65 mt-1">Absent</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 shadow-xs text-center">
+          <div
+            class="text-2xl font-extrabold font-display"
+            :class="courseSummary.rate >= 75 ? 'text-success' : courseSummary.rate >= 50 ? 'text-warning' : 'text-error'"
+          >
+            {{ courseSummary.rate }}%
+          </div>
+          <div class="text-[11px] font-mono uppercase tracking-wider text-foreground/60 dark:text-white/65 mt-1">Attendance Rate</div>
+        </div>
+      </div>
+
+      <!-- Attendance Rate Bar -->
+      <div v-if="!isLoading && courseSummary.total > 0" class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs p-5">
+        <div class="flex items-center justify-between mb-2 text-xs font-mono">
+          <span class="text-foreground/70 dark:text-white/75 font-semibold">Attendance Rate</span>
+          <span
+            class="font-bold"
+            :class="courseSummary.rate >= 75 ? 'text-success' : courseSummary.rate >= 50 ? 'text-warning' : 'text-error'"
+          >{{ courseSummary.rate }}% ({{ courseSummary.total }} sessions)</span>
+        </div>
+        <div class="h-3 rounded-full bg-muted dark:bg-dark-muted overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-700"
+            :class="courseSummary.rate >= 75 ? 'bg-success' : courseSummary.rate >= 50 ? 'bg-warning' : 'bg-error'"
+            :style="{ width: `${courseSummary.rate}%` }"
+          ></div>
+        </div>
+        <p v-if="courseSummary.rate < 75" class="text-[11px] font-mono text-error mt-2">
+          ⚠ You need at least 75% attendance. You are {{ 75 - courseSummary.rate }}% below the threshold.
+        </p>
+      </div>
+
+      <!-- Full attendance log for this course -->
+      <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden">
+        <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/30 pointer-events-none"></div>
+        <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/30 pointer-events-none"></div>
+
+        <div class="flex items-center gap-2 p-5 pb-3 border-b border-outline/30 dark:border-dark-outline/40">
+          <History class="w-4 h-4 text-secondary" />
+          <h2 class="text-sm font-bold font-display uppercase tracking-wider text-foreground dark:text-white">Full Session Log</h2>
+          <span class="ml-auto text-[11px] font-mono text-foreground/50 dark:text-white/60">{{ courseAttendanceHistory.length }} records</span>
+        </div>
+
+        <div class="p-5">
+          <div v-if="isLoading" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
+            <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
+            <span>Loading attendance records…</span>
+          </div>
+          <div v-else-if="courseAttendanceHistory.length === 0" class="py-12 text-center space-y-2">
+            <History class="w-8 h-8 mx-auto text-foreground/30 dark:text-white/35" />
+            <p class="text-sm font-medium text-foreground dark:text-white">No records yet</p>
+            <p class="text-xs font-mono text-foreground/50 dark:text-white/60">Attendance records will appear here once sessions have been conducted.</p>
+          </div>
+          <div v-else class="space-y-2.5">
+            <div
+              v-for="record in courseAttendanceHistory"
+              :key="record.id"
+              class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/40 border border-outline/30 dark:border-dark-outline/40 flex items-center justify-between gap-3 text-xs"
+            >
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div
+                  class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                  :class="record.status === 'present' ? 'bg-success/15 text-success' : 'bg-error/15 text-error'"
+                >
+                  <CheckCircle2 v-if="record.status === 'present'" class="w-4 h-4" />
+                  <AlertOctagon v-else class="w-4 h-4" />
+                </div>
+                <div class="min-w-0">
+                  <p class="font-semibold text-foreground dark:text-white">{{ record.date }}</p>
+                  <p class="text-[10px] font-mono text-foreground/50 dark:text-white/60">{{ record.time }}</p>
+                </div>
+              </div>
+              <span
+                class="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase shrink-0"
+                :class="record.status === 'present' ? 'bg-success/15 text-success border border-success/30' : 'bg-error/15 text-error border border-error/30'"
+              >
+                {{ record.status === 'present' ? 'Present' : 'Absent' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </template>
+
+    <!-- ── DEFAULT VIEW (all courses, opened from sidebar) ── -->
+    <template v-else>
+      <div class="space-y-6 w-full max-w-7xl mx-auto">
+      <!-- Header with Blueprint Eyebrow -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
         <div class="flex items-center gap-2 mb-3 text-secondary dark:text-dark-secondary text-xs font-mono uppercase tracking-wider font-semibold">
@@ -214,8 +343,10 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+      </div>
+      </div>
+    </template>
+
 </template>
 
 <script setup>
@@ -235,10 +366,15 @@ import {
   CheckCircle2, 
   Clock, 
   AlertOctagon, 
-  History 
+  History,
+  ArrowLeft
 } from 'lucide-vue-next';
 
-const emit = defineEmits(['navigate']);
+const emit = defineEmits(['navigate', 'back']);
+
+const props = defineProps({
+  courseId: { type: String, default: null },
+});
 
 const authStore = useAuthStore();
 const coursesStore = useCoursesStore();
@@ -434,5 +570,51 @@ const attendanceHistory = computed(() => {
     })
     .sort((x, y) => new Date(y.rawTimestamp) - new Date(x.rawTimestamp))
     .slice(0, 10);
+});
+// ── Course-specific computed (when courseId prop is set) ──────────────────────
+const filteredCourseCode = computed(() => {
+  if (!props.courseId) return '';
+  const c = coursesStore.getCourseById(props.courseId);
+  return c?.code ?? '';
+});
+
+const filteredCourseName = computed(() => {
+  if (!props.courseId) return '';
+  const c = coursesStore.getCourseById(props.courseId);
+  return c?.name ?? 'Course';
+});
+
+// All session IDs that belong to this course
+const courseSessions = computed(() => {
+  if (!props.courseId) return new Set();
+  return new Set(sessions.value.filter(s => s.courseId === props.courseId).map(s => s.id));
+});
+
+// Attendance records for the student filtered to this course's sessions
+const courseAttendanceHistory = computed(() => {
+  if (!props.courseId) return [];
+  const studentId = profile.value?.id;
+  return attendances.value
+    .filter(a => a.studentId === studentId && courseSessions.value.has(a.sessionId))
+    .map(a => {
+      const ts = a.timestamp ? new Date(a.timestamp) : null;
+      return {
+        id: a.id,
+        date: ts ? ts.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+        time: ts ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—',
+        status: a.status,
+        rawTimestamp: a.timestamp,
+      };
+    })
+    .sort((a, b) => new Date(b.rawTimestamp) - new Date(a.rawTimestamp));
+});
+
+const courseSummary = computed(() => {
+  const records = courseAttendanceHistory.value;
+  const present = records.filter(r => r.status === 'present').length;
+  const absent  = records.filter(r => r.status === 'absent').length;
+  const total   = records.length;
+  const rate    = total > 0 ? Math.round((present / total) * 100) : 0;
+  return { present, absent, total, rate };
 });
 </script>

@@ -42,6 +42,7 @@ const authStore = useAuthStore();
 
 const activeAuthView = ref('login');
 const currentRoute = ref(window.location.pathname === '/' ? '/' : window.location.pathname);
+const routeParams  = ref({});
 const isMobileSidebarOpen = ref(false);
 const isReady = ref(false); // avoid flashing the login screen while we check session
 
@@ -55,10 +56,13 @@ const userRole = computed(() => {
   return 'Student';
 });
 
-const handleNavigationEvent = (path) => {
+const handleNavigationEvent = (path, params = {}) => {
   if (currentRoute.value !== path) {
     currentRoute.value = path;
+    routeParams.value  = params;
     window.history.pushState({ path }, '', path);
+  } else {
+    routeParams.value = params;
   }
   isMobileSidebarOpen.value = false;
 };
@@ -157,7 +161,11 @@ const handleRegisterSuccess = () => {
         <CourseRegistration v-else-if="currentRoute === '/registration'" />
         <MyCourses v-else-if="currentRoute === '/my-courses'" @navigate="handleNavigationEvent" />
         <LecturerCourses v-else-if="currentRoute === '/lecturer-courses'" @navigate="handleNavigationEvent" />
-        <MarkAttendance v-else-if="currentRoute === '/attendance'" />
+        <MarkAttendance v-else-if="currentRoute === '/attendance'"
+          :course-id="routeParams.courseId || null"
+          @navigate="handleNavigationEvent"
+          @back="handleNavigationEvent('/my-courses')"
+        />
         <AttendanceView v-else-if="currentRoute === '/attendance-view'" @navigate="handleNavigationEvent" />
         <CourseReports v-else-if="currentRoute === '/lecturer-reports'" />
         <AttendanceAnalytics v-else-if="currentRoute === '/attendance-analytics'" />

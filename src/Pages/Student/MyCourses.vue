@@ -287,12 +287,12 @@ const unenrollCourse = async (course) => {
 
 const goToAttendance = (course) => {
   auditLogsStore.logAction({
-    action: 'attendance_check_initiated',
-    details: `Opened attendance check-in for ${course.code} — ${course.name}`,
+    action: 'attendance_view_initiated',
+    details: `Opened attendance view for ${course.code} — ${course.name}`,
     userId: profile.value?.id,
     userRole: profile.value?.role,
     userName: profile.value?.name,
   });
-  emit('navigate', '/attendance');
+  emit('navigate', '/attendance', { courseId: course.id, courseCode: course.code, courseName: course.name });
 };
 </script>
