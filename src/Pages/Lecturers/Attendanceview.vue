@@ -172,7 +172,7 @@
             <h2 class="text-base sm:text-lg font-bold font-display text-foreground dark:text-white">
               Physical Roster Verification
             </h2>
-            <p class="text-xs font-mono text-foreground/50">
+            <p class="text-xs font-mono text-foreground/50 dark:text-white/60">
               Check off students present in the lecture hall. Unchecked students are marked absent.
             </p>
           </div>
@@ -183,14 +183,14 @@
             </span>
             <button 
               @click="toggleSelectAll"
-              class="px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-muted/60 hover:bg-muted border border-outline/40 transition-colors cursor-pointer"
+              class="px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-muted/60 dark:bg-dark-muted/60 hover:bg-muted dark:hover:bg-dark-muted border border-outline/40 dark:border-dark-outline/50 text-foreground dark:text-white transition-colors cursor-pointer"
             >
               {{ selectedStudents.length === enrolledStudents.length ? 'Deselect All' : 'Select All' }}
             </button>
           </div>
         </div>
 
-        <div v-if="enrolledStudents.length === 0" class="py-12 text-center text-xs font-mono text-foreground/50">
+        <div v-if="enrolledStudents.length === 0" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/60">
           No students currently enrolled in this section.
         </div>
 
@@ -210,12 +210,12 @@
               v-model="selectedStudents" 
               class="rounded text-secondary focus:ring-secondary w-4 h-4 cursor-pointer"
             />
-            <div class="w-8 h-8 rounded-lg bg-surface dark:bg-dark-surface border border-outline/40 text-foreground font-bold font-mono text-xs flex items-center justify-center shrink-0">
+            <div class="w-8 h-8 rounded-lg bg-surface dark:bg-dark-surface border border-outline/40 text-foreground dark:text-white font-bold font-mono text-xs flex items-center justify-center shrink-0">
               {{ student.name.charAt(0) }}
             </div>
             <div class="min-w-0 flex-1 text-xs">
               <p class="font-semibold text-foreground dark:text-white truncate">{{ student.name }}</p>
-              <p class="text-[10px] font-mono text-foreground/50">{{ student.studentId }}</p>
+              <p class="text-[10px] font-mono text-foreground/50 dark:text-white/60">{{ student.studentId }}</p>
             </div>
           </label>
         </div>
@@ -225,7 +225,7 @@
         </div>
 
         <div class="flex items-center justify-between pt-4 border-t border-outline/30 dark:border-dark-outline/40">
-          <p class="text-[11px] font-mono text-foreground/50 hidden sm:block">
+          <p class="text-[11px] font-mono text-foreground/50 dark:text-white/60 hidden sm:block">
             Notifications dispatched automatically upon submission.
           </p>
           <button

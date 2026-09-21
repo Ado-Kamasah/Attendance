@@ -79,7 +79,7 @@
                   type="text" 
                   v-model="searchQuery" 
                   placeholder="Filter courses…" 
-                  class="pl-7 pr-3 py-1 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono placeholder:text-foreground/40 w-32 sm:w-40"
+                  class="pl-7 pr-3 py-1 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono placeholder:text-foreground/40 dark:placeholder:text-white/40 w-32 sm:w-40"
                 />
               </div>
             </div>
