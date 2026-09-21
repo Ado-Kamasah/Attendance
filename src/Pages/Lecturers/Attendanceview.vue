@@ -252,6 +252,7 @@ import { useAttendancesStore } from '@/stores/attendances';
 import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
+import api from '@/api.js';
 import { 
   BookOpen, 
   ArrowLeft, 
@@ -353,6 +354,13 @@ const submitAttendance = async () => {
     }));
 
     await attendancesStore.markAttendanceBulk(attendanceRecords, { silent: true });
+
+    // Trigger backend absence-warning check (fire-and-forget — non-critical)
+    // The backend's runAbsencesCheck will create warning_1 / warning_2 / ineligible
+    // notifications in student_notifications table and send emails automatically.
+    api.post('/notifications/check-absences', { sessionId: created.id }).catch((err) => {
+      console.warn('Absence check skipped (backend may be offline):', err?.message);
+    });
 
     auditLogsStore.logAction({
       action: 'attendance_recorded',

@@ -508,7 +508,7 @@ onMounted(async () => {
     schedStore.fetchSchedules(),
     sessStore.fetchSessions(),
     attStore.fetchAttendances({ studentId: uid }),
-    notifStore.fetchNotifications(),
+    notifStore.fetchNotifications(uid),
   ]);
   sessStore.subscribeToSessions();
   attStore.subscribeToAttendances();

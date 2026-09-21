@@ -7,9 +7,12 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
   const isLoading = ref(false);
   const error = ref("");
   let realtimeChannel = null;
+  let notifsChannel = null;
 
+  // ── Counts ────────────────────────────────────────────────────────────────────
   const unreadCount = computed(() => notifications.value.filter((n) => !n.isRead).length);
 
+  // ── Typed slices (used by StudentDashboard and notification pages) ────────────
   const attendanceNotifications = computed(() =>
     notifications.value.filter((n) => n.type === "attendance_absent")
   );
@@ -20,6 +23,22 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
     notifications.value.filter((n) => n.type === "eval_open")
   );
 
+  /** ⚠️  1st absence warning (warning_1) and 2nd (warning_2) */
+  const warningNotifications = computed(() =>
+    notifications.value.filter((n) => n.type === "warning_1" || n.type === "warning_2")
+  );
+
+  /** ❌  3+ absences — exam ineligibility */
+  const ineligibleNotifications = computed(() =>
+    notifications.value.filter((n) => n.type === "ineligible")
+  );
+
+  /** 📋  Evaluation period open */
+  const evalOpenNotifications = computed(() =>
+    notifications.value.filter((n) => n.type === "eval_open")
+  );
+
+  // ── Fetch ─────────────────────────────────────────────────────────────────────
   async function fetchNotifications(studentId) {
     if (!studentId) return;
     isLoading.value = true;
@@ -27,7 +46,40 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
     try {
       const results = [];
 
-      // 1. Attendance absences
+      // 1. Absence warnings & ineligibility notices from student_notifications table
+      //    (written by the backend's runAbsencesCheck after each session)
+      const { data: dbNotifs, error: dbErr } = await supabase
+        .from("student_notifications")
+        .select("id, type, message, is_read, created_at, course_id, courses(code, name)")
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (!dbErr && dbNotifs) {
+        dbNotifs.forEach((n) => {
+          results.push({
+            id: "db-" + n.id,
+            type: n.type,           // warning_1 | warning_2 | ineligible | eval_open
+            isRead: n.is_read ?? false,
+            createdAt: n.created_at,
+            courseCode: n.courses?.code ?? "",
+            courseName: n.courses?.name ?? "",
+            message: n.message,
+          });
+        });
+      } else if (dbErr) {
+        // Table may not exist in Supabase yet — fall back gracefully
+        console.warn("student_notifications table not accessible via Supabase:", dbErr.message);
+      }
+
+      // 2. Raw attendance absences (direct Supabase fallback when backend is offline)
+      //    Only add if not already covered by a db notification for the same session.
+      const dbAbsentSessionIds = new Set(
+        results
+          .filter((n) => n.type === "warning_1" || n.type === "warning_2" || n.type === "ineligible" || n.type === "attendance_absent")
+          .map((n) => n.id)
+      );
+
       const { data: absentRecs, error: attErr } = await supabase
         .from("attendances")
         .select("id, status, created_at, sessions(id, course_id, courses(code, name))")
@@ -38,9 +90,11 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
 
       if (!attErr && absentRecs) {
         absentRecs.forEach((rec) => {
+          const notifId = "att-" + rec.id;
+          if (dbAbsentSessionIds.has(notifId)) return; // already have a proper warning
           const course = rec.sessions?.courses;
           results.push({
-            id: "att-" + rec.id,
+            id: notifId,
             type: "attendance_absent",
             isRead: false,
             createdAt: rec.created_at,
@@ -54,7 +108,7 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
         });
       }
 
-      // 2. Suggestion replies / resolutions
+      // 3. Suggestion replies / resolutions
       const { data: suggestions, error: sugErr } = await supabase
         .from("suggestions")
         .select("id, subject, status, admin_note, updated_at")
@@ -80,7 +134,7 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
         });
       }
 
-      // 3. Open evaluations
+      // 4. Open evaluations
       const now = new Date().toISOString();
       const { data: evals, error: evalErr } = await supabase
         .from("evaluations")
@@ -115,9 +169,11 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
     }
   }
 
+  // ── Realtime ──────────────────────────────────────────────────────────────────
   function subscribeToAttendance(studentId) {
     if (realtimeChannel || !studentId) return;
 
+    // Channel 1: raw attendances table (absence marked)
     realtimeChannel = supabase
       .channel("student-notifs-" + studentId)
       .on(
@@ -174,14 +230,60 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
         }
       )
       .subscribe();
+
+    // Channel 2: student_notifications table (backend absence warnings)
+    notifsChannel = supabase
+      .channel("student-db-notifs-" + studentId)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "student_notifications", filter: "student_id=eq." + studentId },
+        async (payload) => {
+          const n = payload.new;
+          if (!n) return;
+
+          // Fetch course details
+          let courseCode = "";
+          let courseName = "";
+          if (n.course_id) {
+            const { data: course } = await supabase
+              .from("courses")
+              .select("code, name")
+              .eq("id", n.course_id)
+              .single();
+            courseCode = course?.code ?? "";
+            courseName = course?.name ?? "";
+          }
+
+          const newNotif = {
+            id: "db-" + n.id,
+            type: n.type,
+            isRead: n.is_read ?? false,
+            createdAt: n.created_at,
+            courseCode,
+            courseName,
+            message: n.message,
+          };
+
+          const idx = notifications.value.findIndex((existing) => existing.id === newNotif.id);
+          if (idx >= 0) notifications.value.splice(idx, 1, newNotif);
+          else notifications.value.unshift(newNotif);
+        }
+      )
+      .subscribe();
   }
 
   function unsubscribe() {
-    if (!realtimeChannel) return;
-    supabase.removeChannel(realtimeChannel);
-    realtimeChannel = null;
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+    }
+    if (notifsChannel) {
+      supabase.removeChannel(notifsChannel);
+      notifsChannel = null;
+    }
   }
 
+  // ── Read tracking (local only — no backend call needed) ───────────────────────
   function markRead(id) {
     const n = notifications.value.find((n) => n.id === id);
     if (n) n.isRead = true;
@@ -196,9 +298,15 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
     isLoading,
     error,
     unreadCount,
+    // Legacy computed (kept for backward compatibility)
     attendanceNotifications,
     suggestionNotifications,
     evalNotifications,
+    // New computed properties used by StudentDashboard
+    warningNotifications,
+    ineligibleNotifications,
+    evalOpenNotifications,
+    // Actions
     fetchNotifications,
     subscribeToAttendance,
     unsubscribe,
