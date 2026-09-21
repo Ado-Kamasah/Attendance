@@ -68,7 +68,7 @@
             <option v-for="c in myCourses" :key="c.id" :value="c.id">{{ c.code }} — {{ c.name }}</option>
           </select>
 
-          <div v-if="lastUpdated" class="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
+          <div v-if="lastUpdated" class="flex items-center gap-1.5 text-xs text-slate-400 dark:text-white/50 font-mono">
             <Clock class="w-3.5 h-3.5" />
             {{ lastUpdated }}
           </div>
@@ -105,7 +105,7 @@
             <Calendar class="w-5 h-5" />
           </div>
           <div class="text-3xl font-display font-extrabold text-slate-900 dark:text-white">{{ kpi.totalSessions }}</div>
-          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">Sessions Held</div>
+          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-white/50 mt-0.5">Sessions Held</div>
           <div class="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
             +{{ kpi.sessionsThisWeek }} this week
           </div>
@@ -118,7 +118,7 @@
             <TrendingUp class="w-5 h-5" />
           </div>
           <div class="text-3xl font-display font-extrabold text-slate-900 dark:text-white">{{ kpi.avgRate }}%</div>
-          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">Avg Attendance Rate</div>
+          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-white/50 mt-0.5">Avg Attendance Rate</div>
           <div class="mt-2 h-1.5 bg-slate-100 dark:bg-dark-muted rounded-full overflow-hidden">
             <div class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700" :style="{ width: kpi.avgRate + '%' }"></div>
           </div>
@@ -131,7 +131,7 @@
             <AlertTriangle class="w-5 h-5" />
           </div>
           <div class="text-3xl font-display font-extrabold text-slate-900 dark:text-white">{{ kpi.atRisk }}</div>
-          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">At-Risk Students</div>
+          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-white/50 mt-0.5">At-Risk Students</div>
           <div class="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900">
             Below 75% threshold
           </div>
@@ -144,7 +144,7 @@
             <CheckCircle2 class="w-5 h-5" />
           </div>
           <div class="text-3xl font-display font-extrabold text-slate-900 dark:text-white">{{ kpi.perfect }}</div>
-          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-0.5">Perfect Attendance</div>
+          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-white/50 mt-0.5">Perfect Attendance</div>
           <div class="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 border border-violet-100 dark:border-violet-900">
             100% across all sessions
           </div>
@@ -156,9 +156,9 @@
         <!-- Course Breakdown Bar Chart -->
         <div class="lg:col-span-2 bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-6 shadow-sm">
           <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">Course Attendance Breakdown</h2>
-          <p class="text-xs text-slate-400 mt-0.5 mb-5">Average attendance rate per course</p>
+          <p class="text-xs text-slate-400 dark:text-white/50 mt-0.5 mb-5">Average attendance rate per course</p>
 
-          <div v-if="courseBreakdown.length === 0" class="flex items-center justify-center h-24 text-slate-400 text-sm">
+          <div v-if="courseBreakdown.length === 0" class="flex items-center justify-center h-24 text-slate-400 dark:text-white/50 text-sm">
             No sessions recorded yet.
           </div>
           <div v-else class="space-y-5">
@@ -182,7 +182,7 @@
                   :style="{ width: c.rate + '%' }"
                 ></div>
               </div>
-              <div class="text-[11px] text-slate-400 font-mono">{{ c.sessions }} sessions · {{ c.present }}/{{ c.total }} present</div>
+              <div class="text-[11px] text-slate-400 dark:text-white/50 font-mono">{{ c.sessions }} sessions · {{ c.present }}/{{ c.total }} present</div>
             </div>
           </div>
         </div>
@@ -190,9 +190,9 @@
         <!-- Sparkline Trend -->
         <div class="bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl p-6 shadow-sm">
           <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">Attendance Trend</h2>
-          <p class="text-xs text-slate-400 mt-0.5 mb-5">Rate per session (last 10)</p>
+          <p class="text-xs text-slate-400 dark:text-white/50 mt-0.5 mb-5">Rate per session (last 10)</p>
 
-          <div v-if="trendPoints.length < 2" class="flex items-center justify-center h-28 text-slate-400 text-sm text-center">
+          <div v-if="trendPoints.length < 2" class="flex items-center justify-center h-28 text-slate-400 dark:text-white/50 text-sm text-center">
             Not enough sessions for a trend yet.
           </div>
           <div v-else class="space-y-2">
@@ -207,11 +207,11 @@
               <path :d="sparkLinePath" fill="none" stroke="#bc9333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
               <circle v-for="(pt, i) in trendPoints" :key="i" :cx="pt.x" :cy="pt.y" r="3.5" fill="#bc9333" stroke="#fff" stroke-width="1.5"/>
             </svg>
-            <div class="flex justify-between text-[11px] font-mono text-slate-400">
+            <div class="flex justify-between text-[11px] font-mono text-slate-400 dark:text-white/50">
               <span>{{ trendMin }}%</span>
               <span>{{ trendMax }}%</span>
             </div>
-            <div class="flex justify-between text-[10px] font-mono text-slate-400">
+            <div class="flex justify-between text-[10px] font-mono text-slate-400 dark:text-white/50">
               <span>{{ trendDates[0] }}</span>
               <span>{{ trendDates[trendDates.length - 1] }}</span>
             </div>
@@ -227,7 +227,7 @@
               <AlertTriangle class="w-4 h-4 text-amber-500" />
               At-Risk Students
             </h2>
-            <p class="text-xs text-slate-400 mt-0.5">Students with attendance below 75% in one or more courses</p>
+            <p class="text-xs text-slate-400 dark:text-white/50 mt-0.5">Students with attendance below 75% in one or more courses</p>
           </div>
           <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
             {{ atRiskStudents.length }} student{{ atRiskStudents.length !== 1 ? 's' : '' }}
@@ -295,14 +295,14 @@
         <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-dark-outline flex items-center justify-between gap-4">
           <div>
             <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">Session History</h2>
-            <p class="text-xs text-slate-400 mt-0.5">All recorded student attendance sessions</p>
+            <p class="text-xs text-slate-400 dark:text-white/50 mt-0.5">All recorded student attendance sessions</p>
           </div>
           <span class="px-3 py-1 rounded-lg text-xs font-mono bg-primary/5 dark:bg-secondary/10 border border-primary/20 dark:border-secondary/20 text-primary dark:text-secondary font-semibold">
             {{ filteredSessions.length }} Session{{ filteredSessions.length !== 1 ? 's' : '' }}
           </span>
         </div>
 
-        <div v-if="filteredSessions.length === 0" class="p-10 text-center text-slate-400 text-sm">
+        <div v-if="filteredSessions.length === 0" class="p-10 text-center text-slate-400 dark:text-white/50 text-sm">
           No sessions for the selected filter.
         </div>
         <div v-else class="overflow-x-auto">
@@ -322,7 +322,7 @@
               <tr v-for="s in filteredSessions" :key="s.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
                 <td class="py-3 px-4">
                   <div class="font-semibold text-slate-900 dark:text-white">{{ formatDate(s.createdAt) }}</div>
-                  <div class="text-[10px] text-slate-400 font-mono">{{ formatTime(s.createdAt) }}</div>
+                  <div class="text-[10px] text-slate-400 dark:text-white/50 font-mono">{{ formatTime(s.createdAt) }}</div>
                 </td>
                 <td class="py-3 px-4">
                   <div class="flex flex-col gap-0.5">
@@ -366,14 +366,14 @@
         <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-dark-outline flex items-center justify-between gap-4">
           <div>
             <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">Class Rep Attendance Reports</h2>
-            <p class="text-xs text-slate-400 mt-0.5">Lecturer attendance marked by class representatives</p>
+            <p class="text-xs text-slate-400 dark:text-white/50 mt-0.5">Lecturer attendance marked by class representatives</p>
           </div>
           <span class="px-3 py-1 rounded-lg text-xs font-mono bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800 font-semibold">
             {{ filteredLecturerAttendances.length }} record{{ filteredLecturerAttendances.length !== 1 ? 's' : '' }}
           </span>
         </div>
 
-        <div v-if="filteredLecturerAttendances.length === 0" class="p-10 text-center text-slate-400 text-sm">
+        <div v-if="filteredLecturerAttendances.length === 0" class="p-10 text-center text-slate-400 dark:text-white/50 text-sm">
           No class rep attendance records found for this lecturer's courses.
         </div>
         <div v-else class="overflow-x-auto">
@@ -391,7 +391,7 @@
               <tr v-for="r in filteredLecturerAttendances" :key="r.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
                 <td class="py-3 px-4">
                   <div class="font-semibold text-slate-900 dark:text-white">{{ formatDate(r.date + 'T00:00:00') }}</div>
-                  <div class="text-[10px] text-slate-400 font-mono">{{ r.time }}</div>
+                  <div class="text-[10px] text-slate-400 dark:text-white/50 font-mono">{{ r.time }}</div>
                 </td>
                 <td class="py-3 px-4">
                   <div class="flex flex-col gap-0.5">
@@ -418,7 +418,7 @@
                     </div>
                     <div>
                       <div class="font-semibold text-slate-900 dark:text-white">{{ r.markedByName }}</div>
-                      <div class="text-[10px] text-slate-400">Class Rep</div>
+                      <div class="text-[10px] text-slate-400 dark:text-white/50">Class Rep</div>
                     </div>
                   </div>
                 </td>

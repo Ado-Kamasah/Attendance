@@ -74,7 +74,7 @@
               </select>
 
               <div class="relative">
-                <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40 pointer-events-none" />
+                <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40 dark:text-white/40 pointer-events-none" />
                 <input 
                   type="text" 
                   v-model="searchQuery" 
@@ -88,9 +88,9 @@
           <!-- Courses List -->
           <div class="pt-4">
             <div v-if="filteredCourses.length === 0" class="py-16 text-center text-foreground/50 dark:text-white/65">
-              <BookOpen class="w-8 h-8 mx-auto mb-2 text-foreground/30" />
+              <BookOpen class="w-8 h-8 mx-auto mb-2 text-foreground/30 dark:text-white/35" />
               <p class="text-sm font-medium text-foreground dark:text-white">No available courses found</p>
-              <p class="text-xs font-mono mt-0.5">There are no unpublished modules matching your filters.</p>
+              <p class="text-xs font-mono text-foreground/50 dark:text-white/65 mt-0.5">There are no unpublished modules matching your filters.</p>
             </div>
 
             <div v-else class="space-y-3">
@@ -119,7 +119,7 @@
                       <span class="text-xs font-bold font-mono text-secondary dark:text-dark-secondary">
                         {{ course.code }}
                       </span>
-                      <span class="px-2 py-0.2 rounded text-[10px] font-mono font-medium bg-muted/60 dark:bg-dark-muted/60 text-foreground/60 border border-outline/30">
+                      <span class="px-2 py-0.2 rounded text-[10px] font-mono font-medium bg-muted/60 dark:bg-dark-muted/60 text-foreground/60 dark:text-white/60 border border-outline/30">
                         {{ course.semester || 'Semester 1' }}
                       </span>
                     </div>

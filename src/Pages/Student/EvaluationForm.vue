@@ -102,12 +102,12 @@
           Select Enrolled Module & Lecturer
         </label>
 
-        <div v-if="isLoadingCourses" class="py-2 text-xs font-mono text-foreground/50 flex items-center gap-2">
+        <div v-if="isLoadingCourses" class="py-2 text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center gap-2">
           <RefreshCw class="w-3.5 h-3.5 animate-spin text-secondary" />
           <span>Loading enrolled modules…</span>
         </div>
 
-        <div v-else-if="eligibleEnrollments.length === 0" class="py-4 text-xs font-mono text-foreground/50">
+        <div v-else-if="eligibleEnrollments.length === 0" class="py-4 text-xs font-mono text-foreground/50 dark:text-white/65">
           No courses with assigned lecturers found. Ensure you are enrolled and assigned to a lecture schedule.
         </div>
 
@@ -157,7 +157,7 @@
                     class="px-3 py-1.5 rounded-xl border text-xs font-mono font-medium cursor-pointer transition-all select-none"
                     :class="responses[q.id] === opt 
                       ? 'bg-secondary text-primary font-bold border-secondary shadow-xs' 
-                      : 'bg-muted/30 dark:bg-dark-muted/30 border-outline/30 dark:border-dark-outline/40 text-foreground/70 hover:bg-muted/60'"
+                      : 'bg-muted/30 dark:bg-dark-muted/30 border-outline/30 dark:border-dark-outline/40 text-foreground/70 dark:text-white/70 hover:bg-muted/60 dark:hover:bg-dark-muted/50'"
                   >
                     <input type="radio" :name="q.id" :value="opt" v-model="responses[q.id]" class="sr-only" />
                     {{ opt }}

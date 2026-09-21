@@ -24,16 +24,16 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 flex items-center justify-center gap-2">
+    <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
       <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
       <span>Loading delegated course assignments…</span>
     </div>
 
     <!-- No Roles Assigned -->
-    <div v-else-if="store.myRoles.length === 0" class="py-16 text-center text-foreground/50 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl max-w-md mx-auto p-8">
-      <UserCheck class="w-10 h-10 mx-auto mb-2 text-foreground/30" />
+    <div v-else-if="store.myRoles.length === 0" class="py-16 text-center text-foreground/50 dark:text-white/65 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl max-w-md mx-auto p-8">
+      <UserCheck class="w-10 h-10 mx-auto mb-2 text-foreground/30 dark:text-white/35" />
       <h3 class="text-base font-bold font-display text-foreground dark:text-white">No Class Rep Appointments</h3>
-      <p class="text-xs font-mono mt-1">
+      <p class="text-xs font-mono text-foreground/60 dark:text-white/60 mt-1">
         You are not assigned as an active class representative for any course cohorts. Contact your department administrator if you were nominated.
       </p>
     </div>
@@ -48,7 +48,7 @@
           class="px-4 py-2 rounded-xl text-xs font-mono font-medium whitespace-nowrap transition-all border flex items-center gap-2 cursor-pointer"
           :class="activeCourseId === role.courseId 
             ? 'bg-secondary text-primary font-bold border-secondary shadow-xs' 
-            : 'bg-surface dark:bg-dark-surface border-outline/40 text-foreground/70 hover:bg-muted/40'"
+            : 'bg-surface dark:bg-dark-surface border-outline/40 text-foreground/70 dark:text-white/70 hover:bg-muted/40 dark:hover:bg-dark-muted/40'"
         >
           <span>{{ role.courseCode }}</span>
           <span class="opacity-70">&bull; {{ role.courseName }}</span>
@@ -79,9 +79,9 @@
               <div 
                 v-for="(sch, i) in activeCourse.schedules" 
                 :key="i"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/40 dark:bg-dark-muted/40 text-[11px] font-mono text-foreground/70 border border-outline/30"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/40 dark:bg-dark-muted/40 text-[11px] font-mono text-foreground/70 dark:text-white/70 border border-outline/30"
               >
-                <Clock class="w-3 h-3 text-foreground/40" />
+                <Clock class="w-3 h-3 text-foreground/40 dark:text-white/40" />
                 <span>{{ sch.day }} {{ sch.startTime }}–{{ sch.endTime }} &bull; {{ sch.venue }}</span>
               </div>
             </div>
@@ -93,7 +93,7 @@
                   <label class="block font-mono font-bold text-foreground dark:text-white uppercase tracking-wider text-[11px] mb-1">
                     Lecture Session Code / PIN *
                   </label>
-                  <p class="text-[10px] font-mono text-foreground/50">
+                  <p class="text-[10px] font-mono text-foreground/50 dark:text-white/60">
                     Input 6-digit PIN created by the instructor to synchronize session timestamp.
                   </p>
                 </div>
@@ -135,7 +135,7 @@
 
                 <!-- Recent Sessions Quick Selection -->
                 <div v-if="courseSessions.length > 0" class="pt-2 border-t border-outline/20">
-                  <span class="block text-[10px] font-mono text-foreground/50 mb-1.5">Recent sessions for this module:</span>
+                  <span class="block text-[10px] font-mono text-foreground/50 dark:text-white/60 mb-1.5">Recent sessions for this module:</span>
                   <div class="flex flex-wrap gap-1.5">
                     <button
                       v-for="s in courseSessions"
@@ -143,7 +143,7 @@
                       type="button"
                       @click="selectRecentSession(s)"
                       class="px-2 py-1 rounded-lg text-[10px] font-mono border transition-all cursor-pointer"
-                      :class="form.sessionCode === s.pin ? 'bg-secondary text-primary font-bold border-secondary' : 'bg-surface border-outline/40 text-foreground/70 hover:bg-muted/40'"
+                      :class="form.sessionCode === s.pin ? 'bg-secondary text-primary font-bold border-secondary' : 'bg-surface dark:bg-dark-muted/30 border-outline/40 text-foreground/70 dark:text-white/70 hover:bg-muted/40'"
                     >
                       #{{ s.pin }} &bull; {{ s.date }}
                     </button>
@@ -168,13 +168,13 @@
               <!-- Date & Time Row -->
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block font-mono text-[11px] text-foreground/70 mb-1" for="att-date">
+                  <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/70 mb-1" for="att-date">
                     Session Date *
                   </label>
                   <input type="date" id="att-date" v-model="form.date" :max="todayStr" required class="w-full px-3 py-2 text-xs bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl font-mono text-foreground dark:text-white outline-hidden focus:border-secondary" />
                 </div>
                 <div>
-                  <label class="block font-mono text-[11px] text-foreground/70 mb-1" for="att-time">
+                  <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/70 mb-1" for="att-time">
                     Arrival Time *
                   </label>
                   <input type="time" id="att-time" v-model="form.time" required class="w-full px-3 py-2 text-xs bg-muted/30 dark:bg-dark-muted/30 border border-outline/40 rounded-xl font-mono text-foreground dark:text-white outline-hidden focus:border-secondary" />
@@ -183,7 +183,7 @@
 
               <!-- Status Radio Group -->
               <div>
-                <label class="block font-mono text-[11px] text-foreground/70 mb-1.5">
+                <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/70 mb-1.5">
                   Instructor Presence *
                 </label>
                 <div class="grid grid-cols-3 gap-2.5">
@@ -193,7 +193,7 @@
                     class="p-2.5 rounded-xl border text-center font-mono text-xs font-bold cursor-pointer transition-all select-none"
                     :class="form.status === opt.value 
                       ? (opt.value === 'present' ? 'bg-success text-white border-success' : opt.value === 'late' ? 'bg-amber-500 text-white border-amber-500' : 'bg-error text-white border-error') 
-                      : 'bg-muted/20 border-outline/30 text-foreground/70 hover:bg-muted/40'"
+                      : 'bg-muted/20 dark:bg-dark-muted/20 border-outline/30 text-foreground/70 dark:text-white/70 hover:bg-muted/40 dark:hover:bg-dark-muted/40'"
                   >
                     <input type="radio" :value="opt.value" v-model="form.status" class="sr-only" />
                     {{ opt.label }}
@@ -203,7 +203,7 @@
 
               <!-- Notes -->
               <div>
-                <label class="block font-mono text-[11px] text-foreground/70 mb-1" for="att-notes">
+                <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/70 mb-1" for="att-notes">
                   Observation Remarks (Optional)
                 </label>
                 <textarea 
@@ -266,19 +266,19 @@
                 <span class="block text-[9px] font-mono text-error/80 uppercase">Absent</span>
               </div>
               <div class="p-2 rounded-xl bg-muted/40 border border-outline/30 text-center">
-                <span class="block text-xs font-bold font-mono text-foreground">{{ history.length }}</span>
-                <span class="block text-[9px] font-mono text-foreground/60 uppercase">Total</span>
+                <span class="block text-xs font-bold font-mono text-foreground dark:text-white">{{ history.length }}</span>
+                <span class="block text-[9px] font-mono text-foreground/60 dark:text-white/60 uppercase">Total</span>
               </div>
             </div>
 
             <!-- History Entries -->
             <div class="pt-4">
-              <div v-if="histLoading" class="py-12 text-center text-xs font-mono text-foreground/50 flex items-center justify-center gap-2">
+              <div v-if="histLoading" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
                 <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
                 <span>Loading logbook…</span>
               </div>
 
-              <div v-else-if="history.length === 0" class="py-12 text-center text-xs font-mono text-foreground/50">
+              <div v-else-if="history.length === 0" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/60">
                 No past logs recorded for this module.
               </div>
 
@@ -304,7 +304,7 @@
                     "{{ rec.notes }}"
                   </p>
 
-                  <p class="text-[10px] font-mono text-foreground/45 pt-1 border-t border-outline/20">
+                  <p class="text-[10px] font-mono text-foreground/45 dark:text-white/50 pt-1 border-t border-outline/20">
                     Logged by {{ rec.markedBy }}
                   </p>
                 </div>

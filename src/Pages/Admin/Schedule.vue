@@ -99,11 +99,11 @@
         <div v-if="filteredClasses.length === 0"
           class="bg-white dark:bg-dark-surface border border-dashed border-slate-200 dark:border-dark-outline rounded-2xl p-12 text-center flex flex-col items-center gap-4"
         >
-          <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-dark-muted flex items-center justify-center text-slate-400">
+          <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-dark-muted flex items-center justify-center text-slate-400 dark:text-white/50">
             <CalendarDays class="w-7 h-7" />
           </div>
           <h3 class="font-display font-bold text-slate-900 dark:text-white text-base">No classes scheduled</h3>
-          <p class="text-sm text-slate-400">No classes arranged for <strong>{{ selectedDay }}</strong>. Schedule one now.</p>
+          <p class="text-sm text-slate-400 dark:text-white/60">No classes arranged for <strong>{{ selectedDay }}</strong>. Schedule one now.</p>
           <button @click="openAddModal"
             class="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-semibold transition-all shadow-sm active:scale-95"
           >Schedule a Class</button>
@@ -121,7 +121,7 @@
               <span class="text-xs font-mono font-bold text-slate-900 dark:text-white">{{ formatTime(cls.startTime) }}</span>
               <div class="w-px h-4 bg-gradient-to-b from-secondary to-transparent"></div>
               <span class="text-xs font-mono font-bold text-slate-900 dark:text-white">{{ formatTime(cls.endTime) }}</span>
-              <span class="text-[10px] font-mono text-slate-400 mt-1">{{ getDuration(cls.startTime, cls.endTime) }}h</span>
+              <span class="text-[10px] font-mono text-slate-400 dark:text-white/50 mt-1">{{ getDuration(cls.startTime, cls.endTime) }}h</span>
             </div>
 
             <!-- Divider -->
@@ -192,7 +192,7 @@
                 <option disabled value="">Select lecturer</option>
                 <option v-for="l in lecturers" :key="l.id" :value="l.name">{{ l.name }}</option>
               </select>
-              <p v-if="isLoadingLecturers" class="text-[10px] text-slate-400 font-mono">Loading lecturers...</p>
+              <p v-if="isLoadingLecturers" class="text-[10px] text-slate-400 dark:text-white/50 font-mono">Loading lecturers...</p>
             </div>
 
             <!-- Venue -->

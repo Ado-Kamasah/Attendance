@@ -61,12 +61,12 @@
             <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 mb-2 block">Lecture Period <span class="text-rose-500">*</span></label>
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1">
-                <label class="text-[10px] text-slate-400 font-mono">Start Date</label>
+                <label class="text-[10px] text-slate-400 dark:text-white/50 font-mono">Start Date</label>
                 <input type="date" v-model="form.startDate" required
                   class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50" />
               </div>
               <div class="space-y-1">
-                <label class="text-[10px] text-slate-400 font-mono">End Date</label>
+                <label class="text-[10px] text-slate-400 dark:text-white/50 font-mono">End Date</label>
                 <input type="date" v-model="form.endDate" required
                   class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50" />
               </div>
@@ -78,12 +78,12 @@
             <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 mb-2 block">Exam Period (Optional)</label>
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1">
-                <label class="text-[10px] text-slate-400 font-mono">Exams Start</label>
+                <label class="text-[10px] text-slate-400 dark:text-white/50 font-mono">Exams Start</label>
                 <input type="date" v-model="form.examsStart"
                   class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50" />
               </div>
               <div class="space-y-1">
-                <label class="text-[10px] text-slate-400 font-mono">Exams End</label>
+                <label class="text-[10px] text-slate-400 dark:text-white/50 font-mono">Exams End</label>
                 <input type="date" v-model="form.examsEnd"
                   class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50" />
               </div>
@@ -96,7 +96,7 @@
               class="w-4 h-4 mt-0.5 rounded border-slate-300 dark:border-slate-600 text-secondary focus:ring-secondary/40 accent-[#bc9333]" />
             <div>
               <div class="text-sm font-semibold text-slate-800 dark:text-white">Set as current active semester</div>
-              <div class="text-xs text-slate-400 mt-0.5">This will deactivate any currently active semester automatically.</div>
+              <div class="text-xs text-slate-400 dark:text-white/50 mt-0.5">This will deactivate any currently active semester automatically.</div>
             </div>
           </label>
 
@@ -150,7 +150,7 @@
             <h2 class="text-sm font-display font-bold text-slate-900 dark:text-white">Saved Configurations</h2>
           </div>
 
-          <div v-if="semesters.length === 0" class="p-8 text-center text-slate-400 text-sm">No semesters configured yet.</div>
+          <div v-if="semesters.length === 0" class="p-8 text-center text-slate-400 dark:text-white/50 text-sm">No semesters configured yet.</div>
 
           <ul v-else class="divide-y divide-slate-100 dark:divide-slate-800/60">
             <li v-for="sem in sortedSemesters" :key="sem.id" class="px-5 py-4 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
@@ -163,9 +163,9 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-xs font-bold text-slate-900 dark:text-white">
-                    {{ sem.term }} <span class="text-slate-400 font-normal">({{ sem.year }})</span>
+                    {{ sem.term }} <span class="text-slate-400 dark:text-white/50 font-normal">({{ sem.year }})</span>
                   </div>
-                  <div class="text-[11px] font-mono text-slate-400 mt-0.5">{{ formatDate(sem.startDate) }} — {{ formatDate(sem.endDate) }}</div>
+                  <div class="text-[11px] font-mono text-slate-400 dark:text-white/50 mt-0.5">{{ formatDate(sem.startDate) }} — {{ formatDate(sem.endDate) }}</div>
 
                   <div v-if="!sem.isCurrent" class="flex items-center gap-1.5 mt-2">
                     <button @click="setActive(sem.id)" class="text-[10px] font-mono font-bold px-2 py-1 rounded-lg bg-secondary/10 text-secondary border border-secondary/30 hover:bg-secondary/20 transition-colors">

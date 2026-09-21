@@ -133,7 +133,7 @@
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
             <tr v-if="courseBreakdown.length === 0">
-              <td colspan="6" class="px-5 py-10 text-center text-xs font-mono text-slate-400">
+              <td colspan="6" class="px-5 py-10 text-center text-xs font-mono text-slate-400 dark:text-white/50">
                 No data available.
               </td>
             </tr>
@@ -237,7 +237,7 @@
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
             <tr v-if="filteredStudentBreakdown.length === 0">
-              <td colspan="9" class="px-5 py-10 text-center text-xs font-mono text-slate-400">
+              <td colspan="9" class="px-5 py-10 text-center text-xs font-mono text-slate-400 dark:text-white/50">
                 No data matches your filters.
               </td>
             </tr>
@@ -354,7 +354,7 @@
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
             <tr v-if="filteredAttendances.length === 0">
-              <td colspan="6" class="px-5 py-10 text-center text-xs font-mono text-slate-400">
+              <td colspan="6" class="px-5 py-10 text-center text-xs font-mono text-slate-400 dark:text-white/50">
                 No records match your filters.
               </td>
             </tr>
@@ -385,7 +385,7 @@
                   {{ rec.status }}
                 </span>
               </td>
-              <td class="px-5 py-4 font-mono text-slate-400">
+              <td class="px-5 py-4 font-mono text-slate-400 dark:text-white/50">
                 {{ rec.recordedAt }}
               </td>
             </tr>
