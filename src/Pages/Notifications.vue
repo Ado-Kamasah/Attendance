@@ -120,6 +120,9 @@
           class="p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition-all"
           :class="[
             n.type === 'attendance_absent'   ? 'bg-error/10 border-error/30' : '',
+            n.type === 'warning_1'           ? 'bg-warning/10 border-warning/30' : '',
+            n.type === 'warning_2'           ? 'bg-error/10 border-error/30' : '',
+            n.type === 'ineligible'          ? 'bg-error/15 border-error/50' : '',
             n.type === 'attendance_warning'  ? 'bg-warning/10 border-warning/30' : '',
             n.type === 'suggestion_resolved' ? 'bg-success/10 border-success/30' : '',
             n.type === 'suggestion_reply'    ? 'bg-secondary/10 border-secondary/30' : '',
@@ -132,14 +135,17 @@
             class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold font-mono text-sm"
             :class="[
               n.type === 'attendance_absent'   ? 'bg-error text-white' : '',
+              n.type === 'warning_1'           ? 'bg-warning/20 text-warning' : '',
+              n.type === 'warning_2'           ? 'bg-error/20 text-error' : '',
+              n.type === 'ineligible'          ? 'bg-error text-white' : '',
               n.type === 'attendance_warning'  ? 'bg-warning/20 text-warning' : '',
               n.type === 'suggestion_resolved' ? 'bg-success/20 text-success' : '',
               n.type === 'suggestion_reply'    ? 'bg-secondary/20 text-secondary' : '',
               n.type === 'eval_open'           ? 'bg-secondary/20 text-secondary' : ''
             ]"
           >
-            <AlertOctagon v-if="n.type === 'attendance_absent'" class="w-4 h-4" />
-            <AlertTriangle v-else-if="n.type === 'attendance_warning'" class="w-4 h-4" />
+            <AlertOctagon v-if="n.type === 'attendance_absent' || n.type === 'ineligible'" class="w-4 h-4" />
+            <AlertTriangle v-else-if="n.type === 'warning_1' || n.type === 'warning_2' || n.type === 'attendance_warning'" class="w-4 h-4" />
             <CheckCircle2 v-else-if="n.type === 'suggestion_resolved'" class="w-4 h-4" />
             <MessageCircle v-else-if="n.type === 'suggestion_reply'" class="w-4 h-4" />
             <Award v-else class="w-4 h-4" />
@@ -329,6 +335,9 @@ onUnmounted(() => {
 
 function absenceLabel(type) {
   if (type === 'attendance_absent')    return 'Absent Mark';
+  if (type === 'warning_1')            return '⚠️ First Absence Warning';
+  if (type === 'warning_2')            return '🚨 Second Absence Warning';
+  if (type === 'ineligible')           return '❌ Exam Ineligibility';
   if (type === 'attendance_warning')   return 'Attendance Warning';
   if (type === 'suggestion_resolved')  return 'Suggestion Resolved';
   if (type === 'suggestion_reply')     return 'Admin Reply';

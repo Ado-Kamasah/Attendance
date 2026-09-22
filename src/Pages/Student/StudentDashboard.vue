@@ -512,6 +512,7 @@ onMounted(async () => {
   ]);
   sessStore.subscribeToSessions();
   attStore.subscribeToAttendances();
+  notifStore.subscribeToAttendance(uid);  // realtime warnings
   isLoading.value = false;
 });
 
@@ -519,12 +520,18 @@ onMounted(async () => {
 const absenceWarnings       = computed(() => notifStore.warningNotifications);
 const ineligibleWarnings    = computed(() => notifStore.ineligibleNotifications);
 const evalOpenNotifications = computed(() => notifStore.evalOpenNotifications);
-const hasAbsenceAlerts      = computed(() => notifStore.notifications.length > 0);
+// Show the Academic Alerts section only when the visible card types have data
+const hasAbsenceAlerts      = computed(() =>
+  absenceWarnings.value.length > 0 ||
+  ineligibleWarnings.value.length > 0 ||
+  evalOpenNotifications.value.length > 0
+);
 const notifUnreadCount      = computed(() => notifStore.unreadCount);
 
 onUnmounted(() => {
   sessStore.unsubscribeFromSessions();
   attStore.unsubscribeFromAttendances();
+  notifStore.unsubscribe();  // clean up notification channels
 });
 
 // ── Enrolled course IDs ───────────────────────────────────────────────────────
