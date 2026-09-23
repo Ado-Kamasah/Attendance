@@ -71,6 +71,46 @@
         <p v-if="courseSummary.rate < 75" class="text-[11px] font-mono text-error mt-2">
           ⚠ You need at least 75% attendance. You are {{ 75 - courseSummary.rate }}% below the threshold.
         </p>
+
+        <!-- Absence Milestones Warning Alert -->
+        <div 
+          v-if="courseSummary.absent >= 3" 
+          class="mt-3 p-3.5 rounded-xl border border-error/40 bg-error/10 dark:bg-dark-error/15 text-error flex items-start gap-2.5 text-xs"
+        >
+          <AlertOctagon class="w-4 h-4 shrink-0 mt-0.5" />
+          <div>
+            <span class="font-bold block">❌ Exam Ineligibility ({{ courseSummary.absent }} Classes Missed)</span>
+            <span class="text-error/90 dark:text-error/80 mt-0.5 block">
+              You have exceeded the maximum allowable absences (3 classes). You are NOT eligible to sit the examination for this course. Please consult your academic advisor immediately.
+            </span>
+          </div>
+        </div>
+
+        <div 
+          v-else-if="courseSummary.absent === 2" 
+          class="mt-3 p-3.5 rounded-xl border border-error/40 bg-error/10 dark:bg-dark-error/15 text-error flex items-start gap-2.5 text-xs"
+        >
+          <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5 text-error" />
+          <div>
+            <span class="font-bold block">🚨 Critical Attendance Warning (2 Classes Missed)</span>
+            <span class="text-error/90 dark:text-error/80 mt-0.5 block">
+              You have missed 2 classes in this course. Missing 1 more class will make you ineligible to write the final examination.
+            </span>
+          </div>
+        </div>
+
+        <div 
+          v-else-if="courseSummary.absent === 1" 
+          class="mt-3 p-3.5 rounded-xl border border-warning/40 bg-warning/10 dark:bg-dark-warning/15 text-warning flex items-start gap-2.5 text-xs"
+        >
+          <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5 text-warning" />
+          <div>
+            <span class="font-bold block">⚠️ Attendance Warning (1 Class Missed)</span>
+            <span class="text-warning/90 dark:text-warning/80 mt-0.5 block">
+              You have missed 1 class in this course. Remember that missing 3 classes will render you ineligible to sit the final examination.
+            </span>
+          </div>
+        </div>
       </div>
 
       <!-- Full attendance log for this course -->
@@ -366,6 +406,7 @@ import {
   CheckCircle2, 
   Clock, 
   AlertOctagon, 
+  AlertTriangle,
   History,
   ArrowLeft
 } from 'lucide-vue-next';

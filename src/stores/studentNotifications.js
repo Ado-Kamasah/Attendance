@@ -38,6 +38,8 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
     notifications.value.filter((n) => n.type === "eval_open")
   );
 
+  const readIds = ref(new Set(JSON.parse(localStorage.getItem('student_read_notifs') || '[]')));
+
   // ── Fetch ─────────────────────────────────────────────────────────────────────
   async function fetchNotifications(studentId) {
     if (!studentId) return;
@@ -45,9 +47,10 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
     error.value = "";
     try {
       const results = [];
+      const dbCoveredCourseIds = new Set();
 
       // 1. Absence warnings & ineligibility notices from student_notifications table
-      //    (written by the backend's runAbsencesCheck after each session)
+      //    (written by backend if available)
       const { data: dbNotifs, error: dbErr } = await supabase
         .from("student_notifications")
         .select("id, type, message, is_read, created_at, course_id, courses(code, name)")
@@ -55,55 +58,96 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
         .order("created_at", { ascending: false })
         .limit(50);
 
-      if (!dbErr && dbNotifs) {
+      if (!dbErr && dbNotifs && dbNotifs.length > 0) {
         dbNotifs.forEach((n) => {
+          if (n.course_id && (n.type === 'warning_1' || n.type === 'warning_2' || n.type === 'ineligible')) {
+            dbCoveredCourseIds.add(n.course_id);
+          }
+          const id = "db-" + n.id;
           results.push({
-            id: "db-" + n.id,
+            id,
             type: n.type,           // warning_1 | warning_2 | ineligible | eval_open
-            isRead: n.is_read ?? false,
+            isRead: n.is_read || readIds.value.has(id),
             createdAt: n.created_at,
             courseCode: n.courses?.code ?? "",
             courseName: n.courses?.name ?? "",
             message: n.message,
           });
         });
-      } else if (dbErr) {
-        // Table may not exist in Supabase yet — fall back gracefully
-        console.warn("student_notifications table not accessible via Supabase:", dbErr.message);
       }
 
-      // 2. Raw attendance absences (direct Supabase fallback when backend is offline)
-      //    Only add if not already covered by a db notification for the same session.
-      const dbAbsentSessionIds = new Set(
-        results
-          .filter((n) => n.type === "warning_1" || n.type === "warning_2" || n.type === "ineligible" || n.type === "attendance_absent")
-          .map((n) => n.id)
-      );
-
+      // 2. Absence warnings computed directly from attendances table
+      //    This guarantees that warnings (warning_1, warning_2, ineligible)
+      //    work 100% of the time directly from the live database.
       const { data: absentRecs, error: attErr } = await supabase
         .from("attendances")
-        .select("id, status, created_at, sessions(id, course_id, courses(code, name))")
+        .select("id, status, created_at, session_id, sessions(id, course_id, courses(id, code, name))")
         .eq("student_id", studentId)
         .eq("status", "absent")
-        .order("created_at", { ascending: false })
-        .limit(20);
+        .order("created_at", { ascending: false });
 
-      if (!attErr && absentRecs) {
+      if (!attErr && absentRecs && absentRecs.length > 0) {
+        // Group absences by course
+        const absencesByCourse = new Map();
         absentRecs.forEach((rec) => {
-          const notifId = "att-" + rec.id;
-          if (dbAbsentSessionIds.has(notifId)) return; // already have a proper warning
           const course = rec.sessions?.courses;
-          results.push({
-            id: notifId,
-            type: "attendance_absent",
-            isRead: false,
-            createdAt: rec.created_at,
-            courseCode: course?.code ?? "",
-            courseName: course?.name ?? "",
-            message:
-              "You were marked absent" +
-              (course?.name ? " for " + course.name : "") +
-              ". If this is an error, contact your lecturer.",
+          const courseId = rec.sessions?.course_id || course?.id;
+          if (!courseId) return;
+
+          if (!absencesByCourse.has(courseId)) {
+            absencesByCourse.set(courseId, {
+              courseId,
+              code: course?.code ?? "",
+              name: course?.name ?? "",
+              records: [],
+              latestCreatedAt: rec.created_at,
+            });
+          }
+          absencesByCourse.get(courseId).records.push(rec);
+        });
+
+        // For each course, generate the appropriate milestone warning
+        absencesByCourse.forEach((group, courseId) => {
+          const missedCount = group.records.length;
+          let warningType = null;
+          let message = "";
+
+          if (missedCount === 1) {
+            warningType = "warning_1";
+            message = `⚠️ Warning: You have missed 1 class in ${group.name} (${group.code}). Missing 3 classes will make you ineligible to write the exam.`;
+          } else if (missedCount === 2) {
+            warningType = "warning_2";
+            message = `🚨 Critical Warning: You have missed 2 classes in ${group.name} (${group.code}). One more absence will render you ineligible to sit the examination.`;
+          } else if (missedCount >= 3) {
+            warningType = "ineligible";
+            message = `❌ Exam Ineligibility: You have missed ${missedCount} classes in ${group.name} (${group.code}). You are NOT eligible to write the examination for this course.`;
+          }
+
+          if (warningType && !dbCoveredCourseIds.has(courseId)) {
+            const warnId = `warn-${studentId}-${courseId}-${missedCount}`;
+            results.push({
+              id: warnId,
+              type: warningType,
+              isRead: readIds.value.has(warnId),
+              createdAt: group.latestCreatedAt,
+              courseCode: group.code,
+              courseName: group.name,
+              message,
+            });
+          }
+
+          // Also include the individual session absence logs
+          group.records.slice(0, 5).forEach((rec) => {
+            const notifId = "att-" + rec.id;
+            results.push({
+              id: notifId,
+              type: "attendance_absent",
+              isRead: readIds.value.has(notifId),
+              createdAt: rec.created_at,
+              courseCode: group.code,
+              courseName: group.name,
+              message: `You were marked absent for ${group.name} (${group.code}) on ${new Date(rec.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`,
+            });
           });
         });
       }
@@ -119,10 +163,11 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
 
       if (!sugErr && suggestions) {
         suggestions.forEach((sug) => {
+          const sugId = "sug-" + sug.id;
           results.push({
-            id: "sug-" + sug.id,
+            id: sugId,
             type: sug.status === "resolved" ? "suggestion_resolved" : "suggestion_reply",
-            isRead: false,
+            isRead: readIds.value.has(sugId),
             createdAt: sug.updated_at,
             courseCode: "",
             courseName: "",
@@ -145,10 +190,11 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
 
       if (!evalErr && evals) {
         evals.forEach((ev) => {
+          const evalId = "eval-" + ev.id;
           results.push({
-            id: "eval-" + ev.id,
+            id: evalId,
             type: "eval_open",
-            isRead: false,
+            isRead: readIds.value.has(evalId),
             createdAt: ev.open_at,
             courseCode: "",
             courseName: "",
@@ -173,36 +219,15 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
   function subscribeToAttendance(studentId) {
     if (realtimeChannel || !studentId) return;
 
-    // Channel 1: raw attendances table (absence marked)
+    // Channel 1: attendances table changes (absent marked/updated)
     realtimeChannel = supabase
       .channel("student-notifs-" + studentId)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "attendances", filter: "student_id=eq." + studentId },
-        async (payload) => {
-          if (payload.new?.status === "absent") {
-            const { data: session } = await supabase
-              .from("sessions")
-              .select("id, course_id, courses(code, name)")
-              .eq("id", payload.new.session_id)
-              .single();
-            const course = session?.courses;
-            const newNotif = {
-              id: "att-" + payload.new.id,
-              type: "attendance_absent",
-              isRead: false,
-              createdAt: payload.new.created_at,
-              courseCode: course?.code ?? "",
-              courseName: course?.name ?? "",
-              message:
-                "You were marked absent" +
-                (course?.name ? " for " + course.name : "") +
-                ". If this is an error, contact your lecturer.",
-            };
-            if (!notifications.value.some((n) => n.id === newNotif.id)) {
-              notifications.value.unshift(newNotif);
-            }
-          }
+        { event: "*", schema: "public", table: "attendances", filter: "student_id=eq." + studentId },
+        async () => {
+          // Immediately re-fetch notifications to re-compute course counts and milestone warnings
+          await fetchNotifications(studentId);
         }
       )
       .on(
@@ -237,36 +262,8 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "student_notifications", filter: "student_id=eq." + studentId },
-        async (payload) => {
-          const n = payload.new;
-          if (!n) return;
-
-          // Fetch course details
-          let courseCode = "";
-          let courseName = "";
-          if (n.course_id) {
-            const { data: course } = await supabase
-              .from("courses")
-              .select("code, name")
-              .eq("id", n.course_id)
-              .single();
-            courseCode = course?.code ?? "";
-            courseName = course?.name ?? "";
-          }
-
-          const newNotif = {
-            id: "db-" + n.id,
-            type: n.type,
-            isRead: n.is_read ?? false,
-            createdAt: n.created_at,
-            courseCode,
-            courseName,
-            message: n.message,
-          };
-
-          const idx = notifications.value.findIndex((existing) => existing.id === newNotif.id);
-          if (idx >= 0) notifications.value.splice(idx, 1, newNotif);
-          else notifications.value.unshift(newNotif);
+        async () => {
+          await fetchNotifications(studentId);
         }
       )
       .subscribe();
@@ -285,12 +282,22 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
 
   // ── Read tracking (local only — no backend call needed) ───────────────────────
   function markRead(id) {
+    readIds.value.add(id);
+    try {
+      localStorage.setItem('student_read_notifs', JSON.stringify([...readIds.value]));
+    } catch {}
     const n = notifications.value.find((n) => n.id === id);
     if (n) n.isRead = true;
   }
 
   function markAllRead() {
-    notifications.value.forEach((n) => (n.isRead = true));
+    notifications.value.forEach((n) => {
+      n.isRead = true;
+      readIds.value.add(n.id);
+    });
+    try {
+      localStorage.setItem('student_read_notifs', JSON.stringify([...readIds.value]));
+    } catch {}
   }
 
   return {
