@@ -40,6 +40,15 @@ function normalizeError(err) {
   return err instanceof Error ? err : new Error(err?.message || 'Something went wrong.');
 }
 
+async function syncStudentNotifs(studentId) {
+  if (!studentId) return;
+  try {
+    const { useStudentNotificationsStore } = await import('./studentNotifications');
+    const store = useStudentNotificationsStore();
+    await store.fetchNotifications(studentId);
+  } catch {}
+}
+
 export const useAttendancesStore = defineStore('attendances', () => {
   const attendances = ref([]);
   const isLoading = ref(false);
@@ -126,6 +135,7 @@ export const useAttendancesStore = defineStore('attendances', () => {
         attendances.value.unshift(created);
       }
       if (!options.silent) push.success({ title: 'Attendance recorded' });
+      syncStudentNotifs(created.studentId);
       return created;
     } catch (err) {
       const normalized = normalizeError(err);
@@ -172,6 +182,8 @@ export const useAttendancesStore = defineStore('attendances', () => {
       }
 
       if (!options.silent) push.success({ title: 'Attendance saved', message: `${created.length} records saved.` });
+      const studentIds = new Set(created.map(r => r.studentId));
+      studentIds.forEach(sid => syncStudentNotifs(sid));
       return created;
     } catch (err) {
       const normalized = normalizeError(err);
@@ -204,6 +216,7 @@ export const useAttendancesStore = defineStore('attendances', () => {
       const index = attendances.value.findIndex((a) => a.id === id);
       if (index !== -1) attendances.value[index] = updated;
       if (!options.silent) push.success({ title: 'Attendance updated' });
+      syncStudentNotifs(updated.studentId);
       return updated;
     } catch (err) {
       const normalized = normalizeError(err);
@@ -249,12 +262,15 @@ export const useAttendancesStore = defineStore('attendances', () => {
             if (!attendances.value.some((a) => a.id === incoming.id)) {
               attendances.value.unshift(incoming);
             }
+            syncStudentNotifs(incoming.studentId);
           } else if (payload.eventType === 'UPDATE') {
             const updated = mapAttendance(payload.new);
             const index = attendances.value.findIndex((a) => a.id === updated.id);
             if (index !== -1) attendances.value[index] = updated;
+            syncStudentNotifs(updated.studentId);
           } else if (payload.eventType === 'DELETE') {
             attendances.value = attendances.value.filter((a) => a.id !== payload.old.id);
+            syncStudentNotifs(payload.old?.student_id);
           }
         }
       )

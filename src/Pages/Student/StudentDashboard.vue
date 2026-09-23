@@ -449,7 +449,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authstore';
 import { useCoursesStore } from '@/stores/courses';
@@ -508,13 +508,26 @@ onMounted(async () => {
     schedStore.fetchSchedules(),
     sessStore.fetchSessions(),
     attStore.fetchAttendances({ studentId: uid }),
-    notifStore.fetchNotifications(uid),
   ]);
+  // Fetch notifications with full course and attendance context loaded
+  await notifStore.fetchNotifications(uid);
   sessStore.subscribeToSessions();
   attStore.subscribeToAttendances();
   notifStore.subscribeToAttendance(uid);  // realtime warnings
   isLoading.value = false;
 });
+
+// Reactively re-evaluate notifications whenever attendance, sessions, or enrollments update
+watch(
+  () => [attendances.value, sessions.value, enrollments.value],
+  () => {
+    const uid = profile.value?.id;
+    if (uid) {
+      notifStore.fetchNotifications(uid);
+    }
+  },
+  { deep: true }
+);
 
 // ── Absence warnings ──────────────────────────────────────────────────────────
 const absenceWarnings       = computed(() => notifStore.warningNotifications);

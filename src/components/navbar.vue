@@ -126,8 +126,8 @@
               v-for="notif in recentLogs"
               :key="notif.id"
               class="p-3 sm:p-3.5 hover:bg-muted/40 dark:hover:bg-dark-muted/40 transition-colors flex items-start gap-2.5 sm:gap-3 cursor-pointer"
-              :class="{ 'bg-secondary/5 dark:bg-dark-secondary/5': !readIds.has(notif.id) }"
-              @click="readIds.add(notif.id)"
+              :class="{ 'bg-secondary/5 dark:bg-dark-secondary/5': !isNotifRead(notif) }"
+              @click="handleNotifClick(notif)"
             >
               <!-- Icon based on type -->
               <div 
@@ -137,7 +137,7 @@
                 <PlusCircle v-if="notif.typeClass === 'type-created'" class="w-4 h-4" />
                 <Trash2 v-else-if="notif.typeClass === 'type-deleted'" class="w-4 h-4" />
                 <RefreshCw v-else-if="notif.typeClass === 'type-updated'" class="w-4 h-4" />
-                <AlertTriangle v-else-if="notif.typeClass === 'type-conflict'" class="w-4 h-4" />
+                <AlertTriangle v-else-if="notif.typeClass === 'type-conflict' || notif.typeClass === 'type-warning'" class="w-4 h-4" />
                 <Info v-else class="w-4 h-4" />
               </div>
 
@@ -155,7 +155,7 @@
                 </p>
                 <div class="flex items-center gap-2 mt-1 text-[10px] font-mono text-foreground/40 dark:text-white/50">
                   <span class="truncate">By: {{ notif.userName }}</span>
-                  <span v-if="!readIds.has(notif.id)" class="inline-block w-1.5 h-1.5 rounded-full bg-secondary shrink-0"></span>
+                  <span v-if="!isNotifRead(notif)" class="inline-block w-1.5 h-1.5 rounded-full bg-secondary shrink-0"></span>
                 </div>
               </div>
             </div>
@@ -309,6 +309,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { useAuthStore } from '@/stores/authstore';
+import { useStudentNotificationsStore } from '@/stores/studentNotifications';
 import { 
   Bell, 
   Settings, 
@@ -336,6 +337,7 @@ const emit = defineEmits(['toggle-mobile-sidebar', 'logout', 'navigate']);
 
 const auditStore = useAuditLogsStore();
 const authStore = useAuthStore();
+const studentNotifStore = useStudentNotificationsStore();
 const { logs, isLoading: isLoadingLogs } = storeToRefs(auditStore);
 const { profile } = storeToRefs(authStore);
 
@@ -408,20 +410,81 @@ const visibleLogs = computed(() => {
   );
 });
 
-const recentLogs = computed(() =>
-  visibleLogs.value.slice(0, 8).map(l => ({
+const recentLogs = computed(() => {
+  const isStudent = profile.value?.role === 'Student';
+  const studentItems = isStudent
+    ? studentNotifStore.notifications.slice(0, 8).map(n => {
+        let typeClass = 'type-info';
+        let actionLabel = 'Academic Alert';
+        if (n.type === 'warning_1') {
+          typeClass = 'type-warning';
+          actionLabel = `⚠️ 1st Absence Warning`;
+        } else if (n.type === 'warning_2') {
+          typeClass = 'type-conflict';
+          actionLabel = `🚨 Critical Warning`;
+        } else if (n.type === 'ineligible') {
+          typeClass = 'type-deleted';
+          actionLabel = `❌ Exam Ineligibility`;
+        } else if (n.type === 'attendance_absent') {
+          typeClass = 'type-deleted';
+          actionLabel = `Absent Mark`;
+        } else if (n.type === 'eval_open') {
+          typeClass = 'type-info';
+          actionLabel = 'Evaluation Open';
+        } else if (n.type?.startsWith('suggestion')) {
+          typeClass = 'type-created';
+          actionLabel = 'Suggestion Update';
+        }
+        return {
+          id: n.id,
+          actionLabel: n.courseCode ? `${actionLabel} (${n.courseCode})` : actionLabel,
+          typeClass,
+          details: n.message,
+          userName: 'Academic System',
+          relativeTime: relTime(n.createdAt),
+          isStudentNotif: true,
+          isRead: !!n.isRead,
+        };
+      })
+    : [];
+
+  const logItems = visibleLogs.value.slice(0, 8).map(l => ({
     id: l.id,
     actionLabel: l.action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
     typeClass: actionTypeClass(l.action),
     details: l.details || '—',
     userName: l.userName || 'System',
     relativeTime: relTime(l.timestamp),
-  }))
-);
+    isStudentNotif: false,
+    isRead: readIds.value.has(l.id),
+  }));
 
-const unreadCount = computed(() =>
-  recentLogs.value.filter(n => !readIds.value.has(n.id)).length
-);
+  return [...studentItems, ...logItems].slice(0, 10);
+});
+
+const unreadCount = computed(() => {
+  if (profile.value?.role === 'Student') {
+    const unreadStudent = studentNotifStore.unreadCount;
+    const unreadLogs = recentLogs.value.filter(n => !n.isStudentNotif && !readIds.value.has(n.id)).length;
+    return unreadStudent + unreadLogs;
+  }
+  return recentLogs.value.filter(n => !readIds.value.has(n.id)).length;
+});
+
+function isNotifRead(notif) {
+  if (notif.isStudentNotif) return notif.isRead || readIds.value.has(notif.id);
+  return readIds.value.has(notif.id);
+}
+
+function handleNotifClick(notif) {
+  readIds.value.add(notif.id);
+  if (notif.isStudentNotif) {
+    studentNotifStore.markRead(notif.id);
+    if (['warning_1', 'warning_2', 'ineligible', 'attendance_absent'].includes(notif.id)) {
+      goToNotifications();
+    }
+  }
+}
 
 function actionTypeClass(action) {
   if (action.includes('created'))  return 'type-created';
@@ -474,6 +537,9 @@ const toggleSettings = () => {
 
 const markAllRead = () => {
   recentLogs.value.forEach(n => readIds.value.add(n.id));
+  if (profile.value?.role === 'Student') {
+    studentNotifStore.markAllRead();
+  }
 };
 
 const goToNotifications = () => {
@@ -521,10 +587,19 @@ onMounted(async () => {
   document.addEventListener('click', closeDropdowns);
   await auditStore.fetchLogs();
   auditStore.subscribeToLogs();
+
+  if (profile.value?.role === 'Student') {
+    const uid = profile.value?.id;
+    if (uid) {
+      studentNotifStore.fetchNotifications(uid);
+      studentNotifStore.subscribeToAttendance(uid);
+    }
+  }
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', closeDropdowns);
   auditStore.unsubscribeFromLogs();
+  studentNotifStore.unsubscribe();
 });
 </script>
