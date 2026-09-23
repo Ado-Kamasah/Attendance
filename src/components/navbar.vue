@@ -12,14 +12,14 @@
 
       <div class="min-w-0">
         <div class="flex items-center gap-2">
-          <h2 class="text-base sm:text-lg font-bold font-display tracking-tight text-foreground dark:text-white truncate">
-            Welcome back, <span class="text-secondary dark:text-dark-secondary">{{ firstName }}</span>
+          <h2 class="text-sm sm:text-base md:text-lg font-bold font-display tracking-tight text-foreground dark:text-white truncate">
+            <span class="hidden sm:inline">Welcome back, </span><span class="text-secondary dark:text-dark-secondary">{{ firstName }}</span>
           </h2>
         </div>
         <div class="flex items-center gap-2 mt-0.5">
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-secondary/10 dark:bg-dark-secondary/15 text-secondary dark:text-dark-secondary border border-secondary/25 dark:border-dark-secondary/30">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold tracking-wide bg-secondary/10 dark:bg-dark-secondary/15 text-secondary dark:text-dark-secondary border border-secondary/25 dark:border-dark-secondary/30 shrink-0">
             <component :is="roleIcon" class="w-3 h-3 shrink-0" />
-            <span>{{ roleLabel }}</span>
+            <span class="truncate">{{ roleLabel }}</span>
           </span>
           <span class="hidden md:inline-flex items-center text-[11px] text-foreground/50 dark:text-white/65 font-mono">
             ● Southshore OS v2.4
@@ -27,6 +27,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Mobile Backdrop for Dropdowns -->
+    <div 
+      v-if="showNotifications || showSettings" 
+      class="fixed inset-0 top-18 z-40 bg-black/40 backdrop-blur-xs sm:hidden"
+      @click="closeAllDropdowns"
+    ></div>
 
     <!-- Right: Search & Action Buttons -->
     <div class="flex items-center gap-2 sm:gap-3">
@@ -48,7 +55,7 @@
       <!-- Instant Theme Toggle -->
       <button 
         @click="toggleThemeQuick"
-        class="p-2 rounded-lg text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border border-outline/40 dark:border-dark-outline/40 transition-all duration-200"
+        class="p-2 rounded-lg text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border border-outline/40 dark:border-dark-outline/40 transition-all duration-200 cursor-pointer"
         :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
         aria-label="Toggle Theme"
       >
@@ -59,7 +66,7 @@
       <!-- Notifications Dropdown -->
       <div class="relative dropdown-wrapper">
         <button 
-          class="relative p-2 rounded-lg border transition-all duration-200"
+          class="relative p-2 rounded-lg border transition-all duration-200 cursor-pointer"
           :class="showNotifications 
             ? 'bg-secondary/15 dark:bg-dark-secondary/20 text-secondary dark:text-dark-secondary border-secondary/40 dark:border-dark-secondary/40' 
             : 'text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border-outline/40 dark:border-dark-outline/40'"
@@ -78,26 +85,26 @@
         <!-- Notifications Dropdown Panel -->
         <div 
           v-if="showNotifications"
-          class="absolute right-0 top-full mt-2.5 w-84 sm:w-96 bg-surface dark:bg-dark-surface border border-outline/60 dark:border-dark-outline rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-150"
+          class="fixed sm:absolute inset-x-3 sm:inset-x-auto sm:right-0 top-[74px] sm:top-full mt-0 sm:mt-2.5 w-auto sm:w-96 max-w-[calc(100vw-1.5rem)] sm:max-w-md bg-surface dark:bg-dark-surface border border-outline/60 dark:border-dark-outline rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] animate-in fade-in slide-in-from-top-2 duration-150"
         >
           <!-- Blueprint corner marks -->
           <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
           <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
           <!-- Panel Header -->
-          <div class="p-3.5 px-4 bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/40 dark:border-dark-outline/40 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold font-display tracking-wider uppercase text-foreground dark:text-white">
+          <div class="p-3 sm:p-3.5 px-3.5 sm:px-4 bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/40 dark:border-dark-outline/40 flex items-center justify-between gap-2 shrink-0">
+            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span class="text-xs font-bold font-display tracking-wider uppercase text-foreground dark:text-white truncate">
                 Audit Feed & Alerts
               </span>
-              <span v-if="unreadCount > 0" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary/15 text-secondary dark:text-dark-secondary border border-secondary/30">
+              <span v-if="unreadCount > 0" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary/15 text-secondary dark:text-dark-secondary border border-secondary/30 shrink-0">
                 {{ unreadCount }} new
               </span>
             </div>
             <button 
               v-if="unreadCount > 0" 
               @click="markAllRead" 
-              class="text-xs font-semibold text-secondary hover:underline flex items-center gap-1 cursor-pointer"
+              class="text-xs font-semibold text-secondary hover:underline flex items-center gap-1 cursor-pointer shrink-0"
             >
               <CheckCheck class="w-3.5 h-3.5" />
               <span>Mark all read</span>
@@ -105,7 +112,7 @@
           </div>
 
           <!-- Panel Body (Scrollable List) -->
-          <div class="max-h-80 overflow-y-auto divide-y divide-outline/20 dark:divide-dark-outline/30">
+          <div class="max-h-[50vh] sm:max-h-80 overflow-y-auto divide-y divide-outline/20 dark:divide-dark-outline/30 flex-1">
             <div v-if="isLoadingLogs" class="p-6 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
               <RefreshCw class="w-3.5 h-3.5 animate-spin text-secondary" />
               <span>Streaming activity logs…</span>
@@ -118,7 +125,7 @@
             <div
               v-for="notif in recentLogs"
               :key="notif.id"
-              class="p-3.5 hover:bg-muted/40 dark:hover:bg-dark-muted/40 transition-colors flex items-start gap-3 cursor-pointer"
+              class="p-3 sm:p-3.5 hover:bg-muted/40 dark:hover:bg-dark-muted/40 transition-colors flex items-start gap-2.5 sm:gap-3 cursor-pointer"
               :class="{ 'bg-secondary/5 dark:bg-dark-secondary/5': !readIds.has(notif.id) }"
               @click="readIds.add(notif.id)"
             >
@@ -147,15 +154,15 @@
                   {{ notif.details }}
                 </p>
                 <div class="flex items-center gap-2 mt-1 text-[10px] font-mono text-foreground/40 dark:text-white/50">
-                  <span>By: {{ notif.userName }}</span>
-                  <span v-if="!readIds.has(notif.id)" class="inline-block w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  <span class="truncate">By: {{ notif.userName }}</span>
+                  <span v-if="!readIds.has(notif.id)" class="inline-block w-1.5 h-1.5 rounded-full bg-secondary shrink-0"></span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Panel Footer -->
-          <div class="p-2.5 bg-muted/20 dark:bg-dark-muted/20 border-t border-outline/40 dark:border-dark-outline/40">
+          <div class="p-2.5 bg-muted/20 dark:bg-dark-muted/20 border-t border-outline/40 dark:border-dark-outline/40 shrink-0">
             <button 
               @click="goToNotifications" 
               class="w-full py-1.5 text-xs font-semibold text-center rounded-lg bg-muted/60 dark:bg-dark-muted/60 hover:bg-secondary/15 hover:text-secondary dark:hover:bg-dark-secondary/20 dark:hover:text-dark-secondary border border-outline/30 dark:border-dark-outline/30 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
@@ -170,7 +177,7 @@
       <!-- Settings Dropdown -->
       <div class="relative dropdown-wrapper">
         <button 
-          class="p-2 rounded-lg border transition-all duration-200"
+          class="p-2 rounded-lg border transition-all duration-200 cursor-pointer"
           :class="showSettings 
             ? 'bg-secondary/15 dark:bg-dark-secondary/20 text-secondary dark:text-dark-secondary border-secondary/40 dark:border-dark-secondary/40' 
             : 'text-foreground/70 dark:text-white/80 hover:text-foreground dark:hover:text-dark-foreground hover:bg-muted/70 dark:hover:bg-dark-muted/70 border-outline/40 dark:border-dark-outline/40'"
@@ -183,12 +190,12 @@
         <!-- Settings Panel -->
         <div 
           v-if="showSettings"
-          class="absolute right-0 top-full mt-2.5 w-76 sm:w-84 bg-surface dark:bg-dark-surface border border-outline/60 dark:border-dark-outline rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-150"
+          class="fixed sm:absolute inset-x-3 sm:inset-x-auto sm:right-0 top-[74px] sm:top-full mt-0 sm:mt-2.5 w-auto sm:w-84 max-w-[calc(100vw-1.5rem)] sm:max-w-md bg-surface dark:bg-dark-surface border border-outline/60 dark:border-dark-outline rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] animate-in fade-in slide-in-from-top-2 duration-150"
         >
           <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
           <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
-          <div class="p-3.5 px-4 bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/40 dark:border-dark-outline/40 flex items-center justify-between">
+          <div class="p-3 sm:p-3.5 px-3.5 sm:px-4 bg-muted/30 dark:bg-dark-muted/30 border-b border-outline/40 dark:border-dark-outline/40 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-2">
               <Sliders class="w-3.5 h-3.5 text-secondary" />
               <span class="text-xs font-bold font-display tracking-wider uppercase text-foreground dark:text-white">
@@ -197,21 +204,21 @@
             </div>
           </div>
 
-          <div class="p-4 space-y-3.5 text-xs">
+          <div class="p-3.5 sm:p-4 space-y-3.5 text-xs overflow-y-auto flex-1">
             <!-- Theme selection -->
-            <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center justify-between gap-3">
               <span class="font-medium text-foreground dark:text-white">Color Mode</span>
-              <div class="inline-flex p-0.5 rounded-lg bg-muted dark:bg-dark-muted border border-outline/40 dark:border-dark-outline/40">
+              <div class="inline-flex p-0.5 rounded-lg bg-muted dark:bg-dark-muted border border-outline/40 dark:border-dark-outline/40 shrink-0">
                 <button 
                   @click="setTheme('Light')" 
-                  class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer"
                   :class="userSettings.theme === 'Light' ? 'bg-surface text-primary shadow-xs' : 'text-foreground/60 dark:text-white/70 hover:text-foreground'"
                 >
                   Light
                 </button>
                 <button 
                   @click="setTheme('Dark')" 
-                  class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer"
                   :class="userSettings.theme === 'Dark' ? 'bg-dark-surface text-dark-secondary shadow-xs' : 'text-foreground/60 dark:text-white/70 hover:text-foreground'"
                 >
                   Dark
@@ -220,26 +227,26 @@
             </div>
 
             <!-- Language selection -->
-            <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center justify-between gap-3">
               <span class="font-medium text-foreground dark:text-white">Language</span>
               <select 
                 v-model="userSettings.language" 
-                class="bg-muted/50 dark:bg-dark-muted/50 border border-outline/40 dark:border-dark-outline/40 rounded-lg px-2.5 py-1 text-xs text-foreground dark:text-white font-mono outline-hidden focus:border-secondary"
+                class="bg-muted/50 dark:bg-dark-muted/50 border border-outline/40 dark:border-dark-outline/40 rounded-lg px-2.5 py-1 text-xs text-foreground dark:text-white font-mono outline-hidden focus:border-secondary max-w-[140px] truncate cursor-pointer"
               >
                 <option value="English">English (EN-US)</option>
               </select>
             </div>
 
             <!-- Email Alerts Toggle -->
-            <div class="flex items-center justify-between gap-4 pt-1">
-              <div>
+            <div class="flex items-center justify-between gap-3 pt-1">
+              <div class="min-w-0 pr-1">
                 <p class="font-medium text-foreground dark:text-white">Email Alerts</p>
-                <p class="text-[10px] text-foreground/50 dark:text-white/65 font-mono">Digest of critical schedules</p>
+                <p class="text-[10px] text-foreground/50 dark:text-white/65 font-mono truncate">Digest of critical schedules</p>
               </div>
               <button 
                 type="button" 
                 @click="userSettings.emailAlerts = !userSettings.emailAlerts"
-                class="w-9 h-5 rounded-full transition-colors relative cursor-pointer"
+                class="w-9 h-5 rounded-full transition-colors relative cursor-pointer shrink-0"
                 :class="userSettings.emailAlerts ? 'bg-secondary' : 'bg-muted dark:bg-dark-muted border border-outline/40'"
               >
                 <span 
@@ -250,15 +257,15 @@
             </div>
 
             <!-- SMS Alerts Toggle -->
-            <div class="flex items-center justify-between gap-4">
-              <div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0 pr-1">
                 <p class="font-medium text-foreground dark:text-white">SMS Alerts</p>
-                <p class="text-[10px] text-foreground/50 dark:text-white/65 font-mono">Urgent session cancellations</p>
+                <p class="text-[10px] text-foreground/50 dark:text-white/65 font-mono truncate">Urgent session cancellations</p>
               </div>
               <button 
                 type="button" 
                 @click="userSettings.smsAlerts = !userSettings.smsAlerts"
-                class="w-9 h-5 rounded-full transition-colors relative cursor-pointer"
+                class="w-9 h-5 rounded-full transition-colors relative cursor-pointer shrink-0"
                 :class="userSettings.smsAlerts ? 'bg-secondary' : 'bg-muted dark:bg-dark-muted border border-outline/40'"
               >
                 <span 
@@ -269,7 +276,7 @@
             </div>
           </div>
 
-          <div class="p-3 bg-muted/20 dark:bg-dark-muted/20 border-t border-outline/40 dark:border-dark-outline/40">
+          <div class="p-3 bg-muted/20 dark:bg-dark-muted/20 border-t border-outline/40 dark:border-dark-outline/40 shrink-0">
             <button 
               @click="saveSettings" 
               class="w-full py-1.5 text-xs font-semibold text-center rounded-lg bg-primary text-surface dark:bg-dark-secondary dark:text-primary hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-1.5"
@@ -493,10 +500,14 @@ const saveSettings = () => {
   document.documentElement.lang = 'en';
 };
 
+const closeAllDropdowns = () => {
+  showNotifications.value = false;
+  showSettings.value = false;
+};
+
 const closeDropdowns = (e) => {
   if (!e.target.closest('.dropdown-wrapper')) {
-    showNotifications.value = false;
-    showSettings.value = false;
+    closeAllDropdowns();
   }
 };
 

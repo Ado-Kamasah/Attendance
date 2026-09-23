@@ -9,7 +9,7 @@
 
     <!-- Sidebar Container -->
     <aside 
-      class="fixed lg:sticky top-0 left-0 h-screen z-50 flex flex-col shrink-0 bg-[#040e1f] dark:bg-[#020712] border-r border-[#162746] dark:border-[#0e1a30] text-slate-200 transition-all duration-300 ease-in-out select-none"
+      class="fixed lg:sticky top-0 left-0 h-screen h-[100dvh] z-50 flex flex-col shrink-0 bg-[#040e1f] dark:bg-[#020712] border-r border-[#162746] dark:border-[#0e1a30] text-slate-200 transition-all duration-300 ease-in-out select-none"
       :class="[
         isCollapsed ? 'w-20' : 'w-72',
         isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'

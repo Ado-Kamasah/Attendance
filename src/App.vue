@@ -126,7 +126,7 @@ const handleRegisterSuccess = () => {
               @switch-to-login="activeAuthView = 'login'" />
   </div>
 
-  <div v-else class="flex h-screen w-full overflow-hidden bg-background text-foreground dark:bg-dark-background dark:text-white">
+  <div v-else class="flex h-screen h-[100dvh] w-full overflow-hidden bg-background text-foreground dark:bg-dark-background dark:text-white">
     <AdminSidebar 
       v-if="userRole === 'Admin' || userRole === 'Super Admin'"
       @navigate="handleNavigationEvent" 
