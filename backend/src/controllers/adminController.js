@@ -91,12 +91,53 @@ export const getLecturers = async (req, res) => {
   try {
     const lecturers = await prisma.user.findMany({
       where: { role: 'LECTURER' },
-      select: { id: true, name: true, email: true }
+      select: { id: true, name: true, email: true, employmentType: true }
     });
     res.status(200).json(lecturers);
   } catch (error) {
     console.error('Error fetching lecturers:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * Update a lecturer's employment type (Admin only)
+ * Body: { employmentType: 'Part-Time' | 'Full-Time' }
+ */
+export const updateLecturerEmploymentType = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { employmentType } = req.body;
+
+    const normalized = employmentType && employmentType.toLowerCase().includes('part')
+      ? 'Part-Time'
+      : 'Full-Time';
+
+    const lecturer = await prisma.user.update({
+      where: { id },
+      data: { employmentType: normalized },
+      select: { id: true, name: true, email: true, employmentType: true }
+    });
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: 'UPDATE_LECTURER_EMPLOYMENT',
+          details: `Admin changed lecturer ${lecturer.name} status to ${normalized}`,
+          userId: req.user?.id || 'admin',
+          userRole: req.user?.role || 'ADMIN',
+          userName: req.user?.name || 'Administrator'
+        }
+      });
+    } catch {}
+
+    res.status(200).json({
+      message: `Lecturer employment type updated to ${normalized}`,
+      lecturer
+    });
+  } catch (error) {
+    console.error('Error updating lecturer employment type:', error);
+    res.status(500).json({ message: 'Server error updating employment type', error: error.message });
   }
 };
 

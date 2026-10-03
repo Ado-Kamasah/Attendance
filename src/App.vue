@@ -33,6 +33,7 @@ import LecturerCourses from './Pages/Lecturers/MyCourses.vue';
 import AttendanceView from './Pages/Lecturers/Attendanceview.vue';
 import CourseReports from './Pages/Lecturers/CourseReports.vue';
 import AttendanceAnalytics from './Pages/Lecturers/AttendanceAnalytics.vue';
+import LecturerClassRepManagement from './Pages/Lecturers/LecturerClassRepManagement.vue';
 import Profile from './Pages/Profile/Profile.vue';
 import Notifications from './Pages/Notifications.vue';
 import { onMounted, onUnmounted } from 'vue';
@@ -169,6 +170,7 @@ const handleRegisterSuccess = () => {
         <AttendanceView v-else-if="currentRoute === '/attendance-view'" @navigate="handleNavigationEvent" />
         <CourseReports v-else-if="currentRoute === '/lecturer-reports'" />
         <AttendanceAnalytics v-else-if="currentRoute === '/attendance-analytics'" />
+        <LecturerClassRepManagement v-else-if="currentRoute === '/lecturer-classrep'" />
         <Schedule v-else-if="currentRoute === '/schedule'" />
         <SemesterSetup v-else-if="currentRoute === '/semestersetup'" />
         <Faculties v-else-if="currentRoute === '/faculties'" />

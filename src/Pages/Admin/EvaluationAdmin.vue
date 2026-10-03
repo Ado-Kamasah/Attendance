@@ -144,7 +144,7 @@
       </div>
     </div>
 
-    <!-- Filters Strip -->
+    <!-- Filters Strip + Download Actions -->
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-3 shadow-sm">
       <select 
         v-model="filterLecturer" 
@@ -173,6 +173,28 @@
           id="ea-search"
           class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline rounded-xl text-xs font-mono text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-secondary"
         />
+      </div>
+
+      <!-- Download Buttons -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          @click="downloadCSV"
+          id="ea-download-csv"
+          :disabled="filteredAnalysis.length === 0"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 cursor-pointer"
+        >
+          <FileDown class="w-3.5 h-3.5" />
+          CSV
+        </button>
+        <button
+          @click="downloadPDF"
+          id="ea-download-pdf"
+          :disabled="filteredAnalysis.length === 0"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-sky-200 dark:border-sky-800/60 bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 text-xs font-mono font-bold hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 cursor-pointer"
+        >
+          <Printer class="w-3.5 h-3.5" />
+          PDF
+        </button>
       </div>
     </div>
 
@@ -353,7 +375,9 @@ import {
   MessageSquare,
   AlertTriangle,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  FileDown,
+  Printer
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -469,4 +493,112 @@ function optColor(opt) {
 
 function rateClass(p) { return p >= 70 ? 'text-emerald-500' : p >= 45 ? 'text-amber-500' : 'text-rose-500'; }
 function rateColor(p) { return p >= 70 ? '#10b981' : p >= 45 ? '#f59e0b' : '#ef4444'; }
+
+// ── Download: CSV ─────────────────────────────────────────────────────────────
+function downloadCSV() {
+  const rows = [];
+
+  // Header row
+  const qHeaders = QUESTIONS.map(q => `"${q.text.replace(/"/g, '""')} (%)"`).join(',');
+  rows.push(`Lecturer,Courses,Total Responses,Retention %,${qHeaders},Comments Count`);
+
+  filteredAnalysis.value.forEach(lec => {
+    const name = lecturerNames.value[lec.lecturerId] ?? lec.lecturerId;
+    const courses = lec.courses.map(c => c.label).join('; ');
+    const comments = commentsFor(lec.lecturerId).length;
+    const qPcts = QUESTIONS.map(q => {
+      const qs = lec.questionStats.find(x => x.questionId === q.id);
+      return qs?.pct ?? '';
+    }).join(',');
+    rows.push(`"${name.replace(/"/g, '""')}","${courses.replace(/"/g, '""')}",${lec.totalResponses},${lec.retainedPct},${qPcts},${comments}`);
+  });
+
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `evaluation-analytics-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.value = 'CSV downloaded successfully!';
+  setTimeout(() => (toast.value = ''), 3000);
+}
+
+// ── Download: PDF (print dialog) ──────────────────────────────────────────────
+function downloadPDF() {
+  // Build a printable HTML document in a new window
+  const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Evaluation Analytics Report</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 12px; color: #1e293b; margin: 20px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .meta { color: #64748b; font-size: 11px; margin-bottom: 20px; }
+  .lecturer-block { border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 24px; overflow: hidden; break-inside: avoid; }
+  .lecturer-header { background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+  .lecturer-header h2 { font-size: 15px; margin: 0 0 4px; }
+  .courses { font-size: 10px; color: #475569; }
+  .kpi-row { display: flex; gap: 16px; margin-top: 8px; }
+  .kpi { background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 12px; }
+  .kpi .val { font-size: 18px; font-weight: bold; }
+  .kpi .lbl { font-size: 9px; text-transform: uppercase; color: #94a3b8; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th { background: #f1f5f9; text-align: left; padding: 6px 10px; font-size: 10px; text-transform: uppercase; color: #64748b; }
+  td { padding: 6px 10px; border-top: 1px solid #f1f5f9; font-size: 11px; }
+  .bar-wrap { background: #f1f5f9; border-radius: 4px; height: 6px; width: 80px; display: inline-block; vertical-align: middle; }
+  .bar-fill { height: 6px; border-radius: 4px; display: inline-block; }
+  .comments { padding: 10px 16px; background: #fffbeb; border-top: 1px solid #fde68a; }
+  .comment { border-left: 3px solid #f59e0b; padding: 4px 8px; margin: 4px 0; font-style: italic; font-size: 11px; }
+  @media print { body { margin: 0; } }
+</style></head><body>
+<h1>Evaluation Analytics Report</h1>
+<div class="meta">Generated: ${dateStr} &nbsp;|&nbsp; Total Lecturers: ${filteredAnalysis.value.length} &nbsp;|&nbsp; Total Responses: ${evalStore.evaluations.length}</div>
+`;
+
+  filteredAnalysis.value.forEach(lec => {
+    const name    = lecturerNames.value[lec.lecturerId] ?? 'Unknown';
+    const courses  = lec.courses.map(c => c.label).join(', ');
+    const comments = commentsFor(lec.lecturerId);
+    const retColor = lec.retainedPct >= 70 ? '#10b981' : lec.retainedPct >= 45 ? '#f59e0b' : '#ef4444';
+
+    html += `<div class="lecturer-block">
+<div class="lecturer-header">
+<h2>${name}</h2>
+<div class="courses">${courses || 'N/A'}</div>
+<div class="kpi-row">
+<div class="kpi"><div class="val">${lec.totalResponses}</div><div class="lbl">Responses</div></div>
+<div class="kpi"><div class="val" style="color:${retColor}">${lec.retainedPct}%</div><div class="lbl">Retention</div></div>
+</div></div>
+<table><thead><tr><th>Question</th><th>Satisfaction</th><th>Distribution</th></tr></thead><tbody>`;
+
+    lec.questionStats.forEach(qs => {
+      const pct = qs.pct ?? '—';
+      const pctNum = typeof pct === 'number' ? pct : 0;
+      const barColor = pctNum >= 70 ? '#10b981' : pctNum >= 45 ? '#f59e0b' : '#ef4444';
+      const dist = Object.entries(qs.counts || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
+      html += `<tr>
+<td>${qs.text}</td>
+<td>${typeof pct === 'number' ? pct + '%' : pct} <span class="bar-wrap"><span class="bar-fill" style="width:${pctNum}%;background:${barColor}"></span></span></td>
+<td style="color:#64748b">${dist}</td>
+</tr>`;
+    });
+    html += '</tbody></table>';
+
+    if (comments.length) {
+      html += `<div class="comments"><strong style="font-size:10px;text-transform:uppercase;color:#92400e">Student Comments (${comments.length})</strong>`;
+      comments.forEach(c => { html += `<div class="comment">${c}</div>`; });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+
+  html += '</body></html>';
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 500);
+}
 </script>

@@ -16,6 +16,7 @@ model User {
   name         String
   role         String
   program      String?
+  employmentType String?    @default("Full-Time")
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 

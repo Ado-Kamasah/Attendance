@@ -151,7 +151,8 @@ import {
   ClipboardCheck, 
   FileSpreadsheet, 
   TrendingUp, 
-  User 
+  User,
+  Users
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -190,6 +191,7 @@ const navGroups = [
       { name: 'View Attendance', path: '/attendance-view', icon: ClipboardCheck },
       { name: 'Course Reports', path: '/lecturer-reports', icon: FileSpreadsheet },
       { name: 'Attendance Analytics', path: '/attendance-analytics', icon: TrendingUp },
+      { name: 'Class Reps', path: '/lecturer-classrep', icon: Users },
       { name: 'My Profile', path: '/profile', icon: User }
     ]
   }

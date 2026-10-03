@@ -4,7 +4,7 @@ import prisma from '../config/db.js';
 // Helper: build structured claim rows for every lecturer
 // Returns an array of claim objects ready for JSON or CSV export.
 // ─────────────────────────────────────────────────────────────────────────────
-async function buildClaimsData({ lecturerId, courseId, fromDate, toDate } = {}) {
+async function buildClaimsData({ lecturerId, courseId, employmentType, fromDate, toDate } = {}) {
   const sessionWhere = {};
   if (lecturerId) sessionWhere.lecturerId = lecturerId;
   if (courseId)   sessionWhere.courseId   = courseId;
@@ -17,7 +17,7 @@ async function buildClaimsData({ lecturerId, courseId, fromDate, toDate } = {}) 
   const sessions = await prisma.session.findMany({
     where: sessionWhere,
     include: {
-      lecturer: { select: { id: true, name: true, email: true } },
+      lecturer: { select: { id: true, name: true, email: true, employmentType: true } },
       course:   { select: { id: true, code: true, name: true, credits: true } },
       attendances: { select: { status: true } },
     },
@@ -31,9 +31,10 @@ async function buildClaimsData({ lecturerId, courseId, fromDate, toDate } = {}) 
     const lKey = s.lecturerId;
     if (!map.has(lKey)) {
       map.set(lKey, {
-        lecturerId:    s.lecturer.id,
-        lecturerName:  s.lecturer.name,
-        lecturerEmail: s.lecturer.email,
+        lecturerId:     s.lecturer.id,
+        lecturerName:   s.lecturer.name,
+        lecturerEmail:  s.lecturer.email,
+        employmentType: s.lecturer.employmentType || 'Full-Time',
         courses: new Map(),
       });
     }
@@ -58,7 +59,7 @@ async function buildClaimsData({ lecturerId, courseId, fromDate, toDate } = {}) 
   }
 
   // Flatten to claim rows
-  const rows = [];
+  let rows = [];
   for (const lec of map.values()) {
     for (const course of lec.courses.values()) {
       const totalSessions   = course.sessions.length;
@@ -72,6 +73,7 @@ async function buildClaimsData({ lecturerId, courseId, fromDate, toDate } = {}) 
         lecturerId:      lec.lecturerId,
         lecturerName:    lec.lecturerName,
         lecturerEmail:   lec.lecturerEmail,
+        employmentType:  lec.employmentType || 'Full-Time',
         courseId:        course.courseId,
         courseCode:      course.courseCode,
         courseName:      course.courseName,
@@ -85,6 +87,12 @@ async function buildClaimsData({ lecturerId, courseId, fromDate, toDate } = {}) 
     }
   }
 
+  // Filter by employmentType if provided ('Part-Time' or 'Full-Time')
+  if (employmentType && employmentType !== 'all') {
+    const filterNorm = employmentType.toLowerCase().includes('part') ? 'part-time' : 'full-time';
+    rows = rows.filter(r => (r.employmentType || 'Full-Time').toLowerCase() === filterNorm);
+  }
+
   return rows;
 }
 
@@ -94,8 +102,8 @@ async function buildClaimsData({ lecturerId, courseId, fromDate, toDate } = {}) 
 // ─────────────────────────────────────────────────────────────────────────────
 export const getClaims = async (req, res) => {
   try {
-    const { lecturerId, courseId, from, to } = req.query;
-    const rows = await buildClaimsData({ lecturerId, courseId, fromDate: from, toDate: to });
+    const { lecturerId, courseId, employmentType, from, to } = req.query;
+    const rows = await buildClaimsData({ lecturerId, courseId, employmentType, fromDate: from, toDate: to });
     res.status(200).json(rows);
   } catch (error) {
     console.error('getClaims error:', error);
@@ -109,11 +117,11 @@ export const getClaims = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const downloadClaims = async (req, res) => {
   try {
-    const { lecturerId, courseId, from, to } = req.query;
-    const rows = await buildClaimsData({ lecturerId, courseId, fromDate: from, toDate: to });
+    const { lecturerId, courseId, employmentType, from, to } = req.query;
+    const rows = await buildClaimsData({ lecturerId, courseId, employmentType, fromDate: from, toDate: to });
 
     const headers = [
-      'Lecturer ID', 'Lecturer Name', 'Lecturer Email',
+      'Lecturer ID', 'Lecturer Name', 'Lecturer Email', 'Employment Type',
       'Course Code', 'Course Name', 'Credits',
       'Total Sessions', 'Total Student Slots', 'Total Present',
       'Attendance Rate (%)',
@@ -125,6 +133,7 @@ export const downloadClaims = async (req, res) => {
         `"${r.lecturerId}"`,
         `"${r.lecturerName}"`,
         `"${r.lecturerEmail}"`,
+        `"${r.employmentType || 'Full-Time'}"`,
         `"${r.courseCode}"`,
         `"${r.courseName}"`,
         r.credits,
@@ -155,7 +164,7 @@ export const getLecturers = async (req, res) => {
   try {
     const lecturers = await prisma.user.findMany({
       where:   { role: 'LECTURER' },
-      select:  { id: true, name: true, email: true },
+      select:  { id: true, name: true, email: true, employmentType: true },
       orderBy: { name: 'asc' },
     });
     res.status(200).json(lecturers);

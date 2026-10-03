@@ -60,7 +60,22 @@
             class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
           >
             <option value="">All Lecturers</option>
-            <option v-for="l in lecturers" :key="l.id" :value="l.id">{{ l.name }}</option>
+            <option v-for="l in lecturers" :key="l.id" :value="l.id">
+              {{ l.name }} ({{ l.employmentType || 'Full-Time' }})
+            </option>
+          </select>
+        </div>
+
+        <!-- Employment Type Filter -->
+        <div class="min-w-[170px]">
+          <label class="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5">Employment / Claim Basis</label>
+          <select
+            v-model="filterEmployment"
+            class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
+          >
+            <option value="">All Staff (FT & PT)</option>
+            <option value="part-time">Part-Time Only (Session Claims)</option>
+            <option value="full-time">Full-Time Only (Salaried)</option>
           </select>
         </div>
 
@@ -108,17 +123,35 @@
         <FileSpreadsheet class="w-3 h-3" />
         {{ filtered.length }} claim rows
       </span>
+      <span
+        @click="filterEmployment = filterEmployment === 'part-time' ? '' : 'part-time'"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
+        :class="{ 'ring-2 ring-amber-500': filterEmployment === 'part-time' }"
+        title="Filter by Part-Time claims"
+      >
+        <Clock class="w-3 h-3" />
+        {{ partTimeClaims.length }} Part-Time Claims ({{ partTimeSessions }} Sessions)
+      </span>
+      <span
+        @click="filterEmployment = filterEmployment === 'full-time' ? '' : 'full-time'"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+        :class="{ 'ring-2 ring-indigo-500': filterEmployment === 'full-time' }"
+        title="Filter by Full-Time staff"
+      >
+        <Briefcase class="w-3 h-3" />
+        {{ fullTimeClaims.length }} Full-Time Faculty
+      </span>
       <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-primary/5 dark:bg-secondary/10 text-primary dark:text-secondary border border-primary/20 dark:border-secondary/20">
         <Users class="w-3 h-3" />
         {{ uniqueLecturers }} lecturer{{ uniqueLecturers !== 1 ? 's' : '' }}
       </span>
-      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
-        <BookOpen class="w-3 h-3" />
-        {{ uniqueCourses }} course{{ uniqueCourses !== 1 ? 's' : '' }}
-      </span>
       <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800">
         <Calendar class="w-3 h-3" />
-        {{ totalSessions }} session{{ totalSessions !== 1 ? 's' : '' }}
+        {{ totalSessions }} total session{{ totalSessions !== 1 ? 's' : '' }}
+      </span>
+      <span v-if="partTimeSessions > 0" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+        <Coins class="w-3 h-3" />
+        Est. PT Payout: GHS {{ (partTimeSessions * 180).toLocaleString() }}
       </span>
     </div>
 
@@ -151,7 +184,7 @@
                 class="py-3 px-4 font-semibold cursor-pointer select-none hover:text-primary dark:hover:text-secondary transition-colors"
               >
                 <div class="flex items-center gap-1">
-                  Lecturer
+                  Lecturer & Type
                   <span class="text-[10px]">{{ sortKey === 'lecturerName' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
                 </div>
               </th>
@@ -170,7 +203,7 @@
                 class="py-3 px-4 font-semibold cursor-pointer select-none hover:text-primary dark:hover:text-secondary transition-colors"
               >
                 <div class="flex items-center gap-1">
-                  Sessions
+                  Verified Sessions
                   <span class="text-[10px]">{{ sortKey === 'totalSessions' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
                 </div>
               </th>
@@ -184,6 +217,9 @@
                   Attendance %
                   <span class="text-[10px]">{{ sortKey === 'attendanceRate' ? (sortDir === 'asc' ? '↑' : '↓') : '⇅' }}</span>
                 </div>
+              </th>
+              <th class="py-3 px-4 font-semibold text-right">
+                Finance Claim Basis
               </th>
             </tr>
           </thead>
@@ -200,8 +236,20 @@
                     {{ c.lecturerName.charAt(0) }}
                   </div>
                   <div>
-                    <p class="font-semibold text-slate-900 dark:text-white text-xs">{{ c.lecturerName }}</p>
-                    <p class="text-[10px] text-slate-400">{{ c.lecturerEmail }}</p>
+                    <div class="flex items-center gap-1.5">
+                      <p class="font-semibold text-slate-900 dark:text-white text-xs">{{ c.lecturerName }}</p>
+                      <span :class="[
+                        'inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-mono font-bold border',
+                        isPartTime(c)
+                          ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                          : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700'
+                      ]">
+                        <Clock v-if="isPartTime(c)" class="w-2.5 h-2.5 text-amber-500" />
+                        <Briefcase v-else class="w-2.5 h-2.5 text-indigo-500" />
+                        {{ isPartTime(c) ? 'Part-Time' : 'Full-Time' }}
+                      </span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 font-mono">{{ c.lecturerEmail }}</p>
                   </div>
                 </div>
               </td>
@@ -220,7 +268,11 @@
               </td>
 
               <!-- Sessions -->
-              <td class="py-3.5 px-4 text-center font-bold font-mono text-slate-700 dark:text-white/90">{{ c.totalSessions }}</td>
+              <td class="py-3.5 px-4 text-center font-bold font-mono text-slate-700 dark:text-white/90">
+                <span :class="isPartTime(c) ? 'text-amber-600 dark:text-amber-400 font-extrabold' : ''">
+                  {{ c.totalSessions }}
+                </span>
+              </td>
 
               <!-- Student Slots -->
               <td class="py-3.5 px-4 text-center font-bold font-mono text-slate-700 dark:text-white/90">{{ c.totalStudentSlots }}</td>
@@ -242,6 +294,28 @@
                     class="font-mono font-bold text-xs"
                     :class="c.attendanceRate >= 70 ? 'text-emerald-600 dark:text-emerald-400' : c.attendanceRate >= 45 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'"
                   >{{ c.attendanceRate }}%</span>
+                </div>
+              </td>
+
+              <!-- Finance Claim Basis & Amount -->
+              <td class="py-3.5 px-4 text-right">
+                <div v-if="isPartTime(c)" class="flex flex-col items-end">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                    <Coins class="w-3 h-3 text-amber-500" />
+                    GHS {{ (c.totalSessions * 180).toLocaleString() }}
+                  </span>
+                  <span class="text-[9px] font-mono text-slate-400 mt-0.5">
+                    {{ c.totalSessions }} sess @ GHS 180
+                  </span>
+                </div>
+                <div v-else class="flex flex-col items-end">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono text-slate-600 dark:text-white/70 bg-slate-100 dark:bg-dark-muted border border-slate-200 dark:border-dark-outline/70">
+                    <Briefcase class="w-2.5 h-2.5 text-slate-400" />
+                    Fixed Salary
+                  </span>
+                  <span class="text-[9px] font-mono text-slate-400 mt-0.5">
+                    Monthly Payroll
+                  </span>
                 </div>
               </td>
             </tr>
@@ -284,22 +358,28 @@ import {
   Calendar,
   FileSpreadsheet,
   BarChart3,
-  Loader2
+  Loader2,
+  Clock,
+  Briefcase,
+  Coins
 } from 'lucide-vue-next';
 
-const claims         = ref([]);
-const lecturers      = ref([]);
-const isLoading      = ref(true);
-const isDownloading  = ref(false);
+const claims           = ref([]);
+const lecturers        = ref([]);
+const isLoading        = ref(true);
+const isDownloading    = ref(false);
 
-const search          = ref('');
-const filterLecturer  = ref('');
-const fromDate        = ref('');
-const toDate          = ref('');
-const sortKey         = ref('lecturerName');
-const sortDir         = ref('asc');
-const page            = ref(1);
-const PAGE_SIZE       = 20;
+const search            = ref('');
+const filterLecturer    = ref('');
+const filterEmployment  = ref('');
+const fromDate          = ref('');
+const toDate            = ref('');
+const sortKey           = ref('lecturerName');
+const sortDir           = ref('asc');
+const page              = ref(1);
+const PAGE_SIZE         = 20;
+
+const isPartTime = (c) => (c.employmentType || '').toLowerCase().includes('part');
 
 // ── Data loading ──────────────────────────────────────────────────────────────
 async function loadClaims() {
@@ -307,9 +387,10 @@ async function loadClaims() {
   page.value = 1;
   try {
     const params = {};
-    if (filterLecturer.value) params.lecturerId = filterLecturer.value;
-    if (fromDate.value)        params.from = fromDate.value;
-    if (toDate.value)          params.to   = toDate.value;
+    if (filterLecturer.value)   params.lecturerId     = filterLecturer.value;
+    if (filterEmployment.value) params.employmentType = filterEmployment.value;
+    if (fromDate.value)         params.from           = fromDate.value;
+    if (toDate.value)           params.to             = toDate.value;
     const { data } = await api.get('/finance/claims', { params });
     claims.value = data;
   } catch { /* silent */ } finally {
@@ -325,7 +406,11 @@ async function loadLecturers() {
 }
 
 function resetFilters() {
-  search.value = ''; filterLecturer.value = ''; fromDate.value = ''; toDate.value = '';
+  search.value = '';
+  filterLecturer.value = '';
+  filterEmployment.value = '';
+  fromDate.value = '';
+  toDate.value = '';
   loadClaims();
 }
 
@@ -340,12 +425,20 @@ function sortBy(key) {
 // ── Filtered + sorted ─────────────────────────────────────────────────────────
 const filtered = computed(() => {
   let list = claims.value;
+  if (filterEmployment.value) {
+    if (filterEmployment.value === 'part-time') {
+      list = list.filter(c => isPartTime(c));
+    } else if (filterEmployment.value === 'full-time') {
+      list = list.filter(c => !isPartTime(c));
+    }
+  }
   if (search.value.trim()) {
     const q = search.value.toLowerCase();
     list = list.filter(c =>
       c.lecturerName.toLowerCase().includes(q) ||
       c.courseCode.toLowerCase().includes(q)   ||
-      c.courseName.toLowerCase().includes(q)
+      c.courseName.toLowerCase().includes(q)   ||
+      (c.employmentType || '').toLowerCase().includes(q)
     );
   }
   return [...list].sort((a, b) => {
@@ -359,9 +452,12 @@ const filtered = computed(() => {
 });
 
 // ── Summary computeds ─────────────────────────────────────────────────────────
-const uniqueLecturers = computed(() => new Set(filtered.value.map(c => c.lecturerId)).size);
-const uniqueCourses   = computed(() => new Set(filtered.value.map(c => c.courseId)).size);
-const totalSessions   = computed(() => filtered.value.reduce((s, c) => s + c.totalSessions, 0));
+const uniqueLecturers  = computed(() => new Set(filtered.value.map(c => c.lecturerId)).size);
+const uniqueCourses    = computed(() => new Set(filtered.value.map(c => c.courseId)).size);
+const totalSessions    = computed(() => filtered.value.reduce((s, c) => s + c.totalSessions, 0));
+const partTimeClaims   = computed(() => filtered.value.filter(c => isPartTime(c)));
+const fullTimeClaims   = computed(() => filtered.value.filter(c => !isPartTime(c)));
+const partTimeSessions = computed(() => partTimeClaims.value.reduce((s, c) => s + c.totalSessions, 0));
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)));
@@ -372,9 +468,10 @@ async function downloadCSV() {
   isDownloading.value = true;
   try {
     const params = new URLSearchParams();
-    if (filterLecturer.value) params.set('lecturerId', filterLecturer.value);
-    if (fromDate.value)        params.set('from', fromDate.value);
-    if (toDate.value)          params.set('to',   toDate.value);
+    if (filterLecturer.value)   params.set('lecturerId', filterLecturer.value);
+    if (filterEmployment.value) params.set('employmentType', filterEmployment.value);
+    if (fromDate.value)         params.set('from', fromDate.value);
+    if (toDate.value)           params.set('to',   toDate.value);
 
     const token    = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
     const baseURL  = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';

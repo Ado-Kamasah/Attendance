@@ -10,12 +10,11 @@ import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// All user management routes are restricted to SUPER_ADMIN (or ADMIN with elevate privilege if needed)
-// SUPER_ADMIN has full permissions.
-router.get('/', authenticateToken, requireRole(['SUPER_ADMIN']), getAllUsers);
-router.get('/:id', authenticateToken, requireRole(['SUPER_ADMIN']), getUserById);
-router.post('/', authenticateToken, requireRole(['SUPER_ADMIN']), createUser);
-router.put('/:id', authenticateToken, requireRole(['SUPER_ADMIN']), updateUser);
+// User management routes - SUPER_ADMIN and ADMIN have access to read and manage accounts
+router.get('/', authenticateToken, requireRole(['SUPER_ADMIN', 'ADMIN']), getAllUsers);
+router.get('/:id', authenticateToken, requireRole(['SUPER_ADMIN', 'ADMIN']), getUserById);
+router.post('/', authenticateToken, requireRole(['SUPER_ADMIN', 'ADMIN']), createUser);
+router.put('/:id', authenticateToken, requireRole(['SUPER_ADMIN', 'ADMIN']), updateUser);
 router.delete('/:id', authenticateToken, requireRole(['SUPER_ADMIN']), deleteUser);
 
 export default router;

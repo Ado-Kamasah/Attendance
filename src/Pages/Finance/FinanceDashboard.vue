@@ -47,11 +47,21 @@
               <Users class="w-4.5 h-4.5" />
             </div>
           </div>
-          <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-3xl font-extrabold font-display text-foreground dark:text-white">
-              {{ totalLecturers }}
-            </span>
-            <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Active Faculty</span>
+          <div class="mt-3 flex items-baseline justify-between gap-2">
+            <div class="flex items-baseline gap-2">
+              <span class="text-3xl font-extrabold font-display text-foreground dark:text-white">
+                {{ totalLecturers }}
+              </span>
+              <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65">Active</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-[10px] font-mono">
+              <span class="px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" title="Part-Time Lecturers (Session Claims)">
+                {{ partTimeCount }} PT
+              </span>
+              <span class="px-2 py-0.5 rounded-full font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20" title="Full-Time Faculty (Salaried)">
+                {{ fullTimeCount }} FT
+              </span>
+            </div>
           </div>
         </div>
 
@@ -162,9 +172,21 @@
                       {{ lec.lecturerName.charAt(0) }}
                     </div>
                     <div class="min-w-0">
-                      <p class="font-semibold text-foreground dark:text-white truncate">
-                        {{ lec.lecturerName }}
-                      </p>
+                      <div class="flex items-center gap-1.5">
+                        <p class="font-semibold text-foreground dark:text-white truncate">
+                          {{ lec.lecturerName }}
+                        </p>
+                        <span :class="[
+                          'inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-mono font-bold border',
+                          (lec.employmentType || '').toLowerCase().includes('part')
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                            : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30'
+                        ]">
+                          <Clock v-if="(lec.employmentType || '').toLowerCase().includes('part')" class="w-2.5 h-2.5" />
+                          <Briefcase v-else class="w-2.5 h-2.5" />
+                          {{ (lec.employmentType || '').toLowerCase().includes('part') ? 'PT' : 'FT' }}
+                        </span>
+                      </div>
                       <p class="text-[11px] font-mono text-foreground/50 md:hidden truncate">
                         {{ lec.lecturerEmail }}
                       </p>
@@ -219,7 +241,9 @@ import {
   BookOpen, 
   FileSpreadsheet, 
   ChevronRight, 
-  RefreshCw 
+  RefreshCw,
+  Clock,
+  Briefcase
 } from 'lucide-vue-next';
 
 defineEmits(['navigate']);
@@ -246,17 +270,32 @@ const avgAttendance  = computed(() => {
   return Math.round(sum / claims.value.length);
 });
 
+const partTimeCount = computed(() => {
+  const map = new Map();
+  for (const c of claims.value) {
+    if (!map.has(c.lecturerId)) {
+      map.set(c.lecturerId, (c.employmentType || '').toLowerCase().includes('part'));
+    }
+  }
+  return [...map.values()].filter(Boolean).length;
+});
+
+const fullTimeCount = computed(() => {
+  return Math.max(0, totalLecturers.value - partTimeCount.value);
+});
+
 const topLecturers = computed(() => {
   const map = new Map();
   for (const c of claims.value) {
     if (!map.has(c.lecturerId)) {
       map.set(c.lecturerId, {
-        lecturerId:   c.lecturerId,
-        lecturerName: c.lecturerName,
-        lecturerEmail: c.lecturerEmail,
-        totalSessions: 0,
-        rateSum: 0,
-        count: 0,
+        lecturerId:     c.lecturerId,
+        lecturerName:   c.lecturerName,
+        lecturerEmail:  c.lecturerEmail,
+        employmentType: c.employmentType || 'Full-Time',
+        totalSessions:  0,
+        rateSum:        0,
+        count:          0,
       });
     }
     const l = map.get(c.lecturerId);

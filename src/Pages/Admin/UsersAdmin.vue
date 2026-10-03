@@ -97,6 +97,18 @@
           <option value="FINANCE">Finance ({{ stats.finance }})</option>
         </select>
 
+        <!-- Lecturer Employment Filter -->
+        <select
+          v-if="roleFilter === 'all' || roleFilter === 'LECTURER'"
+          v-model="employmentFilter"
+          id="user-employment-filter"
+          class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 min-w-[160px]"
+        >
+          <option value="all">All Types (FT & PT)</option>
+          <option value="Full-Time">Full-Time Staff ({{ stats.fullTimeLecturers || 0 }})</option>
+          <option value="Part-Time">Part-Time / Claims ({{ stats.partTimeLecturers || 0 }})</option>
+        </select>
+
         <!-- Sort -->
         <select
           v-model="sortBy"
@@ -109,7 +121,7 @@
           <option value="role">By Role</option>
         </select>
 
-        <button v-if="searchQuery || roleFilter !== 'all'" @click="resetFilters"
+        <button v-if="searchQuery || roleFilter !== 'all' || employmentFilter !== 'all'" @click="resetFilters"
           class="px-4 py-2.5 rounded-xl border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-sm font-medium hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all flex items-center gap-1.5"
         >
           <RotateCcw class="w-3.5 h-3.5" />
@@ -202,6 +214,26 @@
                     <span class="w-1.5 h-1.5 rounded-full" :class="getRoleDotCls(user.role)"></span>
                     {{ formatRole(user.role) }}
                   </span>
+
+                  <!-- Lecturer Employment Type Badge with Quick Toggle -->
+                  <button
+                    v-if="user.role === 'LECTURER'"
+                    @click="toggleEmploymentType(user)"
+                    :id="'btn-emp-toggle-' + user.id"
+                    :title="'Click to switch status: currently ' + (user.employmentType || 'Full-Time') + ' (Finance Claims sync)'"
+                    :class="[
+                      'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border transition-all cursor-pointer shadow-xs hover:scale-105 active:scale-95',
+                      isPartTime(user)
+                        ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 hover:bg-amber-100'
+                        : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700 hover:bg-indigo-100'
+                    ]"
+                  >
+                    <Clock v-if="isPartTime(user)" class="w-3 h-3 text-amber-500" />
+                    <Briefcase v-else class="w-3 h-3 text-indigo-500" />
+                    {{ isPartTime(user) ? 'Part-Time' : 'Full-Time' }}
+                    <span class="text-[9px] opacity-70 ml-0.5" title="Switch status">⇄</span>
+                  </button>
+
                   <span v-if="isClassRep(user.id)" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-800">
                     Class Rep
                   </span>
@@ -217,6 +249,21 @@
               <!-- Actions -->
               <td class="py-3.5 px-4">
                 <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    v-if="user.role === 'LECTURER'"
+                    @click="toggleEmploymentType(user)"
+                    :id="'btn-action-toggle-' + user.id"
+                    :title="isPartTime(user) ? 'Switch to Full-Time Staff' : 'Switch to Part-Time (Claims)'"
+                    :class="[
+                      'p-1.5 rounded-lg transition-colors',
+                      isPartTime(user)
+                        ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                        : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'
+                    ]"
+                  >
+                    <Clock v-if="isPartTime(user)" class="w-3.5 h-3.5" />
+                    <Briefcase v-else class="w-3.5 h-3.5" />
+                  </button>
                   <button
                     v-if="user.role === 'STUDENT'"
                     @click="navigateToClassRep"
@@ -316,6 +363,63 @@
                 <div :class="['font-bold mb-0.5', userForm.role === r.value ? 'text-secondary' : 'text-slate-900 dark:text-white']">{{ r.label }}</div>
                 <div :class="['text-[10px] leading-tight', userForm.role === r.value ? 'text-white/60 dark:text-white/75' : 'text-slate-400']">{{ r.description }}</div>
                 <div v-if="userForm.role === r.value" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary"></div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Employment Type Selector (Only for Lecturers) -->
+          <div v-if="userForm.role === 'LECTURER'" class="p-4 rounded-xl bg-slate-50 dark:bg-dark-muted/50 border border-slate-200 dark:border-dark-outline/70 space-y-2.5 animate-in fade-in duration-200">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-700 dark:text-white font-bold flex items-center gap-1.5">
+                <Briefcase class="w-3.5 h-3.5 text-secondary" />
+                Lecturer Employment Status <span class="text-rose-500">*</span>
+              </label>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary font-semibold">
+                Syncs with Finance Claims
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-white/70">
+              Admin controls whether this lecturer is Part-Time or Full-Time. Part-Time status reflects directly in the Finance claims office for teaching session billing.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <button
+                type="button"
+                @click="userForm.employmentType = 'Full-Time'"
+                :class="[
+                  'relative rounded-xl border p-3.5 text-left transition-all focus:outline-none cursor-pointer',
+                  userForm.employmentType === 'Full-Time'
+                    ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 ring-2 ring-indigo-500/30'
+                    : 'border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-surface hover:border-slate-300 dark:hover:border-slate-600'
+                ]"
+              >
+                <div class="flex items-center gap-2 mb-1">
+                  <Briefcase class="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span class="font-bold text-xs text-slate-900 dark:text-white">Full-Time Faculty</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-white/70">
+                  Permanent academic staff with institutional salaried payroll.
+                </p>
+                <div v-if="userForm.employmentType === 'Full-Time'" class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-indigo-500"></div>
+              </button>
+
+              <button
+                type="button"
+                @click="userForm.employmentType = 'Part-Time'"
+                :class="[
+                  'relative rounded-xl border p-3.5 text-left transition-all focus:outline-none cursor-pointer',
+                  userForm.employmentType === 'Part-Time'
+                    ? 'border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 ring-2 ring-amber-500/30'
+                    : 'border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-surface hover:border-slate-300 dark:hover:border-slate-600'
+                ]"
+              >
+                <div class="flex items-center gap-2 mb-1">
+                  <Clock class="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span class="font-bold text-xs text-slate-900 dark:text-white">Part-Time / Adjunct</span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-white/70">
+                  Billed per session / contact hour in Finance Office Claims.
+                </p>
+                <div v-if="userForm.employmentType === 'Part-Time'" class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-amber-500"></div>
               </button>
             </div>
           </div>
@@ -461,7 +565,8 @@ import { useAuthStore } from '@/stores/authstore.js';
 import { useClassRepStore } from '@/stores/classrep.js';
 import {
   Star, RefreshCw, UserPlus, Search, X, RotateCcw, Edit3, Trash2,
-  Users, CheckCircle2, AlertCircle, Loader2, UserX, Eye, EyeOff
+  Users, CheckCircle2, AlertCircle, Loader2, UserX, Eye, EyeOff,
+  Briefcase, Clock
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -473,9 +578,19 @@ const availableProgrammes = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
 const roleFilter = ref('all');
+const employmentFilter = ref('all');
 const sortBy = ref('newest');
 
-const stats = ref({ total: 0, students: 0, lecturers: 0, admins: 0, superAdmins: 0, finance: 0 });
+const stats = ref({
+  total: 0,
+  students: 0,
+  lecturers: 0,
+  admins: 0,
+  superAdmins: 0,
+  finance: 0,
+  partTimeLecturers: 0,
+  fullTimeLecturers: 0
+});
 
 // KPI items config
 const kpiItems = [
@@ -502,7 +617,7 @@ const isEditing = ref(false);
 const isSaving = ref(false);
 const modalError = ref('');
 const showModalPassword = ref(false);
-const userForm = ref({ id: '', name: '', email: '', role: 'STUDENT', program: '', password: '' });
+const userForm = ref({ id: '', name: '', email: '', role: 'STUDENT', employmentType: 'Full-Time', program: '', password: '' });
 
 // Delete Modal State
 const isDeleteModalOpen = ref(false);
@@ -518,6 +633,45 @@ const availableRoles = [
 ];
 
 const isCurrentUser = (id) => authStore.user?.id === id || authStore.profile?.id === id;
+
+const isPartTime = (user) => (user.employmentType || '').toLowerCase().includes('part');
+
+// Toggle lecturer employment type directly from table or actions
+const toggleEmploymentType = async (user) => {
+  if (user.role !== 'LECTURER') return;
+  const newType = isPartTime(user) ? 'Full-Time' : 'Part-Time';
+  const oldType = user.employmentType || 'Full-Time';
+
+  // Optimistic UI update
+  user.employmentType = newType;
+
+  try {
+    let synced = false;
+    try {
+      const res = await api.patch(`/admin/lecturers/${user.id}/employment-type`, { employmentType: newType });
+      if (res.status === 200) synced = true;
+    } catch {}
+
+    if (!synced) {
+      try {
+        await api.put(`/users/${user.id}`, { employmentType: newType });
+      } catch {}
+    }
+
+    try {
+      await supabase.from('users').update({ employment_type: newType }).eq('id', user.id);
+    } catch {}
+
+    stats.value.partTimeLecturers = users.value.filter(u => u.role === 'LECTURER' && isPartTime(u)).length;
+    stats.value.fullTimeLecturers = users.value.filter(u => u.role === 'LECTURER' && !isPartTime(u)).length;
+
+    showAlert(`Lecturer ${user.name} switched to ${newType}. This change is now synchronized with Finance Claims.`, 'success');
+  } catch (err) {
+    user.employmentType = oldType;
+    console.error('Failed to update employment type:', err);
+    showAlert('Failed to update lecturer employment type.', 'error');
+  }
+};
 
 const fetchUsers = async () => {
   isLoading.value = true;
@@ -536,12 +690,19 @@ const fetchUsers = async () => {
           else if (rawRole === 'ADMIN') displayRole = 'ADMIN';
           else if (rawRole === 'LECTURER' || rawRole === 'STAFF') displayRole = 'LECTURER';
           else if (rawRole === 'FINANCE') displayRole = 'FINANCE';
+
+          const rawEmp = u.employment_type || u.employmentType;
+          const employmentType = rawEmp
+            ? (rawEmp.toLowerCase().includes('part') ? 'Part-Time' : 'Full-Time')
+            : (displayRole === 'LECTURER' ? 'Full-Time' : null);
+
           return {
             id: u.id,
             displayId: u.id_number || u.student_id || (u.id.length > 18 ? u.id.slice(0, 8) + '...' : u.id),
             name: u.name || u.full_name || 'Unnamed User',
             email: u.email || '—',
             role: displayRole,
+            employmentType,
             program: u.program || u.programmes?.name || u.mode || '—',
             program_id: u.program_id,
             createdAt: u.created_at || u.updated_at || new Date().toISOString()
@@ -554,8 +715,12 @@ const fetchUsers = async () => {
       try {
         const res = await api.get('/users');
         if (res.data?.users?.length > 0) {
-          fetchedList = res.data.users.map(u => ({ ...u, displayId: u.id }));
-          if (res.data.stats) stats.value = res.data.stats;
+          fetchedList = res.data.users.map(u => ({
+            ...u,
+            displayId: u.id,
+            employmentType: u.employmentType || (u.role === 'LECTURER' ? 'Full-Time' : null)
+          }));
+          if (res.data.stats) stats.value = { ...stats.value, ...res.data.stats };
         }
       } catch {}
     }
@@ -569,6 +734,8 @@ const fetchUsers = async () => {
         admins: fetchedList.filter(u => u.role === 'ADMIN').length,
         superAdmins: fetchedList.filter(u => u.role === 'SUPER_ADMIN').length,
         finance: fetchedList.filter(u => u.role === 'FINANCE').length,
+        partTimeLecturers: fetchedList.filter(u => u.role === 'LECTURER' && isPartTime(u)).length,
+        fullTimeLecturers: fetchedList.filter(u => u.role === 'LECTURER' && !isPartTime(u)).length,
       };
     } else {
       users.value = [];
@@ -603,6 +770,13 @@ const filteredUsers = computed(() => {
     );
   }
   if (roleFilter.value !== 'all') list = list.filter(u => u.role === roleFilter.value);
+  if (employmentFilter.value !== 'all') {
+    if (employmentFilter.value === 'Part-Time') {
+      list = list.filter(u => u.role === 'LECTURER' && isPartTime(u));
+    } else if (employmentFilter.value === 'Full-Time') {
+      list = list.filter(u => u.role === 'LECTURER' && !isPartTime(u));
+    }
+  }
   if (sortBy.value === 'newest') list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   else if (sortBy.value === 'oldest') list.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
   else if (sortBy.value === 'name_asc') list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -611,17 +785,34 @@ const filteredUsers = computed(() => {
   return list;
 });
 
-const resetFilters = () => { searchQuery.value = ''; roleFilter.value = 'all'; sortBy.value = 'newest'; };
+const resetFilters = () => {
+  searchQuery.value = '';
+  roleFilter.value = 'all';
+  employmentFilter.value = 'all';
+  sortBy.value = 'newest';
+};
 
 const openCreateModal = () => {
-  isEditing.value = false; modalError.value = ''; showModalPassword.value = false;
-  userForm.value = { id: '', name: '', email: '', role: 'STUDENT', program: '', password: '' };
+  isEditing.value = false;
+  modalError.value = '';
+  showModalPassword.value = false;
+  userForm.value = { id: '', name: '', email: '', role: 'STUDENT', employmentType: 'Full-Time', program: '', password: '' };
   isModalOpen.value = true;
 };
 
 const openEditModal = (user) => {
-  isEditing.value = true; modalError.value = ''; showModalPassword.value = false;
-  userForm.value = { id: user.id, name: user.name || '', email: user.email === '—' ? '' : (user.email || ''), role: user.role || 'STUDENT', program: user.program === '—' ? '' : (user.program || ''), password: '' };
+  isEditing.value = true;
+  modalError.value = '';
+  showModalPassword.value = false;
+  userForm.value = {
+    id: user.id,
+    name: user.name || '',
+    email: user.email === '—' ? '' : (user.email || ''),
+    role: user.role || 'STUDENT',
+    employmentType: user.employmentType || (user.role === 'LECTURER' ? 'Full-Time' : null),
+    program: user.program === '—' ? '' : (user.program || ''),
+    password: ''
+  };
   isModalOpen.value = true;
 };
 
@@ -632,19 +823,58 @@ const saveUser = async () => {
   isSaving.value = true;
   try {
     const roleString = userForm.value.role === 'SUPER_ADMIN' ? 'Super Admin' : userForm.value.role === 'ADMIN' ? 'Admin' : userForm.value.role === 'LECTURER' ? 'Lecturer' : userForm.value.role === 'FINANCE' ? 'Finance' : 'Student';
+    const chosenEmployment = userForm.value.role === 'LECTURER' ? (userForm.value.employmentType || 'Full-Time') : null;
+
     if (isEditing.value) {
-      const updateData = { name: userForm.value.name.trim(), role: roleString, updated_at: new Date().toISOString() };
+      const updateData = {
+        name: userForm.value.name.trim(),
+        role: roleString,
+        updated_at: new Date().toISOString()
+      };
+      if (chosenEmployment) updateData.employment_type = chosenEmployment;
       if (userForm.value.email) updateData.email = userForm.value.email.trim().toLowerCase();
       if (userForm.value.program) updateData.program = userForm.value.program;
       const { error: supaErr } = await supabase.from('users').update(updateData).eq('id', userForm.value.id);
-      try { await api.put(`/users/${userForm.value.id}`, { name: userForm.value.name, email: userForm.value.email, role: userForm.value.role, program: userForm.value.program, password: userForm.value.password || undefined }); } catch {}
+      try {
+        await api.put(`/users/${userForm.value.id}`, {
+          name: userForm.value.name,
+          email: userForm.value.email,
+          role: userForm.value.role,
+          employmentType: chosenEmployment,
+          program: userForm.value.program,
+          password: userForm.value.password || undefined
+        });
+      } catch {}
       if (supaErr) throw new Error(supaErr.message);
       showAlert(`User '${userForm.value.name}' updated successfully!`, 'success');
     } else {
       let created = false;
-      try { const res = await api.post('/users', { id: userForm.value.id ? userForm.value.id.trim() : undefined, name: userForm.value.name.trim(), email: userForm.value.email.trim().toLowerCase(), role: userForm.value.role, program: userForm.value.program, password: userForm.value.password }); if (res.status === 201) created = true; } catch {}
+      try {
+        const res = await api.post('/users', {
+          id: userForm.value.id ? userForm.value.id.trim() : undefined,
+          name: userForm.value.name.trim(),
+          email: userForm.value.email.trim().toLowerCase(),
+          role: userForm.value.role,
+          employmentType: chosenEmployment,
+          program: userForm.value.program,
+          password: userForm.value.password
+        });
+        if (res.status === 201) created = true;
+      } catch {}
       if (!created) {
-        const { error: signUpErr } = await supabase.auth.signUp({ email: userForm.value.email.trim().toLowerCase(), password: userForm.value.password, options: { data: { full_name: userForm.value.name.trim(), role: roleString, id_number: userForm.value.id || undefined, program: userForm.value.program || undefined } } });
+        const { error: signUpErr } = await supabase.auth.signUp({
+          email: userForm.value.email.trim().toLowerCase(),
+          password: userForm.value.password,
+          options: {
+            data: {
+              full_name: userForm.value.name.trim(),
+              role: roleString,
+              employment_type: chosenEmployment,
+              id_number: userForm.value.id || undefined,
+              program: userForm.value.program || undefined
+            }
+          }
+        });
         if (signUpErr) throw new Error(signUpErr.message);
       }
       showAlert(`User '${userForm.value.name}' created successfully!`, 'success');

@@ -27,7 +27,7 @@ export const getAllUsers = async (req, res) => {
       ];
     }
 
-    const [users, totalCount, studentCount, lecturerCount, adminCount, superAdminCount, financeCount] = await Promise.all([
+    const [users, totalCount, studentCount, lecturerCount, adminCount, superAdminCount, financeCount, partTimeCount, fullTimeCount] = await Promise.all([
       prisma.user.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -37,6 +37,7 @@ export const getAllUsers = async (req, res) => {
           email: true,
           role: true,
           program: true,
+          employmentType: true,
           createdAt: true,
           updatedAt: true,
           _count: {
@@ -53,7 +54,9 @@ export const getAllUsers = async (req, res) => {
       prisma.user.count({ where: { role: 'LECTURER' } }),
       prisma.user.count({ where: { role: 'ADMIN' } }),
       prisma.user.count({ where: { role: 'SUPER_ADMIN' } }),
-      prisma.user.count({ where: { role: 'FINANCE' } })
+      prisma.user.count({ where: { role: 'FINANCE' } }),
+      prisma.user.count({ where: { role: 'LECTURER', employmentType: 'Part-Time' } }),
+      prisma.user.count({ where: { role: 'LECTURER', employmentType: 'Full-Time' } })
     ]);
 
     res.status(200).json({
@@ -64,7 +67,9 @@ export const getAllUsers = async (req, res) => {
         lecturers: lecturerCount,
         admins: adminCount,
         superAdmins: superAdminCount,
-        finance: financeCount
+        finance: financeCount,
+        partTimeLecturers: partTimeCount,
+        fullTimeLecturers: fullTimeCount
       }
     });
   } catch (error) {
@@ -87,6 +92,7 @@ export const getUserById = async (req, res) => {
         email: true,
         role: true,
         program: true,
+        employmentType: true,
         createdAt: true,
         updatedAt: true
       }
@@ -108,7 +114,7 @@ export const getUserById = async (req, res) => {
  */
 export const createUser = async (req, res) => {
   try {
-    const { id, name, email, role, password, program } = req.body;
+    const { id, name, email, role, password, program, employmentType } = req.body;
 
     if (!name || !email || !role || !password) {
       return res.status(400).json({ message: 'Name, email, role, and password are required' });
@@ -126,6 +132,14 @@ export const createUser = async (req, res) => {
     const validRoles = ['STUDENT', 'LECTURER', 'ADMIN', 'FINANCE', 'SUPER_ADMIN'];
     if (!validRoles.includes(normalizedRole)) {
       return res.status(400).json({ message: `Invalid role. Allowed: ${validRoles.join(', ')}` });
+    }
+
+    // Normalize employmentType for lecturers (defaults to Full-Time)
+    let normalizedEmployment = null;
+    if (normalizedRole === 'LECTURER') {
+      normalizedEmployment = employmentType && employmentType.toLowerCase().includes('part')
+        ? 'Part-Time'
+        : 'Full-Time';
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -165,7 +179,8 @@ export const createUser = async (req, res) => {
         email: cleanEmail,
         passwordHash,
         role: normalizedRole,
-        program: program ? program.trim() : null
+        program: program ? program.trim() : null,
+        employmentType: normalizedEmployment
       },
       select: {
         id: true,
@@ -173,6 +188,7 @@ export const createUser = async (req, res) => {
         email: true,
         role: true,
         program: true,
+        employmentType: true,
         createdAt: true,
         updatedAt: true
       }
@@ -209,7 +225,7 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role, program, password } = req.body;
+    const { name, email, role, program, password, employmentType } = req.body;
 
     const existingUser = await prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
@@ -245,6 +261,16 @@ export const updateUser = async (req, res) => {
       updateData.role = normalizedRole;
     }
 
+    if (employmentType !== undefined) {
+      if (employmentType === null || employmentType === '') {
+        updateData.employmentType = null;
+      } else {
+        updateData.employmentType = employmentType.toLowerCase().includes('part')
+          ? 'Part-Time'
+          : 'Full-Time';
+      }
+    }
+
     if (program !== undefined) {
       updateData.program = program ? program.trim() : null;
     }
@@ -266,6 +292,7 @@ export const updateUser = async (req, res) => {
         email: true,
         role: true,
         program: true,
+        employmentType: true,
         createdAt: true,
         updatedAt: true
       }
