@@ -645,19 +645,27 @@ const toggleEmploymentType = async (user) => {
   // Optimistic UI update
   user.employmentType = newType;
 
+  // Persist locally in localStorage immediately
   try {
-    let synced = false;
-    try {
-      const res = await api.patch(`/admin/lecturers/${user.id}/employment-type`, { employmentType: newType });
-      if (res.status === 200) synced = true;
-    } catch {}
+    const localMap = JSON.parse(localStorage.getItem('lecturer_employment_types') || '{}');
+    localMap[user.id] = newType;
+    if (user.email) localMap[user.email.toLowerCase()] = newType;
+    localStorage.setItem('lecturer_employment_types', JSON.stringify(localMap));
+  } catch {}
 
-    if (!synced) {
-      try {
-        await api.put(`/users/${user.id}`, { employmentType: newType });
-      } catch {}
+  try {
+    // 1. Sync with backend API (persists in dev.db / SQLite)
+    try {
+      await api.patch(`/admin/lecturers/${user.id}/employment-type`, {
+        employmentType: newType,
+        name: user.name,
+        email: user.email
+      });
+    } catch (apiErr) {
+      console.warn('Backend patch notice:', apiErr.message);
     }
 
+    // 2. Try Supabase update (safely caught if column not yet added to PostgreSQL)
     try {
       await supabase.from('users').update({ employment_type: newType }).eq('id', user.id);
     } catch {}
@@ -665,7 +673,7 @@ const toggleEmploymentType = async (user) => {
     stats.value.partTimeLecturers = users.value.filter(u => u.role === 'LECTURER' && isPartTime(u)).length;
     stats.value.fullTimeLecturers = users.value.filter(u => u.role === 'LECTURER' && !isPartTime(u)).length;
 
-    showAlert(`Lecturer ${user.name} switched to ${newType}. This change is now synchronized with Finance Claims.`, 'success');
+    showAlert(`Lecturer ${user.name} is now set as ${newType}.`, 'success');
   } catch (err) {
     user.employmentType = oldType;
     console.error('Failed to update employment type:', err);
@@ -676,54 +684,90 @@ const toggleEmploymentType = async (user) => {
 const fetchUsers = async () => {
   isLoading.value = true;
   try {
-    let fetchedList = null;
+    // Read local cache first
+    let localEmpMap = {};
+    try {
+      localEmpMap = JSON.parse(localStorage.getItem('lecturer_employment_types') || '{}');
+    } catch {}
+
+    // Also fetch backend lecturer employment statuses
+    let backendEmpMap = {};
+    try {
+      const { data: bLecturers } = await api.get('/admin/lecturers');
+      if (Array.isArray(bLecturers)) {
+        bLecturers.forEach(l => {
+          if (l.id && l.employmentType) backendEmpMap[l.id] = l.employmentType;
+          if (l.email && l.employmentType) backendEmpMap[l.email.toLowerCase()] = l.employmentType;
+        });
+      }
+    } catch {}
+
+    const userMap = new Map();
+
+    const normalizeUser = (u) => {
+      if (!u) return;
+      const rawRole = (u.role || 'Student').toUpperCase().replace(/[\s_-]+/g, '_');
+      let displayRole = 'STUDENT';
+      if (rawRole.includes('SUPER')) displayRole = 'SUPER_ADMIN';
+      else if (rawRole === 'ADMIN') displayRole = 'ADMIN';
+      else if (rawRole === 'LECTURER' || rawRole === 'STAFF') displayRole = 'LECTURER';
+      else if (rawRole === 'FINANCE') displayRole = 'FINANCE';
+
+      const idKey = (u.id || '').toString().trim();
+      const emailKey = (u.email || '').toString().trim().toLowerCase();
+      const dedupeKey = (emailKey && emailKey !== '—') ? `email:${emailKey}` : `id:${idKey}`;
+      if (!dedupeKey || dedupeKey === 'id:') return;
+
+      const existing = userMap.get(dedupeKey) || (idKey ? userMap.get(`id:${idKey}`) : null);
+
+      const rawEmp = u.employment_type || u.employmentType || (idKey ? backendEmpMap[idKey] : null) || (emailKey ? backendEmpMap[emailKey] : null) || (idKey ? localEmpMap[idKey] : null) || (emailKey ? localEmpMap[emailKey] : null) || existing?.employmentType;
+      const employmentType = rawEmp
+        ? (rawEmp.toLowerCase().includes('part') ? 'Part-Time' : 'Full-Time')
+        : (displayRole === 'LECTURER' ? 'Full-Time' : null);
+
+      const resolved = {
+        id: idKey || existing?.id,
+        displayId: u.id_number || u.student_id || u.displayId || existing?.displayId || (idKey.length > 18 ? idKey.slice(0, 8) + '...' : idKey),
+        name: u.name || u.full_name || existing?.name || 'Unnamed User',
+        email: u.email && u.email !== '—' ? u.email : (existing?.email || '—'),
+        role: displayRole,
+        employmentType,
+        program: u.program || u.programmes?.name || u.mode || existing?.program || '—',
+        program_id: u.program_id || existing?.program_id,
+        createdAt: u.created_at || u.createdAt || u.updated_at || existing?.createdAt || new Date().toISOString()
+      };
+
+      userMap.set(dedupeKey, resolved);
+      if (idKey) userMap.set(`id:${idKey}`, resolved);
+      if (emailKey && emailKey !== '—') userMap.set(`email:${emailKey}`, resolved);
+    };
+
+    // 1. Ingest Supabase users
     try {
       const { data: supaUsers, error: supaErr } = await supabase
         .from('users')
         .select('*, programmes(id, name)')
         .order('created_at', { ascending: false });
       if (!supaErr && supaUsers && supaUsers.length > 0) {
-        fetchedList = supaUsers.map(u => {
-          const rawRole = (u.role || 'Student').toUpperCase().replace(/[\s_-]+/g, '_');
-          let displayRole = 'STUDENT';
-          if (rawRole.includes('SUPER')) displayRole = 'SUPER_ADMIN';
-          else if (rawRole === 'ADMIN') displayRole = 'ADMIN';
-          else if (rawRole === 'LECTURER' || rawRole === 'STAFF') displayRole = 'LECTURER';
-          else if (rawRole === 'FINANCE') displayRole = 'FINANCE';
-
-          const rawEmp = u.employment_type || u.employmentType;
-          const employmentType = rawEmp
-            ? (rawEmp.toLowerCase().includes('part') ? 'Part-Time' : 'Full-Time')
-            : (displayRole === 'LECTURER' ? 'Full-Time' : null);
-
-          return {
-            id: u.id,
-            displayId: u.id_number || u.student_id || (u.id.length > 18 ? u.id.slice(0, 8) + '...' : u.id),
-            name: u.name || u.full_name || 'Unnamed User',
-            email: u.email || '—',
-            role: displayRole,
-            employmentType,
-            program: u.program || u.programmes?.name || u.mode || '—',
-            program_id: u.program_id,
-            createdAt: u.created_at || u.updated_at || new Date().toISOString()
-          };
-        });
+        supaUsers.forEach(normalizeUser);
       }
     } catch {}
 
-    if (!fetchedList || fetchedList.length === 0) {
-      try {
-        const res = await api.get('/users');
-        if (res.data?.users?.length > 0) {
-          fetchedList = res.data.users.map(u => ({
-            ...u,
-            displayId: u.id,
-            employmentType: u.employmentType || (u.role === 'LECTURER' ? 'Full-Time' : null)
-          }));
-          if (res.data.stats) stats.value = { ...stats.value, ...res.data.stats };
-        }
-      } catch {}
-    }
+    // 2. Ingest Backend users
+    try {
+      const res = await api.get('/users');
+      if (res.data?.users?.length > 0) {
+        res.data.users.forEach(normalizeUser);
+      }
+    } catch {}
+
+    // 3. Ingest custom created lecturers
+    try {
+      const customLecturers = JSON.parse(localStorage.getItem('custom_created_lecturers') || '[]');
+      customLecturers.forEach(normalizeUser);
+    } catch {}
+
+    const fetchedList = Array.from(new Set(userMap.values()));
 
     if (fetchedList) {
       users.value = fetchedList;
@@ -831,21 +875,38 @@ const saveUser = async () => {
         role: roleString,
         updated_at: new Date().toISOString()
       };
-      if (chosenEmployment) updateData.employment_type = chosenEmployment;
       if (userForm.value.email) updateData.email = userForm.value.email.trim().toLowerCase();
       if (userForm.value.program) updateData.program = userForm.value.program;
-      const { error: supaErr } = await supabase.from('users').update(updateData).eq('id', userForm.value.id);
+
+      // Cache locally
+      if (chosenEmployment) {
+        try {
+          const localMap = JSON.parse(localStorage.getItem('lecturer_employment_types') || '{}');
+          localMap[userForm.value.id] = chosenEmployment;
+          if (userForm.value.email) localMap[userForm.value.email.toLowerCase()] = chosenEmployment;
+          localStorage.setItem('lecturer_employment_types', JSON.stringify(localMap));
+        } catch {}
+      }
+
+      // Sync backend
       try {
-        await api.put(`/users/${userForm.value.id}`, {
-          name: userForm.value.name,
-          email: userForm.value.email,
-          role: userForm.value.role,
+        await api.patch(`/admin/lecturers/${userForm.value.id}/employment-type`, {
           employmentType: chosenEmployment,
-          program: userForm.value.program,
-          password: userForm.value.password || undefined
+          name: userForm.value.name,
+          email: userForm.value.email
         });
       } catch {}
-      if (supaErr) throw new Error(supaErr.message);
+
+      // Supabase update: try with employment_type first, fallback if column does not exist
+      if (chosenEmployment) {
+        const { error: supaErr } = await supabase.from('users').update({ ...updateData, employment_type: chosenEmployment }).eq('id', userForm.value.id);
+        if (supaErr) {
+          await supabase.from('users').update(updateData).eq('id', userForm.value.id);
+        }
+      } else {
+        await supabase.from('users').update(updateData).eq('id', userForm.value.id);
+      }
+
       showAlert(`User '${userForm.value.name}' updated successfully!`, 'success');
     } else {
       let created = false;

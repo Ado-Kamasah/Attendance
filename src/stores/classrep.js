@@ -3,9 +3,11 @@ import { ref, computed } from 'vue';
 import { supabase } from '@/stores/supabase';
 import { useAuthStore } from '@/stores/authstore.js';
 import { useCoursesStore } from '@/stores/courses.js';
+import { useSchedulesStore } from '@/stores/schedules.js';
+import api from '@/api.js';
 
 export const useClassRepStore = defineStore('classRep', () => {
-  // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── State ───────────────────────────────────────────────────────────────────
   const allReps = ref([]);
   const myRoles = ref([]);
   const students = ref([]);
@@ -13,39 +15,59 @@ export const useClassRepStore = defineStore('classRep', () => {
   const isLoading = ref(false);
   const error = ref('');
 
-  // â”€â”€ Computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Computed ────────────────────────────────────────────────────────────────
   const isClassRep = computed(() => myRoles.value.length > 0);
   const myRepCourseIds = computed(() => myRoles.value.map((r) => r.courseId));
 
-  // â”€â”€ Admin: fetch all class reps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fetch all class reps ───────────────────────────────────────────────────
   async function fetchAllReps() {
     isLoading.value = true;
     error.value = '';
     try {
-      const { data, error: sbErr } = await supabase
-        .from('class_reps')
-        .select('*, courses(*), users(*, programmes(*))');
-      if (sbErr) throw sbErr;
-
       const coursesStore = useCoursesStore();
       if (!coursesStore.courses?.length) await coursesStore.fetchCourses().catch(() => {});
       if (students.value.length === 0) await fetchStudents().catch(() => {});
 
+      let data = [];
+      try {
+        const { data: richData, error: richErr } = await supabase
+          .from('class_reps')
+          .select('*, courses(*), users(*, programmes(*))')
+          .order('assigned_at', { ascending: false });
+
+        if (!richErr && richData && richData.length > 0) {
+          data = richData;
+        } else {
+          const { data: simpleData } = await supabase
+            .from('class_reps')
+            .select('*, courses(*), users(*)')
+            .order('assigned_at', { ascending: false });
+          if (simpleData && simpleData.length > 0) {
+            data = simpleData;
+          } else {
+            const { data: plainData } = await supabase.from('class_reps').select('*');
+            data = plainData ?? [];
+          }
+        }
+      } catch (err) {
+        console.warn('[classrep] Supabase fetch reps notice:', err.message);
+      }
+
       allReps.value = (data ?? []).map((sr) => {
-        const c = (coursesStore.courses || []).find((x) => x.id === sr.course_id);
-        const code = sr.courses?.code || c?.code || 'â€”';
-        const name = sr.courses?.name || c?.name || code;
-        const level = sr.courses?.level || c?.level || (() => {
-          const m = code.match(/\b([1-4]\d{2})\b/);
-          return m ? m[1] : '100';
-        })();
+        const c = sr.courses || (coursesStore.courses || []).find((x) => x.id === sr.course_id || x.code === sr.course_id) || {};
+        const code = c?.code || (sr.course_id && sr.course_id.length <= 10 ? sr.course_id : '—');
+        const name = c?.name || (code !== '—' ? code : 'Course');
+        let level = c?.level || '100';
+
         const sUser = sr.users;
+        const matchedStudent = (students.value || []).find((s) => s.id === sr.student_id || s.studentId === sr.student_id);
+
         return {
           id: sr.id,
           studentId: sr.student_id,
-          studentName: sUser?.name || sUser?.full_name || 'Student Rep',
-          studentEmail: sUser?.email || '',
-          studentProgram: sUser?.programmes?.name || sUser?.program || c?.program || '-',
+          studentName: sUser?.name || sUser?.full_name || matchedStudent?.name || 'Student Rep',
+          studentEmail: sUser?.email || matchedStudent?.email || '',
+          studentProgram: sUser?.programmes?.name || sUser?.program || matchedStudent?.program || c?.program || '—',
           courseId: sr.course_id,
           courseCode: code,
           courseName: name,
@@ -62,38 +84,69 @@ export const useClassRepStore = defineStore('classRep', () => {
     return allReps.value;
   }
 
-  // â”€â”€ Admin: fetch students â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fetch students directly from Supabase ──────────────────────────────────
   async function fetchStudents(courseId = null) {
     isLoading.value = true;
     error.value = '';
     try {
-      let query = supabase
-        .from('users')
-        .select('id, name, email, id_number, program_id, mode, role, programmes(name)')
-        .ilike('role', 'student')
-        .order('name');
-
+      // 1. Check enrolled student IDs for this course if courseId provided
+      let enrolledIds = new Set();
       if (courseId) {
-        const { data: enrolled } = await supabase
-          .from('enrollments')
-          .select('student_id')
-          .eq('course_id', courseId);
-        const ids = (enrolled ?? []).map((e) => e.student_id);
-        if (ids.length > 0) query = query.in('id', ids);
+        try {
+          const { data: enrolled } = await supabase
+            .from('enrollments')
+            .select('student_id')
+            .eq('course_id', courseId);
+          enrolledIds = new Set((enrolled ?? []).map((e) => e.student_id));
+        } catch {}
       }
 
-      const { data, error: sbErr } = await query;
-      if (sbErr) throw sbErr;
+      // 2. Fetch all students directly from Supabase users table
+      let rawUsers = null;
+      try {
+        const { data: uData, error: uErr } = await supabase
+          .from('users')
+          .select('id, name, email, id_number, program_id, mode, role, programmes(name)')
+          .ilike('role', 'student')
+          .order('name');
+        if (!uErr && uData && uData.length > 0) rawUsers = uData;
+      } catch {}
 
-      students.value = (data ?? []).map((u) => ({
+      if (!rawUsers || rawUsers.length === 0) {
+        try {
+          const { data: fallbackUsers } = await supabase
+            .from('users')
+            .select('id, name, email, id_number, program_id, mode, role')
+            .ilike('role', 'student')
+            .order('name');
+          if (fallbackUsers && fallbackUsers.length > 0) rawUsers = fallbackUsers;
+        } catch {}
+      }
+
+      if (!rawUsers || rawUsers.length === 0) {
+        try {
+          const { data: eqUsers } = await supabase
+            .from('users')
+            .select('id, name, email, id_number, program_id, mode, role')
+            .eq('role', 'Student')
+            .order('name');
+          if (eqUsers && eqUsers.length > 0) rawUsers = eqUsers;
+        } catch {}
+      }
+
+      students.value = (rawUsers ?? []).map((u) => ({
         id: u.id,
         studentId: u.id_number || u.id,
-        name: u.name || 'Student',
+        name: u.name || u.full_name || u.email || 'Student',
         email: u.email || '',
-        program: u.programmes?.name || u.program_id || '',
+        program: u.programmes?.name || u.program_id || u.program || '—',
         mode: u.mode || 'Regular',
-        isEnrolled: !!courseId,
+        isEnrolled: enrolledIds.has(u.id) || enrolledIds.has(u.id_number),
       }));
+
+      if (courseId && enrolledIds.size > 0) {
+        students.value.sort((a, b) => (b.isEnrolled ? 1 : 0) - (a.isEnrolled ? 1 : 0));
+      }
     } catch (err) {
       console.warn('[classrep] fetchStudents error:', err.message);
       students.value = [];
@@ -103,7 +156,7 @@ export const useClassRepStore = defineStore('classRep', () => {
     return students.value;
   }
 
-  // â”€â”€ Filter students by mode/query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Filter students by mode/query ──────────────────────────────────────────
   async function fetchStudentsByFilter({ mode, level, courseId, query: q }) {
     if (students.value.length === 0) await fetchStudents(courseId);
     let filtered = [...students.value];
@@ -122,22 +175,59 @@ export const useClassRepStore = defineStore('classRep', () => {
     return filtered;
   }
 
-  // â”€â”€ Admin: assign class rep â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Assign class rep in Supabase database ──────────────────────────────────
   async function assignClassRep(studentId, courseId, extraData = {}) {
     isLoading.value = true;
     error.value = '';
+
     try {
-      const { error: sbErr } = await supabase
+      // 1. Remove any previous rep for this course in Supabase
+      try {
+        await supabase
+          .from('class_reps')
+          .delete()
+          .eq('course_id', courseId);
+      } catch (delErr) {
+        console.warn('[classrep] Pre-cleanup notice:', delErr);
+      }
+
+      // 2. Insert new rep record directly into Supabase
+      const { data: insData, error: insErr } = await supabase
         .from('class_reps')
-        .upsert(
-          { student_id: studentId, course_id: courseId, assigned_at: new Date().toISOString() },
-          { onConflict: 'course_id' }
-        );
-      if (sbErr) throw sbErr;
-      await fetchAllReps();
-      return { message: 'Class Rep assigned successfully' };
+        .insert({
+          student_id: studentId,
+          course_id: courseId,
+          assigned_at: new Date().toISOString(),
+        })
+        .select();
+
+      if (insErr) {
+        const { error: upErr } = await supabase
+          .from('class_reps')
+          .upsert(
+            { student_id: studentId, course_id: courseId, assigned_at: new Date().toISOString() },
+            { onConflict: 'course_id' }
+          );
+        if (upErr) throw upErr;
+      }
+
+      // 3. Ensure student is enrolled for this course in Supabase
+      try {
+        await supabase
+          .from('enrollments')
+          .upsert(
+            { student_id: studentId, course_id: courseId },
+            { onConflict: 'student_id,course_id' }
+          );
+      } catch (enrErr) {
+        console.warn('[classrep] Enrollment upsert notice:', enrErr);
+      }
+
+      await fetchAllReps().catch(() => {});
+      return { message: 'Class Rep assigned successfully in database.' };
     } catch (err) {
-      const msg = err.message || 'Failed to assign class rep.';
+      console.error('[classrep] assignClassRep error:', err);
+      const msg = err.message || 'Failed to assign class rep in database.';
       error.value = msg;
       throw new Error(msg);
     } finally {
@@ -145,7 +235,7 @@ export const useClassRepStore = defineStore('classRep', () => {
     }
   }
 
-  // â”€â”€ Admin: remove class rep â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Remove class rep from Supabase database ────────────────────────────────
   async function removeClassRep(courseId) {
     isLoading.value = true;
     error.value = '';
@@ -155,8 +245,9 @@ export const useClassRepStore = defineStore('classRep', () => {
         .delete()
         .eq('course_id', courseId);
       if (sbErr) throw sbErr;
+
       allReps.value = allReps.value.filter((r) => r.courseId !== courseId);
-      return { message: 'Class rep removed successfully' };
+      return { message: 'Class rep removed successfully from database.' };
     } catch (err) {
       const msg = err.message || 'Failed to remove class rep.';
       error.value = msg;
@@ -166,28 +257,59 @@ export const useClassRepStore = defineStore('classRep', () => {
     }
   }
 
-  // â”€â”€ Student: fetch my class rep roles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Student: fetch my class rep roles ──────────────────────────────────────
   async function fetchMyRoles() {
     const authStore = useAuthStore();
     const currentUserId = authStore.user?.id || authStore.profile?.id;
-    if (!currentUserId) { myRoles.value = []; return myRoles.value; }
+    const userEmail = authStore.profile?.email || authStore.user?.email;
+    const idNumber = authStore.profile?.id_number;
+
+    if (!currentUserId && !userEmail && !idNumber) {
+      myRoles.value = [];
+      return myRoles.value;
+    }
+
     try {
-      const { data, error: sbErr } = await supabase
-        .from('class_reps')
-        .select('*, courses(*)')
-        .eq('student_id', currentUserId);
-      if (sbErr) throw sbErr;
       const coursesStore = useCoursesStore();
-      myRoles.value = (data ?? []).map((sr) => {
-        const c = (coursesStore.courses || []).find((x) => x.id === sr.course_id);
-        const code = sr.courses?.code || c?.code || 'â€”';
+      const schedulesStore = useSchedulesStore();
+      if (!coursesStore.courses?.length) await coursesStore.fetchCourses().catch(() => {});
+      if (!schedulesStore.schedules?.length) await schedulesStore.fetchSchedules().catch(() => {});
+
+      let rolesData = null;
+      try {
+        const orClauses = [];
+        if (currentUserId) orClauses.push(`student_id.eq.${currentUserId}`);
+        if (idNumber) orClauses.push(`student_id.eq.${idNumber}`);
+        
+        const query = supabase.from('class_reps').select('*, courses(*)');
+        if (orClauses.length > 0) {
+          const { data } = await query.or(orClauses.join(','));
+          if (data && data.length > 0) rolesData = data;
+        }
+      } catch {}
+
+      // Backend fallback
+      if (!rolesData || rolesData.length === 0) {
+        try {
+          const res = await api.get('/classrep/my-roles');
+          if (res.data?.length > 0) {
+            myRoles.value = res.data;
+            return myRoles.value;
+          }
+        } catch {}
+      }
+
+      myRoles.value = (rolesData ?? []).map((sr) => {
+        const c = (coursesStore.courses || []).find((x) => x.id === sr.course_id || x.code === sr.course_id);
+        const code = sr.courses?.code || c?.code || '—';
         const name = sr.courses?.name || c?.name || code;
+        const schedules = (schedulesStore.schedules || []).filter((s) => s.courseId === sr.course_id);
         return {
           id: sr.id,
           courseId: sr.course_id,
           courseCode: code,
           courseName: name,
-          schedules: [],
+          schedules,
           assignedAt: sr.assigned_at || sr.created_at,
         };
       });

@@ -107,17 +107,47 @@ export const getLecturers = async (req, res) => {
 export const updateLecturerEmploymentType = async (req, res) => {
   try {
     const { id } = req.params;
-    const { employmentType } = req.body;
+    const { employmentType, name, email } = req.body;
 
     const normalized = employmentType && employmentType.toLowerCase().includes('part')
       ? 'Part-Time'
       : 'Full-Time';
 
-    const lecturer = await prisma.user.update({
-      where: { id },
-      data: { employmentType: normalized },
-      select: { id: true, name: true, email: true, employmentType: true }
+    const cleanEmail = email ? email.trim().toLowerCase() : null;
+
+    // Look for existing user by id or email
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id },
+          ...(cleanEmail ? [{ email: cleanEmail }] : [])
+        ]
+      }
     });
+
+    let lecturer;
+    if (existing) {
+      lecturer = await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          employmentType: normalized,
+          ...(name ? { name: name.trim() } : {})
+        },
+        select: { id: true, name: true, email: true, employmentType: true }
+      });
+    } else {
+      lecturer = await prisma.user.create({
+        data: {
+          id,
+          name: name ? name.trim() : 'Lecturer',
+          email: cleanEmail || `${id}@southshore.edu.gh`,
+          role: 'LECTURER',
+          employmentType: normalized,
+          passwordHash: 'external_auth'
+        },
+        select: { id: true, name: true, email: true, employmentType: true }
+      });
+    }
 
     try {
       await prisma.auditLog.create({

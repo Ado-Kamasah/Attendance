@@ -254,7 +254,7 @@ export const removeClassRep = async (req, res) => {
     });
 
     if (!existing) {
-      return res.status(404).json({ message: 'No class rep found for this course' });
+      return res.status(200).json({ message: 'No active class rep found for this course' });
     }
 
     await prisma.classRep.delete({ where: { id: existing.id } });

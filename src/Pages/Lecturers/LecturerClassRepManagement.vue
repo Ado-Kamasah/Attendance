@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
 
     <!-- Header -->
@@ -178,7 +178,7 @@
               <div v-if="isLoadingStudents && students.length === 0" class="flex items-center gap-2 px-4 py-3 text-xs text-slate-400 font-mono">
                 <Loader2 class="w-3.5 h-3.5 animate-spin" /> Loading students…
               </div>
-              <div v-for="s in displayStudents.slice(0, 15)" :key="s.id"
+              <div v-for="s in displayStudents" :key="s.id"
                 :id="`lecturer-student-opt-${s.id}`"
                 @click="selectStudent(s)"
                 :class="['flex items-center gap-2.5 px-3 py-2.5 cursor-pointer transition-colors',
@@ -199,7 +199,7 @@
                 </div>
               </div>
               <div v-if="!isLoadingStudents && displayStudents.length === 0" class="px-4 py-6 text-center text-xs text-slate-400">
-                {{ form.courseId ? 'No students found for this course.' : 'Select a course first.' }}
+                {{ form.courseId ? 'No students found.' : 'Select a course first.' }}
               </div>
             </div>
           </div>
@@ -272,11 +272,18 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/authstore.js';
+import { useClassRepStore } from '@/stores/classrep.js';
+import { useCoursesStore } from '@/stores/courses.js';
+import { useSchedulesStore } from '@/stores/schedules.js';
+import { useEnrollmentsStore } from '@/stores/enrollments.js';
 import { supabase } from '@/stores/supabase';
-import api from '@/api.js';
 import { Users, Plus, Search, Trash2, X, CheckCircle2, AlertCircle, Loader2, BookOpen } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
+const classRepStore = useClassRepStore();
+const coursesStore = useCoursesStore();
+const schedulesStore = useSchedulesStore();
+const enrollmentsStore = useEnrollmentsStore();
 
 const search = ref('');
 const showModal = ref(false);
@@ -293,68 +300,168 @@ const form = ref({ courseId: '', studentId: '' });
 
 // All class reps for lecturer's courses
 const myReps = ref([]);
-// Courses this lecturer teaches (from sessions)
+// Courses this lecturer teaches
 const myCourses = ref([]);
 // Students for the assign modal
 const students = ref([]);
 
+function isLecturerSchedule(schedule, profile, user) {
+  if (!schedule || !schedule.lecturer) return false;
+  const sLect = schedule.lecturer.trim().toLowerCase();
+
+  const pName = (profile?.name || profile?.full_name || '').trim().toLowerCase();
+  const pEmail = (profile?.email || user?.email || '').trim().toLowerCase();
+  const pId = (profile?.id || user?.id || '').trim().toLowerCase();
+
+  if (pName && sLect === pName) return true;
+  if (pEmail && sLect === pEmail) return true;
+  if (pId && sLect === pId) return true;
+
+  // Clean title prefixes like Dr., Prof., Mr., Mrs., Ms.
+  const cleanLect = sLect.replace(/^(dr\.|prof\.|mr\.|mrs\.|ms\.)\s*/, '').trim();
+  const cleanProfile = pName.replace(/^(dr\.|prof\.|mr\.|mrs\.|ms\.)\s*/, '').trim();
+  if (cleanLect && cleanProfile) {
+    if (cleanLect === cleanProfile) return true;
+    if (cleanLect.includes(cleanProfile) || cleanProfile.includes(cleanLect)) return true;
+  }
+  return false;
+}
+
 onMounted(async () => {
-  await Promise.allSettled([loadMyCourses(), loadMyReps()]);
+  isLoading.value = true;
+  try {
+    await loadMyCourses();
+    await loadMyReps();
+  } finally {
+    isLoading.value = false;
+  }
 });
 
 async function loadMyCourses() {
-  const lecturerId = authStore.profile?.id;
-  if (!lecturerId) return;
   try {
-    const { data } = await supabase
-      .from('sessions')
-      .select('course_id, courses(id, code, name, level)')
-      .eq('lecturer_id', lecturerId);
-    const seen = new Set();
-    myCourses.value = (data ?? [])
-      .filter(s => s.courses && !seen.has(s.course_id) && seen.add(s.course_id))
-      .map(s => ({
-        id: s.courses.id || s.course_id,
-        code: s.courses.code || '—',
-        name: s.courses.name || 'Unknown',
-        level: s.courses.level || '100',
+    await Promise.allSettled([
+      schedulesStore.fetchSchedules(),
+      coursesStore.fetchCourses(),
+      enrollmentsStore.fetchEnrollments(),
+    ]);
+
+    const profile = authStore.profile;
+    const user = authStore.user;
+    const allCourses = coursesStore.courses || [];
+
+    // 1. Gather course IDs from schedules matching this lecturer
+    const matchedCourseIds = new Set();
+    (schedulesStore.schedules || []).forEach((s) => {
+      if (isLecturerSchedule(s, profile, user)) {
+        if (s.courseId) matchedCourseIds.add(s.courseId);
+      }
+    });
+
+    // 2. Also check sessions table for any courses where lecturer created sessions
+    const lecturerId = profile?.id || user?.id;
+    if (lecturerId) {
+      try {
+        const { data: sessData } = await supabase
+          .from('sessions')
+          .select('course_id')
+          .eq('lecturer_id', lecturerId);
+        (sessData || []).forEach((s) => {
+          if (s.course_id) matchedCourseIds.add(s.course_id);
+        });
+      } catch {}
+    }
+
+    // 3. Map matched course IDs to rich course objects
+    let list = [];
+    matchedCourseIds.forEach((cId) => {
+      const c = allCourses.find((x) => x.id === cId || x.code === cId) || {};
+      const code = c.code || (cId.length <= 10 ? cId : '—');
+      let level = c.level || '100';
+      if (!c.level && code) {
+        const match = code.match(/\b([1-4]\d{2})\b/);
+        if (match) level = match[1];
+      }
+      list.push({
+        id: c.id || cId,
+        code,
+        name: c.name || code || 'Academic Course',
+        level,
+        program: c.program || c.programId || 'General',
+      });
+    });
+
+    // 4. Fallback: if no courses matched the schedules (e.g. testing or newly assigned lecturer)
+    if (list.length === 0 && allCourses.length > 0) {
+      list = allCourses.map((c) => ({
+        id: c.id,
+        code: c.code,
+        name: c.name,
+        level: c.level || '100',
+        program: c.program || c.programId || 'General',
       }));
+    }
+
+    myCourses.value = list;
   } catch (e) {
-    console.error('[LecturerClassRep] loadMyCourses', e);
+    console.error('[LecturerClassRep] loadMyCourses error:', e);
   }
 }
 
 async function loadMyReps() {
-  isLoading.value = true;
   try {
-    const { data } = await supabase
-      .from('class_reps')
-      .select('*, courses(*), users(id, name, email, program_id, programmes(name))');
-    const myCourseIds = new Set(myCourses.value.map(c => c.id));
-    // Filter only reps for this lecturer's courses
-    myReps.value = (data ?? [])
-      .filter(r => myCourseIds.has(r.course_id))
-      .map(r => {
-        const course = myCourses.value.find(c => c.id === r.course_id) || {};
-        const code = r.courses?.code || course.code || '—';
-        const level = r.courses?.level || course.level || '100';
-        return {
-          id: r.id,
-          studentId: r.student_id,
-          studentName: r.users?.name || 'Student Rep',
-          studentEmail: r.users?.email || '',
-          studentProgram: r.users?.programmes?.name || r.users?.program || '—',
-          courseId: r.course_id,
-          courseCode: code,
-          courseName: r.courses?.name || course.name || code,
-          courseLevel: level,
-          assignedAt: r.assigned_at || r.created_at,
-        };
-      });
+    await classRepStore.fetchAllReps();
+    const allReps = classRepStore.allReps || [];
+    const allCourses = coursesStore.courses || [];
+    const allStudents = classRepStore.students || [];
+
+    const myCourseIds = new Set(myCourses.value.map((c) => c.id));
+    const myCourseCodes = new Set(myCourses.value.map((c) => (c.code || '').toUpperCase()));
+
+    // Filter reps for courses taught by this lecturer
+    let relevantReps = allReps;
+    if (myCourses.value.length > 0) {
+      const filtered = allReps.filter((r) =>
+        myCourseIds.has(r.courseId) ||
+        myCourseCodes.has((r.courseCode || '').toUpperCase()) ||
+        myCourseCodes.has((r.courseId || '').toUpperCase())
+      );
+      if (filtered.length > 0 || myCourses.value.length < allCourses.length) {
+        relevantReps = filtered;
+      }
+    }
+
+    // Enrich reps with consistent details
+    myReps.value = relevantReps.map((r) => {
+      const course = myCourses.value.find((c) => c.id === r.courseId || c.code === r.courseId) ||
+                     allCourses.find((c) => c.id === r.courseId || c.code === r.courseId) || {};
+      const student = allStudents.find((s) => s.id === r.studentId || s.studentId === r.studentId) || {};
+
+      const code = r.courseCode || course.code || (r.courseId && r.courseId.length <= 10 ? r.courseId : '—');
+      const name = r.courseName || course.name || (code !== '—' ? code : 'Course');
+      let level = r.courseLevel || course.level;
+      if (!level && code) {
+        const match = code.match(/\b([1-4]\d{2})\b/);
+        if (match) level = match[1];
+      }
+      level = level || '100';
+
+      return {
+        id: r.id,
+        studentId: r.studentId,
+        studentName: (r.studentName && r.studentName !== 'Student' && r.studentName !== 'Student Rep')
+          ? r.studentName
+          : (student.name || r.studentName || 'Student Rep'),
+        studentEmail: r.studentEmail || student.email || '',
+        studentProgram: r.studentProgram || student.program || course.program || '—',
+        courseId: r.courseId,
+        courseCode: code,
+        courseName: name,
+        courseLevel: level,
+        assignedAt: r.assignedAt,
+      };
+    });
   } catch (e) {
-    console.error('[LecturerClassRep] loadMyReps', e);
-  } finally {
-    isLoading.value = false;
+    console.error('[LecturerClassRep] loadMyReps error:', e);
   }
 }
 
@@ -362,28 +469,33 @@ async function loadStudents(courseId) {
   isLoadingStudents.value = true;
   students.value = [];
   try {
-    // Load enrolled students for this course
-    const { data: enrolled } = await supabase
-      .from('enrollments')
-      .select('student_id')
-      .eq('course_id', courseId);
-    const enrolledIds = new Set((enrolled ?? []).map(e => e.student_id));
+    let enrolledIds = new Set();
+    if (courseId) {
+      const storeEnrolled = enrollmentsStore.enrollmentsByCourse(courseId);
+      if (storeEnrolled.length > 0) {
+        enrolledIds = new Set(storeEnrolled.map((e) => e.studentId));
+      } else {
+        try {
+          const { data: enrolled } = await supabase
+            .from('enrollments')
+            .select('student_id')
+            .eq('course_id', courseId);
+          enrolledIds = new Set((enrolled ?? []).map((e) => e.student_id));
+        } catch {}
+      }
+    }
 
-    const { data } = await supabase
-      .from('users')
-      .select('id, name, email, id_number, program_id, programmes(name)')
-      .ilike('role', 'student')
-      .order('name');
-    students.value = (data ?? []).map(s => ({
+    const studentList = await classRepStore.fetchStudents(courseId);
+    students.value = (studentList || []).map((s) => ({
       id: s.id,
       name: s.name || s.email || 'Student',
       email: s.email || '',
-      studentId: s.id_number || s.id,
-      program: s.programmes?.name || '—',
-      isEnrolled: enrolledIds.has(s.id),
+      studentId: s.studentId || s.id,
+      program: s.program || '—',
+      isEnrolled: enrolledIds.has(s.id) || enrolledIds.has(s.studentId) || !!s.isEnrolled,
     })).sort((a, b) => (b.isEnrolled ? 1 : 0) - (a.isEnrolled ? 1 : 0));
   } catch (e) {
-    console.error('[LecturerClassRep] loadStudents', e);
+    console.error('[LecturerClassRep] loadStudents error:', e);
   } finally {
     isLoadingStudents.value = false;
   }
@@ -392,20 +504,23 @@ async function loadStudents(courseId) {
 const filteredReps = computed(() => {
   const q = search.value.toLowerCase().trim();
   if (!q) return myReps.value;
-  return myReps.value.filter(r =>
+  return myReps.value.filter((r) =>
     (r.studentName || '').toLowerCase().includes(q) ||
+    (r.studentEmail || '').toLowerCase().includes(q) ||
     (r.courseCode || '').toLowerCase().includes(q) ||
-    (r.courseName || '').toLowerCase().includes(q)
+    (r.courseName || '').toLowerCase().includes(q) ||
+    (r.studentProgram || '').toLowerCase().includes(q)
   );
 });
 
 const displayStudents = computed(() => {
   const q = studentSearch.value.toLowerCase().trim();
   if (!q) return students.value;
-  return students.value.filter(s =>
+  return students.value.filter((s) =>
     (s.name || '').toLowerCase().includes(q) ||
     (s.email || '').toLowerCase().includes(q) ||
-    (s.studentId || '').toLowerCase().includes(q)
+    (s.studentId || '').toLowerCase().includes(q) ||
+    (s.program || '').toLowerCase().includes(q)
   );
 });
 
@@ -416,14 +531,20 @@ async function openAssignModal() {
   modalError.value = '';
   showModal.value = true;
   if (myCourses.value.length === 0) await loadMyCourses();
+  if (students.value.length === 0) await loadStudents();
 }
 
-function closeModal() { showModal.value = false; }
+function closeModal() {
+  showModal.value = false;
+  modalError.value = '';
+}
 
 function onCourseSelect() {
   form.value.studentId = '';
   selectedStudent.value = null;
-  if (form.value.courseId) loadStudents(form.value.courseId);
+  if (form.value.courseId) {
+    loadStudents(form.value.courseId);
+  }
 }
 
 function selectStudent(s) {
@@ -433,49 +554,78 @@ function selectStudent(s) {
 
 async function submitAssign() {
   modalError.value = '';
-  if (!form.value.courseId) { modalError.value = 'Please select a course.'; return; }
-  if (!form.value.studentId) { modalError.value = 'Please select a student.'; return; }
-  const selectedCourse = myCourses.value.find(c => c.id === form.value.courseId);
+  if (!form.value.courseId) {
+    modalError.value = 'Please select a course.';
+    return;
+  }
+  if (!form.value.studentId) {
+    modalError.value = 'Please select a student.';
+    return;
+  }
+
+  const selectedCourse = myCourses.value.find((c) => c.id === form.value.courseId) ||
+                         coursesStore.courses.find((c) => c.id === form.value.courseId);
+  const student = selectedStudent.value || students.value.find((s) => s.id === form.value.studentId);
+
   isSubmitting.value = true;
   try {
-    const { data } = await api.post('/classrep/lecturer-assign', {
-      studentId: form.value.studentId,
-      courseId: form.value.courseId,
-      studentName: selectedStudent.value?.name,
-      studentEmail: selectedStudent.value?.email,
-      studentProgram: selectedStudent.value?.program,
+    const extraData = {
+      studentName: student?.name,
+      studentEmail: student?.email,
+      studentProgram: student?.program,
       courseCode: selectedCourse?.code,
       courseName: selectedCourse?.name,
       courseLevel: selectedCourse?.level,
-    });
-    showToast(data.message || 'Class representative assigned successfully!', 'success');
+    };
+
+    const res = await classRepStore.assignClassRep(form.value.studentId, form.value.courseId, extraData);
+    showToast(res.message || `${student?.name || 'Student'} assigned as Class Rep for ${selectedCourse?.code || 'course'}`, 'success');
     closeModal();
     await loadMyReps();
   } catch (err) {
-    modalError.value = err.response?.data?.message || err.message || 'Failed to assign class representative';
+    modalError.value = err.message || 'Failed to assign class representative';
   } finally {
     isSubmitting.value = false;
   }
 }
 
-function confirmRemove(rep) { removeTarget.value = rep; }
+function confirmRemove(rep) {
+  removeTarget.value = rep;
+}
 
 async function doRemove() {
   if (!removeTarget.value) return;
   isSubmitting.value = true;
   try {
-    await api.delete(`/classrep/lecturer/${removeTarget.value.courseId}`);
-    showToast(`Class rep removed from ${removeTarget.value.courseCode}`, 'success');
+    const courseId = removeTarget.value.courseId;
+    const courseCode = removeTarget.value.courseCode;
+
+    await classRepStore.removeClassRep(courseId);
+    showToast(`Class rep removed from ${courseCode}`, 'success');
     removeTarget.value = null;
     await loadMyReps();
   } catch (err) {
-    showToast(err.response?.data?.message || err.message || 'Failed to remove class rep', 'error');
+    showToast(err.message || 'Failed to remove class rep', 'error');
   } finally {
     isSubmitting.value = false;
   }
 }
 
-function showToast(msg, type = 'success') { toast.value = { msg, type }; setTimeout(() => (toast.value = null), 3500); }
-function initials(name) { return (name || 'ST').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2); }
-function formatDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return '—'; } }
+function showToast(msg, type = 'success') {
+  toast.value = { msg, type };
+  setTimeout(() => (toast.value = null), 3500);
+}
+
+function initials(name) {
+  return (name || 'ST').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return '—';
+  }
+}
 </script>

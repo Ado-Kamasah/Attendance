@@ -156,6 +156,7 @@ import {
   X, 
   LayoutDashboard, 
   Users, 
+  GraduationCap,
   BarChart3, 
   Clock, 
   TrendingUp, 
@@ -206,6 +207,7 @@ const navGroups = [
     items: [
       { name: 'Dashboard', path: '/', icon: LayoutDashboard },
       { name: 'User Management', path: '/users-admin', icon: Users },
+      { name: 'Lecturers', path: '/lecturers-admin', icon: GraduationCap },
       { name: 'Analytics', path: '/analytics', icon: BarChart3 },
       { name: 'Session Analytics', path: '/session-analytics', icon: Clock },
       { name: 'Lecturer Analytics', path: '/attendance-analytics', icon: TrendingUp },
