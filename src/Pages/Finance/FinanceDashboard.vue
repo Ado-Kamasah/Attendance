@@ -44,6 +44,16 @@
       <button @click="loadData" class="underline font-bold cursor-pointer ml-3">Retry</button>
     </div>
 
+    <!-- RLS Warning Banner -->
+    <div v-if="financeStore.rlsWarning && !isLoading" class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-400 text-xs font-mono flex items-start gap-3">
+      <svg class="w-4 h-4 mt-0.5 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+      <div class="space-y-1">
+        <p class="font-bold text-amber-700 dark:text-amber-300">sessions table blocked by RLS — using schedule-based fallback</p>
+        <p class="text-amber-700/80 dark:text-amber-400/80">Session data is being derived from <strong>schedules + attendances</strong>. For precise per-session claims, run the SQL below in Supabase to fix the RLS policy on the <code class="bg-amber-500/20 px-1 rounded">sessions</code> table.</p>
+        <p class="mt-1">→ Run <code class="bg-amber-500/20 px-1 rounded">readme/fix_sessions_rls.sql</code> in your Supabase SQL Editor.</p>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
       <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
@@ -234,9 +244,13 @@
                   </div>
                 </td>
               </tr>
-              <tr v-if="topLecturers.length === 0">
-                <td colspan="5" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/65">
-                  No instructor session data found in Supabase.
+              <tr v-if="topLecturers.length === 0 && !isLoading">
+                <td colspan="5" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/65 space-y-2">
+                  <p>No instructor claim data could be derived.</p>
+                  <p class="text-[10px] text-foreground/40 dark:text-white/40">
+                    Ensure the <code>sessions</code> table has SELECT access for authenticated users,<br />
+                    or that <code>schedules</code> and <code>attendances</code> tables contain records.
+                  </p>
                 </td>
               </tr>
             </tbody>
