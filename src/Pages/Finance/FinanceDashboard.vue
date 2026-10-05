@@ -19,6 +19,16 @@
 
       <div class="flex items-center gap-3">
         <button 
+          @click="loadData"
+          :disabled="isLoading"
+          class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted/50 hover:bg-slate-50 dark:hover:bg-dark-muted text-foreground dark:text-white font-semibold text-xs transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
+          title="Refresh ledger from Supabase"
+        >
+          <RefreshCw class="w-3.5 h-3.5 text-secondary" :class="{ 'animate-spin': isLoading }" />
+          <span class="hidden sm:inline">Refresh</span>
+        </button>
+
+        <button 
           @click="$emit('navigate', '/finance-claims')"
           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary dark:bg-dark-secondary text-surface dark:text-primary font-semibold text-xs sm:text-sm shadow-md hover:opacity-90 active:scale-98 transition-all cursor-pointer"
         >
@@ -28,10 +38,16 @@
       </div>
     </div>
 
+    <!-- Error Alert if any -->
+    <div v-if="errorMessage" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-mono flex items-center justify-between">
+      <span>{{ errorMessage }}</span>
+      <button @click="loadData" class="underline font-bold cursor-pointer ml-3">Retry</button>
+    </div>
+
     <!-- Loading State -->
     <div v-if="isLoading" class="py-16 text-center text-xs font-mono text-foreground/50 dark:text-white/65 flex items-center justify-center gap-2">
       <RefreshCw class="w-4 h-4 animate-spin text-secondary" />
-      <span>Loading financial records…</span>
+      <span>Loading financial records from Supabase…</span>
     </div>
 
     <template v-else>
@@ -169,7 +185,7 @@
                 <td class="py-3.5 px-4">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-sky-500/15 text-sky-500 font-bold font-mono text-xs flex items-center justify-center shrink-0 border border-sky-500/30">
-                      {{ lec.lecturerName.charAt(0) }}
+                      {{ (lec.lecturerName || 'L').charAt(0) }}
                     </div>
                     <div class="min-w-0">
                       <div class="flex items-center gap-1.5">
@@ -220,7 +236,7 @@
               </tr>
               <tr v-if="topLecturers.length === 0">
                 <td colspan="5" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/65">
-                  No instructor session data found.
+                  No instructor session data found in Supabase.
                 </td>
               </tr>
             </tbody>
@@ -232,8 +248,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import api from '@/api.js';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useFinanceStore } from '@/stores/finance.js';
 import { 
   Users, 
   CalendarDays, 
@@ -248,29 +264,59 @@ import {
 
 defineEmits(['navigate']);
 
-const claims    = ref([]);
-const isLoading = ref(true);
-const today     = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+const financeStore = useFinanceStore();
 
-onMounted(async () => {
+const isLoading = ref(true);
+const errorMessage = ref('');
+const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+async function loadData() {
+  isLoading.value = true;
+  errorMessage.value = '';
   try {
-    const { data } = await api.get('/finance/claims');
-    claims.value = data;
-  } catch { /* silent */ } finally {
+    await Promise.allSettled([
+      financeStore.fetchClaims(),
+      financeStore.fetchLecturers(),
+    ]);
+  } catch (err) {
+    errorMessage.value = err.message || 'Error communicating with Supabase.';
+  } finally {
     isLoading.value = false;
   }
+}
+
+onMounted(() => {
+  loadData();
+  financeStore.subscribeToFinanceRealtime(() => {
+    financeStore.fetchClaims();
+  });
 });
 
-const totalLecturers = computed(() => new Set(claims.value.map(c => c.lecturerId)).size);
-const totalSessions  = computed(() => claims.value.reduce((s, c) => s + c.totalSessions, 0));
+onUnmounted(() => {
+  financeStore.unsubscribeFromFinanceRealtime();
+});
+
+const claims = computed(() => financeStore.claims);
+const lecturers = computed(() => financeStore.lecturers);
+
+const totalLecturers = computed(() => {
+  if (lecturers.value.length > 0) return lecturers.value.length;
+  return new Set(claims.value.map(c => c.lecturerId)).size;
+});
+
+const totalSessions  = computed(() => claims.value.reduce((s, c) => s + (c.totalSessions || 0), 0));
 const totalCourses   = computed(() => new Set(claims.value.map(c => c.courseId)).size);
+
 const avgAttendance  = computed(() => {
   if (!claims.value.length) return 0;
-  const sum = claims.value.reduce((s, c) => s + c.attendanceRate, 0);
+  const sum = claims.value.reduce((s, c) => s + (c.attendanceRate || 0), 0);
   return Math.round(sum / claims.value.length);
 });
 
 const partTimeCount = computed(() => {
+  if (lecturers.value.length > 0) {
+    return lecturers.value.filter(l => (l.employmentType || '').toLowerCase().includes('part')).length;
+  }
   const map = new Map();
   for (const c of claims.value) {
     if (!map.has(c.lecturerId)) {
@@ -299,8 +345,8 @@ const topLecturers = computed(() => {
       });
     }
     const l = map.get(c.lecturerId);
-    l.totalSessions += c.totalSessions;
-    l.rateSum       += c.attendanceRate;
+    l.totalSessions += (c.totalSessions || 0);
+    l.rateSum       += (c.attendanceRate || 0);
     l.count         += 1;
   }
   return [...map.values()]

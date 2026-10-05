@@ -23,15 +23,27 @@
           </p>
         </div>
 
-        <button
-          @click="downloadCSV"
-          :disabled="isDownloading"
-          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-        >
-          <Loader2 v-if="isDownloading" class="w-4 h-4 animate-spin" />
-          <Download v-else class="w-4 h-4" />
-          <span>{{ isDownloading ? 'Downloading...' : 'Download CSV' }}</span>
-        </button>
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <button
+            @click="loadClaims"
+            :disabled="isLoading"
+            class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted/50 hover:bg-slate-50 dark:hover:bg-dark-muted text-slate-700 dark:text-white font-semibold text-xs transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
+            title="Refresh Claims from Supabase"
+          >
+            <RefreshCw class="w-3.5 h-3.5 text-secondary" :class="{ 'animate-spin': isLoading }" />
+            <span>Refresh</span>
+          </button>
+
+          <button
+            @click="downloadCSV"
+            :disabled="isDownloading || filtered.length === 0"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
+          >
+            <Loader2 v-if="isDownloading" class="w-4 h-4 animate-spin" />
+            <Download v-else class="w-4 h-4" />
+            <span>{{ isDownloading ? 'Downloading...' : 'Download CSV' }}</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -103,13 +115,13 @@
         <div class="flex gap-2">
           <button
             @click="loadClaims"
-            class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-semibold rounded-xl transition-all shadow-sm active:scale-95"
+            class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-semibold rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
           >
             Apply
           </button>
           <button
             @click="resetFilters"
-            class="px-4 py-2 border border-slate-200 dark:border-dark-outline/70 text-slate-600 dark:text-white/90 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+            class="px-4 py-2 border border-slate-200 dark:border-dark-outline/70 text-slate-600 dark:text-white/90 text-xs font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
           >
             Reset
           </button>
@@ -158,7 +170,7 @@
     <!-- Loading State -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-dark-muted/60 rounded-2xl border border-dashed border-slate-200 dark:border-dark-outline">
       <Loader2 class="w-10 h-10 text-secondary animate-spin mb-4" />
-      <p class="text-sm font-mono text-slate-500 dark:text-white/75">LOADING CLAIMS DATA...</p>
+      <p class="text-sm font-mono text-slate-500 dark:text-white/75">LOADING CLAIMS DATA FROM SUPABASE...</p>
     </div>
 
     <!-- Empty State -->
@@ -170,7 +182,7 @@
         <BarChart3 class="w-7 h-7" />
       </div>
       <h3 class="text-base font-display font-bold text-slate-900 dark:text-white">No Claims Data Found</h3>
-      <p class="text-sm text-slate-500 dark:text-white/75 mt-1">No claims data matches the selected filters. Try adjusting dates or clearing filters.</p>
+      <p class="text-sm text-slate-500 dark:text-white/75 mt-1">No claims data matches the selected filters in Supabase. Try adjusting dates or clearing filters.</p>
     </div>
 
     <!-- Claims Table -->
@@ -233,7 +245,7 @@
               <td class="py-3.5 px-4">
                 <div class="flex items-center gap-2.5">
                   <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/70 dark:from-secondary dark:to-secondary/70 text-white dark:text-primary flex items-center justify-center font-bold text-sm uppercase flex-shrink-0">
-                    {{ c.lecturerName.charAt(0) }}
+                    {{ (c.lecturerName || 'L').charAt(0) }}
                   </div>
                   <div>
                     <div class="flex items-center gap-1.5">
@@ -348,8 +360,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import api from '@/api.js';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useFinanceStore } from '@/stores/finance.js';
 import {
   Download,
   Search,
@@ -361,8 +373,11 @@ import {
   Loader2,
   Clock,
   Briefcase,
-  Coins
+  Coins,
+  RefreshCw
 } from 'lucide-vue-next';
+
+const financeStore = useFinanceStore();
 
 const claims           = ref([]);
 const lecturers        = ref([]);
@@ -381,28 +396,30 @@ const PAGE_SIZE         = 20;
 
 const isPartTime = (c) => (c.employmentType || '').toLowerCase().includes('part');
 
-// ── Data loading ──────────────────────────────────────────────────────────────
+// ── Data loading from Supabase ────────────────────────────────────────────────
 async function loadClaims() {
   isLoading.value = true;
   page.value = 1;
   try {
-    const params = {};
-    if (filterLecturer.value)   params.lecturerId     = filterLecturer.value;
-    if (filterEmployment.value) params.employmentType = filterEmployment.value;
-    if (fromDate.value)         params.from           = fromDate.value;
-    if (toDate.value)           params.to             = toDate.value;
-    const { data } = await api.get('/finance/claims', { params });
-    claims.value = data;
-  } catch { /* silent */ } finally {
+    const filters = {};
+    if (filterLecturer.value)   filters.lecturerId     = filterLecturer.value;
+    if (filterEmployment.value) filters.employmentType = filterEmployment.value;
+    if (fromDate.value)         filters.fromDate       = fromDate.value;
+    if (toDate.value)           filters.toDate         = toDate.value;
+    claims.value = await financeStore.fetchClaims(filters);
+  } catch (err) {
+    console.error('loadClaims error:', err);
+  } finally {
     isLoading.value = false;
   }
 }
 
 async function loadLecturers() {
   try {
-    const { data } = await api.get('/finance/lecturers');
-    lecturers.value = data;
-  } catch { /* silent */ }
+    lecturers.value = await financeStore.fetchLecturers();
+  } catch (err) {
+    console.error('loadLecturers error:', err);
+  }
 }
 
 function resetFilters() {
@@ -414,7 +431,17 @@ function resetFilters() {
   loadClaims();
 }
 
-onMounted(() => { loadClaims(); loadLecturers(); });
+onMounted(() => {
+  loadClaims();
+  loadLecturers();
+  financeStore.subscribeToFinanceRealtime(() => {
+    loadClaims();
+  });
+});
+
+onUnmounted(() => {
+  financeStore.unsubscribeFromFinanceRealtime();
+});
 
 // ── Sorting ───────────────────────────────────────────────────────────────────
 function sortBy(key) {
@@ -435,9 +462,9 @@ const filtered = computed(() => {
   if (search.value.trim()) {
     const q = search.value.toLowerCase();
     list = list.filter(c =>
-      c.lecturerName.toLowerCase().includes(q) ||
-      c.courseCode.toLowerCase().includes(q)   ||
-      c.courseName.toLowerCase().includes(q)   ||
+      (c.lecturerName || '').toLowerCase().includes(q) ||
+      (c.courseCode || '').toLowerCase().includes(q)   ||
+      (c.courseName || '').toLowerCase().includes(q)   ||
       (c.employmentType || '').toLowerCase().includes(q)
     );
   }
@@ -454,42 +481,30 @@ const filtered = computed(() => {
 // ── Summary computeds ─────────────────────────────────────────────────────────
 const uniqueLecturers  = computed(() => new Set(filtered.value.map(c => c.lecturerId)).size);
 const uniqueCourses    = computed(() => new Set(filtered.value.map(c => c.courseId)).size);
-const totalSessions    = computed(() => filtered.value.reduce((s, c) => s + c.totalSessions, 0));
+const totalSessions    = computed(() => filtered.value.reduce((s, c) => s + (c.totalSessions || 0), 0));
 const partTimeClaims   = computed(() => filtered.value.filter(c => isPartTime(c)));
 const fullTimeClaims   = computed(() => filtered.value.filter(c => !isPartTime(c)));
-const partTimeSessions = computed(() => partTimeClaims.value.reduce((s, c) => s + c.totalSessions, 0));
+const partTimeSessions = computed(() => partTimeClaims.value.reduce((s, c) => s + (c.totalSessions || 0), 0));
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)));
 const paginated  = computed(() => filtered.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE));
 
-// ── CSV Download ──────────────────────────────────────────────────────────────
-async function downloadCSV() {
+// ── CSV Download (Client-Side from Supabase data) ───────────────────────────────
+function downloadCSV() {
   isDownloading.value = true;
   try {
-    const params = new URLSearchParams();
-    if (filterLecturer.value)   params.set('lecturerId', filterLecturer.value);
-    if (filterEmployment.value) params.set('employmentType', filterEmployment.value);
-    if (fromDate.value)         params.set('from', fromDate.value);
-    if (toDate.value)           params.set('to',   toDate.value);
-
-    const token    = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
-    const baseURL  = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    const url      = `${baseURL}/api/finance/claims/download?${params.toString()}`;
-
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!response.ok) throw new Error('Download failed');
-
-    const blob      = await response.blob();
-    const filename  = `lecturer_claims_${new Date().toISOString().slice(0, 10)}.csv`;
-    const link      = document.createElement('a');
-    link.href       = URL.createObjectURL(blob);
-    link.download   = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-  } catch { /* silent */ } finally {
+    const rowsToExport = filtered.value;
+    if (!rowsToExport || rowsToExport.length === 0) {
+      alert('No claim records match your current filters to download.');
+      return;
+    }
+    const filename = `lecturer_claims_${new Date().toISOString().slice(0, 10)}.csv`;
+    financeStore.downloadClaimsCSV(rowsToExport, filename);
+  } catch (err) {
+    console.error('CSV download error:', err);
+    alert('Failed to generate CSV download: ' + err.message);
+  } finally {
     isDownloading.value = false;
   }
 }
