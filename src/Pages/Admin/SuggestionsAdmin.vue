@@ -7,15 +7,82 @@
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
 
-      <div class="relative z-10">
-        <div class="flex items-center gap-2 mb-1.5">
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium tracking-wide uppercase bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
-            <MessageSquare class="w-3 h-3" />
-            ADMIN // SUGGESTION BOX
-          </span>
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium tracking-wide uppercase bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
+              <MessageSquare class="w-3 h-3" />
+              ADMIN // SUGGESTION BOX
+            </span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Suggestion Box</h1>
+          <p class="text-sm text-slate-500 dark:text-white/75 mt-1">Review complaints, suggestions and feedback submitted by students.</p>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-display font-bold text-slate-900 dark:text-white tracking-tight">Suggestion Box</h1>
-        <p class="text-sm text-slate-500 dark:text-white/75 mt-1">Review complaints, suggestions and feedback submitted by students.</p>
+
+        <!-- Download & Export Controls Strip -->
+        <div class="flex items-center flex-wrap gap-2 pt-1 md:pt-0">
+          <button
+            @click="downloadCSV('filtered')"
+            :disabled="filtered.length === 0"
+            title="Download CSV spreadsheet of current list"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 cursor-pointer shadow-xs"
+          >
+            <FileSpreadsheet class="w-3.5 h-3.5" />
+            <span>Download CSV ({{ filtered.length }})</span>
+          </button>
+
+          <button
+            @click="downloadPDF('filtered')"
+            :disabled="filtered.length === 0"
+            title="Print or Save PDF report of suggestions"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-sky-200 dark:border-sky-800/60 bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 text-xs font-mono font-bold hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 cursor-pointer shadow-xs"
+          >
+            <Printer class="w-3.5 h-3.5" />
+            <span>PDF Report</span>
+          </button>
+
+          <!-- Dropdown for more export options -->
+          <div class="relative export-dropdown-container">
+            <button
+              @click.stop="exportDropdownOpen = !exportDropdownOpen"
+              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted text-slate-700 dark:text-white/90 text-xs font-mono font-bold hover:border-secondary transition-all shadow-xs cursor-pointer"
+            >
+              <Download class="w-3.5 h-3.5 text-secondary" />
+              <span>Export</span>
+              <ChevronDown class="w-3 h-3 text-slate-400 transition-transform" :class="{ 'rotate-180': exportDropdownOpen }" />
+            </button>
+
+            <div
+              v-if="exportDropdownOpen"
+              class="absolute right-0 mt-2 w-56 rounded-xl bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline shadow-2xl py-1.5 z-40 animate-in fade-in zoom-in-95 duration-150"
+            >
+              <button
+                @click="downloadCSV('all'); exportDropdownOpen = false"
+                :disabled="suggestions.length === 0"
+                class="w-full text-left px-3.5 py-2 text-xs font-mono flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-dark-muted text-slate-700 dark:text-white/90 disabled:opacity-40 cursor-pointer"
+              >
+                <FileSpreadsheet class="w-3.5 h-3.5 text-emerald-500" />
+                <span>Export All as CSV ({{ suggestions.length }})</span>
+              </button>
+              <button
+                @click="downloadJSON('filtered'); exportDropdownOpen = false"
+                :disabled="filtered.length === 0"
+                class="w-full text-left px-3.5 py-2 text-xs font-mono flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-dark-muted text-slate-700 dark:text-white/90 disabled:opacity-40 cursor-pointer"
+              >
+                <FileText class="w-3.5 h-3.5 text-amber-500" />
+                <span>Export Filtered JSON</span>
+              </button>
+              <button
+                @click="downloadJSON('all'); exportDropdownOpen = false"
+                :disabled="suggestions.length === 0"
+                class="w-full text-left px-3.5 py-2 text-xs font-mono flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-dark-muted text-slate-700 dark:text-white/90 disabled:opacity-40 cursor-pointer border-t border-slate-100 dark:border-dark-outline"
+              >
+                <FileText class="w-3.5 h-3.5 text-primary dark:text-secondary" />
+                <span>Full JSON Backup ({{ suggestions.length }})</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -35,7 +102,7 @@
       </div>
     </div>
 
-    <!-- Filters -->
+    <!-- Filters Strip -->
     <div class="bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row flex-wrap gap-3">
       <div class="flex-1 relative min-w-[200px]">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -58,7 +125,7 @@
         <option value="other">Other</option>
       </select>
       <button @click="load" :disabled="isLoading"
-        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted text-slate-600 dark:text-white/90 hover:text-primary dark:hover:text-secondary text-sm font-medium transition-all shadow-sm disabled:opacity-50 whitespace-nowrap"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted text-slate-600 dark:text-white/90 hover:text-primary dark:hover:text-secondary text-sm font-medium transition-all shadow-sm disabled:opacity-50 whitespace-nowrap cursor-pointer"
       >
         <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
         Refresh
@@ -122,24 +189,68 @@
         </div>
 
         <!-- Actions -->
-        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-dark-outline flex flex-wrap items-center gap-2">
+        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-dark-outline flex flex-wrap items-center justify-between gap-2">
           <div class="flex gap-1.5 flex-wrap">
             <button v-for="st in statusOptions" :key="st.value"
               @click="changeStatus(s, st.value)"
               :disabled="s.status === st.value || s._saving"
-              :class="['px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold border transition-all disabled:cursor-not-allowed',
+              :class="['px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold border transition-all disabled:cursor-not-allowed cursor-pointer',
                 s.status === st.value
                   ? getStatusActiveCls(st.value)
                   : 'bg-slate-50 dark:bg-dark-muted text-slate-500 dark:text-white/75 border-slate-200 dark:border-dark-outline/70 hover:border-slate-300 opacity-60 hover:opacity-100'
               ]"
             >{{ st.label }}</button>
           </div>
-          <button @click="openNote(s)"
-            class="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted text-xs font-semibold text-slate-600 dark:text-white/90 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary transition-all"
-          >
-            <MessageSquare class="w-3.5 h-3.5" />
-            {{ s.adminNote ? 'Edit Note' : 'Add Note' }}
-          </button>
+
+          <div class="flex items-center gap-2">
+            <!-- Single Ticket Download Menu -->
+            <div class="relative ticket-dropdown-container">
+              <button
+                @click.stop="toggleTicketMenu(s.id)"
+                title="Download or Print this suggestion ticket"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-slate-50 dark:bg-dark-muted text-xs font-semibold text-slate-600 dark:text-white/80 hover:text-primary dark:hover:text-secondary hover:border-primary/40 transition-all cursor-pointer"
+              >
+                <Download class="w-3.5 h-3.5 text-secondary" />
+                <span>Download</span>
+                <ChevronDown class="w-3 h-3 text-slate-400" />
+              </button>
+
+              <div
+                v-if="openTicketMenuId === s.id"
+                class="absolute right-0 bottom-full mb-1.5 w-44 rounded-xl bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline shadow-2xl py-1.5 z-40 text-xs font-mono animate-in fade-in zoom-in-95 duration-100"
+              >
+                <button
+                  @click="downloadSingleText(s); openTicketMenuId = null"
+                  class="w-full text-left px-3.5 py-2 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-dark-muted text-slate-700 dark:text-white/90 cursor-pointer"
+                >
+                  <FileText class="w-3.5 h-3.5 text-primary dark:text-secondary" />
+                  <span>Text Slip (.txt)</span>
+                </button>
+                <button
+                  @click="printSingleTicket(s); openTicketMenuId = null"
+                  class="w-full text-left px-3.5 py-2 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-dark-muted text-slate-700 dark:text-white/90 cursor-pointer"
+                >
+                  <Printer class="w-3.5 h-3.5 text-sky-500" />
+                  <span>Print / PDF Slip</span>
+                </button>
+                <button
+                  @click="downloadSingleJSON(s); openTicketMenuId = null"
+                  class="w-full text-left px-3.5 py-2 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-dark-muted text-slate-700 dark:text-white/90 cursor-pointer border-t border-slate-100 dark:border-dark-outline"
+                >
+                  <FileSpreadsheet class="w-3.5 h-3.5 text-emerald-500" />
+                  <span>JSON Record</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Add/Edit Note button -->
+            <button @click="openNote(s)"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-white dark:bg-dark-muted text-xs font-semibold text-slate-600 dark:text-white/90 hover:border-primary dark:hover:border-secondary hover:text-primary dark:hover:text-secondary transition-all cursor-pointer"
+            >
+              <MessageSquare class="w-3.5 h-3.5" />
+              {{ s.adminNote ? 'Edit Note' : 'Add Note' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -181,19 +292,55 @@
         </div>
       </transition>
     </Teleport>
+
+    <!-- Toast Notification via Teleport -->
+    <Teleport to="body">
+      <transition 
+        enter-active-class="transition ease-out duration-300 transform"
+        enter-from-class="opacity-0 translate-y-4"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition ease-in duration-200 transform"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-4"
+      >
+        <div 
+          v-if="toastMessage" 
+          class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-2xl text-xs font-mono font-medium max-w-md"
+        >
+          <CheckCircle2 class="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{{ toastMessage }}</span>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
 import { supabase } from '@/stores/supabase';
-import { MessageSquare, Search, RefreshCw, Loader2, X } from 'lucide-vue-next';
+import { 
+  MessageSquare, 
+  Search, 
+  RefreshCw, 
+  Loader2, 
+  X, 
+  Download, 
+  FileSpreadsheet, 
+  FileText, 
+  Printer, 
+  ChevronDown, 
+  CheckCircle2 
+} from 'lucide-vue-next';
 
 const suggestions = ref([]);
 const isLoading   = ref(false);
 const search         = ref('');
 const filterStatus   = ref('');
 const filterCategory = ref('');
+
+const exportDropdownOpen = ref(false);
+const openTicketMenuId   = ref(null);
+const toastMessage       = ref('');
 
 const noteModal = reactive({ open: false, id: '', subject: '', note: '', saving: false });
 
@@ -213,6 +360,7 @@ const categories = [
 const catLabel = (v) => categories.find(c => c.value === v)?.label ?? v;
 const statusLabel = (s) => ({ unread: 'Unread', reviewed: 'Reviewed', resolved: 'Resolved' })[s] ?? s;
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const fmtDateTime = (d) => new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 const unread   = computed(() => suggestions.value.filter(s => s.status === 'unread').length);
 const reviewed = computed(() => suggestions.value.filter(s => s.status === 'reviewed').length);
@@ -222,9 +370,25 @@ const filtered = computed(() => {
   let list = suggestions.value;
   if (filterStatus.value)   list = list.filter(s => s.status   === filterStatus.value);
   if (filterCategory.value) list = list.filter(s => s.category === filterCategory.value);
-  if (search.value.trim()) { const q = search.value.toLowerCase(); list = list.filter(s => s.subject.toLowerCase().includes(q) || s.message.toLowerCase().includes(q)); }
+  if (search.value.trim()) { 
+    const q = search.value.toLowerCase(); 
+    list = list.filter(s => 
+      s.subject.toLowerCase().includes(q) || 
+      s.message.toLowerCase().includes(q) || 
+      (s.studentName && s.studentName.toLowerCase().includes(q)) ||
+      (s.idNumber && s.idNumber.toLowerCase().includes(q))
+    ); 
+  }
   return list;
 });
+
+// Toast notification helper
+function showToast(msg) {
+  toastMessage.value = msg;
+  setTimeout(() => {
+    if (toastMessage.value === msg) toastMessage.value = '';
+  }, 3500);
+}
 
 // Style helpers
 const getCategoryBorder = (v) => ({
@@ -253,15 +417,24 @@ const getStatusActiveCls = (s) => ({
 async function load() {
   isLoading.value = true;
   try {
-    const { data, error: sbErr } = await supabase.from('suggestions').select('id, student_id, category, subject, message, is_anonymous, status, admin_note, created_at, users(name, id_number)').order('created_at', { ascending: false });
+    const { data, error: sbErr } = await supabase
+      .from('suggestions')
+      .select('id, student_id, category, subject, message, is_anonymous, status, admin_note, created_at, users(name, id_number)')
+      .order('created_at', { ascending: false });
     if (sbErr) throw sbErr;
     suggestions.value = (data ?? []).map(s => ({
-      id: s.id, studentId: s.student_id,
+      id: s.id, 
+      studentId: s.student_id,
       studentName: s.is_anonymous ? 'Anonymous' : (s.users?.name || 'Student'),
       idNumber: s.is_anonymous ? null : (s.users?.id_number || null),
-      category: s.category, subject: s.subject, message: s.message,
-      isAnonymous: s.is_anonymous, status: s.status, adminNote: s.admin_note,
-      createdAt: s.created_at, _saving: false,
+      category: s.category, 
+      subject: s.subject, 
+      message: s.message,
+      isAnonymous: s.is_anonymous, 
+      status: s.status, 
+      adminNote: s.admin_note,
+      createdAt: s.created_at, 
+      _saving: false,
     }));
   } catch { /* silent */ } finally {
     isLoading.value = false;
@@ -274,13 +447,17 @@ async function changeStatus(s, newStatus) {
     const { error: sbErr } = await supabase.from('suggestions').update({ status: newStatus }).eq('id', s.id);
     if (sbErr) throw sbErr;
     s.status = newStatus;
+    showToast(`Status updated to ${statusLabel(newStatus)}`);
   } catch { /* silent */ } finally {
     s._saving = false;
   }
 }
 
 function openNote(s) {
-  noteModal.id = s.id; noteModal.subject = s.subject; noteModal.note = s.adminNote || ''; noteModal.open = true;
+  noteModal.id = s.id; 
+  noteModal.subject = s.subject; 
+  noteModal.note = s.adminNote || ''; 
+  noteModal.open = true;
 }
 
 async function saveNote() {
@@ -291,10 +468,387 @@ async function saveNote() {
     const s = suggestions.value.find(x => x.id === noteModal.id);
     if (s) s.adminNote = noteModal.note;
     noteModal.open = false;
+    showToast('Admin response saved successfully');
   } catch { /* silent */ } finally {
     noteModal.saving = false;
   }
 }
 
-onMounted(load);
+function toggleTicketMenu(id) {
+  openTicketMenuId.value = openTicketMenuId.value === id ? null : id;
+}
+
+function handleGlobalClick(e) {
+  if (!e.target.closest('.export-dropdown-container')) {
+    exportDropdownOpen.value = false;
+  }
+  if (!e.target.closest('.ticket-dropdown-container')) {
+    openTicketMenuId.value = null;
+  }
+}
+
+// ── Export & Download Handlers ───────────────────────────────────────────────
+
+function downloadCSV(subset = 'filtered') {
+  const list = subset === 'all' ? suggestions.value : filtered.value;
+  if (!list.length) {
+    showToast('No suggestion records to download.');
+    return;
+  }
+
+  const headers = [
+    'Ticket ID',
+    'Date Submitted',
+    'Time Submitted',
+    'Category',
+    'Status',
+    'Submission Type',
+    'Student Name',
+    'Student ID',
+    'Subject',
+    'Message',
+    'Admin Response'
+  ];
+
+  const escapeCSV = (val) => {
+    if (val === null || val === undefined) return '""';
+    const s = String(val).replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
+  const rows = [headers.join(',')];
+
+  list.forEach(s => {
+    const d = s.createdAt ? new Date(s.createdAt) : null;
+    const dateStr = d ? d.toISOString().slice(0, 10) : '';
+    const timeStr = d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+    rows.push([
+      escapeCSV(s.id),
+      escapeCSV(dateStr),
+      escapeCSV(timeStr),
+      escapeCSV(catLabel(s.category)),
+      escapeCSV(statusLabel(s.status)),
+      escapeCSV(s.isAnonymous ? 'Anonymous' : 'Identified'),
+      escapeCSV(s.isAnonymous ? 'Anonymous' : (s.studentName || 'Student')),
+      escapeCSV(s.isAnonymous ? 'N/A' : (s.idNumber || 'N/A')),
+      escapeCSV(s.subject),
+      escapeCSV(s.message),
+      escapeCSV(s.adminNote || '')
+    ].join(','));
+  });
+
+  const blob = new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  const tag  = subset === 'all' ? 'all' : (filterStatus.value || filterCategory.value ? 'filtered' : 'active');
+  a.download = `suggestions-${tag}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast(`Downloaded ${list.length} suggestion records as CSV`);
+}
+
+function downloadJSON(subset = 'filtered') {
+  const list = subset === 'all' ? suggestions.value : filtered.value;
+  if (!list.length) {
+    showToast('No suggestion records to download.');
+    return;
+  }
+
+  const exportData = list.map(s => ({
+    id: s.id,
+    date: s.createdAt,
+    category: s.category,
+    status: s.status,
+    isAnonymous: s.isAnonymous,
+    studentName: s.isAnonymous ? 'Anonymous' : (s.studentName || 'Student'),
+    studentId: s.isAnonymous ? null : (s.idNumber || null),
+    subject: s.subject,
+    message: s.message,
+    adminNote: s.adminNote || null,
+  }));
+
+  const jsonStr = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `suggestions-export-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast(`Exported ${list.length} records as JSON`);
+}
+
+function downloadSingleText(s) {
+  const dateStr = fmtDateTime(s.createdAt);
+  const submitterStr = s.isAnonymous 
+    ? 'Anonymous Submission (Confidential Protection Policy)' 
+    : `${s.studentName || 'Student'}${s.idNumber ? ` [ID: ${s.idNumber}]` : ''}`;
+
+  const text = [
+    '================================================================================',
+    '                  UNIVERSITY ACADEMIC & ATTENDANCE PORTAL',
+    '                 STUDENT SUGGESTION BOX - OFFICIAL RECORD',
+    '================================================================================',
+    `Ticket ID        : ${s.id}`,
+    `Date Filed       : ${dateStr}`,
+    `Classification   : ${catLabel(s.category).toUpperCase()}`,
+    `Status           : ${statusLabel(s.status).toUpperCase()}`,
+    `Submitter        : ${submitterStr}`,
+    '--------------------------------------------------------------------------------',
+    'SUBJECT:',
+    s.subject,
+    '',
+    'DETAILS / MESSAGE:',
+    s.message,
+    '--------------------------------------------------------------------------------',
+    'ADMINISTRATIVE NOTES / OFFICIAL RESPONSE:',
+    s.adminNote ? s.adminNote : 'No administrative response note currently recorded.',
+    '================================================================================',
+    `Exported on: ${new Date().toLocaleString()}`,
+    '================================================================================',
+  ].join('\r\n');
+
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `suggestion-ticket-${s.id.slice(0, 8)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast(`Downloaded ticket #${s.id.slice(0, 8)} text slip`);
+}
+
+function downloadSingleJSON(s) {
+  const exportData = {
+    id: s.id,
+    date: s.createdAt,
+    category: s.category,
+    status: s.status,
+    isAnonymous: s.isAnonymous,
+    studentName: s.isAnonymous ? 'Anonymous' : (s.studentName || 'Student'),
+    studentId: s.isAnonymous ? null : (s.idNumber || null),
+    subject: s.subject,
+    message: s.message,
+    adminNote: s.adminNote || null,
+  };
+
+  const jsonStr = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `suggestion-record-${s.id.slice(0, 8)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast(`Downloaded ticket record #${s.id.slice(0, 8)} as JSON`);
+}
+
+function printSingleTicket(s) {
+  const dateStr = fmtDateTime(s.createdAt);
+  const submitterStr = s.isAnonymous 
+    ? '<span style="color:#7c3aed;font-weight:bold;">Anonymous Submission (Protected)</span>' 
+    : `<strong>${s.studentName || 'Student'}</strong>${s.idNumber ? ` &bull; ID: ${s.idNumber}` : ''}`;
+
+  const catColor = {
+    complaint: '#e11d48',
+    suggestion: '#d97706',
+    feedback: '#059669',
+    other: '#7c3aed',
+  }[s.category] || '#475569';
+
+  const statusColor = {
+    unread: '#0284c7',
+    reviewed: '#d97706',
+    resolved: '#059669',
+  }[s.status] || '#475569';
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Suggestion Ticket #${s.id.slice(0, 8)}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 30px; color: #0f172a; line-height: 1.5; font-size: 13px; }
+    .header { border-bottom: 2px solid #031c45; padding-bottom: 12px; margin-bottom: 20px; }
+    .header h1 { margin: 0 0 4px 0; font-size: 18px; color: #031c45; letter-spacing: -0.5px; }
+    .header p { margin: 0; color: #64748b; font-size: 11px; }
+    .card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    .pill { display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-right: 6px; }
+    .meta-row { display: flex; justify-content: space-between; margin-bottom: 14px; font-size: 12px; }
+    .subject { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #0f172a; }
+    .message { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 16px; white-space: pre-wrap; font-size: 12px; color: #334155; }
+    .note-box { background: #f0f9ff; border: 1px solid #bae6fd; border-left: 4px solid #0284c7; border-radius: 6px; padding: 12px; font-size: 12px; color: #0369a1; }
+    .footer { margin-top: 30px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 8px; text-align: right; }
+    @media print { body { margin: 15mm; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>UNIVERSITY SUGGESTION BOX — OFFICIAL TICKET</h1>
+    <p>ATTENDANCE & STUDENT ENGAGEMENT PORTAL &bull; TICKET #${s.id}</p>
+  </div>
+
+  <div class="card">
+    <div class="meta-row">
+      <div>
+        <span class="pill" style="background:#f1f5f9;color:${catColor};border:1px solid ${catColor}40;">${catLabel(s.category)}</span>
+        <span class="pill" style="background:#f1f5f9;color:${statusColor};border:1px solid ${statusColor}40;">${statusLabel(s.status)}</span>
+      </div>
+      <div style="color:#64748b;">Filed: ${dateStr}</div>
+    </div>
+
+    <div style="margin-bottom: 12px; font-size: 12px;">
+      <strong>Submitter:</strong> ${submitterStr}
+    </div>
+
+    <div class="subject">${s.subject}</div>
+    <div class="message">${s.message}</div>
+
+    <div class="note-box">
+      <strong>Administrative Response / Note:</strong><br/>
+      ${s.adminNote ? s.adminNote : '<em>No administrative response recorded yet.</em>'}
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated on ${new Date().toLocaleString()} &bull; System Verified Record
+  </div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
+  } else {
+    showToast('Please allow popups to print ticket slip.');
+  }
+}
+
+function downloadPDF(subset = 'filtered') {
+  const list = subset === 'all' ? suggestions.value : filtered.value;
+  if (!list.length) {
+    showToast('No suggestion records to print/download.');
+    return;
+  }
+
+  const dateStr = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+  const filterDesc = [
+    filterStatus.value ? `Status: ${statusLabel(filterStatus.value)}` : 'All Statuses',
+    filterCategory.value ? `Category: ${catLabel(filterCategory.value)}` : 'All Categories',
+    search.value.trim() ? `Search: "${search.value.trim()}"` : null
+  ].filter(Boolean).join(' • ');
+
+  let itemsHtml = '';
+  list.forEach(s => {
+    const dStr = fmtDateTime(s.createdAt);
+    const submitter = s.isAnonymous 
+      ? '<span style="color:#7c3aed;font-weight:600;">Anonymous Submission</span>' 
+      : `<strong>${s.studentName || 'Student'}</strong>${s.idNumber ? ` [${s.idNumber}]` : ''}`;
+
+    const catBadge = catLabel(s.category);
+    const stBadge = statusLabel(s.status);
+
+    itemsHtml += `
+    <div class="item">
+      <div class="item-header">
+        <div>
+          <span class="badge badge-${s.category}">${catBadge}</span>
+          <span class="badge badge-status">${stBadge}</span>
+          <span class="ticket-id">#${s.id.slice(0, 8)}</span>
+        </div>
+        <div class="date">${dStr}</div>
+      </div>
+      <div class="submitter">Submitter: ${submitter}</div>
+      <div class="subject">${s.subject}</div>
+      <div class="body">${s.message}</div>
+      ${s.adminNote ? `<div class="note"><strong>Admin Note:</strong> ${s.adminNote}</div>` : ''}
+    </div>`;
+  });
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Suggestion Box Dossier — ${dateStr}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; color: #0f172a; margin: 24px; line-height: 1.45; }
+    .header { border-bottom: 2px solid #031c45; padding-bottom: 12px; margin-bottom: 16px; }
+    .header h1 { margin: 0 0 4px 0; font-size: 20px; color: #031c45; }
+    .meta { font-size: 11px; color: #64748b; margin-top: 4px; }
+    .kpis { display: flex; gap: 12px; margin: 16px 0; }
+    .kpi { border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; min-width: 90px; }
+    .kpi .num { font-size: 18px; font-weight: bold; color: #031c45; }
+    .kpi .lbl { font-size: 10px; color: #64748b; text-transform: uppercase; }
+    .item { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; break-inside: avoid; page-break-inside: avoid; }
+    .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-right: 4px; }
+    .badge-complaint { background: #ffe4e6; color: #e11d48; }
+    .badge-suggestion { background: #fef3c7; color: #d97706; }
+    .badge-feedback { background: #d1fae5; color: #059669; }
+    .badge-other { background: #ede9fe; color: #7c3aed; }
+    .badge-status { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+    .ticket-id { font-family: monospace; font-size: 11px; color: #94a3b8; }
+    .date { font-size: 11px; color: #64748b; }
+    .submitter { font-size: 11px; color: #475569; margin-bottom: 4px; }
+    .subject { font-size: 14px; font-weight: bold; color: #0f172a; margin-bottom: 6px; }
+    .body { font-size: 12px; color: #334155; margin-bottom: 8px; white-space: pre-wrap; }
+    .note { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; padding: 8px 10px; font-size: 11px; color: #0369a1; }
+    @media print { body { margin: 10mm; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>University Suggestion Box — Summary Dossier</h1>
+    <div class="meta">Generated: ${dateStr} &bull; Scope: ${filterDesc}</div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="num">${list.length}</div><div class="lbl">Total Items</div></div>
+    <div class="kpi"><div class="num">${list.filter(x => x.status === 'unread').length}</div><div class="lbl">Unread</div></div>
+    <div class="kpi"><div class="num">${list.filter(x => x.status === 'reviewed').length}</div><div class="lbl">Reviewed</div></div>
+    <div class="kpi"><div class="num">${list.filter(x => x.status === 'resolved').length}</div><div class="lbl">Resolved</div></div>
+  </div>
+
+  <div class="items">
+    ${itemsHtml}
+  </div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
+  } else {
+    showToast('Please allow popups to print report.');
+  }
+}
+
+onMounted(() => {
+  load();
+  window.addEventListener('click', handleGlobalClick);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleGlobalClick);
+});
 </script>
