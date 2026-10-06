@@ -152,7 +152,7 @@
         class="bg-slate-50 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 dark:text-white focus:outline-hidden focus:border-secondary"
       >
         <option value="">All Lecturers</option>
-        <option v-for="(name, id) in lecturerNames" :key="id" :value="id">{{ name }}</option>
+        <option v-for="lec in allLecturers" :key="lec.id" :value="lec.id">{{ lec.name }}</option>
       </select>
 
       <select 
@@ -161,7 +161,7 @@
         class="bg-slate-50 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 dark:text-white focus:outline-hidden focus:border-secondary"
       >
         <option value="">All Courses</option>
-        <option v-for="c in evaluatedCourses" :key="c.id" :value="c.id">{{ c.label }}</option>
+        <option v-for="c in allCourses" :key="c.id" :value="c.id">{{ c.label }}</option>
       </select>
 
       <div class="relative flex-1">
@@ -387,23 +387,52 @@ const { profile } = storeToRefs(authStore);
 const filterLecturer = ref('');
 const filterCourse   = ref('');
 const searchQ        = ref('');
-const lecturerNames  = ref({});
-const courseNames    = ref({});
+const lecturerNames  = ref({});  // id → name  (all lecturers)
+const courseNames    = ref({});  // id → label (all courses)
+
+// Full roster lists for filter dropdowns (independent of evaluations)
+const allLecturers   = ref([]); // [{ id, name }]
+const allCourses     = ref([]); // [{ id, label }]
 
 onMounted(async () => {
   await Promise.all([evalStore.fetchEvaluations(), evalStore.fetchSettings()]);
 
-  // Load lecturer names
-  const lecturerIds = [...new Set(evalStore.evaluations.map(e => e.lecturer_id).filter(Boolean))];
-  if (lecturerIds.length) {
-    const { data } = await supabase.from('users').select('id, name').in('id', lecturerIds);
+  // ── 1. Load ALL lecturers from the users table (role = Lecturer) ──────────
+  const { data: lecturersData } = await supabase
+    .from('users')
+    .select('id, name')
+    .eq('role', 'Lecturer')
+    .order('name', { ascending: true });
+
+  (lecturersData ?? []).forEach(u => {
+    lecturerNames.value[u.id] = u.name;
+  });
+  allLecturers.value = (lecturersData ?? []).map(u => ({ id: u.id, name: u.name }));
+
+  // ── 2. Load ALL courses from the courses table ────────────────────────────
+  const { data: coursesData } = await supabase
+    .from('courses')
+    .select('id, code, name')
+    .order('code', { ascending: true });
+
+  (coursesData ?? []).forEach(c => {
+    courseNames.value[c.id] = `${c.code} — ${c.name}`;
+  });
+  allCourses.value = (coursesData ?? []).map(c => ({ id: c.id, label: `${c.code} — ${c.name}` }));
+
+  // ── 3. Also back-fill any lecturer/course IDs that came from evaluations
+  //       but are not in the above queries (edge case: deleted users/courses)
+  const evalLecturerIds = [...new Set(evalStore.evaluations.map(e => e.lecturer_id).filter(Boolean))]
+    .filter(id => !lecturerNames.value[id]);
+  if (evalLecturerIds.length) {
+    const { data } = await supabase.from('users').select('id, name').in('id', evalLecturerIds);
     (data ?? []).forEach(u => { lecturerNames.value[u.id] = u.name; });
   }
 
-  // Load course names
-  const courseIds = [...new Set(evalStore.evaluations.map(e => e.course_id).filter(Boolean))];
-  if (courseIds.length) {
-    const { data } = await supabase.from('courses').select('id, code, name').in('id', courseIds);
+  const evalCourseIds = [...new Set(evalStore.evaluations.map(e => e.course_id).filter(Boolean))]
+    .filter(id => !courseNames.value[id]);
+  if (evalCourseIds.length) {
+    const { data } = await supabase.from('courses').select('id, code, name').in('id', evalCourseIds);
     (data ?? []).forEach(c => { courseNames.value[c.id] = `${c.code} — ${c.name}`; });
   }
 });
