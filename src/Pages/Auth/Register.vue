@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full flex items-center justify-center bg-background dark:bg-dark-background text-foreground dark:text-white relative overflow-x-hidden font-sans p-4 sm:p-6 lg:p-10">
+  <div class="min-h-screen w-full flex items-center justify-center bg-background dark:bg-dark-background text-foreground dark:text-white relative overflow-x-hidden font-sans p-3 sm:p-4 md:p-6 lg:p-10">
     
     <!-- Blueprint architectural grid background -->
     <div class="absolute inset-0 bg-[radial-gradient(#c2cde0_1px,transparent_1px)] dark:bg-[radial-gradient(#1e3560_1.2px,transparent_1.2px)] [background-size:28px_28px] opacity-70 pointer-events-none"></div>
@@ -9,10 +9,10 @@
     <div class="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-primary/10 dark:bg-dark-primary/15 blur-3xl pointer-events-none"></div>
 
     <!-- Main Dual-Column Architectural Container -->
-    <div class="relative z-10 w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 bg-surface/90 dark:bg-dark-surface/90 backdrop-blur-xl border border-outline dark:border-dark-outline rounded-3xl shadow-2xl shadow-primary/10 overflow-hidden">
+    <div class="relative z-10 w-full max-w-sm sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 bg-surface/90 dark:bg-dark-surface/90 backdrop-blur-xl border border-outline dark:border-dark-outline rounded-2xl sm:rounded-3xl shadow-2xl shadow-primary/10 overflow-hidden">
       
       <!-- ── Left Column: Registration Form (7 cols on lg) ── -->
-      <div class="lg:col-span-7 p-8 sm:p-12 lg:p-14 flex flex-col justify-center bg-surface dark:bg-dark-surface order-1 lg:order-1">
+      <div class="lg:col-span-7 p-5 sm:p-8 md:p-10 lg:p-12 xl:p-14 flex flex-col justify-center bg-surface dark:bg-dark-surface order-1 lg:order-1">
         
         <div class="max-w-lg w-full mx-auto">
           
@@ -266,7 +266,7 @@
       </div>
 
       <!-- ── Right Column: Visual Architectural Showcase (5 cols on lg) ── -->
-      <div class="relative lg:col-span-5 bg-primary dark:bg-dark-surface text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between overflow-hidden border-t lg:border-t-0 lg:border-l border-outline/20 dark:border-dark-outline order-2 lg:order-2">
+      <div class="relative lg:col-span-5 bg-primary dark:bg-dark-surface text-white p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-between overflow-hidden border-t lg:border-t-0 lg:border-l border-outline/20 dark:border-dark-outline order-2 lg:order-2 hidden lg:flex">
         
         <!-- Decorative corners -->
         <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>

@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 sm:space-y-8 font-sans pb-10">
+  <div class="space-y-4 sm:space-y-6 lg:space-y-8 font-sans pb-10 w-full max-w-screen-2xl mx-auto">
     
     <!-- ── Top Architectural Header ────────────────────────────────────── -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-outline/40 dark:border-dark-outline/60">
@@ -61,7 +61,7 @@
     </div>
 
     <!-- ── 4 Key Metric Cards ─────────────────────────────────────────── -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+    <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
       
       <!-- Metric 1: Total Students -->
       <div class="relative p-5 bg-surface dark:bg-dark-surface border border-outline/70 dark:border-dark-outline rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
@@ -169,7 +169,7 @@
     </div>
 
     <!-- ── Main Content Split (Today's Schedule & Live Audit Logs) ──────── -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
       
       <!-- Left Column: Today's Schedule (7 cols on lg) -->
       <div class="lg:col-span-7 space-y-4">
@@ -193,12 +193,12 @@
             </div>
 
             <!-- Schedule Filter Tabs -->
-            <div class="flex items-center gap-1 p-1 rounded-xl bg-background dark:bg-dark-background border border-outline/50 dark:border-dark-outline/60 text-xs">
+            <div class="flex items-center gap-1 p-1 rounded-xl bg-background dark:bg-dark-background border border-outline/50 dark:border-dark-outline/60 text-xs overflow-x-auto shrink-0 scrollbar-none">
               <button
                 v-for="tab in filterTabs"
                 :key="tab.id"
                 @click="activeScheduleFilter = tab.id"
-                class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer"
+                class="px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 :class="activeScheduleFilter === tab.id
                   ? 'bg-surface dark:bg-dark-surface text-primary dark:text-dark-secondary shadow-xs font-semibold'
                   : 'text-foreground/60 dark:text-white/70 hover:text-foreground dark:hover:text-dark-foreground'"
@@ -459,7 +459,7 @@
         @click.self="isAuditModalOpen = false"
       >
         <div
-          class="relative w-full max-w-3xl max-h-[85vh] flex flex-col bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden"
+          class="relative w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[90dvh] sm:max-h-[85vh] flex flex-col bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden"
           role="dialog"
           aria-modal="true"
         >
@@ -488,8 +488,8 @@
           </div>
 
           <!-- Search & Filter Bar -->
-          <div class="p-4 bg-background/50 dark:bg-dark-background/50 border-b border-outline/40 dark:border-dark-outline/40 flex flex-col sm:flex-row items-center gap-3 shrink-0">
-            <div class="relative w-full sm:flex-1">
+          <div class="p-3 sm:p-4 bg-background/50 dark:bg-dark-background/50 border-b border-outline/40 dark:border-dark-outline/40 flex flex-col gap-2.5 shrink-0">
+            <div class="relative w-full">
               <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/40 dark:text-white/50" />
               <input
                 type="text"
@@ -498,13 +498,13 @@
                 class="w-full pl-10 pr-4 py-2 bg-surface dark:bg-dark-surface border border-outline dark:border-dark-outline rounded-xl text-xs text-foreground dark:text-white focus:outline-none focus:border-primary dark:focus:border-dark-secondary"
               />
             </div>
-            <div class="flex items-center gap-1 text-xs self-start sm:self-auto">
-              <span class="text-foreground/50 dark:text-white/65 mr-1">Role:</span>
+            <div class="flex items-center gap-1 text-xs overflow-x-auto scrollbar-none pb-0.5">
+              <span class="text-foreground/50 dark:text-white/65 mr-1 shrink-0">Role:</span>
               <button
                 v-for="role in ['All', 'Admin', 'Lecturer', 'Student', 'System']"
                 :key="role"
                 @click="selectedAuditRole = role"
-                class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                 :class="selectedAuditRole === role
                   ? 'bg-primary dark:bg-dark-secondary text-white dark:text-dark-background font-semibold'
                   : 'text-foreground/60 dark:text-white/70 hover:bg-background dark:hover:bg-dark-background'"

@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8 p-1 sm:p-2 lg:p-4 animate-in fade-in duration-500">
+  <div class="space-y-5 sm:space-y-8 p-0 animate-in fade-in duration-500 w-full max-w-screen-2xl mx-auto">
 
     <!-- Header -->
     <div class="relative bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl p-6 sm:p-8 shadow-sm overflow-hidden">
@@ -28,7 +28,7 @@
     </div>
 
     <!-- Stats Strip -->
-    <div class="flex flex-wrap gap-4">
+    <div class="flex flex-wrap gap-3 sm:gap-4">
       <div class="flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline shadow-sm">
         <div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
           <Users class="w-4 h-4" />
@@ -76,8 +76,8 @@
         </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
+      <div class="w-full overflow-x-auto -mx-0">
+        <table class="w-full min-w-[640px] text-left border-collapse text-xs">
           <thead>
             <tr class="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-dark-outline text-slate-500 dark:text-white/75 font-mono uppercase text-[11px] tracking-wider">
               <th class="py-3 px-4 font-semibold">Student</th>
@@ -124,8 +124,8 @@
     </div>
 
     <!-- Assign Modal -->
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" @click.self="closeModal">
-      <div class="relative w-full max-w-xl bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" @click.self="closeModal">
+      <div class="relative w-full max-w-[95vw] sm:max-w-xl bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-2xl shadow-2xl overflow-hidden max-h-[92dvh] sm:max-h-[90vh] flex flex-col">
         <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-emerald-500/40 pointer-events-none"></div>
         <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-emerald-500/40 pointer-events-none"></div>
 

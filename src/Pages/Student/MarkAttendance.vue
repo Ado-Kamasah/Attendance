@@ -2,7 +2,7 @@
 
     <!-- ── COURSE-SPECIFIC VIEW (opened from My Courses) ── -->
     <template v-if="courseId">
-      <div class="space-y-6 w-full max-w-7xl mx-auto">
+      <div class="space-y-4 sm:space-y-6 w-full max-w-screen-2xl mx-auto">
       <!-- Back button + Course Header -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
         <div class="flex items-center gap-3">
@@ -32,7 +32,7 @@
       </div>
 
       <!-- Summary KPI cards -->
-      <div v-if="!isLoading" class="grid grid-cols-3 gap-4">
+      <div v-if="!isLoading" class="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4">
         <div class="p-4 rounded-2xl bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 shadow-xs text-center">
           <div class="text-2xl font-extrabold font-display text-success">{{ courseSummary.present }}</div>
           <div class="text-[11px] font-mono uppercase tracking-wider text-foreground/60 dark:text-white/65 mt-1">Present</div>
@@ -168,7 +168,7 @@
 
     <!-- ── DEFAULT VIEW (all courses, opened from sidebar) ── -->
     <template v-else>
-      <div class="space-y-6 w-full max-w-7xl mx-auto">
+      <div class="space-y-4 sm:space-y-6 w-full max-w-screen-2xl mx-auto">
       <!-- Header with Blueprint Eyebrow -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline/30 dark:border-dark-outline/40">
       <div>
@@ -195,7 +195,7 @@
     </div>
 
     <!-- 2-Column Split Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
       <!-- Left: Active Session Tracker (7 cols) -->
       <div class="lg:col-span-7 space-y-4">
         <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden p-6">

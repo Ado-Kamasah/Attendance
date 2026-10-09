@@ -35,6 +35,8 @@
   --color-dark-warning: #fbbf24;      /* Bright amber */
   --color-dark-error: #f87171;        /* Bright red */
   --color-dark-info: #38bdf8;         /* Bright cyan */
+  /* Breakpoints */
+  --breakpoint-xs: 475px;
 }
 
 @layer base {
@@ -107,5 +109,15 @@
   .dark option {
     color: #ffffff;
     background-color: #1e293b;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }

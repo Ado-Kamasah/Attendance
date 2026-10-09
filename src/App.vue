@@ -155,7 +155,7 @@ const handleRegisterSuccess = () => {
     />
     <div class="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
       <Navbar @toggle-mobile-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen" @logout="handleLogout" @navigate="handleNavigationEvent" />
-      <main class="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden min-w-0 min-h-0">
+      <main class="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 overflow-y-auto overflow-x-hidden min-w-0 min-h-0">
         <Dashboard v-if="currentRoute === '/'" @navigate="handleNavigationEvent" />
         <StudentDashboard v-else-if="currentRoute === '/student-dashboard'" @navigate="handleNavigationEvent" />
         <LecturerDashboard v-else-if="currentRoute === '/lecturer-dashboard'" @navigate="handleNavigationEvent" />
