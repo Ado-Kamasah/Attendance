@@ -383,13 +383,55 @@ const submitAttendance = async () => {
       pin: created.pin,
     };
 
-    sendPresentConfirmations(created.id, created.pin, presentStudents);
-    sendAbsenceNotifications(created.id, created.pin, absentStudents);
+    dispatchSessionAttendance(created.id, created.pin, presentStudents, absentStudents);
   } catch (e) {
     startError.value = e.message || 'Failed to record attendance.';
   } finally {
     isStarting.value = false;
   }
+};
+
+const dispatchSessionAttendance = async (sessionId, pin, presentStudents, absentStudents) => {
+  const pTargets = presentStudents.filter(s => !!s.email);
+  const aTargets = absentStudents.filter(s => !!s.email);
+
+  otpDispatch.value = Object.fromEntries(pTargets.map(s => [s.id, { status: 'sending' }]));
+  absenceDispatch.value = Object.fromEntries(aTargets.map(s => [s.id, { status: 'sending' }]));
+
+  try {
+    // 1. Try unified session-notify endpoint
+    const res = await fetch(`${OTP_API_BASE}/api/attendance/notify-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionCode: pin, sessionId }),
+    });
+
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const byId = Object.fromEntries((data.results || []).map(r => [r.studentId, r]));
+
+      const nextOtp = {};
+      for (const s of pTargets) {
+        const r = byId[s.id];
+        nextOtp[s.id] = { status: (r?.success || data.presentCount > 0) ? 'sent' : 'failed' };
+      }
+      otpDispatch.value = nextOtp;
+
+      const nextAbs = {};
+      for (const s of aTargets) {
+        const r = byId[s.id];
+        nextAbs[s.id] = { status: (r?.success || data.absentCount > 0) ? 'sent' : 'failed' };
+      }
+      absenceDispatch.value = nextAbs;
+      return;
+    }
+  } catch (err) {
+    console.warn('Unified session-notify failed, using fallback:', err);
+  }
+
+  // 2. Fallback to individual dispatchers if unified endpoint unreachable
+  sendPresentConfirmations(sessionId, pin, presentStudents);
+  sendAbsenceNotifications(sessionId, pin, absentStudents);
 };
 
 const sendPresentConfirmations = async (sessionId, pin, presentStudents) => {
