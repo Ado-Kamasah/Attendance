@@ -72,6 +72,16 @@
             <Clock class="w-3.5 h-3.5" />
             {{ lastUpdated }}
           </div>
+
+          <button
+            @click="isExportModalOpen = true"
+            id="btn-export-attendance-lecturer"
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary text-secondary dark:text-secondary border border-secondary/30 text-xs font-mono font-bold hover:opacity-90 active:scale-95 transition-all shadow-2xs cursor-pointer"
+            title="Export lecture attendance to Excel (multi-sheet) or PDF"
+          >
+            <Download class="w-3.5 h-3.5" />
+            <span>Export Register</span>
+          </button>
         </div>
       </div>
     </div>
@@ -429,6 +439,15 @@
         </div>
       </div>
     </template>
+
+    <!-- Attendance Export Modal -->
+    <AttendanceExportModal
+      :is-open="isExportModalOpen"
+      :courses="myCourses"
+      :initial-course-id="selectedCourseFilter !== 'all' ? selectedCourseFilter : (myCourses[0]?.id || '')"
+      :lecturer-name-override="selectedLecturer ? selectedLecturer.name : (authStore.profile?.name || '')"
+      @close="isExportModalOpen = false"
+    />
   </div>
 </template>
 
@@ -436,14 +455,18 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/authstore';
 import { supabase } from '@/stores/supabase';
+import AttendanceExportModal from '@/components/AttendanceExportModal.vue';
 import {
   Users,
   TrendingUp,
   Calendar,
   AlertTriangle,
   CheckCircle2,
-  Clock
+  Clock,
+  Download
 } from 'lucide-vue-next';
+
+const isExportModalOpen = ref(false);
 
 const authStore = useAuthStore();
 

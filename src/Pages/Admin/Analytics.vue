@@ -43,6 +43,16 @@
             <option value="present">Present</option>
             <option value="absent">Absent</option>
           </select>
+
+          <button
+            @click="isExportModalOpen = true"
+            id="btn-export-attendance-admin"
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary text-secondary dark:text-secondary border border-secondary/30 text-xs font-mono font-bold hover:opacity-90 active:scale-95 transition-all shadow-2xs cursor-pointer"
+            title="Export lecture attendance to Excel (multi-sheet) or PDF"
+          >
+            <Download class="w-3.5 h-3.5" />
+            <span>Export Register</span>
+          </button>
         </div>
       </div>
     </div>
@@ -420,6 +430,14 @@
         </button>
       </div>
     </div>
+
+    <!-- Attendance Export Modal -->
+    <AttendanceExportModal
+      :is-open="isExportModalOpen"
+      :courses="courses"
+      :initial-course-id="selectedCourseFilter"
+      @close="isExportModalOpen = false"
+    />
   </div>
 </template>
 
@@ -432,6 +450,7 @@ import { useCoursesStore } from '@/stores/courses';
 import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useProgrammesStore } from '@/stores/programmes';
 import { supabase } from '@/stores/supabase';
+import AttendanceExportModal from '@/components/AttendanceExportModal.vue';
 import {
   Users,
   Percent,
@@ -440,8 +459,11 @@ import {
   BarChart2,
   Search,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Download
 } from 'lucide-vue-next';
+
+const isExportModalOpen = ref(false);
 
 const attendancesStore = useAttendancesStore();
 const sessionsStore = useSessionsStore();
