@@ -99,136 +99,131 @@
           </span>
         </div>
 
-        <!-- Timetable grid card -->
-        <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden">
-          <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/20 pointer-events-none z-10"></div>
-          <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/20 pointer-events-none z-10"></div>
+        <!-- Timetable grid card (Days on vertical axis, Allocated scheduled times on horizontal axis) -->
+        <div
+          v-if="allocatedTimeSlots.length > 0"
+          class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs overflow-hidden"
+        >
+          <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-secondary/20 pointer-events-none z-30"></div>
+          <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-secondary/20 pointer-events-none z-30"></div>
 
           <div class="overflow-x-auto">
-            <div :style="{ minWidth: `${activeDays.length * 160 + 80}px` }">
-              <!-- Day header -->
-              <div
-                class="grid border-b border-outline/30 dark:border-dark-outline/40 bg-muted/30 dark:bg-dark-muted/20"
-                :style="{ gridTemplateColumns: `80px repeat(${activeDays.length}, 1fr)` }"
-              >
-                <div class="px-3 py-4 text-[10px] font-mono font-bold uppercase tracking-wider text-foreground/40 dark:text-white/40 border-r border-outline/20 dark:border-dark-outline/30">
-                  TIME
-                </div>
+            <div class="min-w-full inline-block align-middle">
+              <!-- Header Row: Allocated Scheduled Time Columns -->
+              <div class="flex border-b border-outline/30 dark:border-dark-outline/40 bg-muted/40 dark:bg-dark-muted/30">
+                <!-- Day Column Header (Sticky Left) -->
                 <div
-                  v-for="day in activeDays"
-                  :key="day"
-                  class="px-3 py-4 text-center border-r border-outline/20 dark:border-dark-outline/30 last:border-r-0"
+                  class="w-32 sm:w-44 shrink-0 sticky left-0 z-30 px-4 py-3.5 bg-muted/70 dark:bg-dark-muted/50 backdrop-blur-md border-r border-outline/30 dark:border-dark-outline/40 shadow-[2px_0_6px_rgba(0,0,0,0.03)] dark:shadow-[2px_0_6px_rgba(0,0,0,0.2)] flex items-center justify-between"
                 >
-                  <p class="text-[10px] font-mono font-bold uppercase tracking-widest text-foreground/40 dark:text-white/40">
-                    {{ day.slice(0, 3) }}
-                  </p>
-                  <p class="text-sm font-extrabold font-display text-foreground dark:text-white mt-0.5">
-                    {{ day }}
-                  </p>
-                  <p class="text-[10px] font-mono text-foreground/30 dark:text-white/30 mt-0.5">
-                    {{ entriesForDay(day).length }} class{{ entriesForDay(day).length !== 1 ? 'es' : '' }}
-                  </p>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-foreground/50 dark:text-white/50">
+                    DAY \ TIME
+                  </span>
+                </div>
+
+                <!-- Allocated Time Slots Headers -->
+                <div
+                  v-for="slot in allocatedTimeSlots"
+                  :key="slot.key"
+                  class="min-w-[220px] sm:min-w-[260px] flex-1 px-4 py-3 border-r border-outline/20 dark:border-dark-outline/30 last:border-r-0 text-center flex flex-col justify-center"
+                >
+                  <span class="text-xs font-mono font-extrabold text-foreground dark:text-white">
+                    {{ slot.label12 }}
+                  </span>
+                  <div class="flex items-center justify-center gap-1.5 text-[10px] font-mono text-foreground/50 dark:text-white/50 mt-0.5">
+                    <span>{{ slot.label24 }}</span>
+                    <span>·</span>
+                    <span class="font-semibold text-secondary dark:text-dark-secondary">{{ slot.duration }}</span>
+                  </div>
                 </div>
               </div>
 
-              <!-- Grid body -->
+              <!-- Day Rows: Days on Vertical Axis -->
               <div
-                class="relative grid"
-                :style="{ gridTemplateColumns: `80px repeat(${activeDays.length}, 1fr)`, height: `${GRID_HEIGHT}px` }"
+                v-for="day in activeDays"
+                :key="day"
+                class="flex border-b border-outline/20 dark:border-dark-outline/30 last:border-b-0 hover:bg-muted/5 dark:hover:bg-dark-muted/5 transition-colors"
               >
-                <!-- Time labels -->
-                <div class="relative border-r border-outline/20 dark:border-dark-outline/30">
-                  <div
-                    v-for="(slot, i) in TIME_SLOTS"
-                    :key="slot"
-                    class="absolute left-0 right-0 px-3 pt-1"
-                    :style="{ top: `${i * SLOT_HEIGHT}px`, height: `${SLOT_HEIGHT}px` }"
+                <!-- Day Label Column (Sticky Left) -->
+                <div
+                  class="w-32 sm:w-44 shrink-0 sticky left-0 z-20 px-4 py-4 bg-surface dark:bg-dark-surface border-r border-outline/30 dark:border-dark-outline/40 shadow-[2px_0_6px_rgba(0,0,0,0.03)] dark:shadow-[2px_0_6px_rgba(0,0,0,0.2)] flex flex-col justify-center"
+                >
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-secondary dark:text-dark-secondary">
+                    {{ day.slice(0, 3) }}
+                  </span>
+                  <p class="text-sm font-extrabold font-display text-foreground dark:text-white mt-0.5">
+                    {{ day }}
+                  </p>
+                  <span
+                    class="text-[10px] font-mono mt-1 inline-flex items-center gap-1.5"
+                    :class="entriesForDay(day).length > 0 ? 'text-foreground/60 dark:text-white/60 font-semibold' : 'text-foreground/30 dark:text-white/30'"
                   >
-                    <span class="text-[10px] font-mono text-foreground/40 dark:text-white/40">{{ slot }}</span>
-                    <div class="absolute left-0 right-0 top-0 border-t border-outline/15 dark:border-dark-outline/15"></div>
-                  </div>
+                    <span
+                      v-if="entriesForDay(day).length > 0"
+                      class="w-1.5 h-1.5 rounded-full bg-secondary"
+                    ></span>
+                    {{ entriesForDay(day).length }} {{ entriesForDay(day).length === 1 ? 'class' : 'classes' }}
+                  </span>
                 </div>
 
-                <!-- Day columns -->
+                <!-- Allocated Time Slots Cells -->
                 <div
-                  v-for="day in activeDays"
-                  :key="day"
-                  class="relative border-r border-outline/20 dark:border-dark-outline/30 last:border-r-0"
+                  v-for="slot in allocatedTimeSlots"
+                  :key="slot.key"
+                  class="min-w-[220px] sm:min-w-[260px] flex-1 p-2.5 border-r border-outline/15 dark:border-dark-outline/25 last:border-r-0 flex flex-col justify-center"
                 >
-                  <!-- Hour lines -->
+                  <!-- Classes scheduled at this day and allocated time -->
                   <div
-                    v-for="(_, i) in TIME_SLOTS"
-                    :key="`line-${i}`"
-                    class="absolute left-0 right-0 border-t border-outline/15 dark:border-dark-outline/15"
-                    :style="{ top: `${i * SLOT_HEIGHT}px` }"
-                  ></div>
-                  <!-- Half-hour dashes -->
-                  <div
-                    v-for="(_, i) in TIME_SLOTS"
-                    :key="`half-${i}`"
-                    class="absolute left-4 right-0 border-t border-dashed border-outline/8 dark:border-dark-outline/10"
-                    :style="{ top: `${i * SLOT_HEIGHT + SLOT_HEIGHT / 2}px` }"
-                  ></div>
-
-                  <!-- Course blocks (content adapts to available height) -->
-                  <div
-                    v-for="entry in entriesForDay(day)"
-                    :key="`${entry.courseId}-${entry.startTime}`"
-                    class="absolute left-1.5 right-1.5 rounded-xl overflow-hidden border shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:z-30 cursor-default"
-                    :style="blockStyle(entry)"
-                    :class="courseColorClasses(entry.colorIndex)"
-                    :title="`${entry.courseCode} - ${entry.courseName}\n${entry.startTime} to ${entry.endTime}\nVenue: ${entry.venue}\nLecturer: ${entry.lecturer}\nCredits: ${entry.credits} · Duration: ${durationLabel(entry)}`"
+                    v-if="entriesForDayAndSlot(day, slot).length > 0"
+                    class="space-y-2"
                   >
-                    <!-- Left accent bar -->
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl" :class="colorAccent(entry.colorIndex)"></div>
+                    <div
+                      v-for="entry in entriesForDayAndSlot(day, slot)"
+                      :key="`${entry.courseId}-${entry.startTime}`"
+                      class="relative rounded-xl p-3.5 border shadow-xs transition-all duration-200 hover:scale-[1.01] hover:shadow-md cursor-default overflow-hidden flex flex-col justify-between gap-2.5"
+                      :class="courseColorClasses(entry.colorIndex)"
+                      :title="`${entry.courseCode} - ${entry.courseName}\n${slot.label12}\nVenue: ${entry.venue || 'TBA'}\nLecturer: ${entry.lecturer || 'TBA'}\nCredits: ${entry.credits}`"
+                    >
+                      <!-- Left accent bar -->
+                      <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl" :class="colorAccent(entry.colorIndex)"></div>
 
-                    <!-- ① Tiny block: < 70px — only code + time range -->
-                    <div v-if="blockHeightPx(entry) < 70" class="pl-3 pr-2 py-1 h-full flex flex-col justify-center overflow-hidden">
-                      <p class="text-[10px] font-black font-mono leading-tight truncate">{{ entry.courseCode }}</p>
-                      <p class="text-[9px] font-mono truncate opacity-70 mt-0.5">{{ entry.startTime }}–{{ entry.endTime }}</p>
-                    </div>
-
-                    <!-- ② Medium block: 70–149px (≈1 hr) — code, name, time -->
-                    <div v-else-if="blockHeightPx(entry) < 150" class="pl-3 pr-2 py-1.5 h-full flex flex-col justify-between overflow-hidden">
-                      <div>
-                        <p class="text-[10px] font-black font-mono leading-tight truncate">{{ entry.courseCode }}</p>
-                        <p class="text-[10px] font-semibold leading-tight truncate opacity-85 mt-0.5">{{ entry.courseName }}</p>
-                      </div>
-                      <p class="text-[9px] font-mono truncate opacity-70 mt-1">{{ entry.startTime }} – {{ entry.endTime }}</p>
-                    </div>
-
-                    <!-- ③ Large block: 150–224px (≈2 hrs) — code, name, time, venue, credits -->
-                    <div v-else-if="blockHeightPx(entry) < 225" class="pl-3 pr-2 py-2 h-full flex flex-col justify-between overflow-hidden">
-                      <div>
-                        <div class="flex items-center justify-between gap-1 mb-0.5">
-                          <p class="text-[10px] font-black font-mono leading-tight truncate">{{ entry.courseCode }}</p>
-                          <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md opacity-80 bg-black/10 dark:bg-white/10 shrink-0">{{ durationLabel(entry) }}</span>
+                      <!-- Course Header -->
+                      <div class="pl-1">
+                        <div class="flex items-center justify-between gap-1.5 mb-1">
+                          <span class="text-xs font-black font-mono leading-tight tracking-tight text-foreground dark:text-white">
+                            {{ entry.courseCode }}
+                          </span>
+                          <span
+                            v-if="entry.credits"
+                            class="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/10 shrink-0"
+                          >
+                            {{ entry.credits }} cr
+                          </span>
                         </div>
-                        <p class="text-[10px] font-semibold leading-tight truncate opacity-85">{{ entry.courseName }}</p>
+                        <p class="text-xs font-semibold leading-snug line-clamp-2 opacity-90">
+                          {{ entry.courseName }}
+                        </p>
                       </div>
-                      <div class="mt-1 space-y-0.5">
-                        <p class="text-[9px] font-mono truncate opacity-75">🕐 {{ entry.startTime }} – {{ entry.endTime }}</p>
-                        <p v-if="entry.venue" class="text-[9px] font-mono truncate opacity-70">📍 {{ entry.venue }}</p>
-                        <p class="text-[9px] font-mono truncate opacity-65">{{ entry.credits }} cr</p>
-                      </div>
-                    </div>
 
-                    <!-- ④ Full block: ≥ 225px (≈3 hrs) — everything -->
-                    <div v-else class="pl-3 pr-2 py-2.5 h-full flex flex-col justify-between overflow-hidden">
-                      <div>
-                        <div class="flex items-center justify-between gap-1 mb-1">
-                          <p class="text-[11px] font-black font-mono leading-tight truncate">{{ entry.courseCode }}</p>
-                          <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/10 shrink-0">{{ durationLabel(entry) }}</span>
+                      <!-- Course Details: Venue & Lecturer -->
+                      <div class="pl-1 pt-1.5 border-t border-black/5 dark:border-white/5 flex flex-col gap-0.5 text-[10px] font-mono opacity-80">
+                        <div v-if="entry.venue" class="flex items-center gap-1.5 truncate">
+                          <span>📍</span>
+                          <span class="truncate">{{ entry.venue }}</span>
                         </div>
-                        <p class="text-[10px] font-semibold leading-snug opacity-90 line-clamp-2">{{ entry.courseName }}</p>
-                      </div>
-                      <div class="mt-2 space-y-1">
-                        <p class="text-[9px] font-mono truncate opacity-75">🕐 {{ entry.startTime }} – {{ entry.endTime }}</p>
-                        <p v-if="entry.venue" class="text-[9px] font-mono truncate opacity-70">📍 {{ entry.venue }}</p>
-                        <p class="text-[9px] font-mono truncate opacity-70">👤 {{ entry.lecturer }}</p>
-                        <p class="text-[9px] font-bold font-mono opacity-80">{{ entry.credits }} Credit Hrs</p>
+                        <div v-if="entry.lecturer" class="flex items-center gap-1.5 truncate">
+                          <span>👤</span>
+                          <span class="truncate">{{ entry.lecturer }}</span>
+                        </div>
                       </div>
                     </div>
+                  </div>
+
+                  <!-- Empty slot on this day -->
+                  <div
+                    v-else
+                    class="h-full min-h-[90px] flex items-center justify-center rounded-xl border border-dashed border-outline/15 dark:border-dark-outline/20 bg-muted/5 dark:bg-dark-muted/10"
+                  >
+                    <span class="text-xs font-mono text-foreground/20 dark:text-white/20 select-none">—</span>
                   </div>
                 </div>
               </div>
@@ -236,18 +231,16 @@
           </div>
         </div>
 
-
-        <!-- Summary stats -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div
-            v-for="stat in summaryStats"
-            :key="stat.label"
-            class="p-4 rounded-xl bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/50 flex flex-col gap-1"
-          >
-            <span class="text-[10px] font-mono font-medium text-foreground/50 dark:text-white/55 uppercase tracking-wider">{{ stat.label }}</span>
-            <span class="text-2xl font-extrabold font-display text-foreground dark:text-white">{{ stat.value }}</span>
-            <span class="text-[10px] font-mono text-foreground/40 dark:text-white/40">{{ stat.sub }}</span>
-          </div>
+        <!-- Fallback if no classes scheduled in active programme -->
+        <div
+          v-else
+          class="flex flex-col items-center justify-center py-20 gap-3 rounded-2xl border border-dashed border-outline/40 dark:border-dark-outline/40 bg-surface dark:bg-dark-surface"
+        >
+          <CalendarDays class="w-8 h-8 text-foreground/30 dark:text-white/30" />
+          <p class="text-sm font-semibold text-foreground dark:text-white">No classes scheduled for this programme</p>
+          <p class="text-xs font-mono text-foreground/50 dark:text-white/60">
+            Switch programme tabs or contact academic affairs for your schedule.
+          </p>
         </div>
       </template>
     </template>
@@ -276,16 +269,6 @@ const { enrollments } = storeToRefs(enrollmentsStore);
 // ── Constants ─────────────────────────────────────────────────────────────────
 const REGULAR_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const WEEKEND_DAYS = ['Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-const TIME_START  = 6;   // 06:00
-const TIME_END    = 22;  // 22:00
-const SLOT_HEIGHT = 90;  // px per hour — 1 hr = 90px, 2 hr = 176px, 3 hr = 266px
-const GRID_HEIGHT = (TIME_END - TIME_START) * SLOT_HEIGHT;
-
-const TIME_SLOTS = Array.from({ length: TIME_END - TIME_START }, (_, i) => {
-  const h = TIME_START + i;
-  return `${String(h).padStart(2, '0')}:00`;
-});
 
 const PALETTE = ['blue','violet','emerald','amber','rose','cyan','orange','teal','pink','indigo'];
 
@@ -439,84 +422,83 @@ function entriesForDay(day) {
   return visibleEntries.value.filter((e) => e.day === day);
 }
 
-const uniqueCourses = computed(() => {
-  const enrolled = courses.value.filter((c) => enrolledCourseIds.value.has(c.id));
-  return enrolled.map((c) => ({
-    id: c.id,
-    code: c.code,
-    name: c.name,
-    credits: c.credits,
-    colorIndex: courseColorMap.value[c.id] ?? 0,
-  }));
-});
+// ── Layout & Allocated Time Helpers ───────────────────────────────────────────
+function normalizeTime(t) {
+  if (!t) return '00:00';
+  const parts = String(t).trim().split(':');
+  const h = parts[0].padStart(2, '0');
+  const m = (parts[1] || '00').padStart(2, '0');
+  return `${h}:${m}`;
+}
 
-const totalCredits = computed(() =>
-  uniqueCourses.value.reduce((s, c) => s + (c.credits || 0), 0)
-);
-
-const weeklyHours = computed(() => {
-  const totalMins = visibleEntries.value.reduce((acc, e) => {
-    return acc + Math.max(0, toMin(e.endTime) - toMin(e.startTime));
-  }, 0);
-  const h = Math.round((totalMins / 60) * 10) / 10;
-  return `${h} hrs`;
-});
-
-const scheduledCourseCount = computed(() => {
-  return new Set(visibleEntries.value.map((e) => e.courseId)).size;
-});
-
-const summaryStats = computed(() => [
-  { 
-    label: 'Scheduled Courses',   
-    value: scheduledCourseCount.value,
-    sub: 'on this timetable' 
-  },
-  { 
-    label: 'Total Credit Hours', 
-    value: totalCredits.value,
-    sub: 'this semester' 
-  },
-  { 
-    label: activeTab.value === 'regular' ? 'Regular Classes' : 'Weekend Classes',    
-    value: visibleEntries.value.length,
-    sub: activeTab.value === 'regular' ? 'Mon – Fri sessions' : 'Thu – Sun sessions' 
-  },
-  { 
-    label: 'Weekly Class Time',    
-    value: weeklyHours.value,
-    sub: 'contact hours' 
-  },
-]);
-
-// ── Grid helpers ──────────────────────────────────────────────────────────────
 function toMin(t) {
-  const [h, m] = (t ?? '00:00').split(':').map(Number);
-  return h * 60 + (m || 0);
+  if (!t) return 0;
+  const parts = String(t).trim().split(':').map(Number);
+  return (parts[0] || 0) * 60 + (parts[1] || 0);
 }
 
-/** Returns the pixel height for a given entry so the template can pick the right content tier. */
-function blockHeightPx(entry) {
-  const pxPerMin = SLOT_HEIGHT / 60;
-  return Math.max(24, (toMin(entry.endTime) - toMin(entry.startTime)) * pxPerMin - 4);
+function formatTime12(t) {
+  if (!t) return '';
+  const parts = normalizeTime(t).split(':');
+  let h = parseInt(parts[0], 10);
+  const m = parts[1] || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
 }
 
-/** Human-readable duration label, e.g. "2 hr" or "3 hr" or "1 hr 30 min" */
-function durationLabel(entry) {
-  const mins = toMin(entry.endTime) - toMin(entry.startTime);
+function durationFromTimes(start, end) {
+  const mins = toMin(end) - toMin(start);
   if (mins <= 0) return '';
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   if (m === 0) return `${h} hr`;
+  if (h === 0) return `${m} min`;
   return `${h} hr ${m} min`;
 }
 
-function blockStyle(entry) {
-  const pxPerMin = SLOT_HEIGHT / 60;
-  const origin   = TIME_START * 60;
-  const top      = Math.max(0, (toMin(entry.startTime) - origin) * pxPerMin);
-  const height   = blockHeightPx(entry);
-  return { position: 'absolute', top: `${top}px`, height: `${height}px`, zIndex: 10 };
+/**
+ * Dynamically extracts all distinct time periods allocated for scheduled classes
+ * in the active programme, sorted chronologically.
+ */
+const allocatedTimeSlots = computed(() => {
+  const slotMap = new Map();
+  visibleEntries.value.forEach((e) => {
+    const start = normalizeTime(e.startTime);
+    const end = normalizeTime(e.endTime);
+    if (start && end) {
+      const key = `${start}-${end}`;
+      if (!slotMap.has(key)) {
+        slotMap.set(key, {
+          key,
+          startTime: start,
+          endTime: end,
+          startMin: toMin(start),
+          endMin: toMin(end),
+          label12: `${formatTime12(start)} – ${formatTime12(end)}`,
+          label24: `${start} – ${end}`,
+          duration: durationFromTimes(start, end),
+        });
+      }
+    }
+  });
+
+  return Array.from(slotMap.values()).sort((a, b) => {
+    if (a.startMin !== b.startMin) return a.startMin - b.startMin;
+    return a.endMin - b.endMin;
+  });
+});
+
+/**
+ * Finds all classes scheduled for a specific day and allocated time slot.
+ */
+function entriesForDayAndSlot(day, slot) {
+  return visibleEntries.value.filter((e) => {
+    if (e.day !== day) return false;
+    const start = normalizeTime(e.startTime);
+    const end = normalizeTime(e.endTime);
+    return start === slot.startTime && end === slot.endTime;
+  });
 }
 
 // ── Color helpers ─────────────────────────────────────────────────────────────
