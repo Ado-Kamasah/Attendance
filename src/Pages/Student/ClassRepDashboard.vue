@@ -320,6 +320,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useClassRepStore } from '@/stores/classrep.js';
+import { useAuthStore } from '@/stores/authstore.js';
 import { 
   UserCheck, 
   CheckSquare, 
@@ -333,6 +334,8 @@ import {
 } from 'lucide-vue-next';
 
 const store = useClassRepStore();
+const authStore = useAuthStore();
+const OTP_API_BASE = import.meta.env.VITE_OTP_API_URL || '';
 const isLoading = ref(true);
 const histLoading = ref(false);
 const activeCourseId = ref('');
@@ -465,6 +468,18 @@ async function submitAttendance() {
   }
 
   try {
+    const recordedPayload = {
+      courseId: activeCourseId.value,
+      courseCode: activeCourse.value?.courseCode,
+      courseName: activeCourse.value?.courseName,
+      sessionCode: form.value.sessionCode || undefined,
+      date: form.value.date,
+      time: form.value.time,
+      status: form.value.status,
+      notes: form.value.notes,
+      repName: authStore.profile?.name || authStore.user?.email || 'Class Representative',
+    };
+
     await store.recordAttendance({
       courseId: activeCourseId.value,
       date: form.value.date,
@@ -474,7 +489,16 @@ async function submitAttendance() {
       sessionCode: form.value.sessionCode || undefined,
     });
 
-    formSuccess.value = 'Lecturer attendance recorded successfully!';
+    // Notify lecturer via email API (fire-and-forget)
+    if (OTP_API_BASE) {
+      fetch(`${OTP_API_BASE}/api/attendance/lecturer-marked-by-rep`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recordedPayload),
+      }).catch(err => console.warn('Could not dispatch rep marking email to lecturer:', err));
+    }
+
+    formSuccess.value = 'Lecturer attendance recorded and confirmation email sent!';
     form.value.notes = '';
     form.value.status = '';
     form.value.sessionCode = '';

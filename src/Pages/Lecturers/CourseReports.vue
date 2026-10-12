@@ -545,6 +545,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Attendance Export Modal -->
+    <AttendanceExportModal
+      :is-open="isExportModalOpen"
+      :courses="coursesForLecturer"
+      :initial-course-id="filters.courseId || (coursesForLecturer[0]?.id || '')"
+      :lecturer-name-override="profile?.name || ''"
+      @close="isExportModalOpen = false"
+    />
   </div>
 </template>
 
@@ -558,6 +567,7 @@ import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { supabase } from '@/stores/supabase';
+import AttendanceExportModal from '@/components/AttendanceExportModal.vue';
 import {
   Download,
   BookOpen,
@@ -573,6 +583,8 @@ import {
   RotateCcw,
   Loader2
 } from 'lucide-vue-next';
+
+const isExportModalOpen = ref(false);
 
 const authStore = useAuthStore();
 const coursesStore = useCoursesStore();
@@ -948,7 +960,7 @@ const closeModal = () => {
 };
 
 const exportReport = () => {
-  window.print();
+  isExportModalOpen.value = true;
 };
 
 // ── Delete session ───────────────────────────────────────────────────────────
