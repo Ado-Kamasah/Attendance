@@ -236,38 +236,6 @@
           </div>
         </div>
 
-        <!-- Legend -->
-        <div class="bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl shadow-xs p-5">
-          <div class="flex items-center gap-2 mb-4 pb-3 border-b border-outline/20 dark:border-dark-outline/30">
-            <BookOpen class="w-4 h-4 text-secondary" />
-            <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
-              Enrolled Courses
-            </h3>
-            <span class="text-[10px] font-mono text-foreground/40 dark:text-white/40 ml-1">
-              {{ uniqueCourses.length }} total · {{ totalCredits }} credit hrs
-            </span>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div
-              v-for="course in uniqueCourses"
-              :key="course.id"
-              class="flex items-start gap-3 p-3 rounded-xl border"
-              :class="colorCard(course.colorIndex)"
-            >
-              <div class="w-3 h-3 rounded-full mt-0.5 shrink-0" :class="colorDot(course.colorIndex)"></div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center justify-between gap-2 flex-wrap">
-                  <p class="text-xs font-black font-mono" :class="colorCode(course.colorIndex)">{{ course.code }}</p>
-                  <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full border" :class="colorBadge(course.colorIndex)">
-                    {{ course.credits }} Credits
-                  </span>
-                </div>
-                <p class="text-xs font-semibold text-foreground dark:text-white truncate mt-0.5">{{ course.name }}</p>
-                <p class="text-[10px] font-mono text-foreground/50 dark:text-white/55 mt-0.5">{{ scheduleText(course.id) }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- Summary stats -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -293,7 +261,7 @@ import { useAuthStore } from '@/stores/authstore';
 import { useCoursesStore } from '@/stores/courses';
 import { useSchedulesStore } from '@/stores/schedules';
 import { useEnrollmentsStore } from '@/stores/enrollments';
-import { CalendarDays, BookOpen, CalendarRange, Calendar } from 'lucide-vue-next';
+import { CalendarDays, CalendarRange, Calendar } from 'lucide-vue-next';
 
 const authStore        = useAuthStore();
 const coursesStore     = useCoursesStore();
@@ -486,12 +454,6 @@ const totalCredits = computed(() =>
   uniqueCourses.value.reduce((s, c) => s + (c.credits || 0), 0)
 );
 
-function scheduleText(courseId) {
-  const entries = timetableEntries.value.filter((e) => e.courseId === courseId);
-  if (!entries.length) return 'No schedule in this programme';
-  return entries.map((e) => `${e.day.slice(0, 3)} ${e.startTime}–${e.endTime}`).join(' · ');
-}
-
 const weeklyHours = computed(() => {
   const totalMins = visibleEntries.value.reduce((acc, e) => {
     return acc + Math.max(0, toMin(e.endTime) - toMin(e.startTime));
@@ -500,11 +462,15 @@ const weeklyHours = computed(() => {
   return `${h} hrs`;
 });
 
+const scheduledCourseCount = computed(() => {
+  return new Set(visibleEntries.value.map((e) => e.courseId)).size;
+});
+
 const summaryStats = computed(() => [
   { 
-    label: 'Enrolled Courses',   
-    value: uniqueCourses.value.length,
-    sub: 'active modules' 
+    label: 'Scheduled Courses',   
+    value: scheduledCourseCount.value,
+    sub: 'on this timetable' 
   },
   { 
     label: 'Total Credit Hours', 
@@ -555,23 +521,19 @@ function blockStyle(entry) {
 
 // ── Color helpers ─────────────────────────────────────────────────────────────
 const COLORS = {
-  blue:    { bg:'bg-blue-500/15 dark:bg-blue-500/20',   border:'border-blue-400/30',    text:'text-blue-900 dark:text-blue-100',   accent:'bg-blue-400',    dot:'bg-blue-400',    code:'text-blue-600 dark:text-blue-300',    badge:'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-400/30',    card:'bg-blue-500/5 border-blue-400/20'   },
-  violet:  { bg:'bg-violet-500/15 dark:bg-violet-500/20',border:'border-violet-400/30', text:'text-violet-900 dark:text-violet-100',accent:'bg-violet-400',  dot:'bg-violet-400',  code:'text-violet-600 dark:text-violet-300',badge:'bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-400/30',card:'bg-violet-500/5 border-violet-400/20'},
-  emerald: { bg:'bg-emerald-500/15 dark:bg-emerald-500/20',border:'border-emerald-400/30',text:'text-emerald-900 dark:text-emerald-100',accent:'bg-emerald-400',dot:'bg-emerald-400',code:'text-emerald-600 dark:text-emerald-300',badge:'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-400/30',card:'bg-emerald-500/5 border-emerald-400/20'},
-  amber:   { bg:'bg-amber-500/15 dark:bg-amber-500/20',  border:'border-amber-400/30',  text:'text-amber-900 dark:text-amber-100',  accent:'bg-amber-400',   dot:'bg-amber-400',   code:'text-amber-600 dark:text-amber-300',   badge:'bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-400/30',  card:'bg-amber-500/5 border-amber-400/20' },
-  rose:    { bg:'bg-rose-500/15 dark:bg-rose-500/20',    border:'border-rose-400/30',    text:'text-rose-900 dark:text-rose-100',    accent:'bg-rose-400',    dot:'bg-rose-400',    code:'text-rose-600 dark:text-rose-300',    badge:'bg-rose-500/10 text-rose-600 dark:text-rose-300 border-rose-400/30',    card:'bg-rose-500/5 border-rose-400/20'   },
-  cyan:    { bg:'bg-cyan-500/15 dark:bg-cyan-500/20',    border:'border-cyan-400/30',    text:'text-cyan-900 dark:text-cyan-100',    accent:'bg-cyan-400',    dot:'bg-cyan-400',    code:'text-cyan-600 dark:text-cyan-300',    badge:'bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border-cyan-400/30',    card:'bg-cyan-500/5 border-cyan-400/20'   },
-  orange:  { bg:'bg-orange-500/15 dark:bg-orange-500/20',border:'border-orange-400/30',  text:'text-orange-900 dark:text-orange-100',accent:'bg-orange-400',  dot:'bg-orange-400',  code:'text-orange-600 dark:text-orange-300', badge:'bg-orange-500/10 text-orange-600 dark:text-orange-300 border-orange-400/30',card:'bg-orange-500/5 border-orange-400/20'},
-  teal:    { bg:'bg-teal-500/15 dark:bg-teal-500/20',    border:'border-teal-400/30',    text:'text-teal-900 dark:text-teal-100',    accent:'bg-teal-400',    dot:'bg-teal-400',    code:'text-teal-600 dark:text-teal-300',    badge:'bg-teal-500/10 text-teal-600 dark:text-teal-300 border-teal-400/30',    card:'bg-teal-500/5 border-teal-400/20'   },
-  pink:    { bg:'bg-pink-500/15 dark:bg-pink-500/20',    border:'border-pink-400/30',    text:'text-pink-900 dark:text-pink-100',    accent:'bg-pink-400',    dot:'bg-pink-400',    code:'text-pink-600 dark:text-pink-300',    badge:'bg-pink-500/10 text-pink-600 dark:text-pink-300 border-pink-400/30',    card:'bg-pink-500/5 border-pink-400/20'   },
-  indigo:  { bg:'bg-indigo-500/15 dark:bg-indigo-500/20',border:'border-indigo-400/30',  text:'text-indigo-900 dark:text-indigo-100',accent:'bg-indigo-400',  dot:'bg-indigo-400',  code:'text-indigo-600 dark:text-indigo-300', badge:'bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-indigo-400/30',card:'bg-indigo-500/5 border-indigo-400/20'},
+  blue:    { bg:'bg-blue-500/15 dark:bg-blue-500/20',   border:'border-blue-400/30',    text:'text-blue-900 dark:text-blue-100',   accent:'bg-blue-400' },
+  violet:  { bg:'bg-violet-500/15 dark:bg-violet-500/20',border:'border-violet-400/30', text:'text-violet-900 dark:text-violet-100',accent:'bg-violet-400' },
+  emerald: { bg:'bg-emerald-500/15 dark:bg-emerald-500/20',border:'border-emerald-400/30',text:'text-emerald-900 dark:text-emerald-100',accent:'bg-emerald-400' },
+  amber:   { bg:'bg-amber-500/15 dark:bg-amber-500/20',  border:'border-amber-400/30',  text:'text-amber-900 dark:text-amber-100',  accent:'bg-amber-400' },
+  rose:    { bg:'bg-rose-500/15 dark:bg-rose-500/20',    border:'border-rose-400/30',    text:'text-rose-900 dark:text-rose-100',    accent:'bg-rose-400' },
+  cyan:    { bg:'bg-cyan-500/15 dark:bg-cyan-500/20',    border:'border-cyan-400/30',    text:'text-cyan-900 dark:text-cyan-100',    accent:'bg-cyan-400' },
+  orange:  { bg:'bg-orange-500/15 dark:bg-orange-500/20',border:'border-orange-400/30',  text:'text-orange-900 dark:text-orange-100',accent:'bg-orange-400' },
+  teal:    { bg:'bg-teal-500/15 dark:bg-teal-500/20',    border:'border-teal-400/30',    text:'text-teal-900 dark:text-teal-100',    accent:'bg-teal-400' },
+  pink:    { bg:'bg-pink-500/15 dark:bg-pink-500/20',    border:'border-pink-400/30',    text:'text-pink-900 dark:text-pink-100',    accent:'bg-pink-400' },
+  indigo:  { bg:'bg-indigo-500/15 dark:bg-indigo-500/20',border:'border-indigo-400/30',  text:'text-indigo-900 dark:text-indigo-100',accent:'bg-indigo-400' },
 };
 
 function palColor(idx) { return COLORS[PALETTE[idx % PALETTE.length]]; }
 function courseColorClasses(idx) { const c = palColor(idx); return `${c.bg} ${c.border} ${c.text}`; }
 function colorAccent(idx) { return palColor(idx).accent; }
-function colorDot(idx)    { return palColor(idx).dot;    }
-function colorCode(idx)   { return palColor(idx).code;   }
-function colorBadge(idx)  { return palColor(idx).badge;  }
-function colorCard(idx)   { return palColor(idx).card;   }
 </script>
