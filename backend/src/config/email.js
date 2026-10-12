@@ -117,3 +117,34 @@ export async function sendIneligibilityNotice({ studentName, studentEmail, cours
   `;
   return transporter.sendMail({ from: FROM_ADDRESS, to: studentEmail, subject, html });
 }
+
+/**
+ * Send an attendance-confirmed (present) email to the student.
+ */
+export async function sendAttendanceMarkedEmail({ studentName, studentEmail, courseName, courseCode, sessionDate }) {
+  const subject = `✅ Attendance Confirmed – ${courseCode}`;
+  const dateStr = sessionDate
+    ? new Date(sessionDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#10b981,#059669);padding:28px 32px;color:#fff">
+        <h2 style="margin:0;font-size:1.4rem">✅ Attendance Confirmed</h2>
+        <p style="margin:6px 0 0;opacity:0.85;font-size:0.9rem">${courseCode} – ${courseName}</p>
+      </div>
+      <div style="padding:28px 32px;background:#fff">
+        <p>Dear <strong>${studentName}</strong>,</p>
+        <p>Your attendance has been successfully recorded for <strong>${courseName} (${courseCode})</strong>.</p>
+        <div style="background:#d1fae5;border-left:4px solid #10b981;padding:14px 18px;border-radius:6px;margin:16px 0">
+          <p style="margin:0;color:#065f46;font-weight:600">📅 Session Date: ${dateStr}</p>
+          <p style="margin:6px 0 0;color:#047857;font-size:0.9rem">
+            You are marked <strong>Present</strong> for this session. Keep up the good attendance!
+          </p>
+        </div>
+        <p>If you believe this was recorded in error, please contact your lecturer immediately.</p>
+        <p style="color:#64748b;font-size:0.85rem;margin-top:24px">This is an automated message. Please do not reply to this email.</p>
+      </div>
+    </div>
+  `;
+  return transporter.sendMail({ from: FROM_ADDRESS, to: studentEmail, subject, html });
+}

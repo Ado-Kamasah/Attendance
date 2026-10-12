@@ -3,6 +3,7 @@ import {
   sendFirstAbsenceWarning,
   sendSecondAbsenceWarning,
   sendIneligibilityNotice,
+  sendAttendanceMarkedEmail,
 } from '../config/email.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -172,6 +173,45 @@ export const checkAbsencesForSession = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Internal helper – notify a student that their attendance was marked present.
+// Called from sessionController after a successful attendance.create().
+// ─────────────────────────────────────────────────────────────────────────────
+export async function runPresentNotification({ studentId, courseId, courseName, courseCode, sessionDate }) {
+  try {
+    const student = await prisma.user.findUnique({
+      where: { id: studentId },
+      select: { name: true, email: true },
+    });
+    if (!student) return;
+
+    const message = `✅ Attendance Confirmed: Your attendance for ${courseName} (${courseCode}) has been successfully recorded. Session date: ${
+      sessionDate
+        ? new Date(sessionDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+        : new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    }.`;
+
+    // Persist in-app notification
+    await prisma.studentNotification.create({
+      data: { studentId, courseId, type: 'attendance_present', message },
+    });
+
+    // Fire confirmation email (non-blocking — we swallow errors)
+    try {
+      await sendAttendanceMarkedEmail({
+        studentName:  student.name,
+        studentEmail: student.email,
+        courseName,
+        courseCode,
+        sessionDate,
+      });
+    } catch (emailErr) {
+      console.error(`[presentNotif] email failed for ${student.email}:`, emailErr.message);
+    }
+  } catch (err) {
+    console.error('[runPresentNotification] error:', err.message);
+  }
+}
 
 
 // ─────────────────────────────────────────────────────────────────────────────

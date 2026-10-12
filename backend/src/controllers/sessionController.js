@@ -1,5 +1,6 @@
 import prisma from '../config/db.js';
 import { runAbsencesCheck as runAbsenceCheck } from './notificationController.js';
+import { runPresentNotification } from './notificationController.js';
 
 /**
  * Generate a unique random PIN for the live session
@@ -270,6 +271,15 @@ export const markAttendance = async (req, res) => {
         status: 'present'
       }
     });
+
+    // Fire present notification (non-blocking)
+    runPresentNotification({
+      studentId,
+      courseId:   session.courseId,
+      courseName: session.course.name,
+      courseCode: session.course.code,
+      sessionDate: session.date || session.createdAt,
+    }).catch(err => console.error('runPresentNotification failed:', err.message));
 
     res.status(201).json({
       message: 'Attendance recorded successfully',

@@ -120,6 +120,7 @@
           class="p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition-all"
           :class="[
             n.type === 'attendance_absent'   ? 'bg-error/10 border-error/30' : '',
+            n.type === 'attendance_present'  ? 'bg-success/10 border-success/30' : '',
             n.type === 'warning_1'           ? 'bg-warning/10 border-warning/30' : '',
             n.type === 'warning_2'           ? 'bg-error/10 border-error/30' : '',
             n.type === 'ineligible'          ? 'bg-error/15 border-error/50' : '',
@@ -135,6 +136,7 @@
             class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold font-mono text-sm"
             :class="[
               n.type === 'attendance_absent'   ? 'bg-error text-white' : '',
+              n.type === 'attendance_present'  ? 'bg-success/20 text-success' : '',
               n.type === 'warning_1'           ? 'bg-warning/20 text-warning' : '',
               n.type === 'warning_2'           ? 'bg-error/20 text-error' : '',
               n.type === 'ineligible'          ? 'bg-error text-white' : '',
@@ -145,6 +147,7 @@
             ]"
           >
             <AlertOctagon v-if="n.type === 'attendance_absent' || n.type === 'ineligible'" class="w-4 h-4" />
+            <CheckCircle2 v-else-if="n.type === 'attendance_present'" class="w-4 h-4" />
             <AlertTriangle v-else-if="n.type === 'warning_1' || n.type === 'warning_2' || n.type === 'attendance_warning'" class="w-4 h-4" />
             <CheckCircle2 v-else-if="n.type === 'suggestion_resolved'" class="w-4 h-4" />
             <MessageCircle v-else-if="n.type === 'suggestion_reply'" class="w-4 h-4" />
@@ -156,6 +159,7 @@
               <span 
                 class="text-xs font-bold font-mono uppercase"
                 :class="n.type === 'attendance_absent' || n.type === 'attendance_warning' ? 'text-error'
+                : n.type === 'attendance_present' ? 'text-success'
                 : n.type === 'suggestion_resolved' ? 'text-success'
                 : n.type === 'suggestion_reply' ? 'text-secondary'
                 : 'text-secondary'"
@@ -335,6 +339,7 @@ onUnmounted(() => {
 
 function absenceLabel(type) {
   if (type === 'attendance_absent')    return 'Absent Mark';
+  if (type === 'attendance_present')   return '✅ Attendance Confirmed';
   if (type === 'warning_1')            return '⚠️ First Absence Warning';
   if (type === 'warning_2')            return '🚨 Second Absence Warning';
   if (type === 'ineligible')           return '❌ Exam Ineligibility';

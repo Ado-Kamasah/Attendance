@@ -38,6 +38,11 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
     notifications.value.filter((n) => n.type === "eval_open")
   );
 
+  /** ✅ Attendance marked present */
+  const attendancePresentNotifications = computed(() =>
+    notifications.value.filter((n) => n.type === "attendance_present")
+  );
+
   const readIds = ref(new Set(JSON.parse(localStorage.getItem('student_read_notifs') || '[]')));
 
   // ── Fetch ─────────────────────────────────────────────────────────────────────
@@ -472,6 +477,7 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
     warningNotifications,
     ineligibleNotifications,
     evalOpenNotifications,
+    attendancePresentNotifications,
     // Actions
     fetchNotifications,
     subscribeToAttendance,
