@@ -158,7 +158,8 @@ import {
   Award, 
   MessageSquare, 
   User, 
-  UserCheck 
+  UserCheck,
+  CalendarDays
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -211,6 +212,7 @@ const navGroups = computed(() => [
       { name: 'Dashboard', path: '/student-dashboard', icon: LayoutDashboard },
       { name: 'Course Registration', path: '/registration', icon: ClipboardCheck },
       { name: 'My Courses', path: '/my-courses', icon: BookOpen },
+      { name: 'My Timetable', path: '/my-timetable', icon: CalendarDays },
       { name: 'Lecturer Evaluation', path: '/evaluation', icon: Award },
       { name: 'Suggestion Box', path: '/suggestion-box', icon: MessageSquare },
       { name: 'My Profile', path: '/profile', icon: User },

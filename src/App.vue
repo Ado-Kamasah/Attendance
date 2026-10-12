@@ -22,6 +22,7 @@ import EvaluationForm   from './Pages/Student/EvaluationForm.vue';
 import ClassRepManagement from './Pages/Admin/ClassRepManagement.vue';
 import ClassRepDashboard  from './Pages/Student/ClassRepDashboard.vue';
 import SuggestionBox     from './Pages/Student/SuggestionBox.vue';
+import MyTimetable       from './Pages/Student/MyTimetable.vue';
 import SuggestionsAdmin  from './Pages/Admin/SuggestionsAdmin.vue';
 import AdminSidebar from './USERS_ROLES/admin.vue';
 import LecturerSidebar from './USERS_ROLES/lecturers.vue';
@@ -184,6 +185,7 @@ const handleRegisterSuccess = () => {
         <ClassRepManagement v-else-if="currentRoute === '/classrep-management'" />
         <ClassRepDashboard  v-else-if="currentRoute === '/classrep-dashboard'" />
         <SuggestionBox      v-else-if="currentRoute === '/suggestion-box'" />
+        <MyTimetable        v-else-if="currentRoute === '/my-timetable'" />
         <SuggestionsAdmin   v-else-if="currentRoute === '/suggestions-admin'" />
         <FinanceDashboard   v-else-if="currentRoute === '/finance-dashboard'" @navigate="handleNavigationEvent" />
         <FinanceClaims      v-else-if="currentRoute === '/finance-claims'" />
