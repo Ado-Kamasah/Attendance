@@ -3,6 +3,7 @@ import {
   createCourse, 
   getCourses, 
   enrollInCourse, 
+  unenrollFromCourse,
   getStudentEnrollments, 
   getAvailableCoursesForStudent,
   getCourseStudents,
@@ -33,6 +34,9 @@ router.get('/available', authenticateToken, requireRole(['STUDENT']), getAvailab
 
 // Student/Admin enrolls in a course
 router.post('/:courseId/enroll', authenticateToken, enrollInCourse);
+
+// Student/Admin drops/unenrolls from a course
+router.delete('/:courseId/enroll', authenticateToken, unenrollFromCourse);
 
 // Get students enrolled in a course (Admin/Lecturer)
 router.get('/:courseId/students', authenticateToken, requireRole(['ADMIN', 'LECTURER']), getCourseStudents);

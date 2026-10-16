@@ -18,6 +18,7 @@ import SessionAnalytics from './Pages/Admin/SessionAnalytics.vue';
 import EvaluationAdmin  from './Pages/Admin/EvaluationAdmin.vue';
 import UsersAdmin        from './Pages/Admin/UsersAdmin.vue';
 import LecturersAdmin    from './Pages/Admin/LecturersAdmin.vue';
+import StudentsAdmin     from './Pages/Admin/StudentsAdmin.vue';
 import EvaluationForm   from './Pages/Student/EvaluationForm.vue';
 import ClassRepManagement from './Pages/Admin/ClassRepManagement.vue';
 import ClassRepDashboard  from './Pages/Student/ClassRepDashboard.vue';
@@ -181,6 +182,7 @@ const handleRegisterSuccess = () => {
         <EvaluationAdmin  v-else-if="currentRoute === '/evaluation-admin'" />
         <UsersAdmin       v-else-if="currentRoute === '/users-admin'" />
         <LecturersAdmin   v-else-if="currentRoute === '/lecturers-admin'" @navigate="handleNavigationEvent" />
+        <StudentsAdmin    v-else-if="currentRoute === '/students-admin'" @navigate="handleNavigationEvent" />
         <EvaluationForm   v-else-if="currentRoute === '/evaluation'" />
         <ClassRepManagement v-else-if="currentRoute === '/classrep-management'" />
         <ClassRepDashboard  v-else-if="currentRoute === '/classrep-dashboard'" @navigate="handleNavigationEvent" />

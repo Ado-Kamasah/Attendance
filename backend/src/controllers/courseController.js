@@ -145,6 +145,36 @@ export const enrollInCourse = async (req, res) => {
 };
 
 /**
+ * Drop or unenroll student from a course (Admin or Student)
+ */
+export const unenrollFromCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    let studentId = req.user.id;
+
+    if (req.user.role === 'ADMIN' && (req.body?.studentId || req.query?.studentId)) {
+      studentId = req.body?.studentId || req.query?.studentId;
+    }
+
+    if (!courseId) {
+      return res.status(400).json({ message: 'Course ID is required' });
+    }
+
+    const deleted = await prisma.enrollment.deleteMany({
+      where: {
+        courseId,
+        studentId
+      }
+    });
+
+    res.status(200).json({ message: 'Course registration removed successfully', count: deleted.count });
+  } catch (error) {
+    console.error('Unenroll course error:', error);
+    res.status(500).json({ message: 'Server error unenrolling from course', error: error.message });
+  }
+};
+
+/**
  * Get courses the student is currently enrolled in
  */
 export const getStudentEnrollments = async (req, res) => {
