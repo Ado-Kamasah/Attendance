@@ -28,6 +28,38 @@
       </div>
     </div>
 
+    <!-- Class Representative Delegated Monitoring Banner -->
+    <div 
+      v-if="isClassRep" 
+      class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-900/30 via-indigo-950/40 to-slate-900/40 dark:from-blue-950/50 dark:via-indigo-950/60 dark:to-slate-950/60 border border-blue-500/30 dark:border-blue-400/30 text-foreground dark:text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs"
+    >
+      <div class="flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-xl bg-blue-500/15 border border-blue-400/30 flex items-center justify-center shrink-0 text-blue-500 dark:text-blue-400 shadow-xs">
+          <UserCheck class="w-5 h-5" />
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-500/20 text-blue-600 dark:text-blue-300 border border-blue-500/30 uppercase tracking-wider">
+              Class Representative Active
+            </span>
+            <span class="text-xs font-mono text-foreground/60 dark:text-white/70">
+              {{ classRepStore.myRoles.length }} Course Cohort{{ classRepStore.myRoles.length > 1 ? 's' : '' }} Delegated
+            </span>
+          </div>
+          <p class="text-xs text-foreground/75 dark:text-white/80 mt-1">
+            You are designated to verify lecturer arrival, synchronise session PINs, and submit attendance reports.
+          </p>
+        </div>
+      </div>
+      <button 
+        @click="$emit('navigate', '/classrep-dashboard')"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors shrink-0 cursor-pointer shadow-xs"
+      >
+        <span>Open Class Rep Panel</span>
+        <ArrowRight class="w-3.5 h-3.5" />
+      </button>
+    </div>
+
     <!-- KPI Metric Cards Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Enrolled Courses -->
@@ -443,6 +475,23 @@
             {{ notifUnreadCount }}
           </span>
         </button>
+
+        <!-- Class Rep Desk Quick Action (if assigned) -->
+        <button 
+          v-if="isClassRep"
+          @click="$emit('navigate', '/classrep-dashboard')"
+          class="relative p-4 rounded-xl bg-surface dark:bg-dark-surface border border-blue-500/30 hover:border-blue-500/60 shadow-xs hover:shadow-md transition-all flex flex-col items-center text-center gap-2.5 group cursor-pointer"
+        >
+          <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <UserCheck class="w-5 h-5" />
+          </div>
+          <span class="text-xs font-semibold text-foreground dark:text-white group-hover:text-blue-500 transition-colors">
+            Class Rep Desk
+          </span>
+          <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-blue-500/15 text-blue-500 border border-blue-500/30">
+            Active
+          </span>
+        </button>
       </div>
     </div>
   </div>
@@ -458,6 +507,7 @@ import { useSchedulesStore } from '@/stores/schedules';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { useStudentNotificationsStore } from '@/stores/studentNotifications';
+import { useClassRepStore } from '@/stores/classrep';
 import { 
   BookOpen, 
   TrendingUp, 
@@ -473,7 +523,8 @@ import {
   Award, 
   Plus, 
   Bell,
-  Eye
+  Eye,
+  UserCheck
 } from 'lucide-vue-next';
 
 const emit = defineEmits(['navigate']);
@@ -485,6 +536,7 @@ const schedStore    = useSchedulesStore();
 const sessStore     = useSessionsStore();
 const attStore      = useAttendancesStore();
 const notifStore    = useStudentNotificationsStore();
+const classRepStore = useClassRepStore();
 
 const { profile }     = storeToRefs(authStore);
 const { courses }     = storeToRefs(coursesStore);
@@ -498,6 +550,7 @@ const isLoading = ref(true);
 const firstName = computed(() => (profile.value?.name || 'Student').split(' ')[0]);
 const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 const todayName   = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+const isClassRep  = computed(() => classRepStore.isClassRep);
 
 onMounted(async () => {
   isLoading.value = true;
@@ -508,6 +561,7 @@ onMounted(async () => {
     schedStore.fetchSchedules(),
     sessStore.fetchSessions(),
     attStore.fetchAttendances({ studentId: uid }),
+    classRepStore.fetchMyRoles().catch(() => {}),
   ]);
   // Fetch notifications with full course and attendance context loaded
   await notifStore.fetchNotifications(uid);
@@ -516,6 +570,15 @@ onMounted(async () => {
   notifStore.subscribeToAttendance(uid);  // realtime warnings
   isLoading.value = false;
 });
+
+watch(
+  [() => authStore.user, () => authStore.profile],
+  async ([u, p]) => {
+    if (u || p) {
+      await classRepStore.fetchMyRoles().catch(() => {});
+    }
+  }
+);
 
 // Reactively re-evaluate notifications whenever attendance, sessions, or enrollments update
 watch(
