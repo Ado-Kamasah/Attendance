@@ -132,11 +132,28 @@
               <div class="flex items-start gap-2 flex-wrap">
                 <span class="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary">{{ cls.courseCode }}</span>
                 <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900">{{ cls.semester || 'Semester 1' }}</span>
+                <!-- Delivery Mode Badge -->
+                <span
+                  :class="[
+                    'text-[11px] font-mono font-bold px-2 py-0.5 rounded-full border flex items-center gap-1',
+                    cls.deliveryMode === 'Online'
+                      ? 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800'
+                      : cls.deliveryMode === 'Hybrid'
+                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                  ]"
+                >
+                  <span v-if="cls.deliveryMode === 'Online'">🌐</span>
+                  <span v-else-if="cls.deliveryMode === 'Hybrid'">⚡</span>
+                  <span v-else>🏫</span>
+                  {{ cls.deliveryMode || 'Face-to-Face' }}
+                </span>
               </div>
               <h3 class="text-sm font-bold text-slate-900 dark:text-white">{{ cls.courseTitle }}</h3>
               <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-white/75">
                 <span class="flex items-center gap-1"><UserIcon class="w-3.5 h-3.5" /> {{ cls.lecturer }}</span>
-                <span class="flex items-center gap-1"><MapPin class="w-3.5 h-3.5" /> {{ cls.venue }}</span>
+                <span v-if="cls.deliveryMode !== 'Online'" class="flex items-center gap-1"><MapPin class="w-3.5 h-3.5" /> {{ cls.venue }}</span>
+                <span v-if="cls.deliveryMode === 'Online' || cls.deliveryMode === 'Hybrid'" class="flex items-center gap-1"><Link2 class="w-3.5 h-3.5 text-violet-500" /><span class="text-violet-600 dark:text-violet-400 font-mono">{{ cls.onlineLink || 'Link TBD' }}</span></span>
               </div>
             </div>
 
@@ -172,7 +189,7 @@
           </button>
         </div>
 
-        <form @submit.prevent="saveClass" class="p-6 space-y-4">
+        <form @submit.prevent="saveClass" class="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
           <!-- Course -->
           <div class="space-y-1.5">
             <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Select Course <span class="text-rose-500">*</span></label>
@@ -181,6 +198,28 @@
               <option disabled value="">Choose a course</option>
               <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.code }} — {{ course.name }}</option>
             </select>
+          </div>
+
+          <!-- Delivery Mode selector -->
+          <div class="space-y-2">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Class Delivery Mode <span class="text-rose-500">*</span></label>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                v-for="dm in deliveryModes" :key="dm.value"
+                type="button"
+                @click="newClass.deliveryMode = dm.value"
+                :class="[
+                  'relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all font-mono text-xs font-bold',
+                  newClass.deliveryMode === dm.value
+                    ? dm.activeClass
+                    : 'border-slate-200 dark:border-dark-outline/70 bg-slate-50 dark:bg-dark-muted/60 text-slate-500 dark:text-white/60 hover:border-slate-300 dark:hover:border-slate-600'
+                ]"
+              >
+                <span class="text-xl">{{ dm.icon }}</span>
+                <span>{{ dm.label }}</span>
+                <span v-if="newClass.deliveryMode === dm.value" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" :class="dm.dotClass"></span>
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -195,11 +234,34 @@
               <p v-if="isLoadingLecturers" class="text-[10px] text-slate-400 dark:text-white/50 font-mono">Loading lecturers...</p>
             </div>
 
-            <!-- Venue -->
+            <!-- Venue (hidden for Online-only) -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Venue <span class="text-rose-500">*</span></label>
-              <input type="text" v-model="newClass.venue" placeholder="Hall / Room" required
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">
+                {{ newClass.deliveryMode === 'Online' ? 'Virtual Room / Platform' : 'Venue' }}
+                <span v-if="newClass.deliveryMode !== 'Online'" class="text-rose-500">*</span>
+              </label>
+              <input type="text"
+                v-model="newClass.venue"
+                :placeholder="newClass.deliveryMode === 'Online' ? 'e.g. Zoom, Google Meet' : 'Hall / Room'"
+                :required="newClass.deliveryMode !== 'Online'"
                 class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
+            </div>
+          </div>
+
+          <!-- Online link (shown for Online or Hybrid) -->
+          <div v-if="newClass.deliveryMode === 'Online' || newClass.deliveryMode === 'Hybrid'" class="space-y-1.5">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">
+              Meeting / Stream Link
+              <span v-if="newClass.deliveryMode === 'Online'" class="text-rose-500">*</span>
+              <span v-else class="text-slate-400">(Optional for Hybrid)</span>
+            </label>
+            <div class="relative">
+              <Link2 class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-violet-500 pointer-events-none" />
+              <input type="url"
+                v-model="newClass.onlineLink"
+                placeholder="https://meet.google.com/..."
+                :required="newClass.deliveryMode === 'Online'"
+                class="w-full pl-9 pr-3 bg-slate-50 dark:bg-dark-muted/80 border border-violet-200 dark:border-violet-800/60 rounded-xl py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-400/50 transition-all" />
             </div>
           </div>
 
@@ -247,7 +309,7 @@ import { useCoursesStore } from '@/stores/courses';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { useAuthStore } from '@/stores/authstore';
 import { supabase } from '@/stores/supabase';
-import { CalendarDays, Plus, Edit3, Trash2, X, MapPin, User as UserIcon } from 'lucide-vue-next';
+import { CalendarDays, Plus, Edit3, Trash2, X, MapPin, User as UserIcon, Link2 } from 'lucide-vue-next';
 
 const levels = ['100', '200', '300', '400'];
 const modes = ['Regular', 'Weekend'];
@@ -313,7 +375,31 @@ onUnmounted(() => {
   coursesStore.unsubscribeFromCourses();
 });
 
-const newClass = ref({ courseId: '', lecturer: '', venue: '', day: 'Monday', startTime: '', endTime: '' });
+const deliveryModes = [
+  {
+    value: 'Face-to-Face',
+    label: 'Face-to-Face',
+    icon: '🏫',
+    activeClass: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400',
+    dotClass: 'bg-emerald-500'
+  },
+  {
+    value: 'Online',
+    label: 'Online',
+    icon: '🌐',
+    activeClass: 'border-violet-500 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400',
+    dotClass: 'bg-violet-500'
+  },
+  {
+    value: 'Hybrid',
+    label: 'Hybrid',
+    icon: '⚡',
+    activeClass: 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400',
+    dotClass: 'bg-amber-500'
+  },
+];
+
+const newClass = ref({ courseId: '', lecturer: '', venue: '', day: 'Monday', startTime: '', endTime: '', deliveryMode: 'Face-to-Face', onlineLink: '' });
 
 const schedulesWithCourse = computed(() =>
   schedules.value.map((s) => {
@@ -354,14 +440,14 @@ const getDuration = (start, end) => {
 
 const openAddModal = () => {
   editingScheduleId.value = null;
-  newClass.value = { courseId: '', lecturer: '', venue: '', day: selectedDay.value, startTime: '', endTime: '' };
+  newClass.value = { courseId: '', lecturer: '', venue: '', day: selectedDay.value, startTime: '', endTime: '', deliveryMode: 'Face-to-Face', onlineLink: '' };
   isModalOpen.value = true;
 };
 
 const editClass = (cls) => {
   editingScheduleId.value = cls.id;
-  beforeEditSnapshot.value = { courseCode: cls.courseCode, lecturer: cls.lecturer, venue: cls.venue, day: cls.day, startTime: cls.startTime, endTime: cls.endTime };
-  newClass.value = { courseId: cls.courseId, lecturer: cls.lecturer, venue: cls.venue, day: cls.day, startTime: cls.startTime, endTime: cls.endTime };
+  beforeEditSnapshot.value = { courseCode: cls.courseCode, lecturer: cls.lecturer, venue: cls.venue, day: cls.day, startTime: cls.startTime, endTime: cls.endTime, deliveryMode: cls.deliveryMode, onlineLink: cls.onlineLink };
+  newClass.value = { courseId: cls.courseId, lecturer: cls.lecturer, venue: cls.venue, day: cls.day, startTime: cls.startTime, endTime: cls.endTime, deliveryMode: cls.deliveryMode || 'Face-to-Face', onlineLink: cls.onlineLink || '' };
   isModalOpen.value = true;
 };
 
@@ -370,7 +456,12 @@ const closeModal = () => { isModalOpen.value = false; editingScheduleId.value = 
 const saveClass = async () => {
   try {
     const payload = { level: selectedLevel.value, mode: selectedMode.value, ...newClass.value };
-    const conflict = schedulesStore.findConflict({ day: payload.day, startTime: payload.startTime, endTime: payload.endTime, lecturer: payload.lecturer, venue: payload.venue }, editingScheduleId.value);
+    // For purely online classes, venue conflict check is skipped on the venue dimension
+    const skipVenueConflict = payload.deliveryMode === 'Online';
+    const conflict = schedulesStore.findConflict(
+      { day: payload.day, startTime: payload.startTime, endTime: payload.endTime, lecturer: payload.lecturer, venue: skipVenueConflict ? null : payload.venue },
+      editingScheduleId.value
+    );
     if (conflict) {
       const reason = conflict.lecturer === payload.lecturer
         ? `${payload.lecturer} is already scheduled from ${formatTime(conflict.startTime)} to ${formatTime(conflict.endTime)} on ${payload.day}.`
@@ -380,17 +471,20 @@ const saveClass = async () => {
       return;
     }
     const course = coursesStore.getCourseById(payload.courseId);
-    const label = `${course?.code ?? 'course'} on ${payload.day} ${formatTime(payload.startTime)}-${formatTime(payload.endTime)}, venue: ${payload.venue}, lecturer: ${payload.lecturer}`;
+    const modeLabel = payload.deliveryMode || 'Face-to-Face';
+    const label = `${course?.code ?? 'course'} [${modeLabel}] on ${payload.day} ${formatTime(payload.startTime)}-${formatTime(payload.endTime)}, ${modeLabel === 'Online' ? 'platform' : 'venue'}: ${payload.venue}, lecturer: ${payload.lecturer}`;
     if (editingScheduleId.value) {
       await schedulesStore.updateSchedule(editingScheduleId.value, payload);
       const before = beforeEditSnapshot.value;
       const changes = [];
       if (before) {
+        if (before.deliveryMode !== payload.deliveryMode) changes.push(`Mode: "${before.deliveryMode}" → "${payload.deliveryMode}"`);
         if (before.lecturer !== payload.lecturer) changes.push(`Lecturer: "${before.lecturer}" → "${payload.lecturer}"`);
-        if (before.venue !== payload.venue) changes.push(`Venue: "${before.venue}" → "${payload.venue}"`);
+        if (before.venue !== payload.venue) changes.push(`Venue/Platform: "${before.venue}" → "${payload.venue}"`);
         if (before.day !== payload.day) changes.push(`Day: ${before.day} → ${payload.day}`);
         if (before.startTime !== payload.startTime || before.endTime !== payload.endTime)
           changes.push(`Time: ${formatTime(before.startTime)}-${formatTime(before.endTime)} → ${formatTime(payload.startTime)}-${formatTime(payload.endTime)}`);
+        if ((before.onlineLink || '') !== (payload.onlineLink || '')) changes.push(`Meeting link updated`);
       }
       logAudit('schedule_updated', `Updated class: ${label}.${changes.length ? ` Changes — ${changes.join('; ')}` : ''}`);
     } else {

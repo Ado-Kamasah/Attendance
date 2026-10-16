@@ -16,6 +16,8 @@ function mapSchedule(row) {
     endTime: row.end_time,
     venue: row.venue,
     lecturer: row.lecturer,
+    deliveryMode: row.delivery_mode || 'Face-to-Face',
+    onlineLink: row.online_link || '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -31,6 +33,8 @@ function toRow(schedule) {
   if (schedule.endTime !== undefined) row.end_time = schedule.endTime;
   if (schedule.venue !== undefined) row.venue = schedule.venue;
   if (schedule.lecturer !== undefined) row.lecturer = schedule.lecturer;
+  if (schedule.deliveryMode !== undefined) row.delivery_mode = schedule.deliveryMode;
+  if (schedule.onlineLink !== undefined) row.online_link = schedule.onlineLink;
   return row;
 }
 
