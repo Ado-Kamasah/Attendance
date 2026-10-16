@@ -206,7 +206,25 @@
 
                       <!-- Course Details: Venue & Lecturer -->
                       <div class="pl-1 pt-1.5 border-t border-black/5 dark:border-white/5 flex flex-col gap-0.5 text-[10px] font-mono opacity-80">
-                        <div v-if="entry.venue" class="flex items-center gap-1.5 truncate">
+                        <!-- Delivery Mode pill -->
+                        <div class="flex items-center gap-1 mb-0.5">
+                          <span
+                            :class="[
+                              'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold text-[9px] uppercase tracking-wide',
+                              entry.deliveryMode === 'Online'
+                                ? 'bg-violet-500/20 text-violet-300'
+                                : entry.deliveryMode === 'Hybrid'
+                                ? 'bg-amber-500/20 text-amber-300'
+                                : 'bg-emerald-500/20 text-emerald-300'
+                            ]"
+                          >
+                            <span v-if="entry.deliveryMode === 'Online'">🌐</span>
+                            <span v-else-if="entry.deliveryMode === 'Hybrid'">⚡</span>
+                            <span v-else>🏫</span>
+                            {{ entry.deliveryMode }}
+                          </span>
+                        </div>
+                        <div v-if="entry.venue && entry.deliveryMode !== 'Online'" class="flex items-center gap-1.5 truncate">
                           <span>📍</span>
                           <span class="truncate">{{ entry.venue }}</span>
                         </div>
@@ -214,6 +232,22 @@
                           <span>👤</span>
                           <span class="truncate">{{ entry.lecturer }}</span>
                         </div>
+                        <!-- Clickable meeting link for Online / Hybrid -->
+                        <a
+                          v-if="(entry.deliveryMode === 'Online' || entry.deliveryMode === 'Hybrid') && entry.onlineLink"
+                          :href="entry.onlineLink"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          @click.stop
+                          class="flex items-center gap-1.5 truncate text-violet-300 hover:text-violet-100 underline underline-offset-2 mt-0.5 transition-colors"
+                        >
+                          <span>🔗</span>
+                          <span class="truncate">Join Class</span>
+                        </a>
+                        <span
+                          v-else-if="(entry.deliveryMode === 'Online' || entry.deliveryMode === 'Hybrid') && !entry.onlineLink"
+                          class="text-[9px] italic opacity-60"
+                        >Link TBD</span>
                       </div>
                     </div>
                   </div>
@@ -398,17 +432,19 @@ const timetableEntries = computed(() => {
     .map((s) => {
       const course = courses.value.find((c) => c.id === s.courseId);
       return {
-        courseId:   s.courseId,
-        courseCode: course?.code    ?? '—',
-        courseName: course?.name    ?? 'Unknown Course',
-        credits:    course?.credits ?? 0,
-        day:        s.day,
-        startTime:  s.startTime,
-        endTime:    s.endTime,
-        venue:      s.venue,
-        lecturer:   s.lecturer,
-        mode:       (s.mode ?? '').toLowerCase(),
-        colorIndex: courseColorMap.value[s.courseId] ?? 0,
+        courseId:     s.courseId,
+        courseCode:   course?.code    ?? '—',
+        courseName:   course?.name    ?? 'Unknown Course',
+        credits:      course?.credits ?? 0,
+        day:          s.day,
+        startTime:    s.startTime,
+        endTime:      s.endTime,
+        venue:        s.venue,
+        lecturer:     s.lecturer,
+        mode:         (s.mode ?? '').toLowerCase(),
+        deliveryMode: s.deliveryMode || 'Face-to-Face',
+        onlineLink:   s.onlineLink   || '',
+        colorIndex:   courseColorMap.value[s.courseId] ?? 0,
       };
     });
 });
