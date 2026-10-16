@@ -4,6 +4,31 @@ import prisma from '../config/db.js';
 // POST /api/suggestions
 // Student: submit a new suggestion or complaint
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper to compute 3-day SLA details
+const computeSLA = (createdAt, adminNote, status) => {
+  const created = new Date(createdAt);
+  const deadline = new Date(created.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const diffMs = deadline.getTime() - now.getTime();
+  const isResponded = Boolean(adminNote) || status === 'reviewed' || status === 'resolved';
+  const isOverdue = diffMs < 0 && !isResponded;
+  const isUrgent = diffMs >= 0 && diffMs <= 24 * 60 * 60 * 1000 && !isResponded;
+  const remainingHours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
+  const overdueHours = diffMs < 0 ? Math.floor(Math.abs(diffMs) / (1000 * 60 * 60)) : 0;
+
+  return {
+    slaDeadline: deadline.toISOString(),
+    slaTargetFormatted: deadline.toLocaleDateString('en-US', {
+      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    }),
+    isResponded,
+    isOverdue,
+    isUrgent,
+    remainingHours,
+    overdueHours,
+  };
+};
+
 export const submitSuggestion = async (req, res) => {
   try {
     const studentId = req.user.id;
@@ -13,6 +38,14 @@ export const submitSuggestion = async (req, res) => {
       return res.status(400).json({ message: 'Category, subject and message are required.' });
     }
 
+    const slaDeadline = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+    const deadlineFormatted = slaDeadline.toLocaleDateString('en-US', {
+      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    // Automated institutional response with 3-day commitment
+    const autoResponse = `[Automated Response • 3-Day SLA Commitment]\nThank you for reaching out. Your ${category} has been received and routed to University Administration.\n\n⏱️ Response Policy: Under our student charter, an official administrative review and resolution will be provided within three (3) business days (by ${deadlineFormatted}).`;
+
     const suggestion = await prisma.suggestion.create({
       data: {
         studentId,
@@ -20,10 +53,15 @@ export const submitSuggestion = async (req, res) => {
         subject:     subject.trim(),
         message:     message.trim(),
         isAnonymous: Boolean(isAnonymous),
+        adminNote:   autoResponse,
       },
     });
 
-    res.status(201).json({ message: 'Suggestion submitted successfully.', suggestion });
+    res.status(201).json({ 
+      message: 'Suggestion submitted successfully with automated 3-day SLA response.', 
+      suggestion,
+      slaDeadline,
+    });
   } catch (error) {
     console.error('submitSuggestion error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -69,7 +107,7 @@ export const getAllSuggestions = async (req, res) => {
         status:      s.status,
         adminNote:   s.adminNote,
         createdAt:   s.createdAt,
-        // student identity intentionally omitted for privacy
+        sla:         computeSLA(s.createdAt, s.adminNote, s.status),
       }))
     );
   } catch (error) {

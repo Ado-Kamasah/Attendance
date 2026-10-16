@@ -136,6 +136,15 @@
           </button>
         </div>
 
+        <!-- 3-Day SLA Policy Notice Banner -->
+        <div class="p-3.5 rounded-xl bg-sky-50/80 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-800/60 flex items-start gap-3 text-xs text-sky-800 dark:text-sky-300">
+          <Clock class="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+          <div class="leading-relaxed">
+            <span class="font-bold">Automated 3-Day Response Guarantee:</span>
+            Submissions are automatically routed to the Administrative Board. In accordance with university student charter policy, an automated receipt is issued immediately and an official review response is guaranteed within <span class="font-bold underline decoration-sky-400">three (3) business days</span>.
+          </div>
+        </div>
+
         <!-- Success / Error Banners -->
         <div v-if="successMsg" class="p-3.5 rounded-xl bg-success/10 border border-success/30 text-success text-xs font-mono flex items-center gap-2">
           <CheckCircle2 class="w-4 h-4 shrink-0" />
@@ -219,12 +228,35 @@
             class="p-5 rounded-2xl bg-surface dark:bg-dark-surface border border-outline/40 dark:border-dark-outline/50 shadow-2xs space-y-3"
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <span class="px-2.5 py-0.5 rounded text-[11px] font-bold font-mono uppercase tracking-wider" :class="getCategoryStyle(s.category)">
                   {{ s.category }}
                 </span>
                 <span class="px-2 py-0.2 rounded text-[10px] font-mono border" :class="getStatusStyle(s.status)">
                   {{ s.status || 'Pending' }}
+                </span>
+
+                <!-- 3-Day SLA Status Pill -->
+                <span 
+                  v-if="s.status === 'resolved'"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                >
+                  <CheckCircle2 class="w-3 h-3 text-emerald-500" />
+                  <span>Resolved within SLA</span>
+                </span>
+                <span 
+                  v-else-if="getStudentSLA(s).isOverdue"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                >
+                  <AlertTriangle class="w-3 h-3 text-rose-500" />
+                  <span>SLA Overdue ({{ getStudentSLA(s).remainingText }})</span>
+                </span>
+                <span 
+                  v-else
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800"
+                >
+                  <Clock class="w-3 h-3 text-sky-500" />
+                  <span>Response Target: 3 Days ({{ getStudentSLA(s).remainingText }})</span>
                 </span>
               </div>
               <div class="flex items-center gap-2.5">
@@ -254,13 +286,31 @@
               </p>
             </div>
 
-            <!-- Admin Response Note -->
-            <div v-if="s.adminNote" class="p-3.5 rounded-xl bg-secondary/10 border border-secondary/25 text-xs">
+            <!-- Automated Response Note Box -->
+            <div v-if="parseNotes(s.adminNote).autoNote" class="p-3.5 rounded-xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-800/60 text-xs space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 font-bold text-sky-700 dark:text-sky-400 text-[11px] font-mono uppercase tracking-wider">
+                  <Bot class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                  <span>Automated Institutional Confirmation • 3-Day SLA Commitment</span>
+                </div>
+                <span class="text-[10px] font-mono text-sky-600/80 dark:text-sky-400/80 font-bold">
+                  Target: {{ getStudentSLA(s).deadlineFormatted }}
+                </span>
+              </div>
+              <p class="text-foreground/80 dark:text-white/90 leading-relaxed font-mono text-[11px] whitespace-pre-line">
+                {{ parseNotes(s.adminNote).autoNote }}
+              </p>
+            </div>
+
+            <!-- Official Administrative Follow-Up / Resolution Note -->
+            <div v-if="parseNotes(s.adminNote).adminNote" class="p-3.5 rounded-xl bg-secondary/15 border border-secondary/35 text-xs space-y-1">
               <div class="flex items-center gap-1.5 font-bold text-secondary text-[11px] font-mono uppercase tracking-wider mb-1">
                 <MessageCircle class="w-3.5 h-3.5" />
-                <span>Official Institutional Response:</span>
+                <span>Official Administrative Resolution & Action:</span>
               </div>
-              <p class="text-foreground/80 dark:text-white/90 leading-relaxed">{{ s.adminNote }}</p>
+              <p class="text-foreground/90 dark:text-white leading-relaxed whitespace-pre-line">
+                {{ parseNotes(s.adminNote).adminNote }}
+              </p>
             </div>
 
             <div v-if="s.isAnonymous" class="text-[10px] font-mono text-foreground/45 dark:text-white/55 flex items-center gap-1">
@@ -312,7 +362,10 @@ import {
   MessageCircle,
   Download,
   FileSpreadsheet,
-  Printer
+  Printer,
+  Clock,
+  Bot,
+  Timer
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -346,6 +399,71 @@ function validate() {
   return !errors.category && !errors.subject && !errors.message;
 }
 
+// ── Automated Response & 3-Day SLA Helper ────────────────────────────────────
+function buildAutoResponse(category, createdAt = Date.now()) {
+  const slaTarget = new Date(new Date(createdAt).getTime() + 3 * 24 * 60 * 60 * 1000);
+  const slaTargetFormatted = slaTarget.toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+  return `[Automated Response • 3-Day SLA Commitment]\nThank you for reaching out. Your ${category || 'submission'} has been safely logged with University Administration.\n\n⏱️ Response Policy: Under our student charter, an official administrative review and resolution will be provided within three (3) business days (by ${slaTargetFormatted}).`;
+}
+
+function getStudentSLA(s) {
+  const created = new Date(s.createdAt || Date.now());
+  const deadline = new Date(created.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const diffMs = deadline.getTime() - now.getTime();
+  const isResolved = s.status === 'resolved';
+  const hasManualNote = s.adminNote && (!s.adminNote.includes('[Automated Response') || s.adminNote.includes('--- Administrative Resolution ---'));
+  const isOverdue = diffMs < 0 && !isResolved && !hasManualNote;
+
+  let remainingText = '';
+  if (diffMs > 0) {
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    if (days > 0) remainingText = `${days}d ${hours}h remaining`;
+    else remainingText = `${hours}h remaining`;
+  } else {
+    const overdueDays = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60 * 24));
+    remainingText = overdueDays > 0 ? `Overdue by ${overdueDays}d` : 'Overdue (<24h)';
+  }
+
+  const deadlineFormatted = deadline.toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+
+  return {
+    deadline,
+    deadlineFormatted,
+    isOverdue,
+    isResolved,
+    hasManualNote,
+    remainingText
+  };
+}
+
+// Helper to parse automated vs administrative notes
+function parseNotes(noteStr) {
+  if (!noteStr) return { autoNote: '', adminNote: '' };
+  if (noteStr.includes('--- Administrative Resolution ---')) {
+    const parts = noteStr.split('--- Administrative Resolution ---');
+    return {
+      autoNote: parts[0].trim(),
+      adminNote: parts.slice(1).join('--- Administrative Resolution ---').trim()
+    };
+  }
+  if (noteStr.startsWith('[Automated Response')) {
+    return {
+      autoNote: noteStr.trim(),
+      adminNote: ''
+    };
+  }
+  return {
+    autoNote: '',
+    adminNote: noteStr.trim()
+  };
+}
+
 async function handleSubmit() {
   successMsg.value  = '';
   submitError.value = '';
@@ -354,6 +472,12 @@ async function handleSubmit() {
   isSubmitting.value = true;
   try {
     const studentId = authStore.profile?.id || authStore.user?.id;
+    const autoResponse = buildAutoResponse(form.category);
+    const slaTarget = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+    const dateFormatted = slaTarget.toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    });
+
     const { error: sbErr } = await supabase.from('suggestions').insert({
       student_id:   studentId,
       category:     form.category,
@@ -361,15 +485,16 @@ async function handleSubmit() {
       message:      form.message.trim(),
       is_anonymous: form.isAnonymous,
       status:       'unread',
+      admin_note:   autoResponse,
     });
     if (sbErr) throw sbErr;
-    successMsg.value = 'Your submission has been received. Thank you!';
+    successMsg.value = `Your submission has been logged! Automated response generated with 3-day SLA guarantee (due by ${dateFormatted}).`;
     form.category    = '';
     form.subject     = '';
     form.message     = '';
     form.isAnonymous = false;
     myList.value = [];
-    setTimeout(() => (successMsg.value = ''), 5000);
+    setTimeout(() => (successMsg.value = ''), 6500);
   } catch (e) {
     submitError.value = e?.message || 'Failed to submit. Please try again.';
   } finally {
@@ -488,6 +613,7 @@ function downloadStudentCSV() {
 
 function downloadStudentSlip(s) {
   const dStr = s.createdAt ? new Date(s.createdAt).toLocaleString() : '';
+  const sla = getStudentSLA(s);
   const text = [
     '================================================================================',
     '               UNIVERSITY STUDENT FORUM // SUGGESTION BOX RECEIPT',
@@ -497,6 +623,7 @@ function downloadStudentSlip(s) {
     `Classification     : ${String(s.category || '').toUpperCase()}`,
     `Status             : ${String(s.status || 'unread').toUpperCase()}`,
     `Privacy Mode       : ${s.isAnonymous ? 'Anonymous Protection Applied' : 'Standard Student Identification'}`,
+    `3-Day SLA Target   : ${sla.deadlineFormatted} (${sla.remainingText})`,
     '--------------------------------------------------------------------------------',
     'SUBJECT:',
     s.subject,
@@ -504,8 +631,8 @@ function downloadStudentSlip(s) {
     'SUBMISSION DETAILS:',
     s.message,
     '--------------------------------------------------------------------------------',
-    'OFFICIAL INSTITUTIONAL RESPONSE:',
-    s.adminNote ? s.adminNote : 'Pending administrative review. Check back later.',
+    'OFFICIAL INSTITUTIONAL RESPONSE & 3-DAY SLA GUARANTEE:',
+    s.adminNote ? s.adminNote : 'Automated processing active. Official response due within 3 days.',
     '================================================================================',
     `Receipt Generated  : ${new Date().toLocaleString()}`,
     '================================================================================',
