@@ -92,15 +92,25 @@
                 </span>
 
                 <span 
-                  v-if="!isCollapsed && activeRoute === item.path" 
+                  v-if="!isCollapsed && item.badge"
+                  class="ml-auto px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-teal-500/20 text-teal-300 border border-teal-500/40 shrink-0"
+                >
+                  {{ item.badge }}
+                </span>
+
+                <span 
+                  v-else-if="!isCollapsed && activeRoute === item.path" 
                   class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"
                 ></span>
 
                 <div 
                   v-if="isCollapsed" 
-                  class="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-[#0b1b36] border border-[#1e3860] text-slate-100 text-xs font-medium whitespace-nowrap shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50"
+                  class="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-[#0b1b36] border border-[#1e3860] text-slate-100 text-xs font-medium whitespace-nowrap shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 flex items-center gap-2"
                 >
-                  {{ item.name }}
+                  <span>{{ item.name }}</span>
+                  <span v-if="item.badge" class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-teal-500/20 text-teal-300 border border-teal-500/40">
+                    {{ item.badge }}
+                  </span>
                 </div>
               </a>
             </li>
@@ -213,12 +223,15 @@ const navGroups = computed(() => [
       { name: 'Course Registration', path: '/registration', icon: ClipboardCheck },
       { name: 'My Courses', path: '/my-courses', icon: BookOpen },
       { name: 'My Timetable', path: '/my-timetable', icon: CalendarDays },
+      { 
+        name: 'Class Rep Panel', 
+        path: '/classrep-dashboard', 
+        icon: UserCheck, 
+        badge: isClassRep.value ? 'CR' : null 
+      },
       { name: 'Lecturer Evaluation', path: '/evaluation', icon: Award },
       { name: 'Suggestion Box', path: '/suggestion-box', icon: MessageSquare },
-      { name: 'My Profile', path: '/profile', icon: User },
-      ...(isClassRep.value ? [
-        { name: 'Class Rep Panel', path: '/classrep-dashboard', icon: UserCheck }
-      ] : [])
+      { name: 'My Profile', path: '/profile', icon: User }
     ]
   }
 ]);

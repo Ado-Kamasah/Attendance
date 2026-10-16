@@ -183,7 +183,7 @@ const handleRegisterSuccess = () => {
         <LecturersAdmin   v-else-if="currentRoute === '/lecturers-admin'" @navigate="handleNavigationEvent" />
         <EvaluationForm   v-else-if="currentRoute === '/evaluation'" />
         <ClassRepManagement v-else-if="currentRoute === '/classrep-management'" />
-        <ClassRepDashboard  v-else-if="currentRoute === '/classrep-dashboard'" />
+        <ClassRepDashboard  v-else-if="currentRoute === '/classrep-dashboard'" @navigate="handleNavigationEvent" />
         <SuggestionBox      v-else-if="currentRoute === '/suggestion-box'" />
         <MyTimetable        v-else-if="currentRoute === '/my-timetable'" />
         <SuggestionsAdmin   v-else-if="currentRoute === '/suggestions-admin'" />

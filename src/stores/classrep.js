@@ -260,11 +260,12 @@ export const useClassRepStore = defineStore('classRep', () => {
   // ── Student: fetch my class rep roles ──────────────────────────────────────
   async function fetchMyRoles() {
     const authStore = useAuthStore();
-    const currentUserId = authStore.user?.id || authStore.profile?.id;
-    const userEmail = authStore.profile?.email || authStore.user?.email;
+    const currentUserId = authStore.user?.id;
+    const profileId = authStore.profile?.id;
+    const userEmail = (authStore.profile?.email || authStore.user?.email || '').toLowerCase().trim();
     const idNumber = authStore.profile?.id_number;
 
-    if (!currentUserId && !userEmail && !idNumber) {
+    if (!currentUserId && !profileId && !userEmail && !idNumber) {
       myRoles.value = [];
       return myRoles.value;
     }
@@ -275,20 +276,114 @@ export const useClassRepStore = defineStore('classRep', () => {
       if (!coursesStore.courses?.length) await coursesStore.fetchCourses().catch(() => {});
       if (!schedulesStore.schedules?.length) await schedulesStore.fetchSchedules().catch(() => {});
 
+      // Collect all candidate student identifiers
+      const candidateIds = new Set();
+      if (currentUserId) candidateIds.add(String(currentUserId));
+      if (profileId) candidateIds.add(String(profileId));
+      if (idNumber) candidateIds.add(String(idNumber));
+      if (userEmail) candidateIds.add(userEmail);
+
       let rolesData = null;
+
+      // 1. Direct query to Supabase class_reps with orClauses
       try {
         const orClauses = [];
-        if (currentUserId) orClauses.push(`student_id.eq.${currentUserId}`);
-        if (idNumber) orClauses.push(`student_id.eq.${idNumber}`);
-        
-        const query = supabase.from('class_reps').select('*, courses(*)');
-        if (orClauses.length > 0) {
-          const { data } = await query.or(orClauses.join(','));
-          if (data && data.length > 0) rolesData = data;
+        for (const cid of candidateIds) {
+          orClauses.push(`student_id.eq.${cid}`);
         }
-      } catch {}
 
-      // Backend fallback
+        if (orClauses.length > 0) {
+          // Attempt 1a: with courses and users
+          const { data: d1, error: e1 } = await supabase
+            .from('class_reps')
+            .select('*, courses(*), users(*)')
+            .or(orClauses.join(','));
+          if (!e1 && d1 && d1.length > 0) {
+            rolesData = d1;
+          } else {
+            // Attempt 1b: with courses
+            const { data: d2, error: e2 } = await supabase
+              .from('class_reps')
+              .select('*, courses(*)')
+              .or(orClauses.join(','));
+            if (!e2 && d2 && d2.length > 0) {
+              rolesData = d2;
+            } else {
+              // Attempt 1c: plain select
+              const { data: d3, error: e3 } = await supabase
+                .from('class_reps')
+                .select('*')
+                .or(orClauses.join(','));
+              if (!e3 && d3 && d3.length > 0) {
+                rolesData = d3;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[classrep] Supabase direct query notice:', err.message);
+      }
+
+      // 2. If not found, fetch all reps from Supabase and match client-side
+      if (!rolesData || rolesData.length === 0) {
+        try {
+          const { data: allSupabaseReps, error: allErr } = await supabase
+            .from('class_reps')
+            .select('*, courses(*), users(*)');
+          if (!allErr && allSupabaseReps && allSupabaseReps.length > 0) {
+            const matched = allSupabaseReps.filter((r) => {
+              const rSid = String(r.student_id || '');
+              const rEmail = String(r.users?.email || '').toLowerCase().trim();
+              const rIdNum = String(r.users?.id_number || '');
+              return (
+                candidateIds.has(rSid) ||
+                (userEmail && rEmail === userEmail) ||
+                (idNumber && rIdNum === String(idNumber)) ||
+                (userEmail && rSid.toLowerCase() === userEmail)
+              );
+            });
+            if (matched.length > 0) rolesData = matched;
+          }
+        } catch (err) {
+          console.warn('[classrep] Supabase all reps check notice:', err.message);
+        }
+      }
+
+      // 3. Fallback: Check allReps from store or fetchAllReps
+      if (!rolesData || rolesData.length === 0) {
+        try {
+          if (allReps.value.length === 0) {
+            await fetchAllReps().catch(() => {});
+          }
+          const matched = (allReps.value || []).filter((r) => {
+            const rSid = String(r.studentId || '');
+            const rEmail = String(r.studentEmail || '').toLowerCase().trim();
+            return (
+              candidateIds.has(rSid) ||
+              (userEmail && rEmail === userEmail) ||
+              (userEmail && rSid.toLowerCase() === userEmail)
+            );
+          });
+          if (matched.length > 0) {
+            myRoles.value = matched.map((r) => {
+              const schedules = (schedulesStore.schedules || []).filter((s) => s.courseId === r.courseId);
+              return {
+                id: r.id,
+                courseId: r.courseId,
+                courseCode: r.courseCode,
+                courseName: r.courseName,
+                schedules,
+                assignedAt: r.assignedAt,
+              };
+            });
+            return myRoles.value;
+          }
+        } catch (err) {
+          console.warn('[classrep] allReps fallback notice:', err.message);
+        }
+      }
+
+      // 4. Backend fallback
       if (!rolesData || rolesData.length === 0) {
         try {
           const res = await api.get('/classrep/my-roles');
@@ -299,9 +394,10 @@ export const useClassRepStore = defineStore('classRep', () => {
         } catch {}
       }
 
+      // 5. Map rolesData to myRoles
       myRoles.value = (rolesData ?? []).map((sr) => {
-        const c = (coursesStore.courses || []).find((x) => x.id === sr.course_id || x.code === sr.course_id);
-        const code = sr.courses?.code || c?.code || '—';
+        const c = sr.courses || (coursesStore.courses || []).find((x) => x.id === sr.course_id || x.code === sr.course_id);
+        const code = sr.courses?.code || c?.code || sr.course_id || '—';
         const name = sr.courses?.name || c?.name || code;
         const schedules = (schedulesStore.schedules || []).filter((s) => s.courseId === sr.course_id);
         return {
@@ -320,24 +416,55 @@ export const useClassRepStore = defineStore('classRep', () => {
     return myRoles.value;
   }
 
-  // â”€â”€ Verify session code (PIN) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Verify session code (PIN) ──────────────────────────────────────────────
   async function verifySessionCode(code, courseId) {
     if (!code || !String(code).trim()) throw new Error('Please enter a session code');
     const cleanCode = String(code).trim();
-    const { data, error: sbErr } = await supabase
-      .from('sessions')
-      .select('*, courses(*), users(*)')
-      .eq('pin', cleanCode)
-      .maybeSingle();
+    let data = null;
+    let sbErr = null;
+
+    try {
+      const res = await supabase
+        .from('sessions')
+        .select('*, courses(*), users(*)')
+        .eq('pin', cleanCode)
+        .maybeSingle();
+      data = res.data;
+      sbErr = res.error;
+    } catch (e) {
+      sbErr = e;
+    }
+
+    if (sbErr || !data) {
+      try {
+        const res2 = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('pin', cleanCode)
+          .maybeSingle();
+        if (res2.data) {
+          data = res2.data;
+          sbErr = null;
+        }
+      } catch {}
+    }
+
     if (sbErr) throw new Error(sbErr.message);
     if (!data) throw new Error(`No session found matching code "${cleanCode}".`);
+
+    const coursesStore = useCoursesStore();
+    const c = data.courses || (coursesStore.courses || []).find(x => x.id === data.course_id);
+    const courseCode = c?.code || data.courses?.code || '';
+    const courseName = c?.name || data.courses?.name || '';
+
     const matchesCourse =
       !courseId ||
       data.course_id === courseId ||
-      data.courses?.code?.toUpperCase() === String(courseId).toUpperCase();
+      (courseCode && courseCode.toUpperCase() === String(courseId).toUpperCase()) ||
+      (c && c.id === courseId);
     if (!matchesCourse) {
       throw new Error(
-        `Session code "${cleanCode}" belongs to ${data.courses?.code || 'another course'}, not the selected course.`
+        `Session code "${cleanCode}" belongs to ${courseCode || 'another course'}, not the selected course.`
       );
     }
     const createdDate = new Date(data.created_at || data.date || Date.now());
@@ -345,8 +472,8 @@ export const useClassRepStore = defineStore('classRep', () => {
       id: data.id,
       pin: data.pin,
       courseId: data.course_id,
-      courseCode: data.courses?.code || '',
-      courseName: data.courses?.name || '',
+      courseCode,
+      courseName,
       date: createdDate.toISOString().split('T')[0],
       time: `${String(createdDate.getHours()).padStart(2, '0')}:${String(createdDate.getMinutes()).padStart(2, '0')}`,
       createdAt: createdDate.toISOString(),
@@ -354,28 +481,44 @@ export const useClassRepStore = defineStore('classRep', () => {
     };
   }
 
-  // â”€â”€ Fetch recent sessions for a course â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fetch recent sessions for a course ──────────────────────────────────────
   async function fetchCourseSessions(courseId) {
     try {
-      const { data, error: sbErr } = await supabase
-        .from('sessions')
-        .select('*, courses(*)')
-        .eq('course_id', courseId)
-        .order('created_at', { ascending: false })
-        .limit(6);
-      if (sbErr) throw sbErr;
+      let data = null;
+      try {
+        const res = await supabase
+          .from('sessions')
+          .select('*, courses(*)')
+          .eq('course_id', courseId)
+          .order('created_at', { ascending: false })
+          .limit(6);
+        if (!res.error && res.data) data = res.data;
+      } catch {}
+
+      if (!data) {
+        const res2 = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('course_id', courseId)
+          .order('created_at', { ascending: false })
+          .limit(6);
+        data = res2.data ?? [];
+      }
+
+      const coursesStore = useCoursesStore();
       return (data ?? []).map((s) => {
+        const c = s.courses || (coursesStore.courses || []).find(x => x.id === s.course_id);
         const d = new Date(s.created_at || s.date || Date.now());
         return {
           id: s.id,
           pin: s.pin,
           courseId: s.course_id,
-          courseCode: s.courses?.code || '',
-          courseName: s.courses?.name || '',
+          courseCode: c?.code || s.courses?.code || '',
+          courseName: c?.name || s.courses?.name || '',
           date: d.toISOString().split('T')[0],
           time: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
           createdAt: d.toISOString(),
-          isActive: s.is_active,
+          isActive: s.is_active ?? s.isActive,
         };
       });
     } catch (err) {

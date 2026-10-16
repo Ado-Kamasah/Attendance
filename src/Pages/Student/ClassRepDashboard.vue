@@ -21,6 +21,18 @@
           {{ currentDate }} &bull; Verify faculty lecture delivery, session PINs, and turnout
         </p>
       </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          @click="refreshRoles"
+          :disabled="isLoading || isRefreshing"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface dark:bg-dark-surface border border-outline/40 text-foreground/80 dark:text-white/80 hover:bg-muted/40 text-xs font-mono transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+          title="Refresh class rep assignments"
+        >
+          <RefreshCw class="w-3.5 h-3.5 text-secondary" :class="{ 'animate-spin': isRefreshing }" />
+          <span>{{ isRefreshing ? 'Checking…' : 'Sync Roles' }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -30,12 +42,30 @@
     </div>
 
     <!-- No Roles Assigned -->
-    <div v-else-if="store.myRoles.length === 0" class="py-16 text-center text-foreground/50 dark:text-white/65 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl max-w-md mx-auto p-8">
-      <UserCheck class="w-10 h-10 mx-auto mb-2 text-foreground/30 dark:text-white/35" />
+    <div v-else-if="store.myRoles.length === 0" class="py-16 text-center text-foreground/60 dark:text-white/70 bg-surface dark:bg-dark-surface border border-outline/40 rounded-2xl max-w-lg mx-auto p-8 shadow-xs">
+      <div class="w-12 h-12 rounded-2xl bg-secondary/15 text-secondary border border-secondary/30 flex items-center justify-center mx-auto mb-3 shadow-xs">
+        <UserCheck class="w-6 h-6" />
+      </div>
       <h3 class="text-base font-bold font-display text-foreground dark:text-white">No Class Rep Appointments</h3>
-      <p class="text-xs font-mono text-foreground/60 dark:text-white/60 mt-1">
-        You are not assigned as an active class representative for any course cohorts. Contact your department administrator if you were nominated.
+      <p class="text-xs font-mono text-foreground/60 dark:text-white/60 mt-2 leading-relaxed">
+        You are not currently assigned as an active class representative for any course cohorts. Contact your course lecturer or department administrator if you were nominated.
       </p>
+      <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+        <button
+          @click="refreshRoles"
+          :disabled="isRefreshing"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary text-primary font-bold text-xs shadow-xs hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer"
+        >
+          <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isRefreshing }" />
+          <span>{{ isRefreshing ? 'Checking...' : 'Check for Assignments' }}</span>
+        </button>
+        <button
+          @click="$emit('navigate', '/student-dashboard')"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface dark:bg-dark-surface border border-outline/40 text-foreground/75 dark:text-white/75 hover:bg-muted/40 text-xs font-mono transition-colors cursor-pointer"
+        >
+          Back to Dashboard
+        </button>
+      </div>
     </div>
 
     <template v-else>
@@ -318,7 +348,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useClassRepStore } from '@/stores/classrep.js';
 import { useAuthStore } from '@/stores/authstore.js';
 import { 
@@ -333,10 +363,13 @@ import {
   History 
 } from 'lucide-vue-next';
 
+const emit = defineEmits(['navigate']);
+
 const store = useClassRepStore();
 const authStore = useAuthStore();
 const OTP_API_BASE = import.meta.env.VITE_OTP_API_URL || '';
 const isLoading = ref(true);
+const isRefreshing = ref(false);
 const histLoading = ref(false);
 const activeCourseId = ref('');
 const formError = ref('');
@@ -365,10 +398,39 @@ const statusOptions = [
   { value: 'absent',  label: 'Absent' },
 ];
 
+async function refreshRoles() {
+  isRefreshing.value = true;
+  try {
+    await store.fetchMyRoles();
+    if (store.myRoles.length > 0 && (!activeCourseId.value || !store.myRoles.some(r => r.courseId === activeCourseId.value))) {
+      await switchCourse(store.myRoles[0].courseId);
+    }
+  } catch (err) {
+    console.warn('[ClassRepDashboard] refreshRoles error:', err);
+  } finally {
+    isRefreshing.value = false;
+  }
+}
+
+watch(
+  () => store.myRoles,
+  (newRoles) => {
+    if (newRoles && newRoles.length > 0) {
+      if (!activeCourseId.value || !newRoles.some(r => r.courseId === activeCourseId.value)) {
+        switchCourse(newRoles[0].courseId);
+      }
+    } else {
+      activeCourseId.value = '';
+    }
+  },
+  { immediate: true, deep: true }
+);
+
 onMounted(async () => {
+  isLoading.value = true;
   await store.fetchMyRoles();
   isLoading.value = false;
-  if (store.myRoles.length > 0) {
+  if (store.myRoles.length > 0 && !activeCourseId.value) {
     await switchCourse(store.myRoles[0].courseId);
   }
 });
@@ -377,6 +439,7 @@ const activeCourse = computed(() => store.myRoles.find(r => r.courseId === activ
 const history = computed(() => store.attendanceHistory[activeCourseId.value] || []);
 
 async function switchCourse(courseId) {
+  if (!courseId) return;
   activeCourseId.value = courseId;
   formError.value = '';
   formSuccess.value = '';
