@@ -181,6 +181,9 @@
           <option value="200">Level 200</option>
           <option value="300">Level 300</option>
           <option value="400">Level 400</option>
+          <option value="500">Level 500</option>
+          <option value="600">Level 600</option>
+          <option value="700">Level 700</option>
         </select>
 
         <!-- Program Filter -->
@@ -827,6 +830,9 @@
                 <option value="200">Level 200</option>
                 <option value="300">Level 300</option>
                 <option value="400">Level 400</option>
+                <option value="500">Level 500</option>
+                <option value="600">Level 600</option>
+                <option value="700">Level 700</option>
               </select>
             </div>
           </div>
@@ -966,6 +972,9 @@
                 <option value="200">Level 200</option>
                 <option value="300">Level 300</option>
                 <option value="400">Level 400</option>
+                <option value="500">Level 500</option>
+                <option value="600">Level 600</option>
+                <option value="700">Level 700</option>
               </select>
             </div>
           </div>
@@ -1061,7 +1070,7 @@ const students = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref('all'); // 'all', 'enrolled', 'unenrolled'
-const levelFilter = ref('all');   // 'all', '100', '200', '300', '400'
+const levelFilter = ref('all');   // 'all', '100', '200', '300', '400', '500', '600', '700'
 const programFilter = ref('all'); // 'all' or program string
 const viewMode = ref('table');     // 'table' or 'cards'
 

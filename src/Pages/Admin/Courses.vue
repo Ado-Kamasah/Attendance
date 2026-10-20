@@ -41,6 +41,9 @@
         <option value="200">Level 200</option>
         <option value="300">Level 300</option>
         <option value="400">Level 400</option>
+        <option value="500">Level 500</option>
+        <option value="600">Level 600</option>
+        <option value="700">Level 700</option>
       </select>
       <select v-model="statusFilter"
         class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
@@ -201,6 +204,9 @@
                 <option value="200">200</option>
                 <option value="300">300</option>
                 <option value="400">400</option>
+                <option value="500">500</option>
+                <option value="600">600</option>
+                <option value="700">700</option>
               </select>
             </div>
           </div>

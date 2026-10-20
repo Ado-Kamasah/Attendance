@@ -311,7 +311,7 @@ import { useAuthStore } from '@/stores/authstore';
 import { supabase } from '@/stores/supabase';
 import { CalendarDays, Plus, Edit3, Trash2, X, MapPin, User as UserIcon, Link2 } from 'lucide-vue-next';
 
-const levels = ['100', '200', '300', '400'];
+const levels = ['100', '200', '300', '400', '500', '600', '700'];
 const modes = ['Regular', 'Weekend'];
 const regularDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const weekendDays = ['Thursday', 'Friday', 'Saturday', 'Sunday'];
