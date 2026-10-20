@@ -190,14 +190,43 @@
         </div>
 
         <form @submit.prevent="saveClass" class="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
-          <!-- Course -->
-          <div class="space-y-1.5">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Select Course <span class="text-rose-500">*</span></label>
-            <select v-model="newClass.courseId" required
-              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
-              <option disabled value="">Choose a course</option>
-              <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.code }} — {{ course.name }}</option>
-            </select>
+          <!-- Course: Level picker → filtered course list -->
+          <div class="space-y-3">
+            <!-- Level pill selector -->
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Level <span class="text-rose-500">*</span></label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="lvl in levels"
+                  :key="lvl"
+                  type="button"
+                  @click="setModalLevel(lvl)"
+                  :class="[
+                    'px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border transition-all',
+                    modalLevel === lvl
+                      ? 'bg-primary text-white border-primary dark:bg-secondary dark:border-secondary dark:text-primary'
+                      : 'bg-slate-50 dark:bg-dark-muted/70 text-slate-600 dark:text-white/75 border-slate-200 dark:border-dark-outline/70 hover:border-slate-300 dark:hover:border-slate-600'
+                  ]"
+                >Lvl {{ lvl }}</button>
+              </div>
+            </div>
+
+            <!-- Course dropdown (filtered by modalLevel) -->
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Select Course <span class="text-rose-500">*</span></label>
+              <select v-model="newClass.courseId" required
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
+                <option disabled value="">
+                  {{ coursesForLevel.length ? 'Choose a course' : `No courses at Level ${modalLevel}` }}
+                </option>
+                <option v-for="course in coursesForLevel" :key="course.id" :value="course.id">
+                  {{ course.code }} — {{ course.name }}
+                </option>
+              </select>
+              <p v-if="coursesForLevel.length === 0" class="text-[10px] font-mono text-amber-500 dark:text-amber-400">
+                No courses found for Level {{ modalLevel }}. Add courses first or pick another level.
+              </p>
+            </div>
           </div>
 
           <!-- Delivery Mode selector -->
@@ -327,6 +356,20 @@ const isModalOpen = ref(false);
 const editingScheduleId = ref(null);
 const beforeEditSnapshot = ref(null);
 
+// Level chosen inside the Add/Edit modal — seeds from the active filter level
+const modalLevel = ref('100');
+
+// Courses filtered to the level chosen in the modal
+const coursesForLevel = computed(() =>
+  courses.value.filter((c) => String(c.level) === modalLevel.value)
+);
+
+// Change modal level and clear the selected course so a stale ID isn't carried over
+const setModalLevel = (lvl) => {
+  modalLevel.value = lvl;
+  newClass.value.courseId = '';
+};
+
 const activeDays = computed(() => selectedMode.value === 'Regular' ? regularDays : weekendDays);
 
 watch(selectedMode, (newMode) => {
@@ -440,12 +483,16 @@ const getDuration = (start, end) => {
 
 const openAddModal = () => {
   editingScheduleId.value = null;
+  modalLevel.value = selectedLevel.value;  // pre-seed from the active filter level
   newClass.value = { courseId: '', lecturer: '', venue: '', day: selectedDay.value, startTime: '', endTime: '', deliveryMode: 'Face-to-Face', onlineLink: '' };
   isModalOpen.value = true;
 };
 
 const editClass = (cls) => {
   editingScheduleId.value = cls.id;
+  // Seed modalLevel from the schedule's own level so the right courses show up
+  const course = coursesStore.getCourseById(cls.courseId);
+  modalLevel.value = String(cls.level || course?.level || selectedLevel.value);
   beforeEditSnapshot.value = { courseCode: cls.courseCode, lecturer: cls.lecturer, venue: cls.venue, day: cls.day, startTime: cls.startTime, endTime: cls.endTime, deliveryMode: cls.deliveryMode, onlineLink: cls.onlineLink };
   newClass.value = { courseId: cls.courseId, lecturer: cls.lecturer, venue: cls.venue, day: cls.day, startTime: cls.startTime, endTime: cls.endTime, deliveryMode: cls.deliveryMode || 'Face-to-Face', onlineLink: cls.onlineLink || '' };
   isModalOpen.value = true;
@@ -455,7 +502,8 @@ const closeModal = () => { isModalOpen.value = false; editingScheduleId.value = 
 
 const saveClass = async () => {
   try {
-    const payload = { level: selectedLevel.value, mode: selectedMode.value, ...newClass.value };
+    // Use modalLevel (chosen inside the modal) as the authoritative level for the new/updated schedule
+    const payload = { level: modalLevel.value, mode: selectedMode.value, ...newClass.value };
     // For purely online classes, venue conflict check is skipped on the venue dimension
     const skipVenueConflict = payload.deliveryMode === 'Online';
     const conflict = schedulesStore.findConflict(
