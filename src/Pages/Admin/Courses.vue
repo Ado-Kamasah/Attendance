@@ -214,10 +214,10 @@
 
           <div class="flex items-center justify-end gap-3 pt-2">
             <button type="button" @click="closeModal" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
-            <button type="submit" :disabled="isSavingCourse"
+            <button type="submit" :disabled="isSaving"
               class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md inline-flex items-center gap-2 disabled:opacity-50 active:scale-95">
-              <Loader2 v-if="isSavingCourse" class="w-4 h-4 animate-spin" />
-              <span>{{ isSavingCourse ? 'Saving...' : (editingCourseId ? 'Update Course' : 'Save Course') }}</span>
+              <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
+              <span>{{ isSaving ? 'Saving...' : (editingCourseId ? 'Update Course' : 'Save Course') }}</span>
             </button>
           </div>
         </form>
@@ -240,7 +240,7 @@ const coursesStore = useCoursesStore();
 const facultiesStore = useFacultiesStore();
 const authStore = useAuthStore();
 const auditLogsStore = useAuditLogsStore();
-const { courses, isLoading } = storeToRefs(coursesStore);
+const { courses, isLoading, isSaving } = storeToRefs(coursesStore);
 const { faculties } = storeToRefs(facultiesStore);
 
 /** Resolve a faculty UUID (stored in course.programId) to its display name */
@@ -257,7 +257,6 @@ const levelFilter = ref('all');
 const statusFilter = ref('all');
 
 const isModalOpen = ref(false);
-const isSavingCourse = ref(false);
 const editingCourseId = ref(null);
 const newCourse = ref({ code: '', name: '', credits: 3, programId: '', semester: 'Semester 1', level: '100' });
 
@@ -313,7 +312,6 @@ const editCourse = (course) => {
 const closeModal = () => { isModalOpen.value = false; editingCourseId.value = null; };
 
 const saveCourse = async () => {
-  isSavingCourse.value = true;
   try {
     if (editingCourseId.value) {
       await coursesStore.updateCourse(editingCourseId.value, newCourse.value);
@@ -325,8 +323,6 @@ const saveCourse = async () => {
     closeModal();
   } catch (error) {
     console.error('Error saving course:', error);
-  } finally {
-    isSavingCourse.value = false;
   }
 };
 

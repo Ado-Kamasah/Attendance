@@ -53,7 +53,8 @@ function normalizeError(err) {
 
 export const useCoursesStore = defineStore('courses', () => {
   const courses = ref([]);
-  const isLoading = ref(false);
+  const isLoading = ref(false); // fetch/read loading
+  const isSaving = ref(false);  // create/update/delete loading
   const error = ref('');
   let realtimeChannel = null;
 
@@ -80,7 +81,8 @@ export const useCoursesStore = defineStore('courses', () => {
     error.value = '';
 
     try {
-      let supaList = [];
+      // Try Supabase first — treat any successful response (even empty) as authoritative
+      let supabaseOk = false;
       try {
         let query = supabase.from(TABLE).select('*').order('code', { ascending: true });
 
@@ -90,15 +92,15 @@ export const useCoursesStore = defineStore('courses', () => {
         if (filters.status) query = query.eq('status', filters.status);
 
         const { data, error: fetchErr } = await query;
-        if (!fetchErr && data && data.length > 0) {
-          supaList = data.map(mapCourse);
+        if (!fetchErr) {
+          courses.value = (data ?? []).map(mapCourse);
+          supabaseOk = true;
         }
       } catch (sbErr) {
         console.warn('Supabase courses fetch error, falling back to local API:', sbErr);
       }
 
-      if (supaList.length > 0) {
-        courses.value = supaList;
+      if (supabaseOk) {
         return courses.value;
       }
 
@@ -170,7 +172,7 @@ export const useCoursesStore = defineStore('courses', () => {
    * course: { code, name, credits, programId, level, semester?, status? }
    */
   async function createCourse(course) {
-    isLoading.value = true;
+    isSaving.value = true;
     error.value = '';
 
     try {
@@ -192,12 +194,12 @@ export const useCoursesStore = defineStore('courses', () => {
       push.error({ title: 'Failed to create course', message: normalized.message });
       throw normalized;
     } finally {
-      isLoading.value = false;
+      isSaving.value = false;
     }
   }
 
   async function updateCourse(id, updates) {
-    isLoading.value = true;
+    isSaving.value = true;
     error.value = '';
 
     try {
@@ -221,12 +223,12 @@ export const useCoursesStore = defineStore('courses', () => {
       push.error({ title: 'Failed to update course', message: normalized.message });
       throw normalized;
     } finally {
-      isLoading.value = false;
+      isSaving.value = false;
     }
   }
 
   async function deleteCourse(id) {
-    isLoading.value = true;
+    isSaving.value = true;
     error.value = '';
 
     try {
@@ -241,7 +243,7 @@ export const useCoursesStore = defineStore('courses', () => {
       push.error({ title: 'Failed to delete course', message: normalized.message });
       throw normalized;
     } finally {
-      isLoading.value = false;
+      isSaving.value = false;
     }
   }
 
@@ -280,6 +282,7 @@ export const useCoursesStore = defineStore('courses', () => {
   return {
     courses,
     isLoading,
+    isSaving,
     error,
     activeCourses,
     coursesCount,

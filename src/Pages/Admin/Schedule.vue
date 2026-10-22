@@ -319,9 +319,10 @@
 
           <div class="flex items-center justify-end gap-3 pt-2">
             <button type="button" @click="closeModal" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
-            <button type="submit"
-              class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md active:scale-95">
-              {{ editingScheduleId ? 'Update Schedule' : 'Save Schedule' }}
+            <button type="submit" :disabled="isSavingSchedule"
+              class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md active:scale-95 inline-flex items-center gap-2 disabled:opacity-50">
+              <Loader2 v-if="isSavingSchedule" class="w-4 h-4 animate-spin" />
+              <span>{{ isSavingSchedule ? 'Saving...' : (editingScheduleId ? 'Update Schedule' : 'Save Schedule') }}</span>
             </button>
           </div>
         </form>
@@ -338,7 +339,7 @@ import { useCoursesStore } from '@/stores/courses';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { useAuthStore } from '@/stores/authstore';
 import { supabase } from '@/stores/supabase';
-import { CalendarDays, Plus, Edit3, Trash2, X, MapPin, User as UserIcon, Link2 } from 'lucide-vue-next';
+import { CalendarDays, Plus, Edit3, Trash2, X, MapPin, User as UserIcon, Link2, Loader2 } from 'lucide-vue-next';
 
 const levels = ['100', '200', '300', '400', '500', '600', '700'];
 const modes = ['Regular', 'Weekend'];
@@ -353,6 +354,7 @@ const selectedMode = ref('Regular');
 const selectedSemester = ref('Semester 1');
 const selectedDay = ref(defaultDay);
 const isModalOpen = ref(false);
+const isSavingSchedule = ref(false);
 const editingScheduleId = ref(null);
 const beforeEditSnapshot = ref(null);
 
@@ -501,6 +503,7 @@ const editClass = (cls) => {
 const closeModal = () => { isModalOpen.value = false; editingScheduleId.value = null; beforeEditSnapshot.value = null; };
 
 const saveClass = async () => {
+  isSavingSchedule.value = true;
   try {
     // Use modalLevel (chosen inside the modal) as the authoritative level for the new/updated schedule
     const payload = { level: modalLevel.value, mode: selectedMode.value, ...newClass.value };
@@ -544,6 +547,8 @@ const saveClass = async () => {
   } catch (error) {
     console.error('Error saving schedule:', error);
     alert('Failed to save schedule');
+  } finally {
+    isSavingSchedule.value = false;
   }
 };
 
