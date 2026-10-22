@@ -314,7 +314,7 @@
                         : 'text-slate-700 dark:text-white/90 hover:bg-slate-50 dark:hover:bg-slate-800'
                     ]"
                   >
-                    <span class="w-6 h-6 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-400 flex items-center justify-center text-[10px] font-bold uppercase shrink-0">{{ l.name.charAt(0) }}</span>
+                    <span class="w-6 h-6 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-400 flex items-center justify-center text-[10px] font-bold uppercase shrink-0">{{ (l.name || '?').charAt(0) }}</span>
                     <span class="flex-1 truncate">{{ l.name }}</span>
                     <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md shrink-0"
                       :class="l.role?.toLowerCase().includes('lecturer')
@@ -421,6 +421,7 @@ import { useCoursesStore } from '@/stores/courses';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { useAuthStore } from '@/stores/authstore';
 import { supabase } from '@/stores/supabase';
+import api from '@/api.js';
 import { CalendarDays, Plus, Edit3, Trash2, X, MapPin, User as UserIcon, Link2, Loader2, Search } from 'lucide-vue-next';
 
 // ── Click-outside directive ────────────────────────────────────────────────────
@@ -486,7 +487,7 @@ const showLecturerDropdown = ref(false);
 const filteredLecturers = computed(() => {
   const q = lecturerQuery.value.trim().toLowerCase();
   if (!q) return lecturers.value;
-  return lecturers.value.filter(l => l.name.toLowerCase().includes(q));
+  return lecturers.value.filter(l => (l.name || '').toLowerCase().includes(q));
 });
 
 const selectLecturer = (l) => {
@@ -509,23 +510,86 @@ const onLecturerBlur = () => {
 const loadLecturers = async () => {
   isLoadingLecturers.value = true;
   try {
-    // Fetch ALL users — no server-side role filter so RLS row-visibility
-    // and role-value mismatches don't silently drop results.
-    // Filter client-side so we can debug exactly what comes back.
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, name, role')
-      .order('name')
-      .limit(2000);
-    if (error) throw error;
+    const unifiedMap = new Map();
 
-    const all = data ?? [];
-    console.log('[loadLecturers] total rows fetched:', all.length);
+    const addCandidate = (u) => {
+      if (!u) return;
+      const rawId = (u.id || '').toString().trim();
+      const rawEmail = (u.email || '').toString().trim().toLowerCase();
+      const rawName = (u.name || u.full_name || u.fullName || '').trim();
+      if (!rawName) return;
 
-    // Only show users with the Lecturer role
-    lecturers.value = all
-      .filter(u => u.role && u.role.toLowerCase().includes('lecturer'))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      const dedupeKey = (rawEmail && rawEmail !== '—') ? `email:${rawEmail}` : `id:${rawId || rawName.toLowerCase()}`;
+      if (!dedupeKey || dedupeKey === 'id:') return;
+
+      const existing = unifiedMap.get(dedupeKey) || (rawId ? unifiedMap.get(`id:${rawId}`) : null);
+      const role = u.role || existing?.role || 'Lecturer';
+
+      const resolved = {
+        id: rawId || existing?.id || `lec-${Date.now()}-${Math.random()}`,
+        name: rawName,
+        email: rawEmail && rawEmail !== '—' ? rawEmail : (existing?.email || '—'),
+        role: role,
+      };
+
+      unifiedMap.set(dedupeKey, resolved);
+      if (rawId) unifiedMap.set(`id:${rawId}`, resolved);
+      if (rawEmail && rawEmail !== '—') unifiedMap.set(`email:${rawEmail}`, resolved);
+    };
+
+    // 1. Supabase users
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .limit(2000);
+      if (!error && Array.isArray(data)) {
+        data
+          .filter(u => u.role && u.role.toString().toLowerCase().includes('lecturer'))
+          .forEach(addCandidate);
+      }
+    } catch (e) {
+      console.warn('[loadLecturers] Supabase fetch notice:', e);
+    }
+
+    // 2. Backend /users endpoint
+    try {
+      const { data: bUsers } = await api.get('/users', { params: { role: 'LECTURER' } });
+      if (bUsers?.users?.length > 0) {
+        bUsers.users
+          .filter(u => (u.role || '').toString().toLowerCase().includes('lecturer'))
+          .forEach(addCandidate);
+      }
+    } catch {}
+
+    // 3. Backend /admin/lecturers endpoint
+    try {
+      const { data: bLecturers } = await api.get('/admin/lecturers');
+      if (Array.isArray(bLecturers)) {
+        bLecturers.forEach(addCandidate);
+      }
+    } catch {}
+
+    // 4. Local storage custom created lecturers (registered via LecturersAdmin)
+    try {
+      const localCreated = JSON.parse(localStorage.getItem('custom_created_lecturers') || '[]');
+      if (Array.isArray(localCreated)) {
+        localCreated.forEach(addCandidate);
+      }
+    } catch {}
+
+    // Deduplicate by normalized name
+    const seen = new Set();
+    const list = [];
+    for (const val of unifiedMap.values()) {
+      const canonKey = val.name.toLowerCase();
+      if (!seen.has(canonKey)) {
+        seen.add(canonKey);
+        list.push(val);
+      }
+    }
+
+    lecturers.value = list.sort((a, b) => a.name.localeCompare(b.name));
     console.log('[loadLecturers] lecturers shown:', lecturers.value.length);
   } catch (err) {
     console.error('Failed to load lecturers:', err);
