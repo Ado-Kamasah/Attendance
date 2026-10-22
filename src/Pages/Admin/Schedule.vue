@@ -275,14 +275,60 @@
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Lecturer -->
-            <div class="space-y-1.5">
+            <!-- Lecturer (searchable combobox) -->
+            <div class="space-y-1.5" v-click-outside="() => showLecturerDropdown = false">
               <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Lecturer <span class="text-rose-500">*</span></label>
-              <select v-model="newClass.lecturer" required
-                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
-                <option disabled value="">Select lecturer</option>
-                <option v-for="l in lecturers" :key="l.id" :value="l.name">{{ l.name }}</option>
-              </select>
+              <div class="relative">
+                <!-- Search input -->
+                <div class="relative">
+                  <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    v-model="lecturerQuery"
+                    @focus="showLecturerDropdown = true"
+                    @input="showLecturerDropdown = true"
+                    :placeholder="newClass.lecturer || 'Type to search lecturer…'"
+                    autocomplete="off"
+                    class="w-full pl-8 pr-8 py-2.5 text-sm bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all"
+                  />
+                  <button v-if="lecturerQuery" type="button" @click="lecturerQuery = ''; newClass.lecturer = ''"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                    <X class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <!-- Dropdown list -->
+                <div v-if="showLecturerDropdown && filteredLecturers.length > 0"
+                  class="absolute z-50 mt-1 w-full bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto"
+                >
+                  <button
+                    v-for="l in filteredLecturers"
+                    :key="l.id"
+                    type="button"
+                    @click="selectLecturer(l)"
+                    :class="[
+                      'w-full text-left px-3 py-2 text-sm font-mono flex items-center gap-2 transition-colors',
+                      newClass.lecturer === l.name
+                        ? 'bg-secondary/10 dark:bg-secondary/20 text-secondary dark:text-dark-secondary font-bold'
+                        : 'text-slate-700 dark:text-white/90 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ]"
+                  >
+                    <span class="w-6 h-6 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-400 flex items-center justify-center text-[10px] font-bold uppercase shrink-0">{{ l.name.charAt(0) }}</span>
+                    {{ l.name }}
+                  </button>
+                </div>
+
+                <!-- No results -->
+                <div v-if="showLecturerDropdown && lecturerQuery && filteredLecturers.length === 0"
+                  class="absolute z-50 mt-1 w-full bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-xl shadow-lg px-3 py-2.5 text-xs font-mono text-slate-400"
+                >
+                  No lecturers match "{{ lecturerQuery }}"
+                </div>
+              </div>
+              <!-- Selected lecturer badge -->
+              <p v-if="newClass.lecturer && !lecturerQuery" class="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span>✓</span> {{ newClass.lecturer }}
+              </p>
               <p v-if="isLoadingLecturers" class="text-[10px] text-slate-400 dark:text-white/50 font-mono">Loading lecturers...</p>
             </div>
 
@@ -364,6 +410,15 @@ import { useAuthStore } from '@/stores/authstore';
 import { supabase } from '@/stores/supabase';
 import { CalendarDays, Plus, Edit3, Trash2, X, MapPin, User as UserIcon, Link2, Loader2, Search } from 'lucide-vue-next';
 
+// ── Click-outside directive ────────────────────────────────────────────────────
+const vClickOutside = {
+  mounted(el, binding) {
+    el._clickOutside = (e) => { if (!el.contains(e.target)) binding.value(e); };
+    document.addEventListener('mousedown', el._clickOutside);
+  },
+  unmounted(el) { document.removeEventListener('mousedown', el._clickOutside); },
+};
+
 const levels = ['100', '200', '300', '400', '500', '600', '700'];
 const modes = ['Regular', 'Weekend'];
 const regularDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -412,6 +467,20 @@ const { courses } = storeToRefs(coursesStore);
 
 const lecturers = ref([]);
 const isLoadingLecturers = ref(false);
+const lecturerQuery = ref('');
+const showLecturerDropdown = ref(false);
+
+const filteredLecturers = computed(() => {
+  const q = lecturerQuery.value.trim().toLowerCase();
+  if (!q) return lecturers.value;
+  return lecturers.value.filter(l => l.name.toLowerCase().includes(q));
+});
+
+const selectLecturer = (l) => {
+  newClass.value.lecturer = l.name;
+  lecturerQuery.value = '';
+  showLecturerDropdown.value = false;
+};
 
 const loadLecturers = async () => {
   isLoadingLecturers.value = true;
@@ -515,22 +584,31 @@ const getDuration = (start, end) => {
 
 const openAddModal = () => {
   editingScheduleId.value = null;
-  modalLevel.value = selectedLevel.value;  // pre-seed from the active filter level
+  modalLevel.value = selectedLevel.value;
   newClass.value = { courseId: '', lecturer: '', venue: '', day: selectedDay.value, startTime: '', endTime: '', deliveryMode: 'Face-to-Face', onlineLink: '' };
+  lecturerQuery.value = '';
+  showLecturerDropdown.value = false;
   isModalOpen.value = true;
 };
 
 const editClass = (cls) => {
   editingScheduleId.value = cls.id;
-  // Seed modalLevel from the schedule's own level so the right courses show up
   const course = coursesStore.getCourseById(cls.courseId);
   modalLevel.value = String(cls.level || course?.level || selectedLevel.value);
   beforeEditSnapshot.value = { courseCode: cls.courseCode, lecturer: cls.lecturer, venue: cls.venue, day: cls.day, startTime: cls.startTime, endTime: cls.endTime, deliveryMode: cls.deliveryMode, onlineLink: cls.onlineLink };
   newClass.value = { courseId: cls.courseId, lecturer: cls.lecturer, venue: cls.venue, day: cls.day, startTime: cls.startTime, endTime: cls.endTime, deliveryMode: cls.deliveryMode || 'Face-to-Face', onlineLink: cls.onlineLink || '' };
+  lecturerQuery.value = '';
+  showLecturerDropdown.value = false;
   isModalOpen.value = true;
 };
 
-const closeModal = () => { isModalOpen.value = false; editingScheduleId.value = null; beforeEditSnapshot.value = null; };
+const closeModal = () => {
+  isModalOpen.value = false;
+  editingScheduleId.value = null;
+  beforeEditSnapshot.value = null;
+  lecturerQuery.value = '';
+  showLecturerDropdown.value = false;
+};
 
 const saveClass = async () => {
   isSavingSchedule.value = true;
