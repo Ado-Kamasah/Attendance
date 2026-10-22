@@ -485,7 +485,14 @@ const selectLecturer = (l) => {
 const loadLecturers = async () => {
   isLoadingLecturers.value = true;
   try {
-    const { data, error } = await supabase.from('users').select('id, name').eq('role', 'Lecturer').order('name');
+    // ilike catches 'Lecturer', 'lecturer', 'LECTURER', etc.
+    // limit(1000) overrides Supabase's default 100-row cap
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, role')
+      .ilike('role', '%lecturer%')
+      .order('name')
+      .limit(1000);
     if (error) throw error;
     lecturers.value = data ?? [];
   } catch (err) {
