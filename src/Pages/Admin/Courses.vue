@@ -179,12 +179,11 @@
           </div>
 
           <div class="space-y-1.5">
-            <label for="programme" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Programme <span class="text-rose-500">*</span></label>
-            <select id="programme" v-model="newCourse.programId" required
+            <label for="programme" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Programme <span class="text-slate-400">(optional)</span></label>
+            <select id="programme" v-model="newCourse.programId"
               class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
-              <option value="" disabled>Select a programme</option>
+              <option value="">None / General</option>
               <option v-for="p in programmes" :key="p.id" :value="p.id">{{ p.name }}</option>
-              <option v-if="programmes.length === 0" disabled>No programmes yet — add them in Programme Management</option>
             </select>
           </div>
 
