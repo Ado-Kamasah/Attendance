@@ -178,14 +178,6 @@
               class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all" />
           </div>
 
-          <div class="space-y-1.5">
-            <label for="programme" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Programme <span class="text-slate-400">(optional)</span></label>
-            <select id="programme" v-model="newCourse.programId"
-              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
-              <option value="">None / General</option>
-              <option v-for="p in programmes" :key="p.id" :value="p.id">{{ p.name }}</option>
-            </select>
-          </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
@@ -235,21 +227,15 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCoursesStore } from '@/stores/courses';
-import { useProgrammesStore } from '@/stores/programmes';
 import { useAuthStore } from '@/stores/authstore';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
 import { BookOpen, Plus, Search, RotateCcw, Edit3, Archive, X, Loader2 } from 'lucide-vue-next';
 
 const coursesStore = useCoursesStore();
-const programmesStore = useProgrammesStore();
 const authStore = useAuthStore();
 const auditLogsStore = useAuditLogsStore();
 const { courses, isLoading, isSaving } = storeToRefs(coursesStore);
-const { programmes } = storeToRefs(programmesStore);
-
-/** Resolve a programme UUID to its display name */
-const programmeName = (id) => programmes.value.find((p) => p.id === id)?.name ?? id ?? '—';
 
 const logAudit = (action, details) => {
   const p = authStore.profile;
@@ -264,7 +250,7 @@ const statusFilter = ref('all');
 const isModalOpen = ref(false);
 const saveError = ref('');
 const editingCourseId = ref(null);
-const newCourse = ref({ code: '', name: '', credits: 3, programId: '', semester: 'Semester 1', level: '100' });
+const newCourse = ref({ code: '', name: '', credits: 3, semester: 'Semester 1', level: '100' });
 
 // schedules aren't owned by coursesStore — course_id -> { lecturer, summary }
 const schedulesByCourseId = ref({});
@@ -288,7 +274,6 @@ watch(courses, fetchSchedules, { deep: true });
 onMounted(async () => {
   await Promise.all([
     coursesStore.fetchCourses(),
-    programmesStore.fetchProgrammes(),
   ]);
   coursesStore.subscribeToCourses();
 });
@@ -306,14 +291,14 @@ const coursesWithSchedule = computed(() =>
 const openModal = () => {
   editingCourseId.value = null;
   saveError.value = '';
-  newCourse.value = { code: '', name: '', credits: 3, programId: '', semester: 'Semester 1', level: '100' };
+  newCourse.value = { code: '', name: '', credits: 3, semester: 'Semester 1', level: '100' };
   isModalOpen.value = true;
 };
 
 const editCourse = (course) => {
   editingCourseId.value = course.id;
   saveError.value = '';
-  newCourse.value = { code: course.code, name: course.name, credits: course.credits, programId: course.programId, semester: course.semester || 'Semester 1', level: course.level };
+  newCourse.value = { code: course.code, name: course.name, credits: course.credits, semester: course.semester || 'Semester 1', level: course.level };
   isModalOpen.value = true;
 };
 

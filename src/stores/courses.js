@@ -27,8 +27,6 @@ function toRow(course) {
   if (course.code !== undefined) row.code = course.code;
   if (course.name !== undefined) row.name = course.name;
   if (course.credits !== undefined) row.credits = course.credits;
-  // Send null (not empty string) for program_id — empty string breaks UUID FK
-  if (course.programId !== undefined) row.program_id = course.programId || null;
   if (course.level !== undefined) row.level = course.level;
   if (course.semester !== undefined) row.semester = course.semester;
   if (course.status !== undefined) row.status = course.status;

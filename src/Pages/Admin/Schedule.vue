@@ -68,6 +68,29 @@
           </button>
         </div>
       </div>
+      <!-- Search bar -->
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 pt-3 border-t border-slate-100 dark:border-dark-outline/40">
+        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-bold flex-shrink-0">Search</span>
+        <div class="relative flex-1 max-w-sm">
+          <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 pointer-events-none" />
+          <input
+            v-model="lecturerSearch"
+            type="text"
+            placeholder="Search lecturer, course code or title…"
+            class="w-full pl-8 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-secondary/50 font-mono transition-all"
+          />
+          <button
+            v-if="lecturerSearch"
+            @click="lecturerSearch = ''"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+          >
+            <X class="w-3 h-3" />
+          </button>
+        </div>
+        <span v-if="lecturerSearch" class="text-[11px] font-mono text-secondary dark:text-dark-secondary shrink-0">
+          {{ filteredClasses.length }} result{{ filteredClasses.length === 1 ? '' : 's' }}
+        </span>
+      </div>
     </div>
 
     <!-- Schedule Layout -->
@@ -339,7 +362,7 @@ import { useCoursesStore } from '@/stores/courses';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { useAuthStore } from '@/stores/authstore';
 import { supabase } from '@/stores/supabase';
-import { CalendarDays, Plus, Edit3, Trash2, X, MapPin, User as UserIcon, Link2, Loader2 } from 'lucide-vue-next';
+import { CalendarDays, Plus, Edit3, Trash2, X, MapPin, User as UserIcon, Link2, Loader2, Search } from 'lucide-vue-next';
 
 const levels = ['100', '200', '300', '400', '500', '600', '700'];
 const modes = ['Regular', 'Weekend'];
@@ -356,6 +379,7 @@ const selectedDay = ref(defaultDay);
 const isModalOpen = ref(false);
 const isSavingSchedule = ref(false);
 const editingScheduleId = ref(null);
+const lecturerSearch = ref('');
 const beforeEditSnapshot = ref(null);
 
 // Level chosen inside the Add/Edit modal — seeds from the active filter level
@@ -453,12 +477,18 @@ const schedulesWithCourse = computed(() =>
   })
 );
 
-const filteredClasses = computed(() =>
-  schedulesWithCourse.value.filter(c =>
+const filteredClasses = computed(() => {
+  const q = lecturerSearch.value.trim().toLowerCase();
+  return schedulesWithCourse.value.filter(c =>
     c.level === selectedLevel.value && c.mode === selectedMode.value && c.day === selectedDay.value &&
-    (selectedSemester.value === 'All' || c.semester === selectedSemester.value)
-  ).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
-);
+    (selectedSemester.value === 'All' || c.semester === selectedSemester.value) &&
+    (!q ||
+      (c.lecturer || '').toLowerCase().includes(q) ||
+      (c.courseCode || '').toLowerCase().includes(q) ||
+      (c.courseTitle || '').toLowerCase().includes(q)
+    )
+  ).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+});
 
 const getClassCount = (day) =>
   schedulesWithCourse.value.filter(c =>
