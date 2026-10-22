@@ -287,7 +287,8 @@
                     v-model="lecturerQuery"
                     @focus="showLecturerDropdown = true"
                     @input="showLecturerDropdown = true"
-                    :placeholder="newClass.lecturer || 'Type to search lecturer…'"
+                    @blur="onLecturerBlur"
+                    :placeholder="newClass.lecturer || 'Type to search or enter a name…'"
                     autocomplete="off"
                     class="w-full pl-8 pr-8 py-2.5 text-sm bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all"
                   />
@@ -314,15 +315,27 @@
                     ]"
                   >
                     <span class="w-6 h-6 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-400 flex items-center justify-center text-[10px] font-bold uppercase shrink-0">{{ l.name.charAt(0) }}</span>
-                    {{ l.name }}
+                    <span class="flex-1 truncate">{{ l.name }}</span>
+                    <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md shrink-0"
+                      :class="l.role?.toLowerCase().includes('lecturer')
+                        ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+                    >{{ l.role }}</span>
                   </button>
                 </div>
 
-                <!-- No results -->
+                <!-- No results — offer to use the typed name directly -->
                 <div v-if="showLecturerDropdown && lecturerQuery && filteredLecturers.length === 0"
-                  class="absolute z-50 mt-1 w-full bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-xl shadow-lg px-3 py-2.5 text-xs font-mono text-slate-400"
+                  class="absolute z-50 mt-1 w-full bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-xl shadow-lg overflow-hidden"
                 >
-                  No lecturers match "{{ lecturerQuery }}"
+                  <button type="button"
+                    @click="selectLecturer({ id: '_custom', name: lecturerQuery.trim(), role: 'Custom' })"
+                    class="w-full text-left px-3 py-2.5 text-sm font-mono flex items-center gap-2 text-slate-700 dark:text-white/90 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <span class="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-[10px] shrink-0">+</span>
+                    <span>Use <strong>"{{ lecturerQuery.trim() }}"</strong></span>
+                    <span class="ml-auto text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400">custom</span>
+                  </button>
                 </div>
               </div>
               <!-- Selected lecturer badge -->
@@ -482,19 +495,38 @@ const selectLecturer = (l) => {
   showLecturerDropdown.value = false;
 };
 
+// When the user types a custom name not in the list, wire it directly on blur
+const onLecturerBlur = () => {
+  setTimeout(() => {
+    if (lecturerQuery.value.trim() && !showLecturerDropdown.value) {
+      newClass.value.lecturer = lecturerQuery.value.trim();
+      lecturerQuery.value = '';
+    }
+    showLecturerDropdown.value = false;
+  }, 150);
+};
+
 const loadLecturers = async () => {
   isLoadingLecturers.value = true;
   try {
-    // ilike catches 'Lecturer', 'lecturer', 'LECTURER', etc.
-    // limit(1000) overrides Supabase's default 100-row cap
+    // Fetch ALL users — no server-side role filter so RLS row-visibility
+    // and role-value mismatches don't silently drop results.
+    // Filter client-side so we can debug exactly what comes back.
     const { data, error } = await supabase
       .from('users')
       .select('id, name, role')
-      .ilike('role', '%lecturer%')
       .order('name')
-      .limit(1000);
+      .limit(2000);
     if (error) throw error;
-    lecturers.value = data ?? [];
+
+    const all = data ?? [];
+    console.log('[loadLecturers] total rows fetched:', all.length);
+
+    // Only show users with the Lecturer role
+    lecturers.value = all
+      .filter(u => u.role && u.role.toLowerCase().includes('lecturer'))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    console.log('[loadLecturers] lecturers shown:', lecturers.value.length);
   } catch (err) {
     console.error('Failed to load lecturers:', err);
     lecturers.value = [];
