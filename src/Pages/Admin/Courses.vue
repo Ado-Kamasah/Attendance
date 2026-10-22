@@ -179,12 +179,12 @@
           </div>
 
           <div class="space-y-1.5">
-            <label for="programme" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Faculty / Program <span class="text-rose-500">*</span></label>
+            <label for="programme" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Programme <span class="text-rose-500">*</span></label>
             <select id="programme" v-model="newCourse.programId" required
               class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
-              <option value="" disabled>Select your faculty/program</option>
-              <option v-for="f in faculties" :key="f.id" :value="f.id">{{ f.name }}</option>
-              <option v-if="faculties.length === 0" disabled>No faculties yet — add them in Faculty Management</option>
+              <option value="" disabled>Select a programme</option>
+              <option v-for="p in programmes" :key="p.id" :value="p.id">{{ p.name }}</option>
+              <option v-if="programmes.length === 0" disabled>No programmes yet — add them in Programme Management</option>
             </select>
           </div>
 
@@ -212,6 +212,12 @@
             </div>
           </div>
 
+          <!-- Save Error Banner -->
+          <div v-if="saveError" class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-mono text-rose-700 dark:text-rose-300 flex items-start gap-2">
+            <span class="font-bold shrink-0">⚠ Error:</span>
+            <span>{{ saveError }}</span>
+          </div>
+
           <div class="flex items-center justify-end gap-3 pt-2">
             <button type="button" @click="closeModal" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-sm font-semibold text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
             <button type="submit" :disabled="isSaving"
@@ -230,21 +236,21 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCoursesStore } from '@/stores/courses';
-import { useFacultiesStore } from '@/stores/faculties';
+import { useProgrammesStore } from '@/stores/programmes';
 import { useAuthStore } from '@/stores/authstore';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
 import { BookOpen, Plus, Search, RotateCcw, Edit3, Archive, X, Loader2 } from 'lucide-vue-next';
 
 const coursesStore = useCoursesStore();
-const facultiesStore = useFacultiesStore();
+const programmesStore = useProgrammesStore();
 const authStore = useAuthStore();
 const auditLogsStore = useAuditLogsStore();
 const { courses, isLoading, isSaving } = storeToRefs(coursesStore);
-const { faculties } = storeToRefs(facultiesStore);
+const { programmes } = storeToRefs(programmesStore);
 
-/** Resolve a faculty UUID (stored in course.programId) to its display name */
-const facultyName = (id) => faculties.value.find((f) => f.id === id)?.name ?? id ?? '—';
+/** Resolve a programme UUID to its display name */
+const programmeName = (id) => programmes.value.find((p) => p.id === id)?.name ?? id ?? '—';
 
 const logAudit = (action, details) => {
   const p = authStore.profile;
@@ -257,6 +263,7 @@ const levelFilter = ref('all');
 const statusFilter = ref('all');
 
 const isModalOpen = ref(false);
+const saveError = ref('');
 const editingCourseId = ref(null);
 const newCourse = ref({ code: '', name: '', credits: 3, programId: '', semester: 'Semester 1', level: '100' });
 
@@ -282,7 +289,7 @@ watch(courses, fetchSchedules, { deep: true });
 onMounted(async () => {
   await Promise.all([
     coursesStore.fetchCourses(),
-    facultiesStore.fetchFaculties(),
+    programmesStore.fetchProgrammes(),
   ]);
   coursesStore.subscribeToCourses();
 });
@@ -299,19 +306,22 @@ const coursesWithSchedule = computed(() =>
 
 const openModal = () => {
   editingCourseId.value = null;
+  saveError.value = '';
   newCourse.value = { code: '', name: '', credits: 3, programId: '', semester: 'Semester 1', level: '100' };
   isModalOpen.value = true;
 };
 
 const editCourse = (course) => {
   editingCourseId.value = course.id;
+  saveError.value = '';
   newCourse.value = { code: course.code, name: course.name, credits: course.credits, programId: course.programId, semester: course.semester || 'Semester 1', level: course.level };
   isModalOpen.value = true;
 };
 
-const closeModal = () => { isModalOpen.value = false; editingCourseId.value = null; };
+const closeModal = () => { isModalOpen.value = false; editingCourseId.value = null; saveError.value = ''; };
 
 const saveCourse = async () => {
+  saveError.value = '';
   try {
     if (editingCourseId.value) {
       await coursesStore.updateCourse(editingCourseId.value, newCourse.value);
@@ -321,8 +331,10 @@ const saveCourse = async () => {
       logAudit('course_created', `Created course "${newCourse.value.code} — ${newCourse.value.name}"`);
     }
     closeModal();
-  } catch (error) {
-    console.error('Error saving course:', error);
+  } catch (err) {
+    // Surface the real error so the user can see it in the modal
+    saveError.value = err?.message || 'An unexpected error occurred. Check the browser console for details.';
+    console.error('[saveCourse] Supabase error:', err);
   }
 };
 
