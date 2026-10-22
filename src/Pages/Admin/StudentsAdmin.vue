@@ -809,10 +809,7 @@
               >
                 <option value="" disabled>Select Programme</option>
                 <option v-for="p in availablePrograms" :key="p" :value="p">{{ p }}</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Information Technology">Information Technology</option>
-                <option value="Business Administration">Business Administration</option>
-                <option value="Accounting & Finance">Accounting & Finance</option>
+                <option v-if="availablePrograms.length === 0" disabled>No faculties yet — add them in Faculty Management</option>
               </select>
             </div>
 
@@ -1032,11 +1029,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { supabase } from '@/stores/supabase';
 import api from '@/api.js';
 import { useCoursesStore } from '@/stores/courses.js';
 import { useEnrollmentsStore } from '@/stores/enrollments.js';
 import { useSchedulesStore } from '@/stores/schedules.js';
+import { useFacultiesStore } from '@/stores/faculties.js';
 import {
   GraduationCap,
   BookOpen,
@@ -1064,6 +1063,8 @@ import {
 const coursesStore = useCoursesStore();
 const enrollmentsStore = useEnrollmentsStore();
 const schedulesStore = useSchedulesStore();
+const facultiesStore = useFacultiesStore();
+const { faculties: availableFaculties } = storeToRefs(facultiesStore);
 
 // State
 const students = ref([]);
@@ -1142,15 +1143,14 @@ const getInitials = (name) => {
 // All courses shortcut
 const allCoursesList = computed(() => coursesStore.courses || []);
 
-// Available distinct programs
+// Available distinct programs — faculty store is primary source, student/course data is supplementary
 const availablePrograms = computed(() => {
   const set = new Set();
-  students.value.forEach((s) => {
-    if (s.program) set.add(s.program);
-  });
-  allCoursesList.value.forEach((c) => {
-    if (c.program) set.add(c.program);
-  });
+  // Primary: faculties managed by admin
+  availableFaculties.value.forEach((f) => { if (f.name) set.add(f.name); });
+  // Supplementary: already-assigned programs from student/course data
+  students.value.forEach((s) => { if (s.program) set.add(s.program); });
+  allCoursesList.value.forEach((c) => { if (c.program) set.add(c.program); });
   return Array.from(set).filter(Boolean).sort();
 });
 
@@ -1229,7 +1229,18 @@ const fetchStudentsData = async () => {
     backendStudents.forEach(addCandidate);
     localStudents.forEach(addCandidate);
 
-    const unifiedList = Array.from(new Set(unifiedMap.values()));
+    // Deduplicate by canonical key (email-first) — stale id-keyed refs can point to old objects
+    const seen = new Set();
+    const unifiedList = [];
+    for (const val of unifiedMap.values()) {
+      const canonKey = (val.email && val.email !== '—')
+        ? `email:${val.email.toLowerCase()}`
+        : `id:${val.id}`;
+      if (!seen.has(canonKey)) {
+        seen.add(canonKey);
+        unifiedList.push(val);
+      }
+    }
     const allCourses = coursesStore.courses || [];
     const allEnrollments = enrollmentsStore.enrollments || [];
 
@@ -1279,6 +1290,7 @@ const fetchStudentsData = async () => {
 };
 
 onMounted(() => {
+  facultiesStore.fetchFaculties();
   fetchStudentsData();
 });
 
@@ -1496,7 +1508,7 @@ const openAddStudentModal = () => {
     name: '',
     email: '',
     displayId: '',
-    program: availablePrograms.value[0] || 'Computer Science',
+    program: availablePrograms.value[0] || '',
     level: '100',
     password: ''
   };
@@ -1512,7 +1524,7 @@ const openEditStudentModal = (student) => {
     name: student.name || '',
     email: student.email === '—' ? '' : student.email,
     displayId: student.displayId || student.id_number || '',
-    program: student.program || 'Computer Science',
+    program: student.program || availablePrograms.value[0] || '',
     level: student.level || '100',
     password: ''
   };

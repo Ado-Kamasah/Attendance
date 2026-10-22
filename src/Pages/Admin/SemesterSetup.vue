@@ -6,7 +6,6 @@
       <div class="absolute inset-0 bg-[radial-gradient(#031c45_1px,transparent_1px)] dark:bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.03] dark:opacity-[0.05] bg-[size:16px_16px] pointer-events-none"></div>
       <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
       <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
-
       <div class="relative z-10">
         <div class="flex items-center gap-2 mb-1.5">
           <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium tracking-wide uppercase bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary border border-primary/20 dark:border-secondary/30">
@@ -22,10 +21,18 @@
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
 
       <!-- LEFT: Configuration Form -->
-      <div class="lg:col-span-3 bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-slate-100 dark:border-dark-outline">
-          <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">{{ editingSemesterId ? 'Update Semester' : 'Configure New Semester' }}</h2>
-          <p class="text-xs text-slate-500 dark:text-white/75 mt-0.5">Define the dates and parameters for an academic term.</p>
+      <div ref="formPanel" class="lg:col-span-3 bg-white dark:bg-dark-surface border border-slate-200/80 dark:border-dark-outline/60 rounded-2xl shadow-sm overflow-hidden scroll-mt-6">
+        <div class="p-6 border-b border-slate-100 dark:border-dark-outline flex items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <h2 class="text-base font-display font-bold text-slate-900 dark:text-white">
+              {{ editingSemesterId ? 'Update Semester' : 'Configure New Semester' }}
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-white/75 mt-0.5">Define the dates and parameters for an academic term.</p>
+          </div>
+          <!-- Editing badge -->
+          <span v-if="editingSemesterId" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wide bg-secondary/15 text-secondary border border-secondary/30 flex-shrink-0 animate-pulse">
+            <Edit3 class="w-3 h-3" /> EDITING
+          </span>
         </div>
 
         <form @submit.prevent="saveSemester" class="p-6 space-y-5">
@@ -103,9 +110,9 @@
           <!-- Actions -->
           <div class="flex items-center gap-3 pt-2">
             <button type="submit" :disabled="semestersStore.isLoading"
-              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md disabled:opacity-50 active:scale-95"
-            >
-              <Save class="w-4 h-4" />
+              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-all shadow-md disabled:opacity-50 active:scale-95">
+              <Loader2 v-if="semestersStore.isLoading" class="w-4 h-4 animate-spin" />
+              <Save v-else class="w-4 h-4" />
               {{ editingSemesterId ? 'Update Configuration' : 'Save Configuration' }}
             </button>
             <button type="button" @click="resetForm"
@@ -153,7 +160,8 @@
           <div v-if="semesters.length === 0" class="p-8 text-center text-slate-400 dark:text-white/50 text-sm">No semesters configured yet.</div>
 
           <ul v-else class="divide-y divide-slate-100 dark:divide-slate-800/60">
-            <li v-for="sem in sortedSemesters" :key="sem.id" class="px-5 py-4 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+            <li v-for="sem in sortedSemesters" :key="sem.id"
+              :class="['px-5 py-4 transition-colors', editingSemesterId === sem.id ? 'bg-secondary/5 dark:bg-secondary/10' : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/30']">
               <div class="flex items-start gap-3">
                 <div :class="['w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
                   sem.isCurrent ? 'bg-secondary/20 border border-secondary/30 text-secondary' : 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400'
@@ -161,21 +169,50 @@
                   <Clock v-if="sem.isCurrent" class="w-3.5 h-3.5" />
                   <CheckCircle2 v-else class="w-3.5 h-3.5" />
                 </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-xs font-bold text-slate-900 dark:text-white">
-                    {{ sem.term }} <span class="text-slate-400 dark:text-white/50 font-normal">({{ sem.year }})</span>
-                  </div>
-                  <div class="text-[11px] font-mono text-slate-400 dark:text-white/50 mt-0.5">{{ formatDate(sem.startDate) }} — {{ formatDate(sem.endDate) }}</div>
 
-                  <div v-if="!sem.isCurrent" class="flex items-center gap-1.5 mt-2">
-                    <button @click="setActive(sem.id)" class="text-[10px] font-mono font-bold px-2 py-1 rounded-lg bg-secondary/10 text-secondary border border-secondary/30 hover:bg-secondary/20 transition-colors">
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center flex-wrap gap-1.5">
+                    {{ sem.term }}
+                    <span class="text-slate-400 dark:text-white/50 font-normal">({{ sem.year }})</span>
+                    <span v-if="sem.isCurrent" class="inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary border border-secondary/20">
+                      <span class="w-1 h-1 rounded-full bg-secondary animate-pulse"></span>ACTIVE
+                    </span>
+                    <span v-if="editingSemesterId === sem.id" class="inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary dark:bg-secondary/10 dark:text-secondary border border-primary/20 dark:border-secondary/20">
+                      EDITING...
+                    </span>
+                  </div>
+                  <div class="text-[11px] font-mono text-slate-400 dark:text-white/50 mt-0.5">
+                    {{ formatDate(sem.startDate) }} — {{ formatDate(sem.endDate) }}
+                  </div>
+
+                  <!-- Inline delete confirmation bar -->
+                  <div v-if="confirmDeleteId === sem.id"
+                    class="mt-2.5 flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
+                    <AlertTriangle class="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
+                    <span class="text-[10px] text-rose-700 dark:text-rose-400 flex-1 font-medium">Delete this semester?</span>
+                    <button @click="confirmDelete(sem.id)" :disabled="semestersStore.isLoading"
+                      class="text-[10px] font-mono font-bold px-2.5 py-1 rounded-md bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 transition-colors">
+                      {{ semestersStore.isLoading ? '...' : 'Yes, delete' }}
+                    </button>
+                    <button @click="confirmDeleteId = null"
+                      class="text-[10px] font-mono font-bold px-2.5 py-1 rounded-md border border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+
+                  <!-- Action buttons — shown for ALL semesters -->
+                  <div v-else class="flex items-center flex-wrap gap-1.5 mt-2">
+                    <button v-if="!sem.isCurrent" @click="setActive(sem.id)" :disabled="semestersStore.isLoading"
+                      class="text-[10px] font-mono font-bold px-2 py-1 rounded-lg bg-secondary/10 text-secondary border border-secondary/30 hover:bg-secondary/20 disabled:opacity-50 transition-colors">
                       Set Active
                     </button>
-                    <button @click="editSemester(sem)" title="Edit" class="p-1.5 text-slate-400 hover:text-primary dark:hover:text-secondary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                      <Edit3 class="w-3 h-3" />
+                    <button @click="editSemester(sem)"
+                      class="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-1 rounded-lg text-slate-500 dark:text-white/60 hover:text-primary dark:hover:text-secondary hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
+                      <Edit3 class="w-3 h-3" /> Edit
                     </button>
-                    <button @click="deleteSemester(sem.id)" title="Delete" class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors">
-                      <Trash2 class="w-3 h-3" />
+                    <button @click="confirmDeleteId = sem.id"
+                      class="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-800 transition-colors">
+                      <Trash2 class="w-3 h-3" /> Delete
                     </button>
                   </div>
                 </div>
@@ -193,16 +230,21 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useSemestersStore } from '@/stores/semesters';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
-import { GraduationCap, Save, Clock, CheckCircle2, Edit3, Trash2 } from 'lucide-vue-next';
+import { GraduationCap, Save, Clock, CheckCircle2, Edit3, Trash2, Loader2, AlertTriangle } from 'lucide-vue-next';
 
 const semestersStore = useSemestersStore();
 const auditLogsStore = useAuditLogsStore();
 
+// Template ref used to scroll the form into view when Edit is clicked
+const formPanel = ref(null);
+
 const initialForm = { year: '', term: '', startDate: '', endDate: '', examsStart: '', examsEnd: '', isCurrent: false };
 const form = ref({ ...initialForm });
 const editingSemesterId = ref(null);
+const confirmDeleteId = ref(null);
 const currentUser = ref(null);
 
+// Map raw store rows into the shape this component expects
 const semesters = computed(() =>
   semestersStore.semesters.map((s) => ({
     ...s,
@@ -221,7 +263,12 @@ const loadCurrentUser = async () => {
 
 const logAudit = (action, details) => {
   if (!currentUser.value) return;
-  auditLogsStore.logAction({ action, details, userId: currentUser.value.id, userRole: currentUser.value.role, userName: currentUser.value.name });
+  auditLogsStore.logAction({
+    action, details,
+    userId: currentUser.value.id,
+    userRole: currentUser.value.role,
+    userName: currentUser.value.name,
+  });
 };
 
 onMounted(async () => {
@@ -231,31 +278,47 @@ onMounted(async () => {
 
 onUnmounted(() => { semestersStore.unsubscribeFromSemesters(); });
 
-const activeSemester = computed(() => semesters.value.find(s => s.isCurrent));
-const sortedSemesters = computed(() => [...semesters.value].sort((a, b) => new Date(b.startDate) - new Date(a.startDate)));
+const activeSemester = computed(() => semesters.value.find((s) => s.isCurrent));
+const sortedSemesters = computed(() =>
+  [...semesters.value].sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
+);
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const resetForm = () => { form.value = { ...initialForm }; editingSemesterId.value = null; };
+const resetForm = () => {
+  form.value = { ...initialForm };
+  editingSemesterId.value = null;
+  confirmDeleteId.value = null;
+};
 
+/** Populates the form with an existing semester's data and scrolls to it */
 const editSemester = (sem) => {
+  confirmDeleteId.value = null;
   editingSemesterId.value = sem.id;
   form.value = {
-    year: sem.year, term: sem.term,
+    year: sem.year,
+    term: sem.term,
     startDate: sem.startDate ? sem.startDate.split('T')[0] : '',
     endDate: sem.endDate ? sem.endDate.split('T')[0] : '',
     examsStart: sem.examsStart ? sem.examsStart.split('T')[0] : '',
     examsEnd: sem.examsEnd ? sem.examsEnd.split('T')[0] : '',
-    isCurrent: sem.isCurrent
+    isCurrent: sem.isCurrent,
   };
+  formPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
 const saveSemester = async () => {
   const name = `${form.value.year} - ${form.value.term}`;
-  const payload = { name, startDate: form.value.startDate, endDate: form.value.endDate, examsStart: form.value.examsStart || null, examsEnd: form.value.examsEnd || null };
+  const payload = {
+    name,
+    startDate: form.value.startDate,
+    endDate: form.value.endDate,
+    examsStart: form.value.examsStart || null,
+    examsEnd: form.value.examsEnd || null,
+  };
   try {
     let semesterId = editingSemesterId.value;
     if (semesterId) {
@@ -271,23 +334,32 @@ const saveSemester = async () => {
       logAudit('semester_activated', `Set semester "${name}" as active`);
     }
     resetForm();
-  } catch (error) { console.error('Error saving semester:', error); }
+  } catch (err) {
+    console.error('Error saving semester:', err);
+  }
 };
 
 const setActive = async (id) => {
   try {
-    const sem = semesters.value.find(s => s.id === id);
+    const sem = semesters.value.find((s) => s.id === id);
     await semestersStore.setActiveSemester(id);
     if (sem) logAudit('semester_activated', `Set semester "${sem.name}" as active`);
-  } catch (error) { console.error('Error setting active semester:', error); }
+  } catch (err) {
+    console.error('Error setting active semester:', err);
+  }
 };
 
-const deleteSemester = async (id) => {
-  const sem = semesters.value.find(s => s.id === id);
-  if (!confirm(`Delete semester "${sem?.name ?? ''}"? This cannot be undone.`)) return;
+/** Called when user clicks "Yes, delete" in the inline confirmation bar */
+const confirmDelete = async (id) => {
+  const sem = semesters.value.find((s) => s.id === id);
   try {
     await semestersStore.deleteSemester(id);
     logAudit('semester_deleted', `Deleted semester "${sem?.name ?? ''}"`);
-  } catch (error) { console.error('Error deleting semester:', error); }
+    confirmDeleteId.value = null;
+    // If this was the semester being edited, also clear the form
+    if (editingSemesterId.value === id) resetForm();
+  } catch (err) {
+    console.error('Error deleting semester:', err);
+  }
 };
 </script>

@@ -636,15 +636,17 @@
 
             <div class="space-y-1.5">
               <label for="lecturer-dept-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">
-                Department / Specialization
+                Department / Faculty
               </label>
-              <input
-                type="text"
+              <select
                 id="lecturer-dept-input"
                 v-model="form.program"
-                placeholder="e.g. Computer Science or Business Admin"
                 class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
-              />
+              >
+                <option value="">-- Select Faculty / Department --</option>
+                <option v-for="f in availableFaculties" :key="f.id" :value="f.name">{{ f.name }}</option>
+                <option v-if="availableFaculties.length === 0" disabled>No faculties yet — add them in Faculty Management</option>
+              </select>
             </div>
           </div>
 
@@ -707,10 +709,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { supabase } from '@/stores/supabase';
 import api from '@/api.js';
 import { useCoursesStore } from '@/stores/courses.js';
 import { useSchedulesStore } from '@/stores/schedules.js';
+import { useFacultiesStore } from '@/stores/faculties.js';
 import {
   GraduationCap,
   Briefcase,
@@ -735,6 +739,8 @@ import {
 
 const coursesStore = useCoursesStore();
 const schedulesStore = useSchedulesStore();
+const facultiesStore = useFacultiesStore();
+const { faculties: availableFaculties } = storeToRefs(facultiesStore);
 
 // State
 const lecturers = ref([]);
@@ -886,7 +892,18 @@ const fetchLecturers = async () => {
     bLecturers.forEach(addCandidate);
     localCreated.forEach(addCandidate);
 
-    const unifiedList = Array.from(new Set(unifiedMap.values()));
+    // Deduplicate by canonical key (email-first) — stale id-keyed refs can cause duplicates
+    const seen = new Set();
+    const unifiedList = [];
+    for (const val of unifiedMap.values()) {
+      const canonKey = (val.email && val.email !== '—')
+        ? `email:${val.email.toLowerCase()}`
+        : `id:${val.id}`;
+      if (!seen.has(canonKey)) {
+        seen.add(canonKey);
+        unifiedList.push(val);
+      }
+    }
 
     const allSchedules = schedulesStore.schedules || [];
     const allCourses = coursesStore.courses || [];
@@ -942,6 +959,7 @@ const fetchLecturers = async () => {
 };
 
 onMounted(() => {
+  facultiesStore.fetchFaculties();
   fetchLecturers();
 });
 
