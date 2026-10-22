@@ -183,7 +183,8 @@
             <select id="programme" v-model="newCourse.programId" required
               class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50">
               <option value="" disabled>Select your faculty/program</option>
-              <option v-for="programme in programmes" :key="programme.id" :value="programme.id">{{ programme.name }}</option>
+              <option v-for="f in faculties" :key="f.id" :value="f.id">{{ f.name }}</option>
+              <option v-if="faculties.length === 0" disabled>No faculties yet — add them in Faculty Management</option>
             </select>
           </div>
 
@@ -229,15 +230,21 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCoursesStore } from '@/stores/courses';
+import { useFacultiesStore } from '@/stores/faculties';
 import { useAuthStore } from '@/stores/authstore';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
 import { BookOpen, Plus, Search, RotateCcw, Edit3, Archive, X, Loader2 } from 'lucide-vue-next';
 
 const coursesStore = useCoursesStore();
+const facultiesStore = useFacultiesStore();
 const authStore = useAuthStore();
 const auditLogsStore = useAuditLogsStore();
 const { courses, isLoading } = storeToRefs(coursesStore);
+const { faculties } = storeToRefs(facultiesStore);
+
+/** Resolve a faculty UUID (stored in course.programId) to its display name */
+const facultyName = (id) => faculties.value.find((f) => f.id === id)?.name ?? id ?? '—';
 
 const logAudit = (action, details) => {
   const p = authStore.profile;
@@ -253,8 +260,6 @@ const isModalOpen = ref(false);
 const isSavingCourse = ref(false);
 const editingCourseId = ref(null);
 const newCourse = ref({ code: '', name: '', credits: 3, programId: '', semester: 'Semester 1', level: '100' });
-
-const programmes = ref([]);
 
 // schedules aren't owned by coursesStore — course_id -> { lecturer, summary }
 const schedulesByCourseId = ref({});
@@ -276,11 +281,11 @@ const fetchSchedules = async () => {
 watch(courses, fetchSchedules, { deep: true });
 
 onMounted(async () => {
-  await coursesStore.fetchCourses();
+  await Promise.all([
+    coursesStore.fetchCourses(),
+    facultiesStore.fetchFaculties(),
+  ]);
   coursesStore.subscribeToCourses();
-  const { data, error } = await supabase.from('programmes').select('id, name').order('name');
-  if (error) { console.error('Failed to load faculties', error); return; }
-  programmes.value = data;
 });
 
 onUnmounted(() => { coursesStore.unsubscribeFromCourses(); });
