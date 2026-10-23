@@ -132,11 +132,12 @@ async function register(form) {
       password: form.password,
       options: {
         data: {
-          full_name:  form.fullName,
-          role:       form.role === 'staff' ? 'Lecturer' : 'Student',
-          id_number:  form.idNumber,
-          program_id: form.programId,
-          mode:       form.mode || null,
+          full_name: form.fullName,
+          role:      form.role === 'staff' ? 'Lecturer' : 'Student',
+          id_number: form.idNumber,
+          // programId now holds a faculty name string (faculties table)
+          program:   form.programId || null,
+          mode:      form.mode || null,
         },
       },
     });

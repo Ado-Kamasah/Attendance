@@ -124,9 +124,9 @@
                     required
                     class="w-full pl-10 pr-9 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm appearance-none cursor-pointer"
                   >
-                    <option value="" disabled selected>Select programme</option>
-                    <option v-for="programme in activeProgrammes" :key="programme.id" :value="programme.id">
-                      {{ programme.name }}
+                    <option value="" disabled selected>Select faculty</option>
+                    <option v-for="faculty in faculties" :key="faculty.id" :value="faculty.name">
+                      {{ faculty.name }}
                     </option>
                   </select>
                   <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-foreground/40 dark:text-white/50">
@@ -374,7 +374,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/authstore';
-import { useProgrammesStore } from '@/stores/programmes';
+import { useFacultiesStore } from '@/stores/faculties';
 import { storeToRefs } from 'pinia';
 import {
   GraduationCap,
@@ -398,8 +398,8 @@ import {
 const ALLOWED_DOMAIN = 'southshore.edu.gh';
 
 const authStore = useAuthStore();
-const programmesStore = useProgrammesStore();
-const { activeProgrammes } = storeToRefs(programmesStore);
+const facultiesStore = useFacultiesStore();
+const { faculties } = storeToRefs(facultiesStore);
 
 const showPassword = ref(false);
 const isLoading = ref(false);
@@ -409,9 +409,9 @@ const modeError = ref('');
 
 onMounted(async () => {
   try {
-    await programmesStore.fetchProgrammes({ isActive: true });
+    await facultiesStore.fetchFaculties();
   } catch (error) {
-    console.error('Failed to load programmes', error);
+    console.error('Failed to load faculties', error);
   }
 });
 
@@ -420,7 +420,7 @@ const form = reactive({
   email: '',
   role: 'student',
   idNumber: '',
-  programId: '',
+  programId: '', // stores faculty name (e.g. 'School of Computing')
   mode: '',
   password: '',
 });
