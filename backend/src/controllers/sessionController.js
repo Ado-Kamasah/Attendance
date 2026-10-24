@@ -150,10 +150,17 @@ export const getActiveSessions = async (req, res) => {
  */
 export const getAllSessions = async (req, res) => {
   try {
-    const { courseId, lecturerId } = req.query;
+    const { courseId } = req.query;
+    let queryLecturerId = req.query.lecturerId;
+
+    // Strict Data Isolation: Lecturers and Staff can ONLY view their own sessions
+    if (req.user.role === 'LECTURER' || req.user.role === 'STAFF') {
+      queryLecturerId = req.user.id;
+    }
+
     const where = {};
     if (courseId) where.courseId = courseId;
-    if (lecturerId) where.lecturerId = lecturerId;
+    if (queryLecturerId) where.lecturerId = queryLecturerId;
 
     const sessions = await prisma.session.findMany({
       where,
@@ -313,8 +320,8 @@ export const endSession = async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Verify authorized user owns this session or is admin
-    if (session.lecturerId !== lecturerId && req.user.role !== 'ADMIN') {
+    // Verify authorized user owns this session or is admin/super-admin
+    if (session.lecturerId !== lecturerId && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ message: 'Access denied: Unauthorized to end this session' });
     }
 
@@ -344,6 +351,21 @@ export const endSession = async (req, res) => {
 export const getSessionAttendances = async (req, res) => {
   try {
     const { sessionId } = req.params;
+
+    // Verify session existence and ownership
+    const session = await prisma.session.findUnique({
+      where: { id: sessionId },
+      select: { lecturerId: true }
+    });
+
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    if (session.lecturerId !== req.user.id && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Access denied: Unauthorized to view this session records' });
+    }
+
     const attendances = await prisma.attendance.findMany({
       where: { sessionId },
       include: { student: { select: { id: true, name: true } } },

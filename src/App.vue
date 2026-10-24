@@ -109,6 +109,10 @@ const handleLoginSuccess = () => {
 
 const handleLogout = async () => {
   await authStore.logout();
+  // Reset navigation state so the next user never lands on the previous user's page
+  currentRoute.value = '/';
+  routeParams.value = {};
+  window.history.replaceState({ path: '/' }, '', '/');
   activeAuthView.value = 'login';
 };
 

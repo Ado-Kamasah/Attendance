@@ -277,6 +277,7 @@ import { useCoursesStore } from '@/stores/courses.js';
 import { useSchedulesStore } from '@/stores/schedules.js';
 import { useEnrollmentsStore } from '@/stores/enrollments.js';
 import { supabase } from '@/stores/supabase';
+import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
 import { Users, Plus, Search, Trash2, X, CheckCircle2, AlertCircle, Loader2, BookOpen } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -306,25 +307,7 @@ const myCourses = ref([]);
 const students = ref([]);
 
 function isLecturerSchedule(schedule, profile, user) {
-  if (!schedule || !schedule.lecturer) return false;
-  const sLect = schedule.lecturer.trim().toLowerCase();
-
-  const pName = (profile?.name || profile?.full_name || '').trim().toLowerCase();
-  const pEmail = (profile?.email || user?.email || '').trim().toLowerCase();
-  const pId = (profile?.id || user?.id || '').trim().toLowerCase();
-
-  if (pName && sLect === pName) return true;
-  if (pEmail && sLect === pEmail) return true;
-  if (pId && sLect === pId) return true;
-
-  // Clean title prefixes like Dr., Prof., Mr., Mrs., Ms.
-  const cleanLect = sLect.replace(/^(dr\.|prof\.|mr\.|mrs\.|ms\.)\s*/, '').trim();
-  const cleanProfile = pName.replace(/^(dr\.|prof\.|mr\.|mrs\.|ms\.)\s*/, '').trim();
-  if (cleanLect && cleanProfile) {
-    if (cleanLect === cleanProfile) return true;
-    if (cleanLect.includes(cleanProfile) || cleanProfile.includes(cleanLect)) return true;
-  }
-  return false;
+  return matchesLecturerSchedule(schedule, profile, user);
 }
 
 onMounted(async () => {

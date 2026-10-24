@@ -67,6 +67,16 @@ async function fetchProfile() {
     isLoading.value = true;
     error.value = '';
 
+    // Pre-login cleanup: purge any course-context keys that may have been left
+    // behind by a previous session that ended without a proper logout (e.g. tab close).
+    // This ensures the incoming user never inherits stale activeCourseId etc.
+    const staleKeys = [
+      'userId', 'userRole', 'userEmail', 'user', 'token',
+      'activeCourseId', 'activeCourseCode', 'activeCourseName',
+      'activeCourseSemester', 'activeCourseMode',
+    ];
+    staleKeys.forEach((k) => localStorage.removeItem(k));
+
     try {
       const { data: resolvedEmail, error: rpcErr } = await supabase.rpc(
         'get_login_email',
@@ -109,6 +119,7 @@ async function fetchProfile() {
       isLoading.value = false;
     }
   }
+
 
   /**
    * form: { fullName, email, role, idNumber, program, password }
@@ -172,6 +183,32 @@ async function register(form) {
     await supabase.auth.signOut();
     user.value = null;
     profile.value = null;
+
+    // Clear ALL lecturer/user-specific localStorage keys so that when the
+    // next lecturer logs in they never see stale data from the previous session.
+    const keysToRemove = [
+      'userId',
+      'userRole',
+      'userEmail',
+      'user',
+      'token',
+      'activeCourseId',
+      'activeCourseCode',
+      'activeCourseName',
+      'activeCourseSemester',
+      'activeCourseMode',
+    ];
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+    // Also purge any Supabase session tokens left in localStorage
+    const supabaseKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.includes('-auth-token') || k.startsWith('sb-'))) {
+        supabaseKeys.push(k);
+      }
+    }
+    supabaseKeys.forEach((k) => localStorage.removeItem(k));
   }
 
   /**

@@ -618,7 +618,7 @@ async function fetchAllLecturers() {
 }
 
 async function loadAnalytics() {
-  const lecturerId = isAdmin.value ? selectedLecturerId.value : authStore.profile?.id;
+  const lecturerId = isAdmin.value ? selectedLecturerId.value : (authStore.profile?.id || authStore.user?.id);
   if (!lecturerId) { isLoading.value = false; return; }
   isLoading.value = true;
   selectedCourseFilter.value = 'all';

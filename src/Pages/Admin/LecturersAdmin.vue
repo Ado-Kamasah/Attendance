@@ -736,6 +736,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-vue-next';
+import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
 
 const coursesStore = useCoursesStore();
 const schedulesStore = useSchedulesStore();
@@ -911,22 +912,8 @@ const fetchLecturers = async () => {
     // 8. Enrich each lecturer with matched courses & schedules
     lecturers.value = unifiedList.map((u) => {
       const uNameLower = (u.name || '').trim().toLowerCase();
-      const cleanUName = uNameLower.replace(/^(dr\.|prof\.|mr\.|mrs\.|ms\.)\s*/i, '').trim();
-
-      // Find schedules matching this lecturer
-      const matchedSchedules = allSchedules.filter((s) => {
-        if (!s.lecturer) return false;
-        const sLect = s.lecturer.trim().toLowerCase();
-        const cleanSLect = sLect.replace(/^(dr\.|prof\.|mr\.|mrs\.|ms\.)\s*/i, '').trim();
-        return (
-          sLect === uNameLower ||
-          cleanSLect === cleanUName ||
-          cleanSLect.includes(cleanUName) ||
-          cleanUName.includes(cleanSLect) ||
-          s.lecturer === u.id ||
-          s.lecturerId === u.id
-        );
-      });
+      // Find schedules matching this lecturer strictly (no substring bleed)
+      const matchedSchedules = allSchedules.filter((s) => matchesLecturerSchedule(s, u));
 
       // Find distinct courses
       const courseIdSet = new Set(matchedSchedules.map((s) => s.courseId));

@@ -8,15 +8,19 @@ const api = axios.create({
   },
 });
 
-// Interceptor to add Authorization token automatically
+// Interceptor to add Authorization token automatically.
+// SECURITY: User identity is derived ONLY from the active Supabase session stored
+// in localStorage under the standard 'sb-*' key. We never read manually-cached
+// 'userId' / 'userRole' / 'user' keys because those may contain stale data from
+// a previous lecturer's session.
 api.interceptors.request.use(
   async (config) => {
-    let token = localStorage.getItem('token');
-    let userRole = localStorage.getItem('userRole');
-    let userId = localStorage.getItem('userId');
-    let userEmail = localStorage.getItem('userEmail');
+    let token = null;
+    let userId = null;
+    let userEmail = null;
+    let userRole = null;
 
-    // Check if Supabase session has a token and user metadata
+    // Read ONLY the Supabase-managed session keys — these are always current.
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
@@ -31,32 +35,33 @@ api.interceptors.request.use(
               if (!userId) userId = parsed.user.id;
               if (!userEmail) userEmail = parsed.user.email;
               if (!userRole) {
-                userRole = parsed.user.user_metadata?.role || parsed.user.app_metadata?.role;
+                // Role in Supabase JWT user_metadata is set at registration time
+                userRole =
+                  parsed.user.user_metadata?.role ||
+                  parsed.user.app_metadata?.role ||
+                  null;
               }
             }
           }
         }
       }
-    } catch {}
+    } catch { /* ignore parse errors */ }
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Attach user metadata headers if available in 'user' key
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const u = JSON.parse(userStr);
-        if (u.id) userId = u.id;
-        if (u.role) userRole = u.role;
-        if (u.email) userEmail = u.email;
-      } catch {}
+    // Only attach supplemental headers when we have a verified Supabase token.
+    // Without a token these headers would be meaningless (backend rejects them).
+    if (token && userId) {
+      config.headers['x-user-id'] = userId;
     }
-
-    if (userId) config.headers['x-user-id'] = userId;
-    if (userRole) config.headers['x-user-role'] = userRole;
-    if (userEmail) config.headers['x-user-email'] = userEmail;
+    if (token && userRole) {
+      config.headers['x-user-role'] = userRole;
+    }
+    if (token && userEmail) {
+      config.headers['x-user-email'] = userEmail;
+    }
 
     return config;
   },

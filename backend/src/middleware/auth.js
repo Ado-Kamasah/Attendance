@@ -54,26 +54,25 @@ export const authenticateToken = async (req, res, next) => {
           } catch {}
         }
 
+        // Only proceed if we could resolve a real user identity.
+        // Never fall back to a hardcoded admin-001 or grant access without a verified identity.
+        const resolvedId = id || headerUserId;
+        if (!resolvedId || !role || role.toLowerCase() === 'authenticated') {
+          return res.status(401).json({ message: 'Unable to verify user identity from token' });
+        }
+
         req.user = {
-          id: id || headerUserId || 'admin-001',
+          id: resolvedId,
           email: email || '',
-          role: (role || headerUserRole || 'ADMIN').toUpperCase().replace(/[\s_-]+/g, '_')
+          role: role.toUpperCase().replace(/[\s_-]+/g, '_')
         };
         return next();
       }
     }
   }
 
-  // Fallback: If client provides x-user-id or x-user-role headers
-  if (headerUserId || headerUserRole) {
-    req.user = {
-      id: headerUserId || 'admin-001',
-      email: headerUserEmail || '',
-      role: (headerUserRole || 'ADMIN').toUpperCase().replace(/[\s_-]+/g, '_')
-    };
-    return next();
-  }
-
+  // No valid token found. Headers alone (x-user-id / x-user-role) cannot grant access
+  // without a verified JWT — accepting them would allow any caller to impersonate any user.
   return res.status(401).json({ message: 'Access token required' });
 };
 
@@ -91,14 +90,12 @@ export const requireRole = (allowedRoles) => {
     const headerRole = (req.headers['x-user-role'] || '').toUpperCase().replace(/[\s_-]+/g, '_');
     const normalizedAllowed = allowedRoles.map(r => r.toUpperCase().replace(/[\s_-]+/g, '_'));
 
-    // Allow if user role matches, or is SUPER_ADMIN, or header specifies admin, or in development mode
+    // Allow if user's verified JWT role matches an allowed role, or is SUPER_ADMIN.
+    // NOTE: The x-user-role header is intentionally NOT trusted here — only the role
+    // resolved from the verified JWT is authoritative.
     if (
       normalizedAllowed.includes(userRole) ||
-      normalizedAllowed.includes(headerRole) ||
-      userRole === 'SUPER_ADMIN' ||
-      headerRole === 'ADMIN' ||
-      headerRole === 'SUPER_ADMIN' ||
-      process.env.NODE_ENV !== 'production'
+      userRole === 'SUPER_ADMIN'
     ) {
       return next();
     }

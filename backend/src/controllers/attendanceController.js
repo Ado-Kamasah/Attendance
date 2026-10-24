@@ -129,7 +129,7 @@ export const getSessionAttendanceList = async (req, res) => {
     }
 
     // Verify ownership or Admin role
-    if (session.lecturerId !== userId && req.user.role !== 'ADMIN') {
+    if (session.lecturerId !== userId && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ message: 'Access denied: Unauthorized to view this session records.' });
     }
 
@@ -173,6 +173,35 @@ export const getSessionAttendanceList = async (req, res) => {
 };
 
 /**
+ * Helper to build lecturer schedule conditions for exact ID or name matching
+ */
+const getLecturerScheduleFilter = async (lecturerId, lecturerName) => {
+  let name = lecturerName;
+  if (!name) {
+    const u = await prisma.user.findUnique({ where: { id: lecturerId }, select: { name: true } });
+    name = u?.name;
+  }
+
+  const variations = new Set();
+  if (name) {
+    variations.add(name);
+    const clean = name.replace(/^(dr\.|prof\.|mr\.|mrs\.|ms\.|assoc\.\s*prof\.|rev\.)\s+/i, '').trim();
+    if (clean) {
+      variations.add(clean);
+      variations.add(`Dr. ${clean}`);
+      variations.add(`Prof. ${clean}`);
+    }
+  }
+
+  const conditions = [
+    ...(lecturerId ? [{ lecturer: lecturerId }] : []),
+    ...Array.from(variations).map(v => ({ lecturer: v }))
+  ];
+
+  return conditions.length > 0 ? { OR: conditions } : { lecturer: lecturerId };
+};
+
+/**
  * Get Lecturer Stats (Total Active Courses, Total Students Taught, Average Attendance Rate)
  */
 export const getLecturerStats = async (req, res) => {
@@ -181,8 +210,9 @@ export const getLecturerStats = async (req, res) => {
     const lecturerName = req.user.name;
 
     // Total Active Courses (Assigned to Lecturer)
+    const scheduleFilter = await getLecturerScheduleFilter(lecturerId, lecturerName);
     const schedules = await prisma.schedule.findMany({
-      where: { lecturer: lecturerName },
+      where: scheduleFilter,
       select: { courseId: true }
     });
     const courseIds = [...new Set(schedules.map(s => s.courseId))];
@@ -231,15 +261,18 @@ export const getLecturerStats = async (req, res) => {
  */
 export const getCourseReports = async (req, res) => {
   try {
+    const lecturerId = req.user.id;
     const lecturerName = req.user.name;
 
+    const scheduleFilter = await getLecturerScheduleFilter(lecturerId, lecturerName);
     const schedules = await prisma.schedule.findMany({
-      where: { lecturer: lecturerName },
+      where: scheduleFilter,
       include: {
         course: {
           include: {
             enrollments: true,
             sessions: {
+              where: { lecturerId },
               include: { _count: { select: { attendances: true } } }
             }
           }

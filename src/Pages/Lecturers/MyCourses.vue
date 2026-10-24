@@ -269,6 +269,7 @@ import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { supabase } from '@/stores/supabase';
 import { useProgrammesStore } from '@/stores/programmes';
+import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
 import { 
   BookOpen, 
   Users, 
@@ -342,7 +343,7 @@ onUnmounted(() => {
 
 const lecturerCourses = computed(() => {
   return schedules.value
-    .filter((s) => s.lecturer === lecturerName.value)
+    .filter((s) => matchesLecturerSchedule(s, profile.value, authStore.user))
     .map((s, index) => {
       const course = coursesStore.getCourseById(s.courseId);
       const allCourseEnrollments = enrollmentsStore.enrollmentsByCourse(s.courseId);

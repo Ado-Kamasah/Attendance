@@ -70,7 +70,7 @@
               class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
             >
               <option value="">All Courses</option>
-              <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} - {{ c.name }}</option>
+              <option v-for="c in coursesForLecturer" :key="c.id" :value="c.id">{{ c.code }} - {{ c.name }}</option>
             </select>
           </div>
 
@@ -568,6 +568,7 @@ import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { supabase } from '@/stores/supabase';
 import AttendanceExportModal from '@/components/AttendanceExportModal.vue';
+import { matchesLecturerSchedule, normalizeTitleName } from '@/utils/lecturerHelper';
 import {
   Download,
   BookOpen,
@@ -681,46 +682,51 @@ onUnmounted(() => {
   attendancesStore.unsubscribeFromAttendances();
 });
 
+const isAdmin = computed(() => {
+  const role = (profile.value?.role || '').toUpperCase();
+  return role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SUPERADMIN';
+});
+
 // Courses this lecturer actually teaches, inferred from schedules and held sessions
 const coursesForLecturer = computed(() => {
-  const lecturerName = (profile.value?.name || '').trim().toLowerCase();
+  if (isAdmin.value) {
+    return courses.value;
+  }
+
   const myId = profile.value?.id;
   const myStaffId = profile.value?.id_number || profile.value?.staff_id;
+  const myName = (profile.value?.name || '').trim().toLowerCase();
+  const cleanMyName = normalizeTitleName(myName);
 
   const scheduledCourseIds = new Set();
   (schedulesStore.schedules || []).forEach((s) => {
-    const sName = (s.lecturer || '').trim().toLowerCase();
-    if (lecturerName && sName === lecturerName) {
-      scheduledCourseIds.add(s.courseId);
-    } else if (myStaffId && (s.lecturer === myStaffId || s.lecturerId === myStaffId)) {
-      scheduledCourseIds.add(s.courseId);
-    } else if (myId && s.lecturerId === myId) {
-      scheduledCourseIds.add(s.courseId);
+    if (matchesLecturerSchedule(s, profile.value, authStore.user)) {
+      if (s.courseId) scheduledCourseIds.add(s.courseId);
     }
   });
 
   // Also include any course where this lecturer has created or conducted a session
   sessions.value.forEach((s) => {
-    if (
+    const sName = (s.lecturerName || '').trim().toLowerCase();
+    const cleanSName = normalizeTitleName(sName);
+    const matchesSessionLecturer =
       (myId && s.lecturerId === myId) ||
       (myStaffId && s.lecturerId === myStaffId) ||
       (authStore.user?.id && s.lecturerId === authStore.user?.id) ||
-      (lecturerName && (s.lecturerName || '').trim().toLowerCase() === lecturerName)
-    ) {
-      if (s.courseId) scheduledCourseIds.add(s.courseId);
+      (myName && sName === myName) ||
+      (cleanMyName && cleanSName && cleanMyName === cleanSName);
+
+    if (matchesSessionLecturer && s.courseId) {
+      scheduledCourseIds.add(s.courseId);
     }
   });
 
-  const byScheduleOrSession = courses.value.filter((c) => scheduledCourseIds.has(c.id));
-  return byScheduleOrSession.length > 0 ? byScheduleOrSession : courses.value;
+  return courses.value.filter((c) => scheduledCourseIds.has(c.id));
 });
 
 // Identifies whether a session belongs to the logged-in lecturer
 const isMySession = (s) => {
-  const role = (profile.value?.role || '').toUpperCase();
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SUPERADMIN') {
-    return true;
-  }
+  if (isAdmin.value) return true;
 
   const myId = profile.value?.id;
   const myAuthId = authStore.user?.id;
@@ -728,8 +734,9 @@ const isMySession = (s) => {
   const myStaffId = profile.value?.staff_id;
   const myStudentId = profile.value?.student_id;
   const myName = (profile.value?.name || '').trim().toLowerCase();
+  const cleanMyName = normalizeTitleName(myName);
 
-  // Match by lecturerId against any of the user's possible ID representations
+  // 1. Match by lecturerId against any of the user's possible ID representations
   if (s.lecturerId) {
     if (
       (myId && s.lecturerId === myId) ||
@@ -742,14 +749,19 @@ const isMySession = (s) => {
     }
   }
 
-  // Match by lecturer name if present on session
-  if (s.lecturerName && myName && (s.lecturerName || '').trim().toLowerCase() === myName) {
-    return true;
+  // 2. Match by lecturer name if present on session
+  if (s.lecturerName && myName) {
+    const sName = (s.lecturerName || '').trim().toLowerCase();
+    const cleanSName = normalizeTitleName(sName);
+    if (sName === myName || (cleanSName && cleanSName === cleanMyName)) {
+      return true;
+    }
   }
 
-  // Match by course: if session course belongs to this lecturer's taught courses
+  // 3. Fallback: match by course ONLY if the session has no competing lecturer tag
+  // and the course is strictly in this lecturer's assigned courses
   const lecturerCourseIds = new Set(coursesForLecturer.value.map((c) => c.id));
-  if (s.courseId && lecturerCourseIds.has(s.courseId)) {
+  if (s.courseId && lecturerCourseIds.has(s.courseId) && !s.lecturerId && !s.lecturerName) {
     return true;
   }
 

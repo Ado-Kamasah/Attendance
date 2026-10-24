@@ -292,6 +292,7 @@ import { useCoursesStore } from '@/stores/courses';
 import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
+import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
 import { 
   BookOpen, 
   Users, 
@@ -374,7 +375,7 @@ const lecturerName = computed(() => profile.value?.name ?? '');
 const lecturerCourseIds = computed(() => {
   const ids = new Set(
     schedules.value
-      .filter((s) => s.lecturer === lecturerName.value)
+      .filter((s) => matchesLecturerSchedule(s, profile.value, authStore.user))
       .map((s) => s.courseId)
   );
   return [...ids];
@@ -425,7 +426,7 @@ const todaySchedule = computed(() => {
   const nowMinutes = now.value.getHours() * 60 + now.value.getMinutes();
 
   return schedules.value
-    .filter((s) => s.lecturer === lecturerName.value && s.day === currentDayName)
+    .filter((s) => matchesLecturerSchedule(s, profile.value, authStore.user) && s.day === currentDayName)
     .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
     .map((s) => {
       const course = coursesStore.getCourseById(s.courseId);

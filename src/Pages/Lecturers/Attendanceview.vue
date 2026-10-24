@@ -30,9 +30,23 @@
               <path d="M0 4H140" stroke="currentColor" stroke-width="1.5" />
             </svg>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
-            {{ courseCode }} &bull; <span class="text-secondary dark:text-dark-secondary">{{ courseName }}</span>
-          </h1>
+          <div class="flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-foreground dark:text-white">
+              {{ courseCode }} &bull; <span class="text-secondary dark:text-dark-secondary">{{ courseName }}</span>
+            </h1>
+
+            <!-- Course Switcher -->
+            <select
+              v-if="myAssignedCourses.length > 1"
+              :value="courseId"
+              @change="onCourseDropdownChange($event.target.value)"
+              class="text-xs font-mono font-medium bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline rounded-xl px-3 py-1.5 text-foreground dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/40 cursor-pointer shadow-xs"
+            >
+              <option v-for="c in myAssignedCourses" :key="c.id" :value="c.id">
+                Switch: {{ c.code }} — {{ c.name }}
+              </option>
+            </select>
+          </div>
           <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
             {{ courseSemester }} &bull; {{ courseMode }} Section &bull; {{ todayLabel }}
           </p>
@@ -250,7 +264,10 @@ import { useAuthStore } from '@/stores/authstore';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { useEnrollmentsStore } from '@/stores/enrollments';
+import { useCoursesStore } from '@/stores/courses';
+import { useSchedulesStore } from '@/stores/schedules';
 import { useAuditLogsStore } from '@/stores/auditlogs';
+import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
 import { supabase } from '@/stores/supabase';
 import api from '@/api.js';
 import { 
@@ -268,9 +285,20 @@ const authStore = useAuthStore();
 const sessionsStore = useSessionsStore();
 const attendancesStore = useAttendancesStore();
 const enrollmentsStore = useEnrollmentsStore();
+const coursesStore = useCoursesStore();
+const schedulesStore = useSchedulesStore();
 const auditLogsStore = useAuditLogsStore();
 
 const { profile } = storeToRefs(authStore);
+
+// Strictly compute courses assigned to THIS lecturer
+const myAssignedCourses = computed(() => {
+  const mySchedules = (schedulesStore.schedules || []).filter((s) =>
+    matchesLecturerSchedule(s, profile.value, authStore.user)
+  );
+  const courseIdSet = new Set(mySchedules.map((s) => s.courseId));
+  return (coursesStore.courses || []).filter((c) => courseIdSet.has(c.id) || courseIdSet.has(c.code));
+});
 
 const courseId = ref(localStorage.getItem('activeCourseId') || '');
 const courseCode = ref(localStorage.getItem('activeCourseCode') || '');
@@ -293,11 +321,32 @@ const todayLabel = computed(() =>
   new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 );
 
-onMounted(async () => {
-  if (!courseId.value) return;
+const selectCourse = (c) => {
+  if (!c) return;
+  courseId.value = c.id;
+  courseCode.value = c.code;
+  courseName.value = c.name;
+  courseSemester.value = c.semester || 'Semester 1';
+  localStorage.setItem('activeCourseId', c.id);
+  localStorage.setItem('activeCourseCode', c.code);
+  localStorage.setItem('activeCourseName', c.name);
+  resetForm();
+  loadStudentsForCourse(c.id);
+};
+
+const onCourseDropdownChange = (newCId) => {
+  const found = myAssignedCourses.value.find((c) => c.id === newCId);
+  if (found) selectCourse(found);
+};
+
+const loadStudentsForCourse = async (cId) => {
+  if (!cId) {
+    enrolledStudents.value = [];
+    return;
+  }
   try {
-    await enrollmentsStore.fetchEnrollments({ courseId: courseId.value });
-    const studentIds = enrollmentsStore.enrollmentsByCourse(courseId.value).map((e) => e.studentId);
+    await enrollmentsStore.fetchEnrollments({ courseId: cId });
+    const studentIds = enrollmentsStore.enrollmentsByCourse(cId).map((e) => e.studentId);
     if (studentIds.length > 0) {
       const { data, error } = await supabase
         .from('users')
@@ -311,9 +360,38 @@ onMounted(async () => {
           studentId: u.id_number || 'N/A',
         }));
       }
+    } else {
+      enrolledStudents.value = [];
     }
   } catch (e) {
     console.error('Error fetching students:', e);
+  }
+};
+
+onMounted(async () => {
+  try {
+    await Promise.allSettled([
+      coursesStore.fetchCourses(),
+      schedulesStore.fetchSchedules(),
+    ]);
+
+    // Validate active course against myAssignedCourses
+    const validCourse = myAssignedCourses.value.find(
+      (c) => c.id === courseId.value || c.code === courseId.value
+    );
+
+    if (validCourse) {
+      selectCourse(validCourse);
+    } else if (myAssignedCourses.value.length > 0) {
+      // Prevents showing another lecturer's course from stale localStorage
+      selectCourse(myAssignedCourses.value[0]);
+    } else {
+      // Lecturer has no courses assigned yet
+      courseId.value = '';
+      enrolledStudents.value = [];
+    }
+  } catch (e) {
+    console.error('Error in AttendanceView onMounted:', e);
   }
 });
 
