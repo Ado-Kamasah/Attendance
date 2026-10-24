@@ -331,49 +331,76 @@ export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Prevent deleting one's own account
-    if (req.user && req.user.id === id) {
-      return res.status(400).json({ message: 'You cannot delete your own Super Admin account' });
+    if (!id) {
+      return res.status(400).json({ message: 'User identifier is required' });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { id } });
+    const cleanId = decodeURIComponent(id).trim();
+
+    // Find user by id or email
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: cleanId },
+          { email: cleanId.toLowerCase() }
+        ]
+      }
+    });
+
     if (!existingUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: `User '${cleanId}' not found in database` });
+    }
+
+    const targetId = existingUser.id;
+
+    // Prevent deleting one's own account
+    if (
+      req.user &&
+      (req.user.id === targetId ||
+       (req.user.email && req.user.email.toLowerCase() === existingUser.email.toLowerCase()))
+    ) {
+      return res.status(400).json({ message: 'You cannot delete your own logged-in account' });
+    }
+
+    // Only SUPER_ADMIN can delete a SUPER_ADMIN account
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    if (requesterRole !== 'SUPER_ADMIN' && existingUser.role === 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Only Super Admins can delete Super Admin accounts' });
     }
 
     // Clean up dependent records safely via transaction
     await prisma.$transaction(async (tx) => {
       // 1. Delete student notifications
-      await tx.studentNotification.deleteMany({ where: { studentId: id } });
+      await tx.studentNotification.deleteMany({ where: { studentId: targetId } });
 
       // 2. Delete attendances
-      await tx.attendance.deleteMany({ where: { studentId: id } });
+      await tx.attendance.deleteMany({ where: { studentId: targetId } });
 
       // 3. Delete enrollments
-      await tx.enrollment.deleteMany({ where: { studentId: id } });
+      await tx.enrollment.deleteMany({ where: { studentId: targetId } });
 
       // 4. Delete class rep records
-      await tx.classRep.deleteMany({ where: { studentId: id } });
+      await tx.classRep.deleteMany({ where: { studentId: targetId } });
 
       // 5. Delete lecturer attendances marked by this user
-      await tx.lecturerAttendance.deleteMany({ where: { markedById: id } });
+      await tx.lecturerAttendance.deleteMany({ where: { markedById: targetId } });
 
       // 6. Delete suggestions submitted by this user
-      await tx.suggestion.deleteMany({ where: { studentId: id } });
+      await tx.suggestion.deleteMany({ where: { studentId: targetId } });
 
       // 7. Delete lecturer sessions (and their associated attendances)
       const sessions = await tx.session.findMany({
-        where: { lecturerId: id },
+        where: { lecturerId: targetId },
         select: { id: true }
       });
       if (sessions.length > 0) {
         const sessionIds = sessions.map(s => s.id);
         await tx.attendance.deleteMany({ where: { sessionId: { in: sessionIds } } });
-        await tx.session.deleteMany({ where: { lecturerId: id } });
+        await tx.session.deleteMany({ where: { lecturerId: targetId } });
       }
 
       // 8. Finally delete the user
-      await tx.user.delete({ where: { id } });
+      await tx.user.delete({ where: { id: targetId } });
     });
 
     // Create Audit Log
@@ -381,10 +408,10 @@ export const deleteUser = async (req, res) => {
       await prisma.auditLog.create({
         data: {
           action: 'DELETE_USER',
-          details: `Super Admin deleted user ${existingUser.name} (${existingUser.id}) [Role: ${existingUser.role}]`,
+          details: `${req.user?.role || 'Admin'} deleted user ${existingUser.name} (${existingUser.id}) [Role: ${existingUser.role}]`,
           userId: req.user?.id || 'system',
-          userRole: req.user?.role || 'SUPER_ADMIN',
-          userName: req.user?.name || 'Super Admin'
+          userRole: req.user?.role || 'ADMIN',
+          userName: req.user?.name || 'Administrator'
         }
       });
     } catch (auditErr) {

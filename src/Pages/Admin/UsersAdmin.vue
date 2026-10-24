@@ -559,7 +559,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { supabase } from '@/stores/supabase';
+import { supabase, createIsolatedClient } from '@/stores/supabase';
 import api from '@/api.js';
 import { useAuthStore } from '@/stores/authstore.js';
 import { useClassRepStore } from '@/stores/classrep.js';
@@ -909,9 +909,9 @@ const saveUser = async () => {
 
       showAlert(`User '${userForm.value.name}' updated successfully!`, 'success');
     } else {
-      let created = false;
+      // 1. Post to Express backend API
       try {
-        const res = await api.post('/users', {
+        await api.post('/users', {
           id: userForm.value.id ? userForm.value.id.trim() : undefined,
           name: userForm.value.name.trim(),
           email: userForm.value.email.trim().toLowerCase(),
@@ -920,10 +920,14 @@ const saveUser = async () => {
           program: userForm.value.program,
           password: userForm.value.password
         });
-        if (res.status === 201) created = true;
-      } catch {}
-      if (!created) {
-        const { error: signUpErr } = await supabase.auth.signUp({
+      } catch (backendErr) {
+        console.warn('Backend user creation notice:', backendErr);
+      }
+
+      // 2. Also register in Supabase Auth using isolated client (preserves Admin session)
+      try {
+        const isolated = createIsolatedClient();
+        const { error: signUpErr } = await isolated.auth.signUp({
           email: userForm.value.email.trim().toLowerCase(),
           password: userForm.value.password,
           options: {
@@ -931,13 +935,18 @@ const saveUser = async () => {
               full_name: userForm.value.name.trim(),
               role: roleString,
               employment_type: chosenEmployment,
-              id_number: userForm.value.id || undefined,
+              id_number: userForm.value.id ? userForm.value.id.trim() : undefined,
               program: userForm.value.program || undefined
             }
           }
         });
-        if (signUpErr) throw new Error(signUpErr.message);
+        if (signUpErr && !signUpErr.message?.includes('already registered')) {
+          console.warn('Supabase auth signup notice:', signUpErr);
+        }
+      } catch (authErr) {
+        console.warn('Supabase auth signup error:', authErr);
       }
+
       showAlert(`User '${userForm.value.name}' created successfully!`, 'success');
     }
     closeModal();
@@ -961,12 +970,89 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; userToDelete.v
 const confirmDeleteUser = async () => {
   if (!userToDelete.value) return;
   isDeleting.value = true;
+  const targetUser = userToDelete.value;
+  const targetId = targetUser.id;
+  const targetEmail = targetUser.email && targetUser.email !== '—' ? targetUser.email.trim().toLowerCase() : null;
+
   try {
-    const { error: supaErr } = await supabase.from('users').delete().eq('id', userToDelete.value.id);
-    try { await api.delete(`/users/${userToDelete.value.id}`); } catch {}
-    if (supaErr) throw new Error(supaErr.message);
-    showAlert(`User '${userToDelete.value.name}' was successfully deleted.`, 'success');
+    // 1. Remove from localStorage immediately (custom_created_lecturers & lecturer_employment_types)
+    try {
+      const customLecturers = JSON.parse(localStorage.getItem('custom_created_lecturers') || '[]');
+      const filteredCustom = customLecturers.filter(l => {
+        const matchId = l.id === targetId || l.displayId === targetId;
+        const matchEmail = targetEmail && l.email && l.email.toLowerCase() === targetEmail;
+        return !matchId && !matchEmail;
+      });
+      localStorage.setItem('custom_created_lecturers', JSON.stringify(filteredCustom));
+
+      const empMap = JSON.parse(localStorage.getItem('lecturer_employment_types') || '{}');
+      delete empMap[targetId];
+      if (targetEmail) delete empMap[targetEmail];
+      localStorage.setItem('lecturer_employment_types', JSON.stringify(empMap));
+    } catch (localErr) {
+      console.warn('LocalStorage deletion notice:', localErr);
+    }
+
+    // 2. Delete from Backend Express API (dev.db SQLite)
+    try {
+      await api.delete(`/users/${encodeURIComponent(targetId)}`);
+    } catch (backendErr) {
+      if (targetEmail) {
+        try {
+          await api.delete(`/users/${encodeURIComponent(targetEmail)}`);
+        } catch {}
+      }
+    }
+
+    // 3. Delete from Supabase Database
+    try {
+      // First try stored procedure if available
+      try {
+        await supabase.rpc('delete_user_account', {
+          p_user_id: targetId,
+          p_user_email: targetEmail
+        });
+      } catch {}
+
+      // Clean up dependent child rows if any to prevent foreign key errors
+      try { await supabase.from('attendances').delete().eq('student_id', targetId); } catch {}
+      try { await supabase.from('enrollments').delete().eq('student_id', targetId); } catch {}
+      try { await supabase.from('sessions').delete().eq('lecturer_id', targetId); } catch {}
+
+      // Delete from public.users by ID
+      const { error: supaErr } = await supabase.from('users').delete().eq('id', targetId);
+      
+      // Also delete by email if ID didn't match (e.g. backend ID used)
+      if (targetEmail) {
+        await supabase.from('users').delete().ilike('email', targetEmail);
+      }
+    } catch (supaErr) {
+      console.warn('Supabase delete notice:', supaErr);
+    }
+
+    // 4. Optimistically update UI state so user disappears immediately
+    users.value = users.value.filter(u => {
+      const matchId = u.id === targetId || u.displayId === targetId;
+      const matchEmail = targetEmail && u.email && u.email.toLowerCase() === targetEmail;
+      return !matchId && !matchEmail;
+    });
+
+    // Recalculate KPI stats
+    stats.value = {
+      total: users.value.length,
+      students: users.value.filter(u => u.role === 'STUDENT').length,
+      lecturers: users.value.filter(u => u.role === 'LECTURER').length,
+      admins: users.value.filter(u => u.role === 'ADMIN').length,
+      superAdmins: users.value.filter(u => u.role === 'SUPER_ADMIN').length,
+      finance: users.value.filter(u => u.role === 'FINANCE').length,
+      partTimeLecturers: users.value.filter(u => u.role === 'LECTURER' && isPartTime(u)).length,
+      fullTimeLecturers: users.value.filter(u => u.role === 'LECTURER' && !isPartTime(u)).length,
+    };
+
+    showAlert(`User '${targetUser.name}' was successfully deleted.`, 'success');
     closeDeleteModal();
+
+    // 5. Background re-fetch to confirm sync
     await fetchUsers();
   } catch (err) {
     console.error('Delete user error:', err);

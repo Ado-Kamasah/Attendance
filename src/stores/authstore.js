@@ -35,41 +35,182 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
-async function fetchProfile() {
-  if (!user.value) return null;
-  const { data, error: fetchErr } = await supabase
-    .from('users')
-    .select('*, programmes!users_program_id_fkey(id, name, degree_abbreviation, level)')
-    .eq('id', user.value.id)
-    .single();
+  /**
+   * Resolves a user's login input (email, staff ID, student ID, or username)
+   * to their registered email address.
+   */
+  async function resolveLoginEmail(loginId) {
+    if (!loginId || typeof loginId !== 'string') return null;
+    const clean = loginId.trim();
+    if (!clean) return null;
 
-  if (fetchErr) {
-    console.error('Failed to load profile:', fetchErr);
+    // 1. If already in standard email format, normalize and return
+    if (clean.includes('@')) {
+      return clean.toLowerCase();
+    }
+
+    // 2. Try Supabase RPC get_login_email function
+    try {
+      const { data, error: rpcErr } = await supabase.rpc('get_login_email', {
+        p_login_id: clean,
+      });
+      if (!rpcErr && data && typeof data === 'string' && data.includes('@')) {
+        return data.trim().toLowerCase();
+      }
+    } catch (e) {
+      console.warn('RPC get_login_email notice:', e);
+    }
+
+    const candidateEmail = `${clean.toLowerCase()}@${ALLOWED_DOMAIN}`;
+
+    // 3. Fallback: Query public.users directly for matching id_number, id, or email candidate
+    try {
+      const { data: byIdNumber } = await supabase
+        .from('users')
+        .select('email')
+        .ilike('id_number', clean)
+        .limit(1)
+        .maybeSingle();
+
+      if (byIdNumber?.email) {
+        return byIdNumber.email.trim().toLowerCase();
+      }
+
+      const { data: byOther } = await supabase
+        .from('users')
+        .select('email')
+        .or(`id.eq.${clean},email.ilike.${candidateEmail}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (byOther?.email) {
+        return byOther.email.trim().toLowerCase();
+      }
+    } catch (e) {
+      console.warn('public.users direct lookup notice:', e);
+    }
+
+    // 4. If alphanumeric username without domain (e.g. "s.amoah" or "kwame"), try candidate
+    if (/^[a-zA-Z0-9._-]+$/.test(clean)) {
+      return candidateEmail;
+    }
+
     return null;
   }
-  profile.value = data;
-  return data;
-}
+
+  async function fetchProfile() {
+    if (!user.value) return null;
+
+    try {
+      // 1. Primary lookup: by authenticated user UUID
+      let { data, error: fetchErr } = await supabase
+        .from('users')
+        .select('*, programmes!users_program_id_fkey(id, name, degree_abbreviation, level)')
+        .eq('id', user.value.id)
+        .maybeSingle();
+
+      // Fallback without foreign-key join if relationship fails
+      if (fetchErr || !data) {
+        const simple = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.value.id)
+          .maybeSingle();
+        if (simple.data) {
+          data = simple.data;
+        }
+      }
+
+      // 2. Secondary lookup: by verified email (in case profile has legacy/placeholder ID)
+      if (!data && user.value.email) {
+        const cleanEmail = user.value.email.trim().toLowerCase();
+        let { data: byEmail } = await supabase
+          .from('users')
+          .select('*, programmes!users_program_id_fkey(id, name, degree_abbreviation, level)')
+          .ilike('email', cleanEmail)
+          .maybeSingle();
+
+        if (!byEmail) {
+          const simpleEmail = await supabase
+            .from('users')
+            .select('*')
+            .ilike('email', cleanEmail)
+            .maybeSingle();
+          byEmail = simpleEmail.data;
+        }
+
+        if (byEmail) {
+          data = byEmail;
+          // Synchronize/link public.users.id to match the verified Supabase Auth user UUID
+          if (byEmail.id !== user.value.id) {
+            try {
+              const { error: linkErr } = await supabase
+                .from('users')
+                .update({ id: user.value.id, updated_at: new Date().toISOString() })
+                .eq('id', byEmail.id);
+              if (!linkErr) {
+                data.id = user.value.id;
+              }
+            } catch (linkNotice) {
+              console.warn('Profile ID synchronization notice:', linkNotice);
+            }
+          }
+        }
+      }
+
+      // 3. Fallback: if user is authenticated in Supabase Auth but public.users row is missing,
+      // create it automatically from Auth metadata so the user is never stranded
+      if (!data && user.value) {
+        const meta = user.value.user_metadata || {};
+        const fallbackProfile = {
+          id: user.value.id,
+          email: user.value.email.toLowerCase(),
+          name: meta.full_name || meta.name || user.value.email.split('@')[0],
+          role: meta.role || 'Lecturer',
+          id_number: meta.id_number || null,
+          employment_type: meta.employment_type || 'Full-Time',
+          program: meta.program || null,
+        };
+
+        try {
+          const { data: inserted, error: insertErr } = await supabase
+            .from('users')
+            .insert(fallbackProfile)
+            .select()
+            .maybeSingle();
+          data = (!insertErr && inserted) ? inserted : fallbackProfile;
+        } catch {
+          data = fallbackProfile;
+        }
+      }
+
+      profile.value = data;
+      return data;
+    } catch (e) {
+      console.error('fetchProfile unexpected error:', e);
+      return null;
+    }
+  }
+
   /**
-   * loginId can be either the full @southshore.edu.gh email or the
-   * user's Student/Staff ID number. selectedRole is whatever the login
-   * form's role dropdown was set to, and is verified against the actual
-   * stored role after sign-in — a mismatch is treated as invalid
-   * credentials rather than silently trusting the dropdown.
-   */
-  /**
-   * loginId can be either the full @southshore.edu.gh email or the
-   * user's Student/Staff ID number. Role is not selected by the user —
-   * it's read from the profile after sign-in, and the caller (e.g. the
-   * login form) is responsible for routing based on `profile.role`.
+   * loginId can be either the full institutional email or the
+   * user's Student/Staff ID number.
    */
   async function login({ loginId, password }) {
     isLoading.value = true;
     error.value = '';
 
-    // Pre-login cleanup: purge any course-context keys that may have been left
-    // behind by a previous session that ended without a proper logout (e.g. tab close).
-    // This ensures the incoming user never inherits stale activeCourseId etc.
+    const cleanInput = (loginId || '').trim();
+    const cleanPassword = typeof password === 'string' ? password : '';
+
+    if (!cleanInput || !cleanPassword) {
+      const msg = 'Please enter both your institutional ID/email and password.';
+      error.value = msg;
+      isLoading.value = false;
+      throw new Error(msg);
+    }
+
+    // Pre-login cleanup: purge stale course context & cached keys
     const staleKeys = [
       'userId', 'userRole', 'userEmail', 'user', 'token',
       'activeCourseId', 'activeCourseCode', 'activeCourseName',
@@ -78,21 +219,23 @@ async function fetchProfile() {
     staleKeys.forEach((k) => localStorage.removeItem(k));
 
     try {
-      const { data: resolvedEmail, error: rpcErr } = await supabase.rpc(
-        'get_login_email',
-        { p_login_id: loginId }
-      );
+      const resolvedEmail = await resolveLoginEmail(cleanInput);
 
-      if (rpcErr || !resolvedEmail) {
-        throw new Error('Invalid credentials');
+      if (!resolvedEmail) {
+        const err = new Error(
+          `No account found matching Institutional ID "${cleanInput}". Please check your ID number or log in using your university email address.`
+        );
+        err.code = 'UNKNOWN_ID';
+        throw err;
       }
 
       const { data, error: signInErr } = await supabase.auth.signInWithPassword({
         email: resolvedEmail,
-        password,
+        password: cleanPassword,
       });
 
       if (signInErr) {
+        // 1. Email confirmation pending
         if (signInErr.message === 'Email not confirmed') {
           const err = new Error(
             'Please confirm your email address before signing in — check your inbox for the confirmation link.'
@@ -101,15 +244,56 @@ async function fetchProfile() {
           err.email = resolvedEmail;
           throw err;
         }
-        throw new Error(
-          signInErr.message === 'Invalid login credentials'
-            ? 'Invalid credentials'
-            : signInErr.message
-        );
+
+        // 2. Invalid credentials (wrong password or unactivated auth account)
+        if (
+          signInErr.status === 400 ||
+          signInErr.message === 'Invalid login credentials' ||
+          signInErr.message?.toLowerCase().includes('invalid')
+        ) {
+          const err = new Error(
+            'Invalid email/ID or password. If you are an existing lecturer or your account was recently registered, please verify your password or use "Forgot password?" below to reset/activate your account.'
+          );
+          err.code = 'INVALID_CREDENTIALS';
+          err.email = resolvedEmail;
+          throw err;
+        }
+
+        // 3. Rate limiting
+        if (signInErr.status === 429 || signInErr.message?.toLowerCase().includes('too many')) {
+          const err = new Error('Too many login attempts. For security reasons, please wait a few moments before trying again.');
+          err.code = 'RATE_LIMITED';
+          throw err;
+        }
+
+        // 4. Network or connectivity errors
+        if (
+          signInErr.message?.toLowerCase().includes('network') ||
+          signInErr.message?.toLowerCase().includes('fetch') ||
+          signInErr.name === 'AuthRetryableFetchError'
+        ) {
+          const err = new Error('Network connection error. Please verify your internet connection and try again.');
+          err.code = 'NETWORK_ERROR';
+          throw err;
+        }
+
+        const err = new Error(signInErr.message || 'Authentication failed. Please check your credentials.');
+        err.code = 'AUTH_ERROR';
+        throw err;
+      }
+
+      if (!data?.user) {
+        throw new Error('Sign in succeeded but no active user session was returned. Please try again.');
       }
 
       user.value = data.user;
       const loadedProfile = await fetchProfile();
+
+      if (!loadedProfile) {
+        throw new Error(
+          'Your account authenticated successfully, but your faculty profile could not be loaded. Please contact the administrator to verify your account configuration.'
+        );
+      }
 
       return loadedProfile;
     } catch (err) {

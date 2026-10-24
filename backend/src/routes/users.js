@@ -15,6 +15,6 @@ router.get('/', authenticateToken, requireRole(['SUPER_ADMIN', 'ADMIN']), getAll
 router.get('/:id', authenticateToken, requireRole(['SUPER_ADMIN', 'ADMIN']), getUserById);
 router.post('/', authenticateToken, requireRole(['SUPER_ADMIN', 'ADMIN']), createUser);
 router.put('/:id', authenticateToken, requireRole(['SUPER_ADMIN', 'ADMIN']), updateUser);
-router.delete('/:id', authenticateToken, requireRole(['SUPER_ADMIN']), deleteUser);
+router.delete('/:id', authenticateToken, requireRole(['SUPER_ADMIN', 'ADMIN']), deleteUser);
 
 export default router;

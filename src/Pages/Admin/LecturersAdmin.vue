@@ -350,6 +350,17 @@
               <td class="py-3.5 px-4 text-right">
                 <div class="inline-flex items-center gap-1.5">
                   <button
+                    @click="sendActivationCode(lecturer)"
+                    :disabled="sendingActivationId === lecturer.id"
+                    :id="'btn-invite-' + lecturer.id"
+                    class="p-1.5 text-slate-500 hover:text-secondary hover:bg-slate-100 dark:hover:bg-dark-muted rounded-lg transition-colors cursor-pointer"
+                    title="Send Activation / Password Reset OTP to Lecturer"
+                  >
+                    <Loader2 v-if="sendingActivationId === lecturer.id" class="w-3.5 h-3.5 animate-spin" />
+                    <KeyRound v-else class="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
                     @click="openEditModal(lecturer)"
                     :id="'edit-lecturer-' + lecturer.id"
                     class="p-1.5 text-slate-500 hover:text-primary dark:hover:text-secondary hover:bg-slate-100 dark:hover:bg-dark-muted rounded-lg transition-colors cursor-pointer"
@@ -412,14 +423,25 @@
               </div>
             </div>
 
-            <!-- Quick Edit -->
-            <button
-              @click="openEditModal(lecturer)"
-              class="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-dark-muted transition-colors cursor-pointer shrink-0"
-              title="Edit Lecturer"
-            >
-              <Edit3 class="w-3.5 h-3.5" />
-            </button>
+            <!-- Quick Edit & Activation -->
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                @click="sendActivationCode(lecturer)"
+                :disabled="sendingActivationId === lecturer.id"
+                class="p-1.5 text-slate-400 hover:text-secondary rounded-lg hover:bg-slate-100 dark:hover:bg-dark-muted transition-colors cursor-pointer"
+                title="Send Activation / Password Reset OTP"
+              >
+                <Loader2 v-if="sendingActivationId === lecturer.id" class="w-3.5 h-3.5 animate-spin" />
+                <KeyRound v-else class="w-3.5 h-3.5" />
+              </button>
+              <button
+                @click="openEditModal(lecturer)"
+                class="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-dark-muted transition-colors cursor-pointer"
+                title="Edit Lecturer"
+              >
+                <Edit3 class="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           <!-- Employment Status Banner -->
@@ -483,12 +505,23 @@
             <CalendarRange class="w-3.5 h-3.5" />
             {{ lecturer.schedulesCount || 0 }} slots / week
           </span>
-          <button
-            @click="openEditModal(lecturer)"
-            class="text-secondary hover:underline font-semibold"
-          >
-            Manage Details →
-          </button>
+          <div class="flex items-center gap-2.5">
+            <button
+              @click="sendActivationCode(lecturer)"
+              :disabled="sendingActivationId === lecturer.id"
+              class="text-slate-400 hover:text-secondary font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+              title="Send activation OTP"
+            >
+              <KeyRound class="w-3 h-3" />
+              <span>Send OTP</span>
+            </button>
+            <button
+              @click="openEditModal(lecturer)"
+              class="text-secondary hover:underline font-semibold"
+            >
+              Manage →
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -710,7 +743,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { supabase } from '@/stores/supabase';
+import { supabase, createIsolatedClient } from '@/stores/supabase';
 import api from '@/api.js';
 import { useCoursesStore } from '@/stores/courses.js';
 import { useSchedulesStore } from '@/stores/schedules.js';
@@ -734,7 +767,9 @@ import {
   LayoutGrid,
   UserX,
   Eye,
-  EyeOff
+  EyeOff,
+  KeyRound,
+  Mail
 } from 'lucide-vue-next';
 import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
 
@@ -743,12 +778,15 @@ const schedulesStore = useSchedulesStore();
 const facultiesStore = useFacultiesStore();
 const { faculties: availableFaculties } = storeToRefs(facultiesStore);
 
+const OTP_API = import.meta.env.VITE_OTP_API_URL || '';
+
 // State
 const lecturers = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref('all'); // 'all', 'Full-Time', 'Part-Time'
 const viewMode = ref('table'); // 'table' or 'cards'
+const sendingActivationId = ref(null);
 
 // Toast
 const alertMessage = ref('');
@@ -757,6 +795,32 @@ const showAlert = (msg, type = 'success') => {
   alertMessage.value = msg;
   alertType.value = type;
   setTimeout(() => { if (alertMessage.value === msg) alertMessage.value = ''; }, 4500);
+};
+
+// Send Activation / Password Reset OTP
+const sendActivationCode = async (lecturer) => {
+  if (!lecturer.email || lecturer.email === '—' || !lecturer.email.includes('@')) {
+    showAlert('Lecturer does not have a valid email configured.', 'error');
+    return;
+  }
+  sendingActivationId.value = lecturer.id;
+  try {
+    const res = await fetch(`${OTP_API}/api/auth/forgot-password/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: lecturer.email.trim().toLowerCase() }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      showAlert(`Activation OTP successfully sent to ${lecturer.email}. The lecturer can activate their account on the login page.`, 'success');
+    } else {
+      showAlert(data.message || 'Could not send activation code. Please check email address.', 'error');
+    }
+  } catch (err) {
+    showAlert(`Error sending activation code: ${err.message}`, 'error');
+  } finally {
+    sendingActivationId.value = null;
+  }
 };
 
 // Modal State
@@ -1109,6 +1173,7 @@ const saveLecturer = async () => {
       };
       if (form.value.email) updateData.email = form.value.email.trim().toLowerCase();
       if (form.value.program) updateData.program = form.value.program.trim();
+      if (form.value.displayId) updateData.id_number = form.value.displayId.trim();
 
       const { error: supaErr } = await supabase
         .from('users')
@@ -1118,6 +1183,27 @@ const saveLecturer = async () => {
       if (supaErr) {
         // Fallback without employment_type if column missing
         await supabase.from('users').update(updateData).eq('id', form.value.id);
+      }
+
+      // If a password was provided during edit, ensure Supabase Auth account is provisioned/updated safely
+      if (form.value.password && form.value.password.trim().length >= 6) {
+        try {
+          const isolated = createIsolatedClient();
+          await isolated.auth.signUp({
+            email: form.value.email.trim().toLowerCase(),
+            password: form.value.password.trim(),
+            options: {
+              data: {
+                full_name: form.value.name.trim(),
+                role: 'Lecturer',
+                employment_type: chosenEmployment,
+                id_number: form.value.displayId ? form.value.displayId.trim() : undefined,
+              },
+            },
+          });
+        } catch (pwErr) {
+          console.warn('Auth account sync notice on edit:', pwErr);
+        }
       }
 
       showAlert(`Lecturer '${form.value.name}' updated successfully!`, 'success');
@@ -1146,15 +1232,15 @@ const saveLecturer = async () => {
         }
       } catch (backendErr) {
         console.warn('Backend user creation response:', backendErr?.response?.data || backendErr);
-        // If already exists or error, still proceed to sync
         if (backendErr?.response?.data?.message?.includes('already exists')) {
           created = true;
         }
       }
 
-      // 2. Also register in Supabase Auth
+      // 2. Register in Supabase Auth using isolated client (never pollutes or resets admin session)
       try {
-        await supabase.auth.signUp({
+        const isolated = createIsolatedClient();
+        await isolated.auth.signUp({
           email: cleanEmail,
           password: form.value.password,
           options: {
@@ -1171,7 +1257,23 @@ const saveLecturer = async () => {
         console.warn('Supabase auth signup notice:', signUpErr);
       }
 
-      // 3. Persist locally in cache
+      // 3. Ensure Supabase public.users table contains the profile with id_number
+      try {
+        await supabase.from('users').upsert({
+          id: backendId || undefined,
+          email: cleanEmail,
+          name: cleanName,
+          role: 'Lecturer',
+          employment_type: chosenEmployment,
+          id_number: customId || undefined,
+          program: form.value.program || undefined,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'email' });
+      } catch (upsertErr) {
+        console.warn('Supabase public.users upsert notice:', upsertErr);
+      }
+
+      // 4. Persist locally in cache
       const finalId = customId || backendId || `LEC${Date.now().toString().slice(-4)}`;
       try {
         const localMap = JSON.parse(localStorage.getItem('lecturer_employment_types') || '{}');

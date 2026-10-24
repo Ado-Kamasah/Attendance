@@ -216,9 +216,18 @@
                   <button
                     type="button"
                     @click="handleResend"
-                    class="font-semibold underline hover:no-underline text-red-700 dark:text-red-300"
+                    class="font-semibold underline hover:no-underline text-red-700 dark:text-red-300 cursor-pointer"
                   >
                     {{ resendSent ? 'Confirmation email sent' : 'Resend confirmation email' }}
+                  </button>
+                </div>
+                <div v-else-if="showForgotLink" class="mt-2">
+                  <button
+                    type="button"
+                    @click="triggerForgotFromError"
+                    class="font-semibold underline hover:no-underline text-secondary dark:text-dark-secondary cursor-pointer"
+                  >
+                    Reset or activate your password here &rarr;
                   </button>
                 </div>
               </div>
@@ -558,11 +567,20 @@ const errorMsg = ref('');
 const showResend = ref(false);
 const resendSent = ref(false);
 const unconfirmedEmail = ref('');
+const showForgotLink = ref(false);
+const forgotPrefillEmail = ref('');
 
 const isEmailFocused = ref(false);
 const isPasswordFocused = ref(false);
 
 const emit = defineEmits(['login-success', 'switch-to-register']);
+
+const triggerForgotFromError = () => {
+  openForgot();
+  if (forgotPrefillEmail.value) {
+    fpEmail.value = forgotPrefillEmail.value;
+  }
+};
 
 const handleLogin = async () => {
   if (!loginId.value || !password.value) return;
@@ -571,6 +589,7 @@ const handleLogin = async () => {
   errorMsg.value = '';
   showResend.value = false;
   resendSent.value = false;
+  showForgotLink.value = false;
 
   try {
     const profile = await authStore.login({
@@ -590,6 +609,9 @@ const handleLogin = async () => {
     if (err.code === 'EMAIL_NOT_CONFIRMED') {
       showResend.value = true;
       unconfirmedEmail.value = err.email;
+    } else if (err.code === 'INVALID_CREDENTIALS') {
+      showForgotLink.value = true;
+      forgotPrefillEmail.value = err.email || (loginId.value.includes('@') ? loginId.value.trim().toLowerCase() : '');
     }
   } finally {
     isLoading.value = false;
