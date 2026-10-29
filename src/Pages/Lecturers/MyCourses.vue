@@ -486,6 +486,11 @@ const goToAttendance = (course) => {
   localStorage.setItem('activeCourseId', course.courseId);
   localStorage.setItem('activeCourseCode', course.code);
   localStorage.setItem('activeCourseName', course.name);
+  // Pass the schedule's study mode so Attendanceview pre-selects the correct mode.
+  // This prevents the lecturer from accidentally marking the wrong mode's students.
+  if (course.mode) {
+    localStorage.setItem('activeCourseMode', course.mode);
+  }
   emit('navigate', '/attendance-view');
 };
 </script>

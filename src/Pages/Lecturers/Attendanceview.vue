@@ -48,8 +48,59 @@
             </select>
           </div>
           <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
-            {{ courseSemester }} &bull; {{ courseMode }} Section &bull; {{ todayLabel }}
+            {{ courseSemester }} &bull; {{ selectedMode }} Section &bull; {{ todayLabel }}
           </p>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- STUDY MODE SELECTOR                                          -->
+      <!-- ============================================================ -->
+      <div v-if="!submissionResult" class="relative rounded-2xl border p-4 overflow-hidden"
+        :class="selectedMode === 'Weekend'
+          ? 'bg-gradient-to-r from-amber-50/80 to-orange-50/60 dark:from-amber-950/40 dark:to-orange-950/30 border-amber-200 dark:border-amber-800/60'
+          : 'bg-gradient-to-r from-blue-50/80 to-indigo-50/60 dark:from-blue-950/40 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800/60'"
+      >
+        <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-current opacity-20 pointer-events-none"></div>
+        <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-current opacity-20 pointer-events-none"></div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p class="text-xs font-mono font-bold uppercase tracking-wider"
+              :class="selectedMode === 'Weekend' ? 'text-amber-700 dark:text-amber-400' : 'text-blue-700 dark:text-blue-400'"
+            >
+              Attendance Mode
+            </p>
+            <p class="text-[11px] font-mono mt-0.5"
+              :class="selectedMode === 'Weekend' ? 'text-amber-600/80 dark:text-amber-500/80' : 'text-blue-600/80 dark:text-blue-500/80'"
+            >
+              Only {{ selectedMode }} students registered for this course will appear below.
+            </p>
+          </div>
+
+          <!-- Mode Toggle Buttons -->
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              id="mode-btn-regular"
+              @click="onModeChange('Regular')"
+              class="px-4 py-2 rounded-xl text-xs font-bold font-mono border transition-all cursor-pointer"
+              :class="selectedMode === 'Regular'
+                ? 'bg-blue-600 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-500 shadow-md'
+                : 'bg-surface dark:bg-dark-surface border-outline/50 dark:border-dark-outline text-foreground/70 dark:text-white/70 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:border-blue-400'"
+            >
+              Regular
+            </button>
+            <button
+              id="mode-btn-weekend"
+              @click="onModeChange('Weekend')"
+              class="px-4 py-2 rounded-xl text-xs font-bold font-mono border transition-all cursor-pointer"
+              :class="selectedMode === 'Weekend'
+                ? 'bg-amber-500 dark:bg-amber-400 text-white dark:text-amber-900 border-amber-500 dark:border-amber-400 shadow-md'
+                : 'bg-surface dark:bg-dark-surface border-outline/50 dark:border-dark-outline text-foreground/70 dark:text-white/70 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:border-amber-400'"
+            >
+              Weekend
+            </button>
+          </div>
         </div>
       </div>
 
@@ -187,31 +238,32 @@
               Physical Roster Verification
             </h2>
             <p class="text-xs font-mono text-foreground/50 dark:text-white/60">
-              Check off students present in the lecture hall. Unchecked students are marked absent.
+              Check off <strong class="font-bold">{{ selectedMode }}</strong> students present. Unchecked {{ selectedMode }} students are marked absent.
+              {{ selectedMode === 'Regular' ? 'Weekend' : 'Regular' }} students are not affected.
             </p>
           </div>
 
           <div class="flex items-center gap-2">
             <span class="text-xs font-mono font-bold text-secondary">
-              {{ selectedStudents.length }}/{{ enrolledStudents.length }} Present
+              {{ selectedStudents.length }}/{{ filteredEnrolledStudents.length }} Present
             </span>
             <button 
               @click="toggleSelectAll"
               class="px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-muted/60 dark:bg-dark-muted/60 hover:bg-muted dark:hover:bg-dark-muted border border-outline/40 dark:border-dark-outline/50 text-foreground dark:text-white transition-colors cursor-pointer"
             >
-              {{ selectedStudents.length === enrolledStudents.length ? 'Deselect All' : 'Select All' }}
+              {{ selectedStudents.length === filteredEnrolledStudents.length ? 'Deselect All' : 'Select All' }}
             </button>
           </div>
         </div>
 
-        <div v-if="enrolledStudents.length === 0" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/60">
-          No students currently enrolled in this section.
+        <div v-if="filteredEnrolledStudents.length === 0" class="py-12 text-center text-xs font-mono text-foreground/50 dark:text-white/60">
+          No <strong class="font-bold">{{ selectedMode }}</strong> students are currently enrolled in this course. Switch to the other mode if needed.
         </div>
 
         <!-- Students Selection Grid -->
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-96 overflow-y-auto pr-1">
           <label
-            v-for="student in enrolledStudents"
+            v-for="student in filteredEnrolledStudents"
             :key="student.id"
             class="p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all select-none"
             :class="selectedStudents.includes(student.id) 
@@ -244,7 +296,7 @@
           </p>
           <button
             @click="submitAttendance"
-            :disabled="enrolledStudents.length === 0 || isStarting"
+            :disabled="filteredEnrolledStudents.length === 0 || isStarting"
             class="px-6 py-2.5 rounded-xl bg-primary dark:bg-dark-secondary text-surface dark:text-primary font-bold text-xs sm:text-sm shadow-md hover:opacity-90 active:scale-98 disabled:opacity-40 transition-all flex items-center gap-2 cursor-pointer ml-auto"
           >
             <RefreshCw v-if="isStarting" class="w-4 h-4 animate-spin" />
@@ -306,6 +358,13 @@ const courseName = ref(localStorage.getItem('activeCourseName') || '');
 const courseSemester = ref(localStorage.getItem('activeCourseSemester') || 'Semester 1');
 const courseMode = ref(localStorage.getItem('activeCourseMode') || 'Regular');
 
+// The study mode selected by the lecturer for this attendance session.
+// This is the single source of truth for which students appear in the roll.
+const selectedMode = ref(localStorage.getItem('activeCourseMode') || 'Regular');
+
+// A lookup of all student IDs → their study mode (from users.mode)
+const studentModeById = ref({});
+
 const enrolledStudents = ref([]);
 const selectedStudents = ref([]);
 const isStarting = ref(false);
@@ -339,6 +398,11 @@ const onCourseDropdownChange = (newCId) => {
   if (found) selectCourse(found);
 };
 
+/**
+ * Loads all students enrolled in the course, including their study mode.
+ * The `enrolledStudents` ref always holds ALL enrolled students (with mode).
+ * The visible list for the roll call is derived via `filteredEnrolledStudents`.
+ */
 const loadStudentsForCourse = async (cId) => {
   if (!cId) {
     enrolledStudents.value = [];
@@ -348,16 +412,20 @@ const loadStudentsForCourse = async (cId) => {
     await enrollmentsStore.fetchEnrollments({ courseId: cId });
     const studentIds = enrollmentsStore.enrollmentsByCourse(cId).map((e) => e.studentId);
     if (studentIds.length > 0) {
+      // Fetch users with their mode field so we can filter by study mode
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, id_number')
+        .select('id, name, email, id_number, mode')
         .in('id', studentIds);
       if (!error && data) {
+        // Update the global mode lookup
+        data.forEach((u) => { studentModeById.value[u.id] = u.mode || ''; });
         enrolledStudents.value = data.map((u) => ({
           id: u.id,
           name: u.name,
           email: u.email,
           studentId: u.id_number || 'N/A',
+          mode: u.mode || '',
         }));
       }
     } else {
@@ -366,6 +434,31 @@ const loadStudentsForCourse = async (cId) => {
   } catch (e) {
     console.error('Error fetching students:', e);
   }
+};
+
+/**
+ * Returns only the students whose study mode matches the currently selected mode.
+ * IMPORTANT: This is the list used for roll call — NEVER use `enrolledStudents` directly
+ * for marking attendance. Only students in this filtered list can be marked present/absent.
+ */
+const filteredEnrolledStudents = computed(() => {
+  const mode = selectedMode.value;
+  return enrolledStudents.value.filter((s) => {
+    const sMode = (s.mode || '').trim();
+    if (!sMode) return false; // Skip students with no mode set
+    return sMode === mode;
+  });
+});
+
+/**
+ * Called when the lecturer changes the study mode selector.
+ * Resets the selection so no stale checkboxes carry over.
+ */
+const onModeChange = (newMode) => {
+  selectedMode.value = newMode;
+  selectedStudents.value = [];
+  startError.value = '';
+  localStorage.setItem('activeCourseMode', newMode);
 };
 
 onMounted(async () => {
@@ -395,10 +488,16 @@ onMounted(async () => {
   }
 });
 
+// Keep selectedMode in sync when courseMode changes (e.g. navigating from a different course card)
+onMounted(() => {
+  const storedMode = localStorage.getItem('activeCourseMode') || 'Regular';
+  selectedMode.value = storedMode;
+});
+
 const toggleSelectAll = () => {
-  selectedStudents.value = selectedStudents.value.length === enrolledStudents.value.length
+  selectedStudents.value = selectedStudents.value.length === filteredEnrolledStudents.value.length
     ? []
-    : enrolledStudents.value.map(s => s.id);
+    : filteredEnrolledStudents.value.map(s => s.id);
 };
 
 const resetForm = () => {
@@ -413,19 +512,31 @@ const submitAttendance = async () => {
   startError.value = '';
   isStarting.value = true;
   try {
+    // IMPORTANT: Only operate on students who belong to the currently selected study mode.
+    // Students in the OTHER mode are completely ignored — they are NOT marked absent.
+    const modeStudents = filteredEnrolledStudents.value;
+
+    if (modeStudents.length === 0) {
+      startError.value = `No ${selectedMode.value} students are enrolled in this course. Please switch the mode or check enrolments.`;
+      isStarting.value = false;
+      return;
+    }
+
     const created = await sessionsStore.createSession({
       courseId: courseId.value,
       lecturerId: profile.value?.id,
-      mode: courseMode.value,
-      maxStudents: enrolledStudents.value.length,
+      mode: selectedMode.value,
+      maxStudents: modeStudents.length,
       isActive: false,
     });
 
     const selectedIds = new Set(selectedStudents.value);
-    const presentStudents = enrolledStudents.value.filter(s => selectedIds.has(s.id));
-    const absentStudents  = enrolledStudents.value.filter(s => !selectedIds.has(s.id));
+    const presentStudents = modeStudents.filter(s => selectedIds.has(s.id));
+    const absentStudents  = modeStudents.filter(s => !selectedIds.has(s.id));
 
-    const attendanceRecords = enrolledStudents.value.map(s => ({
+    // Only create attendance records for students in the selected mode's session.
+    // Students in the other mode are NOT included — they remain unaffected.
+    const attendanceRecords = modeStudents.map(s => ({
       sessionId: created.id,
       studentId: s.id,
       status: selectedIds.has(s.id) ? 'present' : 'absent',
@@ -448,7 +559,7 @@ const submitAttendance = async () => {
       userName: profile.value?.name,
     });
 
-    const total = enrolledStudents.value.length;
+    const total = modeStudents.length;
     submissionResult.value = {
       presentCount: presentStudents.length,
       absentCount:  absentStudents.length,
