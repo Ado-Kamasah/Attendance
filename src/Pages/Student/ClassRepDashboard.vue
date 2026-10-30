@@ -73,7 +73,7 @@
       <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         <button
           v-for="role in store.myRoles"
-          :key="role.courseId"
+          :key="`${role.courseId}_${role.mode || 'Regular'}`"
           @click="switchCourse(role.courseId)"
           class="px-4 py-2 rounded-xl text-xs font-mono font-medium whitespace-nowrap transition-all border flex items-center gap-2 cursor-pointer"
           :class="activeCourseId === role.courseId 
@@ -82,6 +82,14 @@
         >
           <span>{{ role.courseCode }}</span>
           <span class="opacity-70">&bull; {{ role.courseName }}</span>
+          <span :class="[
+            'text-[9px] font-mono px-1.5 py-0.5 rounded-full border ml-1 font-bold',
+            (role.mode || 'Regular') === 'Weekend'
+              ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300'
+              : 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border-sky-300'
+          ]">
+            {{ role.mode || 'Regular' }}
+          </span>
         </button>
       </div>
 
@@ -101,6 +109,14 @@
               </div>
               <p class="text-xs font-mono text-secondary dark:text-dark-secondary mt-0.5">
                 {{ activeCourse.courseCode }} &bull; {{ activeCourse.courseName }}
+                <span :class="[
+                  'ml-2 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border',
+                  (activeCourse.mode || 'Regular') === 'Weekend'
+                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300'
+                    : 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-300'
+                ]">
+                  {{ activeCourse.mode || 'Regular' }} Cohort
+                </span>
               </p>
             </div>
 

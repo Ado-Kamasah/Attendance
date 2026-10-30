@@ -31,6 +31,7 @@ export const getAllClassReps = async (req, res) => {
           courseCode:  code || (r.courseId.length <= 10 ? r.courseId : '—'),
           courseName:  r.course?.name || (code ? code : 'Course'),
           courseLevel: level || '100',
+          mode:        r.mode || 'Regular',
           assignedAt:  r.assignedAt,
         };
       })
@@ -98,13 +99,15 @@ export const getStudentList = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/classrep/assign  — Admin: assign a student as class rep for a course
-// Body: { studentId, courseId, studentName?, studentEmail?, studentProgram?, courseCode?, courseName?, courseLevel? }
+// Body: { studentId, courseId, mode?, studentName?, studentEmail?, studentProgram?, courseCode?, courseName?, courseLevel? }
+// mode: "Regular" | "Weekend" (independent assignments per course)
 // ─────────────────────────────────────────────────────────────────────────────
 export const assignClassRep = async (req, res) => {
   try {
     const {
       studentId,
       courseId,
+      mode = 'Regular',
       studentName,
       studentEmail,
       studentProgram,
@@ -116,6 +119,8 @@ export const assignClassRep = async (req, res) => {
     if (!studentId || !courseId) {
       return res.status(400).json({ message: 'studentId and courseId are required' });
     }
+
+    const validMode = String(mode).toLowerCase() === 'weekend' ? 'Weekend' : 'Regular';
 
     // Flexible student lookup by ID or Email
     let student = await prisma.user.findFirst({
@@ -196,18 +201,18 @@ export const assignClassRep = async (req, res) => {
       return res.status(404).json({ message: 'Course not found or could not be initialized' });
     }
 
-    // Upsert: replace existing rep for this course if any
+    // Upsert on (courseId, mode) pair — Regular and Weekend reps coexist independently
     const rep = await prisma.classRep.upsert({
-      where:  { courseId: course.id },
+      where:  { courseId_mode: { courseId: course.id, mode: validMode } },
       update: { studentId: student.id, assignedAt: new Date() },
-      create: { studentId: student.id, courseId: course.id },
+      create: { studentId: student.id, courseId: course.id, mode: validMode },
       include: {
         student: { select: { id: true, name: true, email: true, program: true } },
         course:  { select: { id: true, code: true, name: true, level: true } },
       },
     });
 
-    // Auto-enroll the student in the course so they have full access to course materials & attendance
+    // Auto-enroll the student in the course
     await prisma.enrollment.upsert({
       where: {
         studentId_courseId: { studentId: student.id, courseId: course.id }
@@ -217,7 +222,7 @@ export const assignClassRep = async (req, res) => {
     }).catch(e => console.warn('Auto-enroll enrollment notice:', e.message));
 
     res.status(200).json({
-      message: `${student.name} assigned as Class Rep for ${course.name} (${course.code})`,
+      message: `${student.name} assigned as Class Rep (${validMode}) for ${course.name} (${course.code})`,
       rep: {
         id:          rep.id,
         studentId:   rep.studentId,
@@ -228,6 +233,7 @@ export const assignClassRep = async (req, res) => {
         courseCode:  rep.course?.code || course.code,
         courseName:  rep.course?.name || course.name,
         courseLevel: rep.course?.level || course.level,
+        mode:        rep.mode,
         assignedAt:  rep.assignedAt,
       },
     });
@@ -239,25 +245,34 @@ export const assignClassRep = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE /api/classrep/:courseId  — Admin: remove class rep for a course
+// Query: ?mode=Regular|Weekend (if omitted, removes both)
 // ─────────────────────────────────────────────────────────────────────────────
 export const removeClassRep = async (req, res) => {
   try {
     const { courseId } = req.params;
+    const { mode } = req.query;
 
-    const existing = await prisma.classRep.findFirst({
-      where: {
-        OR: [
-          { courseId },
-          { course: { code: courseId.toUpperCase() } }
-        ]
-      }
-    });
+    const where = {
+      OR: [
+        { courseId },
+        { course: { code: courseId.toUpperCase() } }
+      ]
+    };
 
-    if (!existing) {
-      return res.status(200).json({ message: 'No active class rep found for this course' });
+    if (mode) {
+      const validMode = mode.toLowerCase() === 'weekend' ? 'Weekend' : 'Regular';
+      where.mode = validMode;
     }
 
-    await prisma.classRep.delete({ where: { id: existing.id } });
+    const existing = await prisma.classRep.findMany({ where });
+
+    if (!existing || existing.length === 0) {
+      return res.status(200).json({ message: 'No active class rep found for this course and mode' });
+    }
+
+    await prisma.classRep.deleteMany({
+      where: { id: { in: existing.map(r => r.id) } }
+    });
 
     res.status(200).json({ message: 'Class rep removed successfully' });
   } catch (error) {
@@ -296,6 +311,7 @@ export const getMyClassRepRoles = async (req, res) => {
         courseId:  r.courseId,
         courseCode:r.course.code,
         courseName:r.course.name,
+        mode:      r.mode || 'Regular',
         schedules: r.course.schedules,
         assignedAt:r.assignedAt,
       }))
@@ -307,9 +323,7 @@ export const getMyClassRepRoles = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/classrep/verify-session  — Class Rep: verify session code with course reference
-// Query: ?code=123456&courseId=...
 // ─────────────────────────────────────────────────────────────────────────────
 export const verifySession = async (req, res) => {
   try {
@@ -321,7 +335,6 @@ export const verifySession = async (req, res) => {
 
     const cleanCode = code.trim();
 
-    // 1. Search Prisma session
     const session = await prisma.session.findFirst({
       where: { pin: cleanCode },
       include: {
@@ -331,7 +344,6 @@ export const verifySession = async (req, res) => {
     });
 
     if (session) {
-      // Check if course matches
       const targetCourse = courseId ? courseId.trim().toUpperCase() : null;
       const courseMatch = !targetCourse ||
         session.courseId === courseId ||
@@ -371,7 +383,6 @@ export const verifySession = async (req, res) => {
       });
     }
 
-    // Session code not found in local database
     return res.status(404).json({
       valid: false,
       message: `No active or recorded session found with code "${cleanCode}".`
@@ -429,7 +440,6 @@ export const getCourseSessions = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/classrep/lecturer-attendance   — Class Rep: mark lecturer attendance
-// Body: { courseId, sessionCode?, date?, time?, status, notes? }
 // ─────────────────────────────────────────────────────────────────────────────
 export const markLecturerAttendance = async (req, res) => {
   try {
@@ -446,7 +456,6 @@ export const markLecturerAttendance = async (req, res) => {
 
     const normStatus = status.toLowerCase();
 
-    // Resolve course
     const course = await prisma.course.findFirst({
       where: {
         OR: [
@@ -458,7 +467,6 @@ export const markLecturerAttendance = async (req, res) => {
 
     const targetCourseId = course ? course.id : courseId;
 
-    // Verify this student is the class rep for this course
     const rep = await prisma.classRep.findFirst({
       where: {
         studentId: markedById,
@@ -477,7 +485,6 @@ export const markLecturerAttendance = async (req, res) => {
     let resolvedTime = time;
     let sessionDetailsTag = '';
 
-    // If sessionCode is provided, verify against this course and extract date/time
     if (sessionCode && String(sessionCode).trim()) {
       const cleanCode = String(sessionCode).trim();
       sessionDetailsTag = `[Session Code: ${cleanCode}]`;
@@ -488,7 +495,6 @@ export const markLecturerAttendance = async (req, res) => {
       });
 
       if (session) {
-        // Course reference check
         const match = session.courseId === targetCourseId ||
           session.course?.code?.toUpperCase() === courseId.trim().toUpperCase();
 
@@ -508,7 +514,6 @@ export const markLecturerAttendance = async (req, res) => {
       }
     }
 
-    // Default to current date/time if not determined
     if (!resolvedDate) {
       resolvedDate = new Date().toISOString().split('T')[0];
     }
@@ -521,7 +526,6 @@ export const markLecturerAttendance = async (req, res) => {
       ? (notes ? `${sessionDetailsTag} ${notes}` : sessionDetailsTag)
       : (notes || null);
 
-    // Prevent duplicate for the same course + date
     const existing = await prisma.lecturerAttendance.findFirst({
       where: { courseId: targetCourseId, date: resolvedDate },
     });

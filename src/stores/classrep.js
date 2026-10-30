@@ -28,53 +28,85 @@ export const useClassRepStore = defineStore('classRep', () => {
       if (!coursesStore.courses?.length) await coursesStore.fetchCourses().catch(() => {});
       if (students.value.length === 0) await fetchStudents().catch(() => {});
 
-      let data = [];
+      const repMap = new Map();
+
+      // 1. Fetch from Backend Express / SQLite API
       try {
+        const bRes = await api.get('/classrep/all');
+        if (Array.isArray(bRes.data)) {
+          bRes.data.forEach((br) => {
+            const rawMode = br.mode || 'Regular';
+            const mode = String(rawMode).toLowerCase() === 'weekend' ? 'Weekend' : 'Regular';
+            const key = `${br.courseId}_${mode}`;
+            repMap.set(key, {
+              id: br.id,
+              studentId: br.studentId,
+              studentName: br.studentName || 'Student Rep',
+              studentEmail: br.studentEmail || '',
+              studentProgram: br.studentProgram || '',
+              courseId: br.courseId,
+              courseCode: br.courseCode,
+              courseName: br.courseName,
+              courseLevel: br.courseLevel || '100',
+              mode,
+              assignedAt: br.assignedAt || new Date().toISOString(),
+            });
+          });
+        }
+      } catch (bErr) {
+        console.warn('[classrep] Backend fetch reps notice:', bErr.message);
+      }
+
+      // 2. Fetch from Supabase
+      try {
+        let sbReps = [];
         const { data: richData, error: richErr } = await supabase
           .from('class_reps')
           .select('*, courses(*), users(*, programmes(*))')
           .order('assigned_at', { ascending: false });
 
         if (!richErr && richData && richData.length > 0) {
-          data = richData;
+          sbReps = richData;
         } else {
-          const { data: simpleData } = await supabase
-            .from('class_reps')
-            .select('*, courses(*), users(*)')
-            .order('assigned_at', { ascending: false });
-          if (simpleData && simpleData.length > 0) {
-            data = simpleData;
-          } else {
-            const { data: plainData } = await supabase.from('class_reps').select('*');
-            data = plainData ?? [];
-          }
+          const { data: plainData } = await supabase.from('class_reps').select('*, courses(*), users(*), study_mode');
+          sbReps = plainData ?? [];
         }
+
+        sbReps.forEach((sr) => {
+          const c = sr.courses || (coursesStore.courses || []).find((x) => x.id === sr.course_id || x.code === sr.course_id) || {};
+          const code = c?.code || (sr.course_id && sr.course_id.length <= 10 ? sr.course_id : '—');
+          const name = c?.name || (code !== '—' ? code : 'Course');
+          let level = c?.level || '100';
+
+          const sUser = sr.users;
+          const matchedStudent = (students.value || []).find((s) => s.id === sr.student_id || s.studentId === sr.student_id);
+
+          // study_mode is the Supabase column name (avoids Postgres aggregate collision with 'mode')
+          const rawMode = sr.study_mode || sUser?.mode || matchedStudent?.mode || 'Regular';
+          const mode = String(rawMode).toLowerCase() === 'weekend' ? 'Weekend' : 'Regular';
+          const key = `${sr.course_id}_${mode}`;
+
+          // Keep whichever is richest
+          const existing = repMap.get(key);
+          repMap.set(key, {
+            id: sr.id || existing?.id,
+            studentId: sr.student_id,
+            studentName: sUser?.name || sUser?.full_name || matchedStudent?.name || existing?.studentName || 'Student Rep',
+            studentEmail: sUser?.email || matchedStudent?.email || existing?.studentEmail || '',
+            studentProgram: sUser?.programmes?.name || sUser?.program || matchedStudent?.program || c?.program || existing?.studentProgram || '—',
+            courseId: sr.course_id,
+            courseCode: code || existing?.courseCode || '—',
+            courseName: name || existing?.courseName || 'Course',
+            courseLevel: level || existing?.courseLevel || '100',
+            mode,
+            assignedAt: sr.assigned_at || sr.created_at || existing?.assignedAt || new Date().toISOString(),
+          });
+        });
       } catch (err) {
         console.warn('[classrep] Supabase fetch reps notice:', err.message);
       }
 
-      allReps.value = (data ?? []).map((sr) => {
-        const c = sr.courses || (coursesStore.courses || []).find((x) => x.id === sr.course_id || x.code === sr.course_id) || {};
-        const code = c?.code || (sr.course_id && sr.course_id.length <= 10 ? sr.course_id : '—');
-        const name = c?.name || (code !== '—' ? code : 'Course');
-        let level = c?.level || '100';
-
-        const sUser = sr.users;
-        const matchedStudent = (students.value || []).find((s) => s.id === sr.student_id || s.studentId === sr.student_id);
-
-        return {
-          id: sr.id,
-          studentId: sr.student_id,
-          studentName: sUser?.name || sUser?.full_name || matchedStudent?.name || 'Student Rep',
-          studentEmail: sUser?.email || matchedStudent?.email || '',
-          studentProgram: sUser?.programmes?.name || sUser?.program || matchedStudent?.program || c?.program || '—',
-          courseId: sr.course_id,
-          courseCode: code,
-          courseName: name,
-          courseLevel: level,
-          assignedAt: sr.assigned_at || sr.created_at || new Date().toISOString(),
-        };
-      });
+      allReps.value = Array.from(repMap.values());
     } catch (err) {
       error.value = err.message || 'Failed to load class reps.';
       console.error('[classrep] fetchAllReps error:', err);
@@ -89,7 +121,6 @@ export const useClassRepStore = defineStore('classRep', () => {
     isLoading.value = true;
     error.value = '';
     try {
-      // 1. Check enrolled student IDs for this course if courseId provided
       let enrolledIds = new Set();
       if (courseId) {
         try {
@@ -101,7 +132,6 @@ export const useClassRepStore = defineStore('classRep', () => {
         } catch {}
       }
 
-      // 2. Fetch all students directly from Supabase users table
       let rawUsers = null;
       try {
         const { data: uData, error: uErr } = await supabase
@@ -123,25 +153,24 @@ export const useClassRepStore = defineStore('classRep', () => {
         } catch {}
       }
 
+      // If Supabase users empty, fallback to backend students
       if (!rawUsers || rawUsers.length === 0) {
         try {
-          const { data: eqUsers } = await supabase
-            .from('users')
-            .select('id, name, email, id_number, program_id, mode, role')
-            .eq('role', 'Student')
-            .order('name');
-          if (eqUsers && eqUsers.length > 0) rawUsers = eqUsers;
+          const { data: bStudents } = await api.get('/classrep/students');
+          if (Array.isArray(bStudents) && bStudents.length > 0) {
+            rawUsers = bStudents;
+          }
         } catch {}
       }
 
       students.value = (rawUsers ?? []).map((u) => ({
         id: u.id,
-        studentId: u.id_number || u.id,
+        studentId: u.id_number || u.studentId || u.id,
         name: u.name || u.full_name || u.email || 'Student',
         email: u.email || '',
         program: u.programmes?.name || u.program_id || u.program || '—',
-        mode: u.mode || 'Regular',
-        isEnrolled: enrolledIds.has(u.id) || enrolledIds.has(u.id_number),
+        mode: (u.mode || 'Regular').toLowerCase() === 'weekend' ? 'Weekend' : 'Regular',
+        isEnrolled: enrolledIds.has(u.id) || enrolledIds.has(u.id_number) || !!u.isEnrolled,
       }));
 
       if (courseId && enrolledIds.size > 0) {
@@ -169,49 +198,89 @@ export const useClassRepStore = defineStore('classRep', () => {
       );
     }
     if (mode && mode !== 'All') {
-      const withMode = filtered.filter((s) => (s.mode || '').toLowerCase() === mode.toLowerCase());
+      const withMode = filtered.filter((s) => (s.mode || 'Regular').toLowerCase() === mode.toLowerCase());
       if (withMode.length > 0) filtered = withMode;
     }
     return filtered;
   }
 
-  // ── Assign class rep in Supabase database ──────────────────────────────────
+  // ── Assign class rep in Backend & Supabase (Mode-Aware) ─────────────────────
   async function assignClassRep(studentId, courseId, extraData = {}) {
     isLoading.value = true;
     error.value = '';
 
+    // Determine student mode: Regular or Weekend
+    const studentMode = extraData.mode || 'Regular';
+    const validMode = String(studentMode).toLowerCase() === 'weekend' ? 'Weekend' : 'Regular';
+
     try {
-      // 1. Remove any previous rep for this course in Supabase
+      // 1. Sync with Express / Prisma backend first (persists with @@unique([courseId, mode]))
+      let backendSuccess = false;
       try {
-        await supabase
+        const res = await api.post('/classrep/assign', {
+          studentId,
+          courseId,
+          mode: validMode,
+          studentName: extraData.studentName,
+          studentEmail: extraData.studentEmail,
+          studentProgram: extraData.studentProgram,
+          courseCode: extraData.courseCode,
+          courseName: extraData.courseName,
+          courseLevel: extraData.courseLevel,
+        });
+        if (res.status === 200 || res.status === 201) backendSuccess = true;
+      } catch (backendErr) {
+        console.warn('[classrep] Backend assign notice:', backendErr.message);
+      }
+
+      // 2. Remove ONLY existing rep for this course of the SAME mode in Supabase
+      // Crucial: do NOT delete the other mode's rep!
+      try {
+        // Find existing reps for this course in Supabase
+        const { data: existingReps } = await supabase
           .from('class_reps')
-          .delete()
+          .select('id, student_id, course_id, study_mode, users(mode)')
           .eq('course_id', courseId);
+
+        if (Array.isArray(existingReps)) {
+          for (const er of existingReps) {
+            const erMode = er.study_mode 
+              ? (String(er.study_mode).toLowerCase() === 'weekend' ? 'Weekend' : 'Regular')
+              : (er.users?.mode ? (er.users.mode.toLowerCase() === 'weekend' ? 'Weekend' : 'Regular') : 'Regular');
+            if (erMode === validMode || er.student_id === studentId) {
+              await supabase.from('class_reps').delete().eq('id', er.id);
+            }
+          }
+        }
       } catch (delErr) {
-        console.warn('[classrep] Pre-cleanup notice:', delErr);
+        console.warn('[classrep] Mode-specific cleanup notice:', delErr.message);
       }
 
-      // 2. Insert new rep record directly into Supabase
-      const { data: insData, error: insErr } = await supabase
-        .from('class_reps')
-        .insert({
-          student_id: studentId,
-          course_id: courseId,
-          assigned_at: new Date().toISOString(),
-        })
-        .select();
-
-      if (insErr) {
-        const { error: upErr } = await supabase
+      // 3. Insert new rep record into Supabase (mode-aware)
+      try {
+        const { error: insErr } = await supabase
           .from('class_reps')
-          .upsert(
-            { student_id: studentId, course_id: courseId, assigned_at: new Date().toISOString() },
-            { onConflict: 'course_id' }
-          );
-        if (upErr) throw upErr;
+          .insert({
+            student_id: studentId,
+            course_id: courseId,
+            study_mode: validMode,
+            assigned_at: new Date().toISOString(),
+          });
+        if (insErr) {
+          // Fallback if study_mode column not yet migrated in Supabase
+          await supabase
+            .from('class_reps')
+            .insert({
+              student_id: studentId,
+              course_id: courseId,
+              assigned_at: new Date().toISOString(),
+            });
+        }
+      } catch (insertCatch) {
+        console.warn('[classrep] Supabase insert notice:', insertCatch.message);
       }
 
-      // 3. Ensure student is enrolled for this course in Supabase
+      // 4. Ensure student is enrolled for this course in Supabase
       try {
         await supabase
           .from('enrollments')
@@ -220,14 +289,14 @@ export const useClassRepStore = defineStore('classRep', () => {
             { onConflict: 'student_id,course_id' }
           );
       } catch (enrErr) {
-        console.warn('[classrep] Enrollment upsert notice:', enrErr);
+        console.warn('[classrep] Enrollment upsert notice:', enrErr.message);
       }
 
       await fetchAllReps().catch(() => {});
-      return { message: 'Class Rep assigned successfully in database.' };
+      return { message: `Class Rep (${validMode}) assigned successfully!` };
     } catch (err) {
       console.error('[classrep] assignClassRep error:', err);
-      const msg = err.message || 'Failed to assign class rep in database.';
+      const msg = err.message || 'Failed to assign class rep.';
       error.value = msg;
       throw new Error(msg);
     } finally {
@@ -235,19 +304,50 @@ export const useClassRepStore = defineStore('classRep', () => {
     }
   }
 
-  // ── Remove class rep from Supabase database ────────────────────────────────
-  async function removeClassRep(courseId) {
+  // ── Remove class rep (Mode-Aware) ──────────────────────────────────────────
+  async function removeClassRep(courseId, mode = null) {
     isLoading.value = true;
     error.value = '';
-    try {
-      const { error: sbErr } = await supabase
-        .from('class_reps')
-        .delete()
-        .eq('course_id', courseId);
-      if (sbErr) throw sbErr;
+    const validMode = mode ? (String(mode).toLowerCase() === 'weekend' ? 'Weekend' : 'Regular') : null;
 
-      allReps.value = allReps.value.filter((r) => r.courseId !== courseId);
-      return { message: 'Class rep removed successfully from database.' };
+    try {
+      // 1. Sync with backend API
+      try {
+        const queryParam = validMode ? `?mode=${encodeURIComponent(validMode)}` : '';
+        await api.delete(`/classrep/${encodeURIComponent(courseId)}${queryParam}`);
+      } catch (bErr) {
+        console.warn('[classrep] Backend remove notice:', bErr.message);
+      }
+
+      // 2. Remove matching rep from Supabase database
+      try {
+        const { data: existingReps } = await supabase
+          .from('class_reps')
+          .select('id, student_id, course_id, users(mode)')
+          .eq('course_id', courseId);
+
+        if (Array.isArray(existingReps)) {
+          for (const er of existingReps) {
+            const erMode = er.study_mode 
+              ? (String(er.study_mode).toLowerCase() === 'weekend' ? 'Weekend' : 'Regular')
+              : (er.users?.mode ? (er.users.mode.toLowerCase() === 'weekend' ? 'Weekend' : 'Regular') : 'Regular');
+            if (!validMode || erMode === validMode) {
+              await supabase.from('class_reps').delete().eq('id', er.id);
+            }
+          }
+        }
+      } catch (sbErr) {
+        console.warn('[classrep] Supabase delete notice:', sbErr.message);
+      }
+
+      // 3. Update local state
+      allReps.value = allReps.value.filter((r) => {
+        if (r.courseId !== courseId) return true;
+        if (!validMode) return false;
+        return r.mode !== validMode;
+      });
+
+      return { message: 'Class rep removed successfully.' };
     } catch (err) {
       const msg = err.message || 'Failed to remove class rep.';
       error.value = msg;
@@ -293,7 +393,6 @@ export const useClassRepStore = defineStore('classRep', () => {
         }
 
         if (orClauses.length > 0) {
-          // Attempt 1a: with courses and users
           const { data: d1, error: e1 } = await supabase
             .from('class_reps')
             .select('*, courses(*), users(*)')
@@ -301,7 +400,6 @@ export const useClassRepStore = defineStore('classRep', () => {
           if (!e1 && d1 && d1.length > 0) {
             rolesData = d1;
           } else {
-            // Attempt 1b: with courses
             const { data: d2, error: e2 } = await supabase
               .from('class_reps')
               .select('*, courses(*)')
@@ -309,7 +407,6 @@ export const useClassRepStore = defineStore('classRep', () => {
             if (!e2 && d2 && d2.length > 0) {
               rolesData = d2;
             } else {
-              // Attempt 1c: plain select
               const { data: d3, error: e3 } = await supabase
                 .from('class_reps')
                 .select('*')
@@ -324,32 +421,7 @@ export const useClassRepStore = defineStore('classRep', () => {
         console.warn('[classrep] Supabase direct query notice:', err.message);
       }
 
-      // 2. If not found, fetch all reps from Supabase and match client-side
-      if (!rolesData || rolesData.length === 0) {
-        try {
-          const { data: allSupabaseReps, error: allErr } = await supabase
-            .from('class_reps')
-            .select('*, courses(*), users(*)');
-          if (!allErr && allSupabaseReps && allSupabaseReps.length > 0) {
-            const matched = allSupabaseReps.filter((r) => {
-              const rSid = String(r.student_id || '');
-              const rEmail = String(r.users?.email || '').toLowerCase().trim();
-              const rIdNum = String(r.users?.id_number || '');
-              return (
-                candidateIds.has(rSid) ||
-                (userEmail && rEmail === userEmail) ||
-                (idNumber && rIdNum === String(idNumber)) ||
-                (userEmail && rSid.toLowerCase() === userEmail)
-              );
-            });
-            if (matched.length > 0) rolesData = matched;
-          }
-        } catch (err) {
-          console.warn('[classrep] Supabase all reps check notice:', err.message);
-        }
-      }
-
-      // 3. Fallback: Check allReps from store or fetchAllReps
+      // 2. Fallback: match from allReps
       if (!rolesData || rolesData.length === 0) {
         try {
           if (allReps.value.length === 0) {
@@ -372,6 +444,7 @@ export const useClassRepStore = defineStore('classRep', () => {
                 courseId: r.courseId,
                 courseCode: r.courseCode,
                 courseName: r.courseName,
+                mode: r.mode || 'Regular',
                 schedules,
                 assignedAt: r.assignedAt,
               };
@@ -383,7 +456,7 @@ export const useClassRepStore = defineStore('classRep', () => {
         }
       }
 
-      // 4. Backend fallback
+      // 3. Backend fallback
       if (!rolesData || rolesData.length === 0) {
         try {
           const res = await api.get('/classrep/my-roles');
@@ -394,17 +467,19 @@ export const useClassRepStore = defineStore('classRep', () => {
         } catch {}
       }
 
-      // 5. Map rolesData to myRoles
+      // 4. Map rolesData to myRoles
       myRoles.value = (rolesData ?? []).map((sr) => {
         const c = sr.courses || (coursesStore.courses || []).find((x) => x.id === sr.course_id || x.code === sr.course_id);
         const code = sr.courses?.code || c?.code || sr.course_id || '—';
         const name = sr.courses?.name || c?.name || code;
         const schedules = (schedulesStore.schedules || []).filter((s) => s.courseId === sr.course_id);
+        const rawMode = sr.study_mode || sr.mode || sr.users?.mode || 'Regular';
         return {
           id: sr.id,
           courseId: sr.course_id,
           courseCode: code,
           courseName: name,
+          mode: String(rawMode).toLowerCase() === 'weekend' ? 'Weekend' : 'Regular',
           schedules,
           assignedAt: sr.assigned_at || sr.created_at,
         };
@@ -481,7 +556,7 @@ export const useClassRepStore = defineStore('classRep', () => {
     };
   }
 
-  // ── Fetch recent sessions for a course ──────────────────────────────────────
+  // ── Fetch recent sessions for a course ─────────────────────────────────────
   async function fetchCourseSessions(courseId) {
     try {
       let data = null;
@@ -527,7 +602,7 @@ export const useClassRepStore = defineStore('classRep', () => {
     }
   }
 
-  // â”€â”€ Mark lecturer attendance (by class rep) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Mark lecturer attendance (by class rep) ────────────────────────────────
   async function markLecturerAttendance({ courseId, sessionCode, date, time, status, notes }) {
     isLoading.value = true;
     error.value = '';
@@ -558,7 +633,7 @@ export const useClassRepStore = defineStore('classRep', () => {
     }
   }
 
-  // â”€â”€ Fetch attendance history for a course â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Fetch attendance history for a course ──────────────────────────────────
   async function fetchAttendanceHistory(courseId) {
     try {
       const { data, error: sbErr } = await supabase

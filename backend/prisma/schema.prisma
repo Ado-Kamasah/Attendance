@@ -148,15 +148,16 @@ model StudentNotification {
 
 // ── Class Representative ──────────────────────────────────────────────────────
 model ClassRep {
-  id        String   @id @default(uuid())
-  studentId String
-  courseId  String
+  id         String   @id @default(uuid())
+  studentId  String
+  courseId   String
+  mode       String   @default("Regular")
   assignedAt DateTime @default(now())
 
   student   User     @relation(fields: [studentId], references: [id])
   course    Course   @relation(fields: [courseId], references: [id])
 
-  @@unique([courseId]) // One class rep per course
+  @@unique([courseId, mode]) // One class rep per course per mode
 }
 
 // ── Lecturer Attendance (marked by Class Rep) ─────────────────────────────────
