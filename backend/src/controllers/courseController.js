@@ -222,14 +222,21 @@ export const getAvailableCoursesForStudent = async (req, res) => {
     const enrolledCourseIds = studentEnrollments.map(e => e.courseId);
 
     // Find active courses matching student's program and level
-    const availableCourses = await prisma.course.findMany({
-      where: {
-        program: student.program,
-        status: 'active',
-        id: {
-          notIn: enrolledCourseIds.length > 0 ? enrolledCourseIds : undefined
-        }
+    const courseWhere = {
+      status: 'active',
+      id: {
+        notIn: enrolledCourseIds.length > 0 ? enrolledCourseIds : undefined
       }
+    };
+    if (student.program) {
+      courseWhere.program = student.program;
+    }
+    if (student.level) {
+      courseWhere.level = student.level;
+    }
+
+    const availableCourses = await prisma.course.findMany({
+      where: courseWhere
     });
 
     res.status(200).json(availableCourses);

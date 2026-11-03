@@ -13,7 +13,7 @@
           Course <span class="text-secondary dark:text-dark-secondary">Registration</span>
         </h1>
         <p class="text-xs sm:text-sm font-mono text-foreground/60 dark:text-white/70 mt-1">
-          Select and confirm accredited modules for the active semester &bull; {{ currentUserProgram }}
+          Select and confirm accredited modules &bull; {{ currentUserProgram }} &bull; Level {{ profile?.level || '100' }} &bull; {{ profile?.mode || 'Regular' }} Mode
         </p>
       </div>
 
@@ -498,6 +498,8 @@ import {
   Loader2
 } from 'lucide-vue-next';
 
+const emit = defineEmits(['navigate']);
+
 const authStore = useAuthStore();
 const coursesStore = useCoursesStore();
 const schedulesStore = useSchedulesStore();
@@ -645,20 +647,55 @@ const availableGlobalCourses = computed(() =>
 const filteredCourses = computed(() => {
   let list = availableGlobalCourses.value;
 
-  if (profile.value?.programId) {
-    list = list.filter((course) => course.programId === profile.value?.programId);
+  // 1. Filter by student's programme / department
+  const studentProg = (profile.value?.program || profile.value?.programId || '').toLowerCase().trim();
+  if (studentProg) {
+    list = list.filter((course) => {
+      const cp = (course.program || course.programId || '').toLowerCase().trim();
+      if (!cp) return true; // General course available across departments
+      if (cp === studentProg) return true;
+      if (cp.includes(studentProg) || studentProg.includes(cp)) return true;
+      if (cp.includes('comput') && studentProg.includes('comput')) return true;
+      if (cp.includes('data') && studentProg.includes('data')) return true;
+      if (cp.includes('soft') && studentProg.includes('soft')) return true;
+      if (cp.includes('busin') && studentProg.includes('busin')) return true;
+      if (cp.includes('admin') && studentProg.includes('admin')) return true;
+      if (cp.includes('account') && studentProg.includes('account')) return true;
+      if (cp.includes('human') && studentProg.includes('human')) return true;
+      if (cp.includes('commun') && studentProg.includes('commun')) return true;
+      return false;
+    });
   }
 
+  // 2. Filter by student's study mode (Regular vs Weekend)
+  const studentMode = (profile.value?.mode || 'Regular').toLowerCase();
+  list = list.filter((course) => {
+    if (course.mode && course.mode.toLowerCase() !== studentMode) {
+      return false;
+    }
+    const courseSchedules = schedules.value.filter((s) => s.courseId === course.id);
+    if (courseSchedules.length > 0) {
+      const matchesMode = courseSchedules.some(
+        (s) => (s.mode || 'Regular').toLowerCase() === studentMode
+      );
+      if (!matchesMode) return false;
+    }
+    return true;
+  });
+
+  // 3. Filter by semester
   if (semesterFilter.value !== 'all') {
     list = list.filter((course) => (course.semester || 'Semester 1') === semesterFilter.value);
   }
 
+  // 4. Filter by level (100–700)
   if (levelFilter.value !== 'all') {
-    list = list.filter((course) => String(course.level) === levelFilter.value);
+    list = list.filter((course) => String(course.level) === String(levelFilter.value));
   }
 
+  // 5. Search query filter
   if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase();
+    const q = searchQuery.value.toLowerCase().trim();
     list = list.filter(
       (course) =>
         course.code.toLowerCase().includes(q) ||
@@ -723,8 +760,11 @@ const submitRegistration = async () => {
     }
 
     if (registered.length > 0 && failed.length === 0) {
-      feedbackMsg.value = `Successfully enrolled in ${registered.length} module(s)!`;
+      feedbackMsg.value = `Successfully enrolled in ${registered.length} module(s)! Redirecting to your dashboard...`;
       feedbackIsError.value = false;
+      setTimeout(() => {
+        emit('navigate', '/student-dashboard');
+      }, 1500);
     } else if (failed.length > 0) {
       feedbackMsg.value = `Registered for ${registered.length} module(s). Issues with: ${failed.map(f => f.course.code).join(', ')}`;
       feedbackIsError.value = true;
@@ -756,6 +796,15 @@ onMounted(async () => {
 
     coursesStore.subscribeToCourses();
     enrollmentsStore.subscribeToEnrollments();
+
+    // Auto-select student's level filter from profile
+    if (profile.value?.level) {
+      levelFilter.value = String(profile.value.level);
+    }
+    // Auto-select semester filter from active semester
+    if (activeSemester.value?.name) {
+      semesterFilter.value = activeSemester.value.name.includes('2') ? 'Semester 2' : 'Semester 1';
+    }
   } catch (error) {
     console.error('Error fetching data', error);
   } finally {

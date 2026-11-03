@@ -40,7 +40,7 @@
             <!-- Full Name -->
             <div class="space-y-1.5">
               <label for="fullName" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
-                Full Name
+                Full Name <span class="text-secondary dark:text-dark-secondary">*</span>
               </label>
               <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
@@ -61,7 +61,7 @@
             <div class="space-y-1.5">
               <div class="flex items-center justify-between">
                 <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
-                  Institutional Email
+                  Institutional Email <span class="text-secondary dark:text-dark-secondary">*</span>
                 </label>
                 <span class="text-[11px] font-mono text-secondary dark:text-dark-secondary">@southshore.edu.gh</span>
               </div>
@@ -86,13 +86,13 @@
               </p>
             </div>
 
-            <!-- Two Columns on Tablet/Desktop: ID Number & Faculty/Program -->
+            <!-- Two Columns: ID Number & Level (100–700) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               <!-- ID Number -->
               <div class="space-y-1.5">
                 <label for="idNumber" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
-                  Student / Staff ID
+                  Student / Staff ID <span class="text-secondary dark:text-dark-secondary">*</span>
                 </label>
                 <div class="relative group">
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
@@ -104,35 +104,115 @@
                     v-model="form.idNumber"
                     placeholder="e.g. SUC2025001"
                     required
-                    class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm"
+                    class="w-full pl-10 pr-4 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white placeholder-foreground/35 dark:placeholder-dark-foreground/35 focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm font-mono"
                   />
                 </div>
               </div>
 
-              <!-- Faculty / Program -->
+              <!-- Level Selection (100–700) -->
               <div class="space-y-1.5">
-                <label for="program" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
-                  Faculty / Programme
+                <label for="level" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
+                  Academic Level <span class="text-secondary dark:text-dark-secondary">*</span>
+                </label>
+                <div class="relative group">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                    <Layers class="w-4 h-4" />
+                  </div>
+                  <select
+                    id="level"
+                    v-model="form.level"
+                    required
+                    class="w-full pl-10 pr-9 py-2.5 bg-background dark:bg-dark-background border rounded-xl text-sm text-foreground dark:text-white focus:outline-none focus:ring-4 transition-all shadow-sm appearance-none cursor-pointer font-mono"
+                    :class="levelError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-outline dark:border-dark-outline focus:border-primary dark:focus:border-dark-secondary focus:ring-primary/10 dark:focus:ring-dark-secondary/10'"
+                  >
+                    <option value="" disabled selected>Select level</option>
+                    <option value="100">Level 100 (Freshman)</option>
+                    <option value="200">Level 200 (Sophomore)</option>
+                    <option value="300">Level 300 (Junior)</option>
+                    <option value="400">Level 400 (Senior)</option>
+                    <option value="500">Level 500 (Postgraduate / Professional)</option>
+                    <option value="600">Level 600 (Master's)</option>
+                    <option value="700">Level 700 (Doctorate / PhD)</option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-foreground/40 dark:text-white/50">
+                    <ChevronDown class="w-4 h-4" />
+                  </div>
+                </div>
+                <p v-if="levelError" class="text-xs text-red-500 flex items-center gap-1.5 mt-1">
+                  <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                  <span>{{ levelError }}</span>
+                </p>
+              </div>
+
+            </div>
+
+            <!-- Two Columns: Faculty & Programme Cascade -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              <!-- Faculty Selection -->
+              <div class="space-y-1.5">
+                <label for="faculty" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
+                  Faculty <span class="text-secondary dark:text-dark-secondary">*</span>
                 </label>
                 <div class="relative group">
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
                     <GraduationCap class="w-4 h-4" />
                   </div>
                   <select
-                    id="program"
-                    v-model="form.programId"
+                    id="faculty"
+                    v-model="form.faculty"
+                    @change="onFacultyChange"
                     required
-                    class="w-full pl-10 pr-9 py-2.5 bg-background dark:bg-dark-background border border-outline dark:border-dark-outline rounded-xl text-sm text-foreground dark:text-white focus:outline-none focus:border-primary dark:focus:border-dark-secondary focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10 transition-all shadow-sm appearance-none cursor-pointer"
+                    class="w-full pl-10 pr-9 py-2.5 bg-background dark:bg-dark-background border rounded-xl text-sm text-foreground dark:text-white focus:outline-none focus:ring-4 transition-all shadow-sm appearance-none cursor-pointer truncate"
+                    :class="facultyError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-outline dark:border-dark-outline focus:border-primary dark:focus:border-dark-secondary focus:ring-primary/10 dark:focus:ring-dark-secondary/10'"
                   >
                     <option value="" disabled selected>Select faculty</option>
-                    <option v-for="faculty in faculties" :key="faculty.id" :value="faculty.name">
-                      {{ faculty.name }}
+                    <option v-for="fac in availableFaculties" :key="fac" :value="fac">
+                      {{ fac }}
                     </option>
                   </select>
                   <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-foreground/40 dark:text-white/50">
                     <ChevronDown class="w-4 h-4" />
                   </div>
                 </div>
+                <p v-if="facultyError" class="text-xs text-red-500 flex items-center gap-1.5 mt-1">
+                  <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                  <span>{{ facultyError }}</span>
+                </p>
+              </div>
+
+              <!-- Programme / Department Selection (Cascaded) -->
+              <div class="space-y-1.5">
+                <label for="programme" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
+                  Programme / Department <span class="text-secondary dark:text-dark-secondary">*</span>
+                </label>
+                <div class="relative group">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
+                    <BookOpen class="w-4 h-4" />
+                  </div>
+                  <select
+                    id="programme"
+                    v-model="form.programme"
+                    :disabled="!form.faculty"
+                    required
+                    class="w-full pl-10 pr-9 py-2.5 bg-background dark:bg-dark-background border rounded-xl text-sm text-foreground dark:text-white focus:outline-none focus:ring-4 transition-all shadow-sm appearance-none cursor-pointer truncate disabled:opacity-50 disabled:cursor-not-allowed"
+                    :class="programmeError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-outline dark:border-dark-outline focus:border-primary dark:focus:border-dark-secondary focus:ring-primary/10 dark:focus:ring-dark-secondary/10'"
+                  >
+                    <option value="" disabled selected>
+                      {{ form.faculty ? 'Select programme' : 'Select faculty first' }}
+                    </option>
+                    <option v-for="prog in availableProgrammes" :key="prog" :value="prog">
+                      {{ prog }}
+                    </option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-foreground/40 dark:text-white/50">
+                    <ChevronDown class="w-4 h-4" />
+                  </div>
+                </div>
+                <p v-if="programmeError" class="text-xs text-red-500 flex items-center gap-1.5 mt-1">
+                  <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                  <span>{{ programmeError }}</span>
+                </p>
               </div>
 
             </div>
@@ -192,7 +272,7 @@
             <!-- Password -->
             <div class="space-y-1.5">
               <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-white/88 font-display">
-                Create Secure Password
+                Create Secure Password <span class="text-secondary dark:text-dark-secondary">*</span>
               </label>
               <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-foreground/40 dark:text-white/50 group-focus-within:text-primary dark:group-focus-within:text-dark-secondary transition-colors">
@@ -304,7 +384,7 @@
             Seamless Academic Onboarding
           </h3>
           <p class="text-white/75 text-sm leading-relaxed">
-            Register once using your official university email to access all departmental lecture schedules, attendance logs, and evaluation forms.
+            Register once using your official university credentials to enroll in eligible semester courses, access lecture schedules, and track attendance.
           </p>
         </div>
 
@@ -317,9 +397,9 @@
                 <CheckCircle2 class="w-5 h-5" />
               </div>
               <div>
-                <h4 class="text-sm font-semibold font-display text-white mb-0.5">Instant Check-In</h4>
+                <h4 class="text-sm font-semibold font-display text-white mb-0.5">Automated Course Registration</h4>
                 <p class="text-xs text-white/70 leading-relaxed">
-                  Verify presence in lectures via class rep coordination, geofence, and biometric verification.
+                  First-time students are guided directly to enroll in faculty-accredited courses filtered by your study level.
                 </p>
               </div>
             </div>
@@ -331,9 +411,9 @@
                 <BarChart3 class="w-5 h-5" />
               </div>
               <div>
-                <h4 class="text-sm font-semibold font-display text-white mb-0.5">Real-Time Analytics</h4>
+                <h4 class="text-sm font-semibold font-display text-white mb-0.5">Real-Time Attendance Analytics</h4>
                 <p class="text-xs text-white/70 leading-relaxed">
-                  Monitor semester attendance rates, lecture participation thresholds, and exam eligibility.
+                  Monitor semester attendance rates, lecture participation thresholds, and exam eligibility by study mode.
                 </p>
               </div>
             </div>
@@ -357,10 +437,10 @@
 
         <!-- Bottom Technical Badge -->
         <div class="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
-          <span class="font-mono text-[10px] uppercase">SYS: SUC-AUTH-V2.4</span>
+          <span class="font-mono text-[10px] uppercase">SYS: SUC-AUTH-V2.5</span>
           <span class="inline-flex items-center gap-1.5 text-white/80">
             <span class="w-2 h-2 rounded-full bg-secondary dark:bg-dark-secondary"></span>
-            Admissions Open
+            Admissions Active
           </span>
         </div>
 
@@ -372,16 +452,23 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/authstore';
 import { useFacultiesStore } from '@/stores/faculties';
 import { storeToRefs } from 'pinia';
 import {
+  getProgrammesForFaculty,
+  FACULTY_PROGRAMME_MAP,
+  isValidProgrammeFacultyPair
+} from '@/utils/academicRelationships';
+import {
   GraduationCap,
+  BookOpen,
   ShieldCheck,
   User,
   Mail,
   IdCard,
+  Layers,
   Lock,
   Eye,
   EyeOff,
@@ -405,7 +492,24 @@ const showPassword = ref(false);
 const isLoading = ref(false);
 const errorMsg = ref('');
 const emailDomainError = ref('');
+const levelError = ref('');
+const facultyError = ref('');
+const programmeError = ref('');
 const modeError = ref('');
+
+const form = reactive({
+  fullName: '',
+  email: '',
+  role: 'student',
+  idNumber: '',
+  faculty: '',
+  programme: '',
+  level: '',
+  mode: '',
+  password: '',
+});
+
+const emit = defineEmits(['register-success', 'switch-to-login']);
 
 onMounted(async () => {
   try {
@@ -415,17 +519,33 @@ onMounted(async () => {
   }
 });
 
-const form = reactive({
-  fullName: '',
-  email: '',
-  role: 'student',
-  idNumber: '',
-  programId: '', // stores faculty name (e.g. 'School of Computing')
-  mode: '',
-  password: '',
+// List of available faculties, combining store results with standard map fallbacks
+const availableFaculties = computed(() => {
+  const list = [];
+  if (faculties.value && faculties.value.length > 0) {
+    faculties.value.forEach((f) => {
+      if (f.name && !list.includes(f.name)) list.push(f.name);
+    });
+  }
+  Object.keys(FACULTY_PROGRAMME_MAP).forEach((facName) => {
+    if (!list.includes(facName)) list.push(facName);
+  });
+  return list;
 });
 
-const emit = defineEmits(['register-success', 'switch-to-login']);
+// Cascaded programmes for currently selected faculty
+const availableProgrammes = computed(() => {
+  if (!form.faculty) return [];
+  return getProgrammesForFaculty(form.faculty);
+});
+
+// When faculty changes, validate/reset programme if it no longer belongs
+const onFacultyChange = () => {
+  facultyError.value = '';
+  if (form.programme && !isValidProgrammeFacultyPair(form.programme, form.faculty)) {
+    form.programme = '';
+  }
+};
 
 const validateEmailDomain = () => {
   if (!form.email) {
@@ -442,22 +562,52 @@ const handleRegister = async () => {
   validateEmailDomain();
   if (emailDomainError.value) return;
 
+  levelError.value = '';
+  facultyError.value = '';
+  programmeError.value = '';
   modeError.value = '';
+  errorMsg.value = '';
+
+  if (!form.level) {
+    levelError.value = 'Please select your current academic level.';
+    return;
+  }
+
+  if (!form.faculty) {
+    facultyError.value = 'Please select your faculty.';
+    return;
+  }
+
+  if (!form.programme) {
+    programmeError.value = 'Please select your programme / department.';
+    return;
+  }
+
   if (!form.mode) {
     modeError.value = 'Please select your study mode (Regular or Weekend).';
     return;
   }
 
   isLoading.value = true;
-  errorMsg.value = '';
 
   try {
-    const data = await authStore.register(form);
+    const data = await authStore.register({
+      fullName: form.fullName.trim(),
+      email: form.email.trim().toLowerCase(),
+      role: form.role,
+      idNumber: form.idNumber.trim(),
+      faculty: form.faculty,
+      programme: form.programme,
+      level: form.level,
+      mode: form.mode,
+      password: form.password,
+    });
 
     emit('register-success', {
       email: data.user?.email,
-      role: form.role === 'staff' ? 'Lecturer' : 'Student',
+      role: 'Student',
       needsEmailConfirmation: !data.session,
+      isStudent: true,
     });
   } catch (err) {
     console.error('Registration error:', err);

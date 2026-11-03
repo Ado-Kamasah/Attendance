@@ -28,6 +28,55 @@
       </div>
     </div>
 
+    <!-- Academic Profile Context Banner -->
+    <div class="relative bg-surface dark:bg-dark-surface border border-outline/50 dark:border-dark-outline/60 rounded-2xl p-4 sm:p-5 shadow-xs overflow-hidden">
+      <!-- Blueprint corner accents -->
+      <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+      <div class="absolute top-2 right-2 w-3 h-3 border-r-2 border-t-2 border-secondary/40 pointer-events-none"></div>
+
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Level Badge -->
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 dark:bg-primary/20 border border-primary/20 text-primary dark:text-dark-primary font-mono text-xs font-bold">
+            <Layers class="w-3.5 h-3.5 text-secondary dark:text-dark-secondary" />
+            <span>Level {{ profile?.level || '100' }}</span>
+          </div>
+
+          <!-- Study Mode Badge -->
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl border font-mono text-xs font-bold"
+            :class="(profile?.mode || 'Regular') === 'Weekend' 
+              ? 'bg-secondary/15 text-secondary border-secondary/30' 
+              : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20'">
+            <CalendarDays class="w-3.5 h-3.5" />
+            <span>{{ profile?.mode || 'Regular' }} Mode</span>
+          </div>
+
+          <!-- Active Semester Badge -->
+          <div v-if="activeSemester" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono text-xs font-semibold">
+            <CalendarClock class="w-3.5 h-3.5" />
+            <span>{{ activeSemester.name }}</span>
+          </div>
+
+          <!-- Student ID Badge -->
+          <div v-if="profile?.id_number" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 dark:bg-dark-muted/60 border border-outline/40 text-foreground/75 dark:text-white/80 font-mono text-xs">
+            <IdCard class="w-3.5 h-3.5 text-secondary" />
+            <span>{{ profile.id_number }}</span>
+          </div>
+        </div>
+
+        <!-- Faculty & Programme Hierarchy -->
+        <div class="flex flex-col sm:items-end text-left sm:text-right">
+          <div class="flex items-center gap-1.5 text-xs font-bold font-display text-foreground dark:text-white">
+            <GraduationCap class="w-3.5 h-3.5 text-secondary shrink-0" />
+            <span>{{ profile?.program || 'General Programme' }}</span>
+          </div>
+          <span class="text-[11px] font-mono text-foreground/50 dark:text-white/65 mt-0.5">
+            {{ profile?.faculty || 'Faculty of Academic Affairs' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- Class Representative Delegated Monitoring Banner -->
     <div 
       v-if="isClassRep" 
@@ -508,6 +557,7 @@ import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { useStudentNotificationsStore } from '@/stores/studentNotifications';
 import { useClassRepStore } from '@/stores/classrep';
+import { useSemestersStore } from '@/stores/semesters';
 import { 
   BookOpen, 
   TrendingUp, 
@@ -524,7 +574,12 @@ import {
   Plus, 
   Bell,
   Eye,
-  UserCheck
+  UserCheck,
+  Layers,
+  IdCard,
+  GraduationCap,
+  CalendarDays,
+  CalendarClock
 } from 'lucide-vue-next';
 
 const emit = defineEmits(['navigate']);
@@ -537,6 +592,7 @@ const sessStore     = useSessionsStore();
 const attStore      = useAttendancesStore();
 const notifStore    = useStudentNotificationsStore();
 const classRepStore = useClassRepStore();
+const semestersStore = useSemestersStore();
 
 const { profile }     = storeToRefs(authStore);
 const { courses }     = storeToRefs(coursesStore);
@@ -544,6 +600,7 @@ const { enrollments } = storeToRefs(enrollStore);
 const { schedules }   = storeToRefs(schedStore);
 const { sessions }    = storeToRefs(sessStore);
 const { attendances } = storeToRefs(attStore);
+const { activeSemester } = storeToRefs(semestersStore);
 
 const isLoading = ref(true);
 
@@ -562,6 +619,7 @@ onMounted(async () => {
     sessStore.fetchSessions(),
     attStore.fetchAttendances({ studentId: uid }),
     classRepStore.fetchMyRoles().catch(() => {}),
+    semestersStore.fetchSemesters().catch(() => {}),
   ]);
   // Fetch notifications with full course and attendance context loaded
   await notifStore.fetchNotifications(uid);

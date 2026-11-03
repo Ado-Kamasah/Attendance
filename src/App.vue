@@ -41,6 +41,7 @@ import LecturerClassRepManagement from './Pages/Lecturers/LecturerClassRepManage
 import Profile from './Pages/Profile/Profile.vue';
 import Notifications from './Pages/Notifications.vue';
 import { useAuthStore } from './stores/authstore.js';
+import { supabase } from './stores/supabase.js';
 
 const authStore = useAuthStore();
 
@@ -76,6 +77,26 @@ const handleNavigationEvent = (path, params = {}) => {
   isMobileSidebarOpen.value = false;
 };
 
+const getStudentLandingRoute = async (studentId) => {
+  if (!studentId) return '/student-dashboard';
+  try {
+    const { data, error } = await supabase
+      .from('enrollments')
+      .select('id')
+      .eq('student_id', studentId)
+      .limit(1);
+
+    if (!error && data && data.length > 0) {
+      return '/student-dashboard';
+    }
+    // If student has 0 enrollments, direct to Course Registration
+    return '/registration';
+  } catch (err) {
+    console.warn('Student destination check notice:', err);
+    return '/student-dashboard';
+  }
+};
+
 const redirectForRole = (role) => {
   if (role === 'Super Admin')   handleNavigationEvent('/users-admin');
   else if (role === 'Admin')    handleNavigationEvent('/');
@@ -84,7 +105,7 @@ const redirectForRole = (role) => {
   else if (role === 'Finance')  handleNavigationEvent('/finance-dashboard');
 };
 
-const handleLoginSuccess = (payload) => {
+const handleLoginSuccess = async (payload) => {
   const rawRole = (payload?.role || authStore.profile?.role || '').toUpperCase().replace(/[\s_-]+/g, '_');
   let role = '';
   if (rawRole === 'SUPER_ADMIN' || rawRole === 'SUPERADMIN') role = 'Super Admin';
@@ -94,7 +115,10 @@ const handleLoginSuccess = (payload) => {
   else if (rawRole === 'STUDENT') role = 'Student';
   else role = userRole.value;
 
-  if (role) {
+  if (role === 'Student') {
+    const dest = await getStudentLandingRoute(authStore.profile?.id);
+    handleNavigationEvent(dest);
+  } else if (role) {
     redirectForRole(role);
   }
 };
@@ -107,17 +131,37 @@ const handleLogout = async () => {
   activeAuthView.value = 'login';
 };
 
-const handleRegisterSuccess = () => {
-  activeAuthView.value = 'register' ? (activeAuthView.value = 'login') : null;
+const handleRegisterSuccess = async (payload) => {
+  if (payload?.needsEmailConfirmation) {
+    activeAuthView.value = 'login';
+    return;
+  }
+
+  if (authStore.user && authStore.profile) {
+    const role = (authStore.profile.role || '').toUpperCase();
+    if (role === 'STUDENT') {
+      const dest = await getStudentLandingRoute(authStore.profile.id);
+      handleNavigationEvent(dest);
+    } else {
+      redirectForRole(userRole.value);
+    }
+  } else {
+    activeAuthView.value = 'login';
+  }
 };
 
 // Auto-redirect to the proper role dashboard if user lands on root or login page
 watch(
   [() => authStore.profile, () => currentRoute.value],
-  ([newProfile, route]) => {
+  async ([newProfile, route]) => {
     if (newProfile && userRole.value) {
       if (route === '/' || route === '/login') {
-        redirectForRole(userRole.value);
+        if (userRole.value === 'Student') {
+          const dest = await getStudentLandingRoute(newProfile.id);
+          handleNavigationEvent(dest);
+        } else {
+          redirectForRole(userRole.value);
+        }
       }
     }
   },
@@ -130,7 +174,12 @@ onMounted(async () => {
 
   if (authStore.user && authStore.profile) {
     if (currentRoute.value === '/' || currentRoute.value === '/login') {
-      redirectForRole(userRole.value);
+      if (userRole.value === 'Student') {
+        const dest = await getStudentLandingRoute(authStore.profile.id);
+        handleNavigationEvent(dest);
+      } else {
+        redirectForRole(userRole.value);
+      }
     }
   }
 
@@ -208,7 +257,7 @@ onUnmounted(() => {
         <StudentDashboard v-else-if="currentRoute === '/student-dashboard'" @navigate="handleNavigationEvent" />
         <LecturerDashboard v-else-if="currentRoute === '/lecturer-dashboard'" @navigate="handleNavigationEvent" />
         <Courses v-else-if="currentRoute === '/courses'" />
-        <CourseRegistration v-else-if="currentRoute === '/registration'" />
+        <CourseRegistration v-else-if="currentRoute === '/registration'" @navigate="handleNavigationEvent" />
         <MyCourses v-else-if="currentRoute === '/my-courses'" @navigate="handleNavigationEvent" />
         <LecturerCourses v-else-if="currentRoute === '/lecturer-courses'" @navigate="handleNavigationEvent" />
         <MarkAttendance v-else-if="currentRoute === '/attendance'"

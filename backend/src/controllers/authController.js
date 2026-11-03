@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_for_attendance_sy
  */
 export const register = async (req, res) => {
   try {
-    const { fullName, email, role, idNumber, password, program } = req.body;
+    const { fullName, email, role, idNumber, password, program, faculty, level, mode } = req.body;
 
     if (!fullName || !email || !role || !password) {
       return res.status(400).json({ message: 'Missing required fields' });

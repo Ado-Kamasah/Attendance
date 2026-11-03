@@ -188,6 +188,14 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
 
+      if (data && user.value) {
+        const meta = user.value.user_metadata || {};
+        if (!data.level && meta.level) data.level = meta.level;
+        if (!data.mode && meta.mode) data.mode = meta.mode;
+        if (!data.faculty && meta.faculty) data.faculty = meta.faculty;
+        if (!data.program && meta.program) data.program = meta.program;
+      }
+
       profile.value = data;
       return data;
     } catch (e) {
@@ -326,17 +334,24 @@ async function register(form) {
       throw new Error(`Registration is restricted to @${ALLOWED_DOMAIN} email addresses`);
     }
 
+    const levelStr = String(form.level || '100');
+    const progStr = form.programme || form.program || form.programId || null;
+    const facStr = form.faculty || null;
+    const modeStr = form.mode || 'Regular';
+    const roleStr = form.role === 'staff' ? 'Lecturer' : 'Student';
+
     const { data, error: signUpErr } = await supabase.auth.signUp({
       email,
       password: form.password,
       options: {
         data: {
           full_name: form.fullName,
-          role:      form.role === 'staff' ? 'Lecturer' : 'Student',
+          role: roleStr,
           id_number: form.idNumber,
-          // programId now holds a faculty name string (faculties table)
-          program:   form.programId || null,
-          mode:      form.mode || null,
+          faculty: facStr,
+          program: progStr,
+          level: levelStr,
+          mode: modeStr,
         },
       },
     });
@@ -345,9 +360,42 @@ async function register(form) {
       throw new Error(signUpErr.message);
     }
 
-    if (data.session) {
+    if (data.session && data.user) {
       user.value = data.user;
+      try {
+        await supabase.from('users').upsert({
+          id: data.user.id,
+          email,
+          name: form.fullName,
+          role: roleStr,
+          id_number: form.idNumber,
+          faculty: facStr,
+          program: progStr,
+          level: levelStr,
+          mode: modeStr,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+      } catch (upsertNotice) {
+        console.warn('Profile upsert notice on signup:', upsertNotice);
+      }
       await fetchProfile();
+    }
+
+    // Also sync to local backend if available (fallback)
+    try {
+      await api.post('/auth/register', {
+        fullName: form.fullName,
+        email,
+        role: form.role === 'staff' ? 'staff' : 'student',
+        idNumber: form.idNumber,
+        password: form.password,
+        faculty: facStr,
+        program: progStr,
+        level: levelStr,
+        mode: modeStr
+      });
+    } catch (localErr) {
+      console.warn('Local API register sync notice:', localErr.message);
     }
 
     return data;
