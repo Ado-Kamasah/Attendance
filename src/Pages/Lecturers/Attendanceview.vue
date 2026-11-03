@@ -444,8 +444,7 @@ const loadStudentsForCourse = async (cId) => {
 const filteredEnrolledStudents = computed(() => {
   const mode = selectedMode.value;
   return enrolledStudents.value.filter((s) => {
-    const sMode = (s.mode || '').trim();
-    if (!sMode) return false; // Skip students with no mode set
+    const sMode = (s.mode || 'Regular').trim();
     return sMode === mode;
   });
 });

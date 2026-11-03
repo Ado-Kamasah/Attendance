@@ -61,7 +61,19 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+          <!-- Study Mode -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Study Mode</label>
+            <select
+              v-model="filters.mode"
+              class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all"
+            >
+              <option value="">All Modes</option>
+              <option value="Regular">Regular</option>
+              <option value="Weekend">Weekend</option>
+            </select>
+          </div>
           <!-- Course -->
           <div class="space-y-1.5">
             <label class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75">Course</label>
@@ -622,7 +634,7 @@ const hasActiveFilters = computed(() =>
 );
 
 const clearFilters = () => {
-  filters.value = { courseId: '', level: '', semester: '', studentId: '', dateFrom: '', dateTo: '', pinSearch: '' };
+  filters.value = { courseId: '', level: '', semester: '', studentId: '', dateFrom: '', dateTo: '', pinSearch: '', mode: '' };
 };
 
 onMounted(async () => {
@@ -660,13 +672,13 @@ onMounted(async () => {
     if (studentIds.length > 0) {
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, id_number, program_id')
+        .select('id, name, id_number, program_id, mode')
         .in('id', studentIds)
         .order('name');
 
       if (!error && data) {
         studentsById.value = Object.fromEntries(
-          data.map((u) => [u.id, { id: u.id, name: u.name, studentId: u.id_number, programId: u.program_id }])
+          data.map((u) => [u.id, { id: u.id, name: u.name, studentId: u.id_number, programId: u.program_id, mode: u.mode || 'Regular' }])
         );
       }
     }
@@ -798,6 +810,7 @@ const filteredSessions = computed(() => {
 
     const course = coursesStore.getCourseById(s.courseId);
 
+    if (f.mode && (s.mode || 'Regular') !== f.mode) return false;
     if (f.courseId && s.courseId !== f.courseId) return false;
     if (f.level && course && course.level !== f.level) return false;
     if (f.semester && course && course.semester !== f.semester) return false;

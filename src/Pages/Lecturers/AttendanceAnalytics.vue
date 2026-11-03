@@ -630,12 +630,12 @@ async function loadAnalytics() {
     const sessionIds = (sd ?? []).map(s => s.id);
     let ad = [];
     if (sessionIds.length) {
-      const { data } = await supabase.from('attendances').select('id,session_id,student_id,status,users(name,id_number)').in('session_id', sessionIds);
+      const { data } = await supabase.from('attendances').select('id,session_id,student_id,status,users(name,id_number,mode)').in('session_id', sessionIds);
       ad = data ?? [];
     }
     const bySession = new Map();
     ad.forEach(a => { if (!bySession.has(a.session_id)) bySession.set(a.session_id, []); bySession.get(a.session_id).push(a); });
-    rawAttendances.value = ad.map(a => ({ sessionId: a.session_id, studentId: a.student_id, status: a.status, studentName: a.users?.name || 'Unknown', idNumber: a.users?.id_number || '—' }));
+    rawAttendances.value = ad.map(a => ({ sessionId: a.session_id, studentId: a.student_id, status: a.status, studentName: a.users?.name || 'Unknown', idNumber: a.users?.id_number || '—', mode: a.users?.mode || 'Regular' }));
     rawSessions.value = (sd ?? []).map(s => {
       const atts = bySession.get(s.id) ?? [];
       const presentCount = atts.filter(a => a.status === 'present').length;

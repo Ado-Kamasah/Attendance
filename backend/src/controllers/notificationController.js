@@ -60,9 +60,16 @@ export const broadcastEvaluationOpen = async (req, res) => {
 // Internal helper – determine missed class count for a student in a course
 // ─────────────────────────────────────────────────────────────────────────────
 async function getMissedCount(studentId, courseId) {
-  const totalSessions = await prisma.session.count({ where: { courseId } });
+  const student = await prisma.user.findUnique({
+    where: { id: studentId },
+    select: { mode: true }
+  });
+  const studentMode = student?.mode || 'Regular';
+  const totalSessions = await prisma.session.count({
+    where: { courseId, mode: studentMode }
+  });
   const attended = await prisma.attendance.count({
-    where: { studentId, session: { courseId } },
+    where: { studentId, session: { courseId, mode: studentMode } },
   });
   return Math.max(0, totalSessions - attended);
 }
@@ -79,10 +86,17 @@ export async function runAbsencesCheck(sessionId) {
   if (!session) return [];
 
   const { courseId, course } = session;
+  const sessionMode = session.mode || 'Regular';
 
+  // Strictly check only enrolled students whose study mode matches this session's mode
   const enrollments = await prisma.enrollment.findMany({
-    where: { courseId },
-    include: { student: { select: { id: true, name: true, email: true } } },
+    where: {
+      courseId,
+      student: {
+        mode: sessionMode
+      }
+    },
+    include: { student: { select: { id: true, name: true, email: true, mode: true } } },
   });
 
   const presentIds = new Set(

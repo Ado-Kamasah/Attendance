@@ -36,7 +36,8 @@ const generateUniquePin = async () => {
  */
 export const startSession = async (req, res) => {
   try {
-    const { courseId, pin, maxStudents } = req.body;
+    const { courseId, pin, maxStudents, mode } = req.body;
+    const sessionMode = (mode && mode.trim().toLowerCase() === 'weekend') ? 'Weekend' : 'Regular';
     const lecturerId = req.user.id;
 
     if (!courseId) {

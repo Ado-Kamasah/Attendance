@@ -80,8 +80,8 @@ export const useCoursesStore = defineStore('courses', () => {
     error.value = '';
 
     try {
-      // Try Supabase first — treat any successful response (even empty) as authoritative
-      let supabaseOk = false;
+      // Try Supabase first — if Supabase returns rows, use them
+      let supaList = [];
       try {
         let query = supabase.from(TABLE).select('*').order('code', { ascending: true });
 
@@ -91,15 +91,15 @@ export const useCoursesStore = defineStore('courses', () => {
         if (filters.status) query = query.eq('status', filters.status);
 
         const { data, error: fetchErr } = await query;
-        if (!fetchErr) {
-          courses.value = (data ?? []).map(mapCourse);
-          supabaseOk = true;
+        if (!fetchErr && data && data.length > 0) {
+          supaList = data.map(mapCourse);
         }
       } catch (sbErr) {
         console.warn('Supabase courses fetch error, falling back to local API:', sbErr);
       }
 
-      if (supabaseOk) {
+      if (supaList.length > 0) {
+        courses.value = supaList;
         return courses.value;
       }
 

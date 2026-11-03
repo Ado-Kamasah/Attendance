@@ -631,9 +631,20 @@ const overallRate  = computed(() => {
 
 // ── Today's schedule ──────────────────────────────────────────────────────────
 const todayClasses = computed(() => {
-  const activeSessions = new Set(sessions.value.filter(s => s.isActive).map(s => s.courseId));
+  const studentMode = (profile.value?.mode || 'Regular').trim().toLowerCase();
+  const activeSessions = new Set(
+    sessions.value
+      .filter(s => s.isActive && (s.mode || 'Regular').trim().toLowerCase() === studentMode)
+      .map(s => s.courseId)
+  );
   return schedules.value
-    .filter(s => s.day === todayName && enrolledCourseIds.value.includes(s.courseId))
+    .filter(s => {
+      if (s.day !== todayName) return false;
+      if (!enrolledCourseIds.value.includes(s.courseId)) return false;
+      const sMode = (s.mode || '').trim().toLowerCase();
+      if (sMode && sMode !== studentMode) return false;
+      return true;
+    })
     .map(s => {
       const course = coursesStore.getCourseById(s.courseId);
       return {
@@ -652,9 +663,14 @@ const todayClasses = computed(() => {
 
 // ── Per-course attendance stats ───────────────────────────────────────────────
 const courseStats = computed(() => {
+  const studentMode = (profile.value?.mode || 'Regular').trim().toLowerCase();
   return enrolledCourseIds.value.map(cid => {
     const course = coursesStore.getCourseById(cid);
-    const courseSessIds = new Set(sessions.value.filter(s => s.courseId === cid).map(s => s.id));
+    const courseSessIds = new Set(
+      sessions.value
+        .filter(s => s.courseId === cid && (s.mode || 'Regular').trim().toLowerCase() === studentMode)
+        .map(s => s.id)
+    );
     const recs    = myAttendances.value.filter(a => courseSessIds.has(a.sessionId));
     const present = recs.filter(a => a.status === 'present').length;
     const absent  = recs.filter(a => a.status === 'absent').length;

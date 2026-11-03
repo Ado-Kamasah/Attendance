@@ -89,6 +89,7 @@ model Session {
   lecturerId  String
   date        DateTime     @default(now())
   pin         String       @unique
+  mode        String?      @default("Regular")
   maxStudents Int
   isActive    Boolean      @default(true)
   createdAt   DateTime     @default(now())

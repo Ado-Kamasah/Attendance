@@ -549,9 +549,13 @@ const enrolledCourseIds = computed(() =>
     .map((e) => e.courseId)
 );
 
+const studentMode = computed(() => (profile.value?.mode || 'Regular').trim().toLowerCase());
+
 const activeSessionRaw = computed(() =>
   sessions.value.find(
-    (s) => s.isActive && enrolledCourseIds.value.includes(s.courseId)
+    (s) => s.isActive &&
+      enrolledCourseIds.value.includes(s.courseId) &&
+      (s.mode || 'Regular').trim().toLowerCase() === studentMode.value
   ) ?? null
 );
 
@@ -625,10 +629,14 @@ const filteredCourseName = computed(() => {
   return c?.name ?? 'Course';
 });
 
-// All session IDs that belong to this course
+// All session IDs that belong to this course and match the student's study mode
 const courseSessions = computed(() => {
   if (!props.courseId) return new Set();
-  return new Set(sessions.value.filter(s => s.courseId === props.courseId).map(s => s.id));
+  return new Set(
+    sessions.value
+      .filter(s => s.courseId === props.courseId && (s.mode || 'Regular').trim().toLowerCase() === studentMode.value)
+      .map(s => s.id)
+  );
 });
 
 // Attendance records for the student filtered to this course's sessions

@@ -22,21 +22,31 @@ export const getStudentAttendanceSummary = async (req, res) => {
 
     const summary = [];
 
+    // Fetch student's registered study mode
+    const studentUser = await prisma.user.findUnique({
+      where: { id: studentId },
+      select: { mode: true }
+    });
+    const studentMode = studentUser?.mode || 'Regular';
+
     for (const enrollment of enrollments) {
       const courseId = enrollment.courseId;
 
-      // Count total sessions started for this course
+      // Count total sessions started for this course matching student's study mode
+      const sessionFilter = {
+        courseId,
+        mode: studentMode
+      };
+
       const totalSessions = await prisma.session.count({
-        where: { courseId }
+        where: sessionFilter
       });
 
-      // Count sessions attended by the student
+      // Count sessions attended by the student in their eligible sessions
       const attendedSessions = await prisma.attendance.count({
         where: {
           studentId,
-          session: {
-            courseId
-          }
+          session: sessionFilter
         }
       });
 
@@ -331,14 +341,16 @@ export const getCourseStudentsAttendance = async (req, res) => {
       }
     });
 
-    const totalSessions = await prisma.session.count({ where: { courseId } });
-
     const studentsAttendance = await Promise.all(
       enrollments.map(async (e) => {
-        const attended = await prisma.attendance.count({
-          where: { studentId: e.studentId, session: { courseId } }
+        const studentMode = e.student?.mode || 'Regular';
+        const eligibleSessions = await prisma.session.count({
+          where: { courseId, mode: studentMode }
         });
-        const attendanceRate = totalSessions > 0 ? Math.round((attended / totalSessions) * 100) : 0;
+        const attended = await prisma.attendance.count({
+          where: { studentId: e.studentId, session: { courseId, mode: studentMode } }
+        });
+        const attendanceRate = eligibleSessions > 0 ? Math.round((attended / eligibleSessions) * 100) : 0;
         return {
           id: e.student.id,
           studentId: e.student.id,
