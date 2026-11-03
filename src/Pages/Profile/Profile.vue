@@ -79,17 +79,31 @@
           <div class="mt-6 pt-4 border-t border-outline/30 dark:border-dark-outline/40 text-left space-y-3 text-xs font-mono">
             <div class="flex items-center justify-between">
               <span class="text-foreground/50 dark:text-white/65">User ID</span>
-              <span class="font-bold text-foreground dark:text-white">{{ profile?.id_number || '—' }}</span>
+              <span class="font-bold text-foreground dark:text-white truncate max-w-40" :title="profile?.id_number || profile?.id">
+                {{ profile?.id_number || profile?.id || '—' }}
+              </span>
+            </div>
+            <div v-if="profile?.faculty" class="flex items-center justify-between">
+              <span class="text-foreground/50 dark:text-white/65">Faculty</span>
+              <span class="font-bold text-foreground dark:text-white truncate max-w-40 text-right" :title="profile.faculty">{{ profile.faculty }}</span>
             </div>
             <div v-if="profile?.program" class="flex items-center justify-between">
-              <span class="text-foreground/50 dark:text-white/65">Program</span>
-              <span class="font-bold text-foreground dark:text-white truncate max-w-40 text-right">{{ profile.program }}</span>
+              <span class="text-foreground/50 dark:text-white/65">Programme</span>
+              <span class="font-bold text-foreground dark:text-white truncate max-w-40 text-right" :title="profile.program">{{ profile.program }}</span>
+            </div>
+            <div v-if="profile?.level" class="flex items-center justify-between">
+              <span class="text-foreground/50 dark:text-white/65">Level</span>
+              <span class="font-bold text-foreground dark:text-white">Level {{ profile.level }}</span>
             </div>
             <div v-if="profile?.mode" class="flex items-center justify-between">
               <span class="text-foreground/50 dark:text-white/65">Study Mode</span>
               <span class="px-2 py-0.5 rounded text-[10px] font-bold" :class="profile.mode === 'Weekend' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'">
                 {{ profile.mode }}
               </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-foreground/50 dark:text-white/65">Phone</span>
+              <span class="font-bold text-foreground dark:text-white">{{ profile?.phone_number || profile?.phone || '—' }}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-foreground/50 dark:text-white/65">Member Since</span>
@@ -117,12 +131,12 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 text-xs">
               <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
-                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Full Name</span>
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Full Legal Name</span>
                 <p class="font-bold text-sm text-foreground dark:text-white mt-0.5">{{ profile?.name || '—' }}</p>
               </div>
 
               <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
-                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Email Address</span>
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Institutional Email</span>
                 <p class="font-bold text-sm text-foreground dark:text-white mt-0.5 truncate">{{ profile?.email || '—' }}</p>
               </div>
 
@@ -132,12 +146,35 @@
               </div>
 
               <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
-                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">ID Number</span>
-                <p class="font-bold text-sm font-mono text-foreground dark:text-white mt-0.5">{{ profile?.id_number || '—' }}</p>
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Student ID / Index</span>
+                <p class="font-bold text-sm font-mono text-foreground dark:text-white mt-0.5">{{ profile?.id_number || profile?.id || '—' }}</p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Phone Number</span>
+                <p class="font-bold text-sm text-foreground dark:text-white mt-0.5 font-mono">{{ profile?.phone_number || profile?.phone || '—' }}</p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Academic Level</span>
+                <p class="font-bold text-sm text-foreground dark:text-white mt-0.5">Level {{ profile?.level || '100' }}</p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Study Track Mode</span>
+                <p class="font-bold text-sm text-foreground dark:text-white mt-0.5 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full" :class="(profile?.mode || 'Regular') === 'Weekend' ? 'bg-amber-500' : 'bg-sky-500'"></span>
+                  <span>{{ profile?.mode || 'Regular' }}</span>
+                </p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Assigned Faculty</span>
+                <p class="font-bold text-sm text-foreground dark:text-white mt-0.5 truncate">{{ profile?.faculty || 'School of Computing' }}</p>
               </div>
 
               <div v-if="profile?.program" class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40 sm:col-span-2">
-                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Academic Program</span>
+                <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Academic Department / Programme</span>
                 <p class="font-bold text-sm text-foreground dark:text-white mt-0.5">{{ profile.program }}</p>
               </div>
             </div>
@@ -170,7 +207,7 @@
                   <p class="font-medium text-foreground dark:text-white">Password Authentication</p>
                   <p class="text-[10px] font-mono text-foreground/50 dark:text-white/65">Protected via Supabase Auth</p>
                 </div>
-                <span class="font-mono tracking-widest text-foreground/40">••••••••••••</span>
+                <span class="font-mono tracking-widest text-foreground/40">•••••••••••••</span>
               </div>
 
               <!-- Password Update Drawer -->
@@ -184,7 +221,7 @@
                       <input 
                         :type="showNewPw ? 'text' : 'password'" 
                         v-model="pwForm.newPassword" 
-                        placeholder="••••••••" 
+                        placeholder="•••••••••" 
                         id="new-password-input"
                         class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono"
                       />
@@ -207,7 +244,7 @@
                       <input 
                         :type="showConfirmPw ? 'text' : 'password'" 
                         v-model="pwForm.confirmPassword" 
-                        placeholder="••••••••" 
+                        placeholder="•••••••••" 
                         id="confirm-password-input"
                         class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono"
                       />
@@ -251,11 +288,12 @@
           <div class="flex items-center gap-2 pb-4 border-b border-outline/30 dark:border-dark-outline/40">
             <Edit3 class="w-4 h-4 text-secondary" />
             <h3 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
-              Edit Account Information
+              Edit Account Profile Information
             </h3>
           </div>
 
           <div class="space-y-4 text-xs">
+            <!-- Full Legal Name (Editable) -->
             <div>
               <label for="edit-name" class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
                 Full Legal Name <span class="text-error">*</span>
@@ -269,6 +307,24 @@
               />
             </div>
 
+            <!-- Phone Number (Editable for student & all users) -->
+            <div>
+              <label for="edit-phone" class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
+                Primary Phone / WhatsApp Number
+              </label>
+              <input 
+                id="edit-phone" 
+                type="tel" 
+                v-model="editForm.phoneNumber" 
+                placeholder="e.g. +233 24 123 4567" 
+                class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-mono"
+              />
+              <span class="text-[10px] text-foreground/50 dark:text-white/60 mt-1 block">
+                Used for urgent institutional notifications, course announcements, and attendance verification.
+              </span>
+            </div>
+
+            <!-- Email (Immutable) -->
             <div>
               <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
                 Institutional Email (Immutable)
@@ -281,51 +337,66 @@
               />
             </div>
 
-            <div v-if="roleLower === 'student'">
-              <label for="edit-program" class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
-                Academic Programme
-              </label>
-              <input 
-                id="edit-program" 
-                type="text" 
-                v-model="editForm.program" 
-                placeholder="e.g. B.Sc. Computer Science" 
-                class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white"
-              />
-            </div>
+            <!-- Institutional Academic Records: LOCKED for Students -->
+            <div class="pt-2 border-t border-outline/30 dark:border-dark-outline/40">
+              <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs mb-3 flex items-start gap-2.5">
+                <Lock class="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                <div>
+                  <span class="font-bold uppercase tracking-wider text-[10px] block">Protected Academic Information</span>
+                  <p class="text-[11px] leading-relaxed mt-0.5">
+                    Faculty, Programme, Level, and Study Mode are official institutional credentials. To protect academic records, students cannot modify these values directly. Contact your Academic Registry administrator to request changes.
+                  </p>
+                </div>
+              </div>
 
-            <div>
-              <label class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1.5">
-                Study Track Mode
-              </label>
-              <div class="grid grid-cols-2 gap-3" id="edit-mode-group">
-                <button
-                  type="button"
-                  @click="editForm.mode = 'Regular'"
-                  id="mode-regular-btn"
-                  class="p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer"
-                  :class="editForm.mode === 'Regular' ? 'bg-primary/10 dark:bg-primary/20 border-primary text-primary dark:text-dark-primary font-bold shadow-xs' : 'bg-muted/30 dark:bg-dark-muted/30 border-outline/40 text-foreground/60'"
-                >
-                  <Calendar class="w-4 h-4" />
-                  <div>
-                    <p class="text-xs font-semibold">Regular Mode</p>
-                    <p class="text-[10px] font-mono text-foreground/50">Mon – Fri Schedule</p>
-                  </div>
-                </button>
+              <!-- Read-only academic summary grid -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30">
+                  <span class="text-[10px] font-mono text-foreground/50 uppercase">Faculty</span>
+                  <p class="font-semibold text-foreground dark:text-white mt-0.5 truncate">{{ profile?.faculty || 'School of Computing' }}</p>
+                </div>
 
-                <button
-                  type="button"
-                  @click="editForm.mode = 'Weekend'"
-                  id="mode-weekend-btn"
-                  class="p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer"
-                  :class="editForm.mode === 'Weekend' ? 'bg-secondary/15 dark:bg-dark-secondary/20 border-secondary text-secondary dark:text-dark-secondary font-bold shadow-xs' : 'bg-muted/30 dark:bg-dark-muted/30 border-outline/40 text-foreground/60'"
-                >
-                  <CalendarDays class="w-4 h-4" />
+                <div class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30">
+                  <span class="text-[10px] font-mono text-foreground/50 uppercase">Programme</span>
+                  <p class="font-semibold text-foreground dark:text-white mt-0.5 truncate">{{ profile?.program || 'General Studies' }}</p>
+                </div>
+
+                <div class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30">
+                  <span class="text-[10px] font-mono text-foreground/50 uppercase">Academic Level</span>
+                  <p class="font-semibold text-foreground dark:text-white mt-0.5">Level {{ profile?.level || '100' }}</p>
+                </div>
+
+                <div class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30">
+                  <span class="text-[10px] font-mono text-foreground/50 uppercase">Study Track Mode</span>
+                  <p class="font-semibold text-foreground dark:text-white mt-0.5">{{ profile?.mode || 'Regular' }}</p>
+                </div>
+              </div>
+
+              <!-- If Admin editing their own profile, optionally allow admin override -->
+              <div v-if="isAdmin" class="mt-4 p-3 rounded-xl bg-secondary/10 border border-secondary/30 space-y-3">
+                <span class="text-[10px] font-mono font-bold uppercase text-secondary tracking-wider block">
+                  Administrator Academic Override
+                </span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <p class="text-xs font-semibold">Weekend Mode</p>
-                    <p class="text-[10px] font-mono text-foreground/50">Sat – Sun Sessions</p>
+                    <label class="block font-mono text-[10px] text-foreground/70 mb-1">Programme</label>
+                    <input 
+                      type="text" 
+                      v-model="editForm.program" 
+                      class="w-full px-3 py-1.5 text-xs bg-surface dark:bg-dark-surface border border-outline/40 rounded-lg outline-hidden text-foreground dark:text-white"
+                    />
                   </div>
-                </button>
+                  <div>
+                    <label class="block font-mono text-[10px] text-foreground/70 mb-1">Study Mode</label>
+                    <select 
+                      v-model="editForm.mode" 
+                      class="w-full px-3 py-1.5 text-xs bg-surface dark:bg-dark-surface border border-outline/40 rounded-lg outline-hidden text-foreground dark:text-white font-mono"
+                    >
+                      <option value="Regular">Regular</option>
+                      <option value="Weekend">Weekend</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -393,10 +464,11 @@ const errorMsg = ref('');
 const editError = ref('');
 const pwError = ref('');
 
-const editForm = ref({ name: '', program: '', mode: '' });
+const editForm = ref({ name: '', phoneNumber: '', program: '', mode: '' });
 const pwForm = ref({ newPassword: '', confirmPassword: '' });
 
 const roleLower = computed(() => (profile.value?.role || 'student').toLowerCase());
+const isAdmin = computed(() => ['admin', 'super_admin'].includes(roleLower.value));
 
 const initials = computed(() => {
   const name = profile.value?.name || '';
@@ -428,9 +500,10 @@ function clearAlerts() {
 }
 
 function startEdit() {
-  editForm.value.name    = profile.value?.name    || '';
-  editForm.value.program = profile.value?.program || '';
-  editForm.value.mode    = profile.value?.mode    || '';
+  editForm.value.name        = profile.value?.name || '';
+  editForm.value.phoneNumber = profile.value?.phone_number || profile.value?.phoneNumber || profile.value?.phone || '';
+  editForm.value.program     = profile.value?.program || '';
+  editForm.value.mode        = profile.value?.mode || '';
   editError.value = '';
   isEditing.value = true;
 }
@@ -444,32 +517,44 @@ async function saveProfile() {
   clearAlerts();
   editError.value = '';
   if (!editForm.value.name.trim()) {
-    editError.value = 'Full name is required.';
+    editError.value = 'Full legal name is required.';
     return;
   }
   isSaving.value = true;
   try {
-    const updates = { name: editForm.value.name.trim() };
-    if (roleLower.value === 'student' && editForm.value.program) {
-      updates.program = editForm.value.program.trim();
+    const cleanPhone = editForm.value.phoneNumber?.trim() || null;
+    const updates = { 
+      name: editForm.value.name.trim(),
+      phone_number: cleanPhone
+    };
+
+    // Only administrators are allowed to change academic fields (programme, mode)
+    if (isAdmin.value) {
+      if (editForm.value.program) {
+        updates.program = editForm.value.program.trim();
+      }
+      if (editForm.value.mode) {
+        updates.mode = editForm.value.mode;
+      }
     }
-    if (editForm.value.mode) {
-      updates.mode = editForm.value.mode;
-    }
+
     const { error } = await supabase
       .from('users')
       .update(updates)
       .eq('id', profile.value.id);
+
     if (error) throw error;
     await authStore.fetchProfile();
     isEditing.value = false;
+
     auditLogsStore.logAction({
       action: 'profile_updated',
-      details: `Updated profile name to "${updates.name}"${updates.program ? `, program to "${updates.program}"` : ''}${updates.mode ? `, mode to "${updates.mode}"` : ''}`,
+      details: `Updated profile info (Name: "${updates.name}"${cleanPhone ? `, Phone: "${cleanPhone}"` : ''})`,
       userId:   profile.value.id,
       userRole: profile.value.role,
       userName: profile.value.name,
     });
+
     successMsg.value = 'Profile updated successfully!';
     setTimeout(() => (successMsg.value = ''), 4000);
   } catch (e) {

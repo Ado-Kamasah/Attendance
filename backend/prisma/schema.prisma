@@ -15,9 +15,12 @@ model User {
   passwordHash String
   name         String
   role         String
+  faculty      String?
   program      String?
+  level        String?      @default("100")
   employmentType String?    @default("Full-Time")
   mode         String?      @default("Regular")
+  phoneNumber  String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 

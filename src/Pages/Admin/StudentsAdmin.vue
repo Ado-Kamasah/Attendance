@@ -186,6 +186,17 @@
           <option value="700">Level 700</option>
         </select>
 
+        <!-- Faculty Filter -->
+        <select
+          v-model="facultyFilter"
+          class="px-3 py-2 bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl text-xs text-slate-700 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-secondary/50 max-w-[160px] truncate"
+        >
+          <option value="all">All Faculties</option>
+          <option v-for="fac in availableFacultiesList" :key="fac" :value="fac">
+            {{ fac }}
+          </option>
+        </select>
+
         <!-- Program Filter -->
         <select
           v-model="programFilter"
@@ -311,7 +322,7 @@
           <thead>
             <tr class="border-b border-slate-100 dark:border-dark-outline bg-slate-50/75 dark:bg-dark-muted/40 font-mono text-[11px] text-slate-500 dark:text-white/75 uppercase tracking-wider">
               <th class="py-3 px-4">Student Identification</th>
-              <th class="py-3 px-4">Program & Level</th>
+              <th class="py-3 px-4">Faculty & Programme</th>
               <th class="py-3 px-4">Study Mode</th>
               <th class="py-3 px-4">Enrollment Status</th>
               <th class="py-3 px-4">Registered Modules</th>
@@ -340,13 +351,19 @@
                       <span>·</span>
                       <span class="truncate">{{ student.email }}</span>
                     </div>
+                    <div v-if="student.phoneNumber" class="text-[10px] font-mono text-slate-400">
+                      Tel: {{ student.phoneNumber }}
+                    </div>
                   </div>
                 </div>
               </td>
 
-              <!-- Program & Level -->
+              <!-- Faculty & Programme & Level -->
               <td class="py-3.5 px-4">
                 <div class="space-y-0.5">
+                  <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold truncate max-w-[200px]" :title="student.faculty">
+                    {{ student.faculty || 'School of Computing' }}
+                  </div>
                   <div class="font-medium text-slate-800 dark:text-white text-xs truncate max-w-[200px]" :title="student.program">
                     {{ student.program || 'General Studies' }}
                   </div>
@@ -502,25 +519,31 @@
           </div>
 
           <!-- Academic Badge, Level & Study Mode -->
-          <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-dark-muted/40 border border-slate-200/70 dark:border-dark-outline/50 text-xs">
-            <span class="font-medium text-slate-700 dark:text-white/80 truncate max-w-[130px]" :title="student.program">
+          <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-50 dark:bg-dark-muted/40 border border-slate-200/70 dark:border-dark-outline/50 text-xs">
+            <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 font-semibold uppercase">
+              <span class="truncate max-w-[140px]" :title="student.faculty">{{ student.faculty || 'School of Computing' }}</span>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-200/80 dark:bg-dark-muted text-slate-700 dark:text-slate-200">
+                  Lvl {{ student.level || '100' }}
+                </span>
+                <button
+                  @click="openChangeModeModal(student)"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[10px] font-bold border transition-all cursor-pointer active:scale-95"
+                  :class="(student.mode || 'Regular') === 'Weekend'
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                    : 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border-sky-300 dark:border-sky-700'"
+                  title="Change Study Mode"
+                >
+                  <span>{{ student.mode || 'Regular' }}</span>
+                  <ArrowRightLeft class="w-2.5 h-2.5" />
+                </button>
+              </div>
+            </div>
+            <div class="font-bold text-slate-800 dark:text-white text-xs truncate" :title="student.program">
               {{ student.program || 'General Program' }}
-            </span>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <span class="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-200/80 dark:bg-dark-muted text-slate-700 dark:text-slate-200">
-                Lvl {{ student.level || '100' }}
-              </span>
-              <button
-                @click="openChangeModeModal(student)"
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[10px] font-bold border transition-all cursor-pointer active:scale-95"
-                :class="(student.mode || 'Regular') === 'Weekend'
-                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-700'
-                  : 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border-sky-300 dark:border-sky-700'"
-                title="Change Study Mode"
-              >
-                <span>{{ student.mode || 'Regular' }}</span>
-                <ArrowRightLeft class="w-2.5 h-2.5" />
-              </button>
+            </div>
+            <div v-if="student.phoneNumber" class="text-[10px] font-mono text-slate-500 dark:text-white/60">
+              Tel: {{ student.phoneNumber }}
             </div>
           </div>
 
@@ -866,42 +889,19 @@
             </div>
           </div>
 
-          <!-- Program, Level & Study Mode -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Phone Number & Study Mode -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label for="student-prog-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-semibold">
-                Program <span class="text-rose-500">*</span>
+              <label for="student-phone-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-semibold">
+                Phone Number <span class="text-slate-400 font-normal">(optional)</span>
               </label>
-              <select
-                id="student-prog-input"
-                v-model="studentForm.program"
-                required
-                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
-              >
-                <option value="" disabled>Select Programme</option>
-                <option v-for="p in availablePrograms" :key="p" :value="p">{{ p }}</option>
-                <option v-if="availablePrograms.length === 0" disabled>No faculties yet — add them in Faculty Management</option>
-              </select>
-            </div>
-
-            <div class="space-y-1.5">
-              <label for="student-level-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-semibold">
-                Level <span class="text-rose-500">*</span>
-              </label>
-              <select
-                id="student-level-input"
-                v-model="studentForm.level"
-                required
+              <input
+                type="tel"
+                id="student-phone-input"
+                v-model="studentForm.phoneNumber"
+                placeholder="e.g. +233 24 123 4567"
                 class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 font-mono"
-              >
-                <option value="100">Level 100</option>
-                <option value="200">Level 200</option>
-                <option value="300">Level 300</option>
-                <option value="400">Level 400</option>
-                <option value="500">Level 500</option>
-                <option value="600">Level 600</option>
-                <option value="700">Level 700</option>
-              </select>
+              />
             </div>
 
             <div class="space-y-1.5">
@@ -917,6 +917,71 @@
                 <option value="Regular">Regular</option>
                 <option value="Weekend">Weekend</option>
               </select>
+            </div>
+          </div>
+
+          <!-- Academic Affiliation: Cascading Faculty & Programme -->
+          <div class="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-dark-muted/40 border border-slate-200 dark:border-dark-outline/70 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono uppercase tracking-wider text-secondary font-bold">
+                ACADEMIC AFFILIATION & PLACEMENT
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">Faculty-Programme Cascading</span>
+            </div>
+
+            <!-- Faculty Selection -->
+            <div class="space-y-1.5">
+              <label for="student-fac-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-semibold">
+                Faculty / School <span class="text-rose-500">*</span>
+              </label>
+              <select
+                id="student-fac-input"
+                v-model="studentForm.faculty"
+                @change="handleFacultyChange"
+                required
+                class="w-full bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
+              >
+                <option value="" disabled>Select Faculty</option>
+                <option v-for="f in availableFacultiesList" :key="f" :value="f">{{ f }}</option>
+              </select>
+            </div>
+
+            <!-- Program & Level Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="sm:col-span-2 space-y-1.5">
+                <label for="student-prog-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-semibold">
+                  Department / Programme <span class="text-rose-500">*</span>
+                </label>
+                <select
+                  id="student-prog-input"
+                  v-model="studentForm.program"
+                  required
+                  class="w-full bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                >
+                  <option value="" disabled>Select Programme</option>
+                  <option v-for="p in programmesForSelectedFaculty" :key="p" :value="p">{{ p }}</option>
+                </select>
+              </div>
+
+              <div class="space-y-1.5">
+                <label for="student-level-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-semibold">
+                  Level <span class="text-rose-500">*</span>
+                </label>
+                <select
+                  id="student-level-input"
+                  v-model="studentForm.level"
+                  required
+                  class="w-full bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 font-mono"
+                >
+                  <option value="100">Level 100</option>
+                  <option value="200">Level 200</option>
+                  <option value="300">Level 300</option>
+                  <option value="400">Level 400</option>
+                  <option value="500">Level 500</option>
+                  <option value="600">Level 600</option>
+                  <option value="700">Level 700</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -1411,6 +1476,12 @@ import { useEnrollmentsStore } from '@/stores/enrollments.js';
 import { useSchedulesStore } from '@/stores/schedules.js';
 import { useFacultiesStore } from '@/stores/faculties.js';
 import {
+  FACULTY_PROGRAMME_MAP,
+  getProgrammesForFaculty,
+  getFacultyForProgramme,
+  isValidProgrammeFacultyPair
+} from '@/utils/academicRelationships.js';
+import {
   GraduationCap,
   BookOpen,
   BookPlus,
@@ -1448,6 +1519,7 @@ const isLoading = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref('all'); // 'all', 'enrolled', 'unenrolled'
 const levelFilter = ref('all');   // 'all', '100', '200', '300', '400', '500', '600', '700'
+const facultyFilter = ref('all'); // 'all' or faculty name
 const programFilter = ref('all'); // 'all' or program string
 const modeFilter = ref('all');    // 'all', 'Regular', 'Weekend'
 const viewMode = ref('table');     // 'table' or 'cards'
@@ -1618,9 +1690,11 @@ const studentForm = ref({
   name: '',
   email: '',
   displayId: '',
+  faculty: '',
   program: '',
   level: '100',
   mode: 'Regular',
+  phoneNumber: '',
   password: ''
 });
 
@@ -1648,6 +1722,27 @@ const getInitials = (name) => {
 const allCoursesList = computed(() => coursesStore.courses || []);
 
 // Available distinct programs — faculty store is primary source, student/course data is supplementary
+// Distinct university faculties
+const availableFacultiesList = computed(() => {
+  const set = new Set();
+  Object.keys(FACULTY_PROGRAMME_MAP).forEach((f) => set.add(f));
+  availableFaculties.value.forEach((f) => { if (f.name) set.add(f.name); });
+  return Array.from(set).filter(Boolean).sort();
+});
+
+// Cascading programmes dynamically filtered by selected faculty in the form
+const programmesForSelectedFaculty = computed(() => {
+  return getProgrammesForFaculty(studentForm.value.faculty, availablePrograms.value);
+});
+
+// Auto-reset or default programme when faculty changes in the form
+const handleFacultyChange = () => {
+  const validProgs = programmesForSelectedFaculty.value;
+  if (!validProgs.includes(studentForm.value.program)) {
+    studentForm.value.program = validProgs[0] || '';
+  }
+};
+
 const availablePrograms = computed(() => {
   const set = new Set();
   // Primary: faculties managed by admin
@@ -1713,6 +1808,9 @@ const fetchStudentsData = async () => {
 
       const existing = unifiedMap.get(dedupeKey) || (rawId ? unifiedMap.get(`id:${rawId}`) : null);
 
+      const resolvedFaculty = u.faculty || existing?.faculty || getFacultyForProgramme(u.program || u.program_id || existing?.program, availableFacultiesList.value);
+      const resolvedPhone = u.phone_number || u.phoneNumber || u.phone || existing?.phoneNumber || '';
+
       const resolved = {
         id: rawId || existing?.id || `stu-${Date.now()}`,
         id_number: rawIdNum || existing?.id_number || rawId,
@@ -1720,8 +1818,10 @@ const fetchStudentsData = async () => {
         email: u.email && u.email !== '—' ? u.email : (existing?.email || '—'),
         role: 'STUDENT',
         mode: u.mode || existing?.mode || 'Regular',
+        faculty: resolvedFaculty,
         program: u.program || u.program_id || existing?.program || 'Computer Science',
         level: (u.level || existing?.level || '100').toString(),
+        phoneNumber: resolvedPhone,
         createdAt: u.created_at || u.createdAt || existing?.createdAt || new Date().toISOString()
       };
 
@@ -1825,6 +1925,10 @@ const filteredStudents = computed(() => {
     list = list.filter((s) => (s.level || '100').toString() === levelFilter.value);
   }
 
+  if (facultyFilter.value !== 'all') {
+    list = list.filter((s) => (s.faculty || '').toLowerCase() === facultyFilter.value.toLowerCase());
+  }
+
   if (programFilter.value !== 'all') {
     list = list.filter((s) => (s.program || '').toLowerCase() === programFilter.value.toLowerCase());
   }
@@ -1839,12 +1943,14 @@ const filteredStudents = computed(() => {
       const matchName = (s.name || '').toLowerCase().includes(q);
       const matchEmail = (s.email || '').toLowerCase().includes(q);
       const matchId = (s.displayId || '').toLowerCase().includes(q) || (s.id || '').toLowerCase().includes(q);
+      const matchFac = (s.faculty || '').toLowerCase().includes(q);
       const matchProg = (s.program || '').toLowerCase().includes(q);
       const matchMode = (s.mode || 'Regular').toLowerCase().includes(q);
+      const matchPhone = (s.phoneNumber || '').toLowerCase().includes(q);
       const matchCourse = (s.enrolledCourses || []).some(
         (c) => (c.code || '').toLowerCase().includes(q) || (c.name || '').toLowerCase().includes(q)
       );
-      return matchName || matchEmail || matchId || matchProg || matchMode || matchCourse;
+      return matchName || matchEmail || matchId || matchFac || matchProg || matchMode || matchPhone || matchCourse;
     });
   }
 
@@ -1855,6 +1961,7 @@ const resetFilters = () => {
   searchQuery.value = '';
   statusFilter.value = 'all';
   levelFilter.value = 'all';
+  facultyFilter.value = 'all';
   programFilter.value = 'all';
   modeFilter.value = 'all';
 };
@@ -2016,14 +2123,18 @@ const openAddStudentModal = () => {
   isEditingStudent.value = false;
   studentModalError.value = '';
   showStudentPassword.value = false;
+  const initialFaculty = availableFacultiesList.value[0] || 'School of Computing';
+  const progs = getProgrammesForFaculty(initialFaculty, availablePrograms.value);
   studentForm.value = {
     id: '',
     name: '',
     email: '',
     displayId: '',
-    program: availablePrograms.value[0] || '',
+    faculty: initialFaculty,
+    program: progs[0] || '',
     level: '100',
     mode: 'Regular',
+    phoneNumber: '',
     password: ''
   };
   isStudentModalOpen.value = true;
@@ -2033,14 +2144,17 @@ const openEditStudentModal = (student) => {
   isEditingStudent.value = true;
   studentModalError.value = '';
   showStudentPassword.value = false;
+  const inferredFaculty = student.faculty || getFacultyForProgramme(student.program, availableFacultiesList.value);
   studentForm.value = {
     id: student.id,
     name: student.name || '',
     email: student.email === '—' ? '' : student.email,
     displayId: student.displayId || student.id_number || '',
-    program: student.program || availablePrograms.value[0] || '',
+    faculty: inferredFaculty,
+    program: student.program || '',
     level: student.level || '100',
     mode: student.mode || 'Regular',
+    phoneNumber: student.phoneNumber || student.phone_number || '',
     password: ''
   };
   isStudentModalOpen.value = true;
@@ -2059,18 +2173,41 @@ const saveStudent = async () => {
   try {
     const cleanName = studentForm.value.name.trim();
     const cleanEmail = studentForm.value.email.trim().toLowerCase();
-    const cleanProgram = studentForm.value.program;
+    const cleanFaculty = studentForm.value.faculty?.trim() || 'School of Computing';
+    const cleanProgram = studentForm.value.program?.trim();
     const cleanLevel = studentForm.value.level;
     const cleanMode = studentForm.value.mode || 'Regular';
+    const cleanPhone = studentForm.value.phoneNumber?.trim() || null;
+
+    if (!cleanFaculty) {
+      studentModalError.value = 'Please select a faculty.';
+      isSavingStudent.value = false;
+      return;
+    }
+
+    if (!cleanProgram) {
+      studentModalError.value = 'Please select a programme for the chosen faculty.';
+      isSavingStudent.value = false;
+      return;
+    }
+
+    // Validate faculty and programme relationship
+    if (!isValidProgrammeFacultyPair(cleanProgram, cleanFaculty)) {
+      studentModalError.value = `Selected programme "${cleanProgram}" does not belong to "${cleanFaculty}". Please select a matching department programme.`;
+      isSavingStudent.value = false;
+      return;
+    }
 
     if (isEditingStudent.value) {
       // 1. Update Supabase
       const updateData = {
         name: cleanName,
         email: cleanEmail,
+        faculty: cleanFaculty,
         program: cleanProgram,
         level: cleanLevel,
         mode: cleanMode,
+        phone_number: cleanPhone,
         updated_at: new Date().toISOString()
       };
 
@@ -2085,9 +2222,11 @@ const saveStudent = async () => {
         await api.put(`/users/${studentForm.value.id}`, {
           name: cleanName,
           email: cleanEmail,
+          faculty: cleanFaculty,
           program: cleanProgram,
           level: cleanLevel,
           mode: cleanMode,
+          phoneNumber: cleanPhone,
           password: studentForm.value.password || undefined
         });
       } catch (e) {
@@ -2099,9 +2238,11 @@ const saveStudent = async () => {
       if (existing) {
         existing.name = cleanName;
         existing.email = cleanEmail;
+        existing.faculty = cleanFaculty;
         existing.program = cleanProgram;
         existing.level = cleanLevel;
         existing.mode = cleanMode;
+        existing.phoneNumber = cleanPhone || '';
       }
 
       showAlert(`Student '${cleanName}' profile updated successfully!`, 'success');
@@ -2117,9 +2258,11 @@ const saveStudent = async () => {
           name: cleanName,
           email: cleanEmail,
           role: 'STUDENT',
+          faculty: cleanFaculty,
           program: cleanProgram,
           level: cleanLevel,
           mode: cleanMode,
+          phoneNumber: cleanPhone,
           password: studentForm.value.password || 'Student@123'
         });
         if (res.status === 201 || res.status === 200) backendCreated = true;
@@ -2135,9 +2278,11 @@ const saveStudent = async () => {
           name: cleanName,
           email: cleanEmail,
           role: 'student',
+          faculty: cleanFaculty,
           program: cleanProgram,
           level: cleanLevel,
           mode: cleanMode,
+          phone_number: cleanPhone,
           created_at: new Date().toISOString()
         });
       } catch (e) {
@@ -2153,9 +2298,11 @@ const saveStudent = async () => {
           name: cleanName,
           email: cleanEmail,
           role: 'STUDENT',
+          faculty: cleanFaculty,
           program: cleanProgram,
           level: cleanLevel,
           mode: cleanMode,
+          phoneNumber: cleanPhone || '',
           created_at: new Date().toISOString()
         });
         localStorage.setItem('custom_created_students', JSON.stringify(localList));

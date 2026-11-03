@@ -169,7 +169,11 @@ export const useAuthStore = defineStore('auth', () => {
           role: meta.role || 'Lecturer',
           id_number: meta.id_number || null,
           employment_type: meta.employment_type || 'Full-Time',
+          faculty: meta.faculty || null,
           program: meta.program || null,
+          level: meta.level || '100',
+          mode: meta.mode || 'Regular',
+          phone_number: meta.phone_number || meta.phone || null,
         };
 
         try {

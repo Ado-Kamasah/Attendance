@@ -36,7 +36,15 @@ export const getAllUsers = async (req, res) => {
           name: true,
           email: true,
           role: true,
-          program: true,
+          faculty: true,
+          faculty: true,
+        program: true,
+        level: true,
+        mode: true,
+        phoneNumber: true,
+          level: true,
+          mode: true,
+          phoneNumber: true,
           employmentType: true,
           createdAt: true,
           updatedAt: true,
@@ -91,7 +99,11 @@ export const getUserById = async (req, res) => {
         name: true,
         email: true,
         role: true,
+        faculty: true,
         program: true,
+        level: true,
+        mode: true,
+        phoneNumber: true,
         employmentType: true,
         createdAt: true,
         updatedAt: true
@@ -114,7 +126,7 @@ export const getUserById = async (req, res) => {
  */
 export const createUser = async (req, res) => {
   try {
-    const { id, name, email, role, password, program, employmentType, mode } = req.body;
+    const { id, name, email, role, password, faculty, program, level, employmentType, mode, phoneNumber, phone } = req.body;
 
     if (!name || !email || !role || !password) {
       return res.status(400).json({ message: 'Name, email, role, and password are required' });
@@ -179,16 +191,23 @@ export const createUser = async (req, res) => {
         email: cleanEmail,
         passwordHash,
         role: normalizedRole,
+        faculty: faculty ? faculty.trim() : null,
         program: program ? program.trim() : null,
+        level: level ? level.toString().trim() : '100',
         employmentType: normalizedEmployment,
-        mode: mode === 'Weekend' ? 'Weekend' : 'Regular'
+        mode: mode === 'Weekend' ? 'Weekend' : 'Regular',
+        phoneNumber: (phoneNumber || phone) ? (phoneNumber || phone).trim() : null
       },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        faculty: true,
         program: true,
+        level: true,
+        mode: true,
+        phoneNumber: true,
         employmentType: true,
         createdAt: true,
         updatedAt: true
@@ -226,7 +245,7 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role, program, password, employmentType, mode } = req.body;
+    const { name, email, role, faculty, program, level, password, employmentType, mode, phoneNumber, phone } = req.body;
 
     const existingUser = await prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
@@ -272,8 +291,21 @@ export const updateUser = async (req, res) => {
       }
     }
 
+    if (faculty !== undefined) {
+      updateData.faculty = faculty ? faculty.trim() : null;
+    }
+
     if (program !== undefined) {
       updateData.program = program ? program.trim() : null;
+    }
+
+    if (level !== undefined) {
+      updateData.level = level ? level.toString().trim() : '100';
+    }
+
+    if (phoneNumber !== undefined || phone !== undefined) {
+      const p = phoneNumber !== undefined ? phoneNumber : phone;
+      updateData.phoneNumber = p ? p.trim() : null;
     }
 
     if (mode !== undefined) {
@@ -296,7 +328,11 @@ export const updateUser = async (req, res) => {
         name: true,
         email: true,
         role: true,
+        faculty: true,
         program: true,
+        level: true,
+        mode: true,
+        phoneNumber: true,
         employmentType: true,
         createdAt: true,
         updatedAt: true
