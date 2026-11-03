@@ -126,13 +126,13 @@
                     :class="levelError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-outline dark:border-dark-outline focus:border-primary dark:focus:border-dark-secondary focus:ring-primary/10 dark:focus:ring-dark-secondary/10'"
                   >
                     <option value="" disabled selected>Select level</option>
-                    <option value="100">Level 100 (Freshman)</option>
-                    <option value="200">Level 200 (Sophomore)</option>
-                    <option value="300">Level 300 (Junior)</option>
-                    <option value="400">Level 400 (Senior)</option>
-                    <option value="500">Level 500 (Postgraduate / Professional)</option>
-                    <option value="600">Level 600 (Master's)</option>
-                    <option value="700">Level 700 (Doctorate / PhD)</option>
+                    <option value="100">Level 100 </option>
+                    <option value="200">Level 200 </option>
+                    <option value="300">Level 300 </option>
+                    <option value="400">Level 400 </option>
+                    <option value="500">Level 500 </option>
+                    <option value="600">Level 600 </option>
+                    <option value="700">Level 700 </option>
                   </select>
                   <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-foreground/40 dark:text-white/50">
                     <ChevronDown class="w-4 h-4" />
