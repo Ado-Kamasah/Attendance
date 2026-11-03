@@ -197,6 +197,26 @@
           </option>
         </select>
 
+        <!-- Study Mode Filter -->
+        <div class="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline/50 shrink-0">
+          <button
+            v-for="m in [
+              { key: 'all', label: `All Modes` },
+              { key: 'Regular', label: `Regular (${stats.regular || 0})` },
+              { key: 'Weekend', label: `Weekend (${stats.weekend || 0})` }
+            ]"
+            :key="m.key"
+            @click="modeFilter = m.key"
+            :class="['px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer',
+              modeFilter === m.key
+                ? (m.key === 'Weekend' ? 'bg-amber-500 text-white shadow-xs font-bold' : m.key === 'Regular' ? 'bg-sky-600 text-white shadow-xs font-bold' : 'bg-white dark:bg-dark-surface text-slate-900 dark:text-white shadow-xs font-bold')
+                : 'text-slate-500 dark:text-white/70 hover:text-slate-800'
+            ]"
+          >
+            {{ m.label }}
+          </button>
+        </div>
+
         <!-- Registration Status Filter -->
         <div class="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline/50 shrink-0">
           <button
@@ -240,7 +260,7 @@
         </div>
 
         <button
-          v-if="searchQuery || statusFilter !== 'all' || levelFilter !== 'all' || programFilter !== 'all'"
+          v-if="searchQuery || statusFilter !== 'all' || levelFilter !== 'all' || programFilter !== 'all' || modeFilter !== 'all'"
           @click="resetFilters"
           class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-slate-100 dark:hover:bg-dark-muted transition-colors cursor-pointer"
           title="Reset All Filters"
@@ -269,7 +289,7 @@
       </p>
       <div class="mt-4 flex items-center justify-center gap-2">
         <button
-          v-if="searchQuery || statusFilter !== 'all' || levelFilter !== 'all' || programFilter !== 'all'"
+          v-if="searchQuery || statusFilter !== 'all' || levelFilter !== 'all' || programFilter !== 'all' || modeFilter !== 'all'"
           @click="resetFilters"
           class="px-4 py-2 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-dark-muted transition-all"
         >
@@ -292,6 +312,7 @@
             <tr class="border-b border-slate-100 dark:border-dark-outline bg-slate-50/75 dark:bg-dark-muted/40 font-mono text-[11px] text-slate-500 dark:text-white/75 uppercase tracking-wider">
               <th class="py-3 px-4">Student Identification</th>
               <th class="py-3 px-4">Program & Level</th>
+              <th class="py-3 px-4">Study Mode</th>
               <th class="py-3 px-4">Enrollment Status</th>
               <th class="py-3 px-4">Registered Modules</th>
               <th class="py-3 px-4">Credits</th>
@@ -333,6 +354,23 @@
                     Lvl {{ student.level || '100' }}
                   </span>
                 </div>
+              </td>
+
+              <!-- Study Mode Badge -->
+              <td class="py-3.5 px-4">
+                <button
+                  @click="openChangeModeModal(student)"
+                  :id="'btn-mode-' + student.id"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold transition-all cursor-pointer active:scale-95 shadow-xs group/mode"
+                  :class="(student.mode || 'Regular') === 'Weekend'
+                    ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+                    : 'bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700 hover:bg-sky-100 dark:hover:bg-sky-900/40'"
+                  title="Click to change student study mode"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" :class="(student.mode || 'Regular') === 'Weekend' ? 'bg-amber-500' : 'bg-sky-500'"></span>
+                  <span>{{ student.mode || 'Regular' }}</span>
+                  <ArrowRightLeft class="w-3 h-3 opacity-50 group-hover/mode:opacity-100 transition-opacity" />
+                </button>
               </td>
 
               <!-- Enrollment Status Badge -->
@@ -384,6 +422,16 @@
               <!-- Actions -->
               <td class="py-3.5 px-4 text-right">
                 <div class="inline-flex items-center gap-1.5">
+                  <button
+                    @click="openChangeModeModal(student)"
+                    :id="'btn-change-mode-' + student.id"
+                    class="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 hover:border-secondary/50 text-slate-700 dark:text-white text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs"
+                    title="Change Student Study Mode (Regular / Weekend)"
+                  >
+                    <ArrowRightLeft class="w-3.5 h-3.5 text-secondary" />
+                    <span>Mode</span>
+                  </button>
+
                   <button
                     @click="openCourseRegModal(student)"
                     :id="'btn-reg-' + student.id"
@@ -453,14 +501,27 @@
             </button>
           </div>
 
-          <!-- Academic Badge & Level -->
+          <!-- Academic Badge, Level & Study Mode -->
           <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-dark-muted/40 border border-slate-200/70 dark:border-dark-outline/50 text-xs">
-            <span class="font-medium text-slate-700 dark:text-white/80 truncate max-w-[170px]" :title="student.program">
+            <span class="font-medium text-slate-700 dark:text-white/80 truncate max-w-[130px]" :title="student.program">
               {{ student.program || 'General Program' }}
             </span>
-            <span class="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-200/80 dark:bg-dark-muted text-slate-700 dark:text-slate-200">
-              Level {{ student.level || '100' }}
-            </span>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-200/80 dark:bg-dark-muted text-slate-700 dark:text-slate-200">
+                Lvl {{ student.level || '100' }}
+              </span>
+              <button
+                @click="openChangeModeModal(student)"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[10px] font-bold border transition-all cursor-pointer active:scale-95"
+                :class="(student.mode || 'Regular') === 'Weekend'
+                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                  : 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border-sky-300 dark:border-sky-700'"
+                title="Change Study Mode"
+              >
+                <span>{{ student.mode || 'Regular' }}</span>
+                <ArrowRightLeft class="w-2.5 h-2.5" />
+              </button>
+            </div>
           </div>
 
           <!-- Enrolled Courses Preview -->
@@ -493,17 +554,27 @@
         </div>
 
         <!-- Card Footer Action -->
-        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-dark-outline/40 flex items-center justify-between">
+        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-dark-outline/40 flex items-center justify-between gap-2">
           <span class="text-[10px] font-mono text-slate-400">
             {{ student.enrolledCourses.length }} course(s)
           </span>
-          <button
-            @click="openCourseRegModal(student)"
-            class="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-semibold tracking-wide transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
-          >
-            <BookPlus class="w-3.5 h-3.5 text-secondary" />
-            <span>Manage Courses</span>
-          </button>
+          <div class="flex items-center gap-1.5">
+            <button
+              @click="openChangeModeModal(student)"
+              class="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 hover:border-secondary/50 text-slate-700 dark:text-white text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
+              title="Change Study Mode"
+            >
+              <ArrowRightLeft class="w-3 h-3 text-secondary" />
+              <span>Mode</span>
+            </button>
+            <button
+              @click="openCourseRegModal(student)"
+              class="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-semibold tracking-wide transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+            >
+              <BookPlus class="w-3.5 h-3.5 text-secondary" />
+              <span>Manage Courses</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -795,11 +866,11 @@
             </div>
           </div>
 
-          <!-- Program & Level -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Program, Level & Study Mode -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="space-y-1.5">
               <label for="student-prog-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-semibold">
-                Program of Study <span class="text-rose-500">*</span>
+                Program <span class="text-rose-500">*</span>
               </label>
               <select
                 id="student-prog-input"
@@ -815,7 +886,7 @@
 
             <div class="space-y-1.5">
               <label for="student-level-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-semibold">
-                Academic Level <span class="text-rose-500">*</span>
+                Level <span class="text-rose-500">*</span>
               </label>
               <select
                 id="student-level-input"
@@ -830,6 +901,21 @@
                 <option value="500">Level 500</option>
                 <option value="600">Level 600</option>
                 <option value="700">Level 700</option>
+              </select>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="student-mode-input" class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-white/75 font-semibold">
+                Study Mode <span class="text-rose-500">*</span>
+              </label>
+              <select
+                id="student-mode-input"
+                v-model="studentForm.mode"
+                required
+                class="w-full bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 font-mono"
+              >
+                <option value="Regular">Regular</option>
+                <option value="Weekend">Weekend</option>
               </select>
             </div>
           </div>
@@ -1024,6 +1110,294 @@
         </div>
       </div>
     </div>
+
+    <!-- ========================================== -->
+    <!-- 4. STUDENT STUDY MODE MANAGEMENT MODAL     -->
+    <!-- ========================================== -->
+    <div
+      v-if="isModeModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
+      @click.self="closeChangeModeModal"
+    >
+      <div class="relative w-full max-w-xl bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-outline rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+        <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/40 pointer-events-none"></div>
+        <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/40 pointer-events-none"></div>
+
+        <!-- Header -->
+        <div class="p-6 border-b border-slate-100 dark:border-dark-outline flex items-start justify-between gap-4 bg-slate-50/50 dark:bg-dark-muted/30">
+          <div class="flex items-start gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-secondary/15 text-secondary border border-secondary/30 flex items-center justify-center shrink-0">
+              <ArrowRightLeft class="w-6 h-6" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono uppercase tracking-wider text-secondary font-bold">
+                  STUDENT COHORT & ATTENDANCE MANAGEMENT
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.2 rounded-full bg-slate-200 dark:bg-dark-muted font-bold">
+                  {{ modeModalStudent?.displayId }}
+                </span>
+              </div>
+              <h2 class="text-xl font-display font-bold text-slate-900 dark:text-white mt-0.5">
+                Manage Student Study Mode
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-white/70">
+                Switch student study mode between Regular and Weekend cohorts to assign correct attendance lists.
+              </p>
+            </div>
+          </div>
+          <button @click="closeChangeModeModal" class="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-dark-muted transition-colors cursor-pointer">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <!-- Modal Body Content -->
+        <div class="p-6 overflow-y-auto space-y-5 flex-1 text-xs sm:text-sm">
+          <!-- Alert Banner -->
+          <div v-if="modeModalAlert" :class="['p-3 rounded-xl border flex items-center justify-between gap-2',
+            modeModalAlertType === 'success'
+              ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300 text-emerald-800 dark:text-emerald-300'
+              : 'bg-rose-50 dark:bg-rose-950/70 border-rose-300 text-rose-800 dark:text-rose-300'
+          ]">
+            <div class="flex items-center gap-2">
+              <CheckCircle2 v-if="modeModalAlertType === 'success'" class="w-4 h-4 text-emerald-600 shrink-0" />
+              <AlertCircle v-else class="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{{ modeModalAlert }}</span>
+            </div>
+            <button @click="modeModalAlert = ''" class="cursor-pointer font-bold">&times;</button>
+          </div>
+
+          <!-- Student Profile Summary Card -->
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-dark-muted/40 border border-slate-200/80 dark:border-dark-outline/60 flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-secondary/20 text-primary dark:text-secondary border border-secondary/30 flex items-center justify-center font-bold text-sm font-display shrink-0">
+                {{ getInitials(modeModalStudent?.name) }}
+              </div>
+              <div class="min-w-0">
+                <div class="font-bold text-slate-900 dark:text-white truncate text-sm">
+                  {{ modeModalStudent?.name }}
+                </div>
+                <div class="text-[11px] font-mono text-slate-400 flex items-center gap-2 truncate">
+                  <span class="text-secondary font-semibold">{{ modeModalStudent?.displayId }}</span>
+                  <span>·</span>
+                  <span class="truncate">{{ modeModalStudent?.email }}</span>
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-white/70 mt-0.5">
+                  {{ modeModalStudent?.program || 'General Program' }} · Level {{ modeModalStudent?.level || '100' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Current Mode Badge -->
+            <div class="text-right shrink-0">
+              <span class="text-[10px] font-mono text-slate-400 uppercase tracking-wider block font-semibold mb-1">Current Mode</span>
+              <span
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-bold border"
+                :class="(modeModalStudent?.mode || 'Regular') === 'Weekend'
+                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                  : 'bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 border-sky-300 dark:border-sky-700'"
+              >
+                <span class="w-1.5 h-1.5 rounded-full" :class="(modeModalStudent?.mode || 'Regular') === 'Weekend' ? 'bg-amber-500' : 'bg-sky-500'"></span>
+                {{ modeModalStudent?.mode || 'Regular' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Study Mode Selector Options -->
+          <div class="space-y-2">
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-600 dark:text-white/80 font-bold block">
+              Select New Study Mode <span class="text-rose-500">*</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Regular Option -->
+              <div
+                @click="selectedNewMode = 'Regular'"
+                :class="['p-4 rounded-2xl border-2 transition-all cursor-pointer relative',
+                  selectedNewMode === 'Regular'
+                    ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/40 shadow-xs ring-2 ring-sky-400/20'
+                    : 'border-slate-200 dark:border-dark-outline hover:border-slate-300 bg-white dark:bg-dark-surface'
+                ]"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-sky-500"></span>
+                    <span class="font-bold text-sm text-slate-900 dark:text-white">Regular Mode</span>
+                  </div>
+                  <span
+                    v-if="(modeModalStudent?.mode || 'Regular') === 'Regular'"
+                    class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-200 dark:bg-dark-muted text-slate-600 dark:text-slate-300 font-bold"
+                  >
+                    Current
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-white/70">
+                  Weekday timetable sessions (Monday – Friday). Eligible for Regular section roll calls.
+                </p>
+                <div v-if="selectedNewMode === 'Regular'" class="mt-2 text-[10px] font-mono font-bold text-sky-700 dark:text-sky-300 flex items-center gap-1">
+                  <CheckCircle2 class="w-3.5 h-3.5" /> Selected
+                </div>
+              </div>
+
+              <!-- Weekend Option -->
+              <div
+                @click="selectedNewMode = 'Weekend'"
+                :class="['p-4 rounded-2xl border-2 transition-all cursor-pointer relative',
+                  selectedNewMode === 'Weekend'
+                    ? 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/40 shadow-xs ring-2 ring-amber-400/20'
+                    : 'border-slate-200 dark:border-dark-outline hover:border-slate-300 bg-white dark:bg-dark-surface'
+                ]"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                    <span class="font-bold text-sm text-slate-900 dark:text-white">Weekend Mode</span>
+                  </div>
+                  <span
+                    v-if="(modeModalStudent?.mode || 'Regular') === 'Weekend'"
+                    class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-200 dark:bg-dark-muted text-slate-600 dark:text-slate-300 font-bold"
+                  >
+                    Current
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-white/70">
+                  Weekend timetable sessions (Saturday – Sunday). Eligible for Weekend section roll calls.
+                </p>
+                <div v-if="selectedNewMode === 'Weekend'" class="mt-2 text-[10px] font-mono font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1">
+                  <CheckCircle2 class="w-3.5 h-3.5" /> Selected
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Course Registration & Schedule Compatibility Check -->
+          <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-dark-outline/40">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-mono uppercase tracking-wider text-slate-600 dark:text-white/80 font-bold flex items-center gap-1.5">
+                <BookOpen class="w-3.5 h-3.5 text-secondary" />
+                Course Schedule Compatibility Check
+              </span>
+              <span class="text-[11px] font-mono text-slate-400">
+                {{ modeModalStudent?.enrolledCourses?.length || 0 }} Enrolled Module(s)
+              </span>
+            </div>
+
+            <!-- If Mismatches Found -->
+            <div
+              v-if="courseScheduleMismatches.length > 0"
+              class="p-4 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/70 space-y-2.5"
+            >
+              <div class="flex items-start gap-2.5">
+                <AlertTriangle class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div class="min-w-0">
+                  <h4 class="font-bold text-amber-900 dark:text-amber-200 text-xs">
+                    Schedule Mismatch Notice ({{ courseScheduleMismatches.length }} module{{ courseScheduleMismatches.length === 1 ? '' : 's' }})
+                  </h4>
+                  <p class="text-[11px] text-amber-800/90 dark:text-amber-300/80 mt-0.5">
+                    The student is registered in courses that do not currently have scheduled timetable slots for <strong>{{ selectedNewMode }}</strong> mode.
+                  </p>
+                </div>
+              </div>
+
+              <!-- List of mismatched courses -->
+              <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                <div
+                  v-for="item in courseScheduleMismatches"
+                  :key="item.course.id"
+                  class="p-2 rounded-xl bg-white/90 dark:bg-dark-surface/90 border border-amber-200 dark:border-amber-800/50 flex items-center justify-between text-xs gap-2"
+                >
+                  <div class="min-w-0">
+                    <span class="font-mono font-bold text-amber-800 dark:text-amber-300">{{ item.course.code }}</span>
+                    <span class="text-slate-700 dark:text-white truncate ml-1.5">{{ item.course.name }}</span>
+                  </div>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 shrink-0">
+                    {{ item.hasNoSchedules ? 'No timetable set' : `Only in ${item.availableModes.join(', ')}` }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-amber-200/80 dark:border-amber-800/40 flex items-center justify-between text-[11px] text-amber-900/80 dark:text-amber-300/90">
+                <span>Existing registrations and past attendance are preserved safely.</span>
+                <button
+                  type="button"
+                  @click="openCourseRegModal(modeModalStudent); closeChangeModeModal();"
+                  class="text-amber-800 dark:text-amber-200 font-bold hover:underline cursor-pointer"
+                >
+                  Resolve in Manage Courses ➜
+                </button>
+              </div>
+            </div>
+
+            <!-- All Compatible -->
+            <div
+              v-else-if="modeModalStudent?.enrolledCourses?.length > 0"
+              class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2"
+            >
+              <CheckCircle2 class="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>All {{ modeModalStudent.enrolledCourses.length }} registered module(s) have timetable schedules compatible with {{ selectedNewMode }} mode.</span>
+            </div>
+
+            <!-- No enrolled courses -->
+            <div
+              v-else
+              class="p-3 rounded-xl bg-slate-50 dark:bg-dark-muted/40 border border-slate-200 dark:border-dark-outline text-slate-500 text-xs flex items-center gap-2"
+            >
+              <CheckCircle2 class="w-4 h-4 text-slate-400 shrink-0" />
+              <span>Student is not currently enrolled in any courses. Mode can be changed freely.</span>
+            </div>
+          </div>
+
+          <!-- Integrity & History Guarantee Notice -->
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-dark-muted/30 border border-slate-200/70 dark:border-dark-outline/40 text-[11px] text-slate-500 dark:text-white/60 space-y-1">
+            <div class="font-bold font-mono uppercase text-slate-600 dark:text-white/70 flex items-center gap-1.5">
+              <ShieldCheck class="w-3.5 h-3.5 text-secondary" />
+              System Integrity Guarantee
+            </div>
+            <p>
+              Changing the study mode only updates the student's cohort category. <strong>Past attendance history, login credentials, and existing course records remain completely untouched.</strong> The student will automatically appear in future {{ selectedNewMode }} attendance roll calls.
+            </p>
+          </div>
+
+          <!-- Confirmation Step Banner -->
+          <div
+            v-if="selectedNewMode !== (modeModalStudent?.mode || 'Regular')"
+            class="p-3.5 rounded-2xl bg-secondary/10 border-2 border-secondary/40 space-y-2"
+          >
+            <div class="flex items-center gap-2 font-bold text-xs text-secondary">
+              <AlertCircle class="w-4 h-4" />
+              <span>Confirmation Required</span>
+            </div>
+            <p class="text-xs text-slate-700 dark:text-white/90">
+              Confirm changing <strong>{{ modeModalStudent?.name }}</strong> from
+              <span class="font-bold underline">{{ modeModalStudent?.mode || 'Regular' }}</span> to
+              <span class="font-bold underline text-secondary">{{ selectedNewMode }}</span> mode?
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 px-6 border-t border-slate-100 dark:border-dark-outline flex items-center justify-between bg-slate-50/50 dark:bg-dark-muted/30">
+          <button
+            type="button"
+            @click="closeChangeModeModal"
+            class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-dark-outline/70 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-dark-muted transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            @click="saveStudyMode"
+            :disabled="isSavingMode || selectedNewMode === (modeModalStudent?.mode || 'Regular')"
+            id="btn-confirm-save-mode"
+            class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-semibold transition-all shadow-md inline-flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Loader2 v-if="isSavingMode" class="w-4 h-4 animate-spin" />
+            <ArrowRightLeft v-else class="w-4 h-4 text-secondary" />
+            <span>{{ isSavingMode ? 'Updating Mode...' : `Change to ${selectedNewMode}` }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1057,7 +1431,9 @@ import {
   UserX,
   Eye,
   EyeOff,
-  Plus
+  Plus,
+  ArrowRightLeft,
+  ShieldCheck
 } from 'lucide-vue-next';
 
 const coursesStore = useCoursesStore();
@@ -1073,6 +1449,7 @@ const searchQuery = ref('');
 const statusFilter = ref('all'); // 'all', 'enrolled', 'unenrolled'
 const levelFilter = ref('all');   // 'all', '100', '200', '300', '400', '500', '600', '700'
 const programFilter = ref('all'); // 'all' or program string
+const modeFilter = ref('all');    // 'all', 'Regular', 'Weekend'
 const viewMode = ref('table');     // 'table' or 'cards'
 
 // Toast
@@ -1102,6 +1479,132 @@ const showRegAlert = (msg, type = 'success') => {
 };
 
 // ==========================================
+// STUDY MODE CHANGE MODAL STATE & LOGIC
+// ==========================================
+const isModeModalOpen = ref(false);
+const modeModalStudent = ref(null);
+const selectedNewMode = ref('Regular');
+const isSavingMode = ref(false);
+const modeModalAlert = ref('');
+const modeModalAlertType = ref('success');
+
+const openChangeModeModal = (student) => {
+  modeModalStudent.value = student;
+  selectedNewMode.value = student.mode === 'Weekend' ? 'Weekend' : 'Regular';
+  modeModalAlert.value = '';
+  isModeModalOpen.value = true;
+};
+
+const closeChangeModeModal = () => {
+  isModeModalOpen.value = false;
+  modeModalStudent.value = null;
+  modeModalAlert.value = '';
+};
+
+const showModeModalAlert = (msg, type = 'success') => {
+  modeModalAlert.value = msg;
+  modeModalAlertType.value = type;
+  setTimeout(() => { if (modeModalAlert.value === msg) modeModalAlert.value = ''; }, 4000);
+};
+
+// Compatibility check: Enrolled courses lacking schedule slots for the newly selected study mode
+const courseScheduleMismatches = computed(() => {
+  if (!modeModalStudent.value) return [];
+  const student = modeModalStudent.value;
+  const newMode = selectedNewMode.value;
+  const allSchedules = schedulesStore.schedules || [];
+
+  const mismatches = [];
+  for (const course of student.enrolledCourses || []) {
+    // Find schedules matching this course by ID or code
+    const courseSchedules = allSchedules.filter(
+      (s) => s.courseId === course.id || s.courseId === course.code
+    );
+
+    // Check if any schedule slot matches the new mode
+    const hasMatchingSchedule = courseSchedules.some(
+      (s) => (s.mode || '').trim().toLowerCase() === newMode.toLowerCase()
+    );
+
+    if (!hasMatchingSchedule) {
+      const availableModes = [...new Set(courseSchedules.map((s) => s.mode).filter(Boolean))];
+      mismatches.push({
+        course,
+        availableModes,
+        hasNoSchedules: courseSchedules.length === 0
+      });
+    }
+  }
+  return mismatches;
+});
+
+// Save Study Mode update to Supabase
+const saveStudyMode = async () => {
+  if (!modeModalStudent.value || !selectedNewMode.value) return;
+
+  const currentMode = modeModalStudent.value.mode || 'Regular';
+  const newMode = selectedNewMode.value;
+
+  if (newMode === currentMode) {
+    showModeModalAlert('Please select a different study mode.', 'error');
+    return;
+  }
+
+  isSavingMode.value = true;
+  modeModalAlert.value = '';
+
+  const studentId = modeModalStudent.value.id;
+  const studentName = modeModalStudent.value.name;
+
+  try {
+    // 1. Update Supabase users table (preserves all other columns, enrollments, and attendances)
+    const { error: supaErr } = await supabase
+      .from('users')
+      .update({
+        mode: newMode,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', studentId);
+
+    if (supaErr) throw supaErr;
+
+    // 2. Also update Express backend if running
+    try {
+      await api.put(`/users/${studentId}`, {
+        mode: newMode
+      });
+    } catch (backendErr) {
+      console.warn('Backend user mode sync notice:', backendErr.message);
+    }
+
+    // 3. Update in local reactive students array
+    const target = students.value.find((s) => s.id === studentId);
+    if (target) {
+      target.mode = newMode;
+    }
+    modeModalStudent.value.mode = newMode;
+
+    // 4. Update custom created students in localStorage if cached
+    try {
+      const localList = JSON.parse(localStorage.getItem('custom_created_students') || '[]');
+      const localItem = localList.find((s) => s.id === studentId);
+      if (localItem) {
+        localItem.mode = newMode;
+        localStorage.setItem('custom_created_students', JSON.stringify(localList));
+      }
+    } catch {}
+
+    showAlert(`Study mode for '${studentName}' successfully changed to ${newMode}!`, 'success');
+    closeChangeModeModal();
+  } catch (err) {
+    console.error('Failed to change study mode:', err);
+    showModeModalAlert(err.message || 'Failed to update student study mode.', 'error');
+  } finally {
+    isSavingMode.value = false;
+  }
+};
+
+// ==========================================
 // ADD / EDIT STUDENT MODAL STATE
 // ==========================================
 const isStudentModalOpen = ref(false);
@@ -1117,6 +1620,7 @@ const studentForm = ref({
   displayId: '',
   program: '',
   level: '100',
+  mode: 'Regular',
   password: ''
 });
 
@@ -1215,6 +1719,7 @@ const fetchStudentsData = async () => {
         name: u.name || u.full_name || existing?.name || 'Student Learner',
         email: u.email && u.email !== '—' ? u.email : (existing?.email || '—'),
         role: 'STUDENT',
+        mode: u.mode || existing?.mode || 'Regular',
         program: u.program || u.program_id || existing?.program || 'Computer Science',
         level: (u.level || existing?.level || '100').toString(),
         createdAt: u.created_at || u.createdAt || existing?.createdAt || new Date().toISOString()
@@ -1300,8 +1805,10 @@ const stats = computed(() => {
   const enrolled = students.value.filter((s) => s.enrolledCourses.length > 0).length;
   const unenrolled = total - enrolled;
   const totalEnrollments = students.value.reduce((acc, s) => acc + s.enrolledCourses.length, 0);
+  const regular = students.value.filter((s) => (s.mode || 'Regular') === 'Regular').length;
+  const weekend = students.value.filter((s) => (s.mode || 'Regular') === 'Weekend').length;
 
-  return { total, enrolled, unenrolled, totalEnrollments };
+  return { total, enrolled, unenrolled, totalEnrollments, regular, weekend };
 });
 
 // Filtered Students List
@@ -1322,6 +1829,10 @@ const filteredStudents = computed(() => {
     list = list.filter((s) => (s.program || '').toLowerCase() === programFilter.value.toLowerCase());
   }
 
+  if (modeFilter.value !== 'all') {
+    list = list.filter((s) => (s.mode || 'Regular').toLowerCase() === modeFilter.value.toLowerCase());
+  }
+
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim();
     list = list.filter((s) => {
@@ -1329,10 +1840,11 @@ const filteredStudents = computed(() => {
       const matchEmail = (s.email || '').toLowerCase().includes(q);
       const matchId = (s.displayId || '').toLowerCase().includes(q) || (s.id || '').toLowerCase().includes(q);
       const matchProg = (s.program || '').toLowerCase().includes(q);
+      const matchMode = (s.mode || 'Regular').toLowerCase().includes(q);
       const matchCourse = (s.enrolledCourses || []).some(
         (c) => (c.code || '').toLowerCase().includes(q) || (c.name || '').toLowerCase().includes(q)
       );
-      return matchName || matchEmail || matchId || matchProg || matchCourse;
+      return matchName || matchEmail || matchId || matchProg || matchMode || matchCourse;
     });
   }
 
@@ -1344,6 +1856,7 @@ const resetFilters = () => {
   statusFilter.value = 'all';
   levelFilter.value = 'all';
   programFilter.value = 'all';
+  modeFilter.value = 'all';
 };
 
 // ==========================================
@@ -1510,6 +2023,7 @@ const openAddStudentModal = () => {
     displayId: '',
     program: availablePrograms.value[0] || '',
     level: '100',
+    mode: 'Regular',
     password: ''
   };
   isStudentModalOpen.value = true;
@@ -1526,6 +2040,7 @@ const openEditStudentModal = (student) => {
     displayId: student.displayId || student.id_number || '',
     program: student.program || availablePrograms.value[0] || '',
     level: student.level || '100',
+    mode: student.mode || 'Regular',
     password: ''
   };
   isStudentModalOpen.value = true;
@@ -1546,6 +2061,7 @@ const saveStudent = async () => {
     const cleanEmail = studentForm.value.email.trim().toLowerCase();
     const cleanProgram = studentForm.value.program;
     const cleanLevel = studentForm.value.level;
+    const cleanMode = studentForm.value.mode || 'Regular';
 
     if (isEditingStudent.value) {
       // 1. Update Supabase
@@ -1554,6 +2070,7 @@ const saveStudent = async () => {
         email: cleanEmail,
         program: cleanProgram,
         level: cleanLevel,
+        mode: cleanMode,
         updated_at: new Date().toISOString()
       };
 
@@ -1570,6 +2087,7 @@ const saveStudent = async () => {
           email: cleanEmail,
           program: cleanProgram,
           level: cleanLevel,
+          mode: cleanMode,
           password: studentForm.value.password || undefined
         });
       } catch (e) {
@@ -1583,6 +2101,7 @@ const saveStudent = async () => {
         existing.email = cleanEmail;
         existing.program = cleanProgram;
         existing.level = cleanLevel;
+        existing.mode = cleanMode;
       }
 
       showAlert(`Student '${cleanName}' profile updated successfully!`, 'success');
@@ -1600,6 +2119,7 @@ const saveStudent = async () => {
           role: 'STUDENT',
           program: cleanProgram,
           level: cleanLevel,
+          mode: cleanMode,
           password: studentForm.value.password || 'Student@123'
         });
         if (res.status === 201 || res.status === 200) backendCreated = true;
@@ -1617,6 +2137,7 @@ const saveStudent = async () => {
           role: 'student',
           program: cleanProgram,
           level: cleanLevel,
+          mode: cleanMode,
           created_at: new Date().toISOString()
         });
       } catch (e) {
@@ -1634,6 +2155,7 @@ const saveStudent = async () => {
           role: 'STUDENT',
           program: cleanProgram,
           level: cleanLevel,
+          mode: cleanMode,
           created_at: new Date().toISOString()
         });
         localStorage.setItem('custom_created_students', JSON.stringify(localList));

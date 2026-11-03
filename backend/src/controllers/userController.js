@@ -114,7 +114,7 @@ export const getUserById = async (req, res) => {
  */
 export const createUser = async (req, res) => {
   try {
-    const { id, name, email, role, password, program, employmentType } = req.body;
+    const { id, name, email, role, password, program, employmentType, mode } = req.body;
 
     if (!name || !email || !role || !password) {
       return res.status(400).json({ message: 'Name, email, role, and password are required' });
@@ -180,7 +180,8 @@ export const createUser = async (req, res) => {
         passwordHash,
         role: normalizedRole,
         program: program ? program.trim() : null,
-        employmentType: normalizedEmployment
+        employmentType: normalizedEmployment,
+        mode: mode === 'Weekend' ? 'Weekend' : 'Regular'
       },
       select: {
         id: true,
@@ -225,7 +226,7 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role, program, password, employmentType } = req.body;
+    const { name, email, role, program, password, employmentType, mode } = req.body;
 
     const existingUser = await prisma.user.findUnique({ where: { id } });
     if (!existingUser) {
@@ -273,6 +274,10 @@ export const updateUser = async (req, res) => {
 
     if (program !== undefined) {
       updateData.program = program ? program.trim() : null;
+    }
+
+    if (mode !== undefined) {
+      updateData.mode = mode === 'Weekend' ? 'Weekend' : 'Regular';
     }
 
     if (password && password.trim()) {
