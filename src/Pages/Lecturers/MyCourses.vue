@@ -269,7 +269,8 @@ import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { supabase } from '@/stores/supabase';
 import { useProgrammesStore } from '@/stores/programmes';
-import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
+import { matchesLecturerSchedule, getLecturerAssignedCourses } from '@/utils/lecturerHelper';
+import api from '@/api.js';
 import { 
   BookOpen, 
   Users, 
@@ -342,47 +343,89 @@ onUnmounted(() => {
 });
 
 const lecturerCourses = computed(() => {
-  return schedules.value
-    .filter((s) => matchesLecturerSchedule(s, profile.value, authStore.user))
-    .map((s, index) => {
-      const course = coursesStore.getCourseById(s.courseId);
-      const allCourseEnrollments = enrollmentsStore.enrollmentsByCourse(s.courseId);
-      const sectionEnrollments = allCourseEnrollments.filter((e) => {
-        const studentMode = studentModeById.value[e.studentId];
-        return !s.mode || !studentMode || studentMode === s.mode;
-      });
+  const result = [];
+  const handledKeys = new Set();
 
-      const courseSessionIds = new Set(
-        sessions.value.filter((sess) => sess.courseId === s.courseId).map((sess) => sess.id)
-      );
+  const matchedSchedules = schedules.value.filter((s) =>
+    matchesLecturerSchedule(s, profile.value, authStore.user)
+  );
 
-      const sectionStudentIds = new Set(sectionEnrollments.map((e) => e.studentId));
-      const sectionAttendances = attendances.value.filter(
-        (a) => courseSessionIds.has(a.sessionId) && sectionStudentIds.has(a.studentId)
-      );
+  matchedSchedules.forEach((s, index) => {
+    const course = coursesStore.getCourseById(s.courseId);
+    if (s.courseId) handledKeys.add(s.courseId);
+    if (course?.id) handledKeys.add(course.id);
+    if (course?.code) handledKeys.add(course.code);
 
-      let avgAttendance = 0;
-      if (sectionAttendances.length > 0) {
-        const presentCount = sectionAttendances.filter((a) => a.status === 'present').length;
-        avgAttendance = Math.round((presentCount / sectionAttendances.length) * 100);
-      }
-
-      return {
-        id: s.id,
-        courseId: s.courseId,
-        code: course?.code ?? 'Unknown',
-        name: course?.name ?? 'Unknown Course',
-        day: s.day,
-        time: `${s.startTime} - ${s.endTime}`,
-        startTime: s.startTime,
-        endTime: s.endTime,
-        venue: s.venue,
-        mode: s.mode || 'Regular',
-        studentsCount: sectionEnrollments.length,
-        avgAttendance,
-        color: palette[index % palette.length],
-      };
+    const allCourseEnrollments = enrollmentsStore.enrollmentsByCourse(s.courseId);
+    const sectionEnrollments = allCourseEnrollments.filter((e) => {
+      const studentMode = studentModeById.value[e.studentId] || e.student?.mode;
+      return !s.mode || !studentMode || studentMode === s.mode;
     });
+
+    const courseSessionIds = new Set(
+      sessions.value.filter((sess) => sess.courseId === s.courseId || sess.courseId === course?.id).map((sess) => sess.id)
+    );
+
+    const sectionStudentIds = new Set(sectionEnrollments.map((e) => e.studentId));
+    const sectionAttendances = attendances.value.filter(
+      (a) => courseSessionIds.has(a.sessionId) && sectionStudentIds.has(a.studentId)
+    );
+
+    let avgAttendance = 0;
+    if (sectionAttendances.length > 0) {
+      const presentCount = sectionAttendances.filter((a) => a.status === 'present').length;
+      avgAttendance = Math.round((presentCount / sectionAttendances.length) * 100);
+    }
+
+    result.push({
+      id: s.id,
+      courseId: course?.id || s.courseId,
+      code: course?.code ?? (s.courseId?.length <= 10 ? s.courseId : 'Course'),
+      name: course?.name ?? 'Assigned Course',
+      day: s.day || 'Monday',
+      time: s.startTime && s.endTime ? `${s.startTime} - ${s.endTime}` : 'TBD',
+      startTime: s.startTime || '08:00',
+      endTime: s.endTime || '10:00',
+      venue: s.venue || 'Lecture Hall',
+      mode: s.mode || 'Regular',
+      studentsCount: sectionEnrollments.length,
+      avgAttendance,
+      color: palette[index % palette.length],
+    });
+  });
+
+  // Include any courses assigned to this lecturer without separate schedule rows
+  const allAssigned = getLecturerAssignedCourses(
+    schedules.value,
+    coursesStore.courses,
+    profile.value,
+    authStore.user
+  );
+
+  allAssigned.forEach((c) => {
+    if (!handledKeys.has(c.id) && !handledKeys.has(c.code)) {
+      handledKeys.add(c.id);
+      handledKeys.add(c.code);
+      const allCourseEnrollments = enrollmentsStore.enrollmentsByCourse(c.id);
+      result.push({
+        id: `course-${c.id}`,
+        courseId: c.id,
+        code: c.code,
+        name: c.name,
+        day: 'Monday',
+        time: 'TBD',
+        startTime: '08:00',
+        endTime: '10:00',
+        venue: 'Lecture Hall',
+        mode: 'Regular',
+        studentsCount: allCourseEnrollments.length,
+        avgAttendance: 0,
+        color: palette[result.length % palette.length],
+      });
+    }
+  });
+
+  return result;
 });
 
 const editingCourse = ref(null);
@@ -457,18 +500,36 @@ const openClassList = async (course) => {
       return;
     }
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, name, id_number, program_id')
-      .in('id', studentIds);
+    let list = [];
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, id_number, program_id')
+        .in('id', studentIds);
+      if (!error && data && data.length > 0) {
+        list = data.map((u) => ({
+          id: u.id,
+          name: u.name,
+          studentId: u.id_number || 'N/A',
+          programId: u.program_id,
+        }));
+      }
+    } catch {}
 
-    if (error) throw error;
-    studentsList.value = (data || []).map((u) => ({
-      id: u.id,
-      name: u.name,
-      studentId: u.id_number || 'N/A',
-      programId: u.program_id,
-    }));
+    if (list.length === 0) {
+      try {
+        const res = await api.get(`/courses/${course.courseId}/students`);
+        if (res.data && res.data.length > 0) {
+          list = res.data.map((u) => ({
+            id: u.id,
+            name: u.name,
+            studentId: u.studentId || u.id,
+            programId: u.program,
+          }));
+        }
+      } catch {}
+    }
+    studentsList.value = list;
   } catch (e) {
     console.error('Failed to load class list:', e);
   } finally {

@@ -265,7 +265,9 @@ export const getCourseStudents = async (req, res) => {
             id: true,
             name: true,
             email: true,
-            program: true
+            program: true,
+            mode: true,
+            level: true
           }
         }
       }
@@ -276,7 +278,9 @@ export const getCourseStudents = async (req, res) => {
       name: e.student.name,
       studentId: e.student.id, // For display purposes
       email: e.student.email,
-      program: e.student.program
+      program: e.student.program,
+      mode: e.student.mode || 'Regular',
+      level: e.student.level || '100'
     }));
 
     res.status(200).json(students);
@@ -355,5 +359,44 @@ export const archiveCourse = async (req, res) => {
   } catch (error) {
     console.error('Archive course error:', error);
     res.status(500).json({ message: 'Server error archiving course', error: error.message });
+  }
+};
+
+/**
+ * Get all enrollments master list
+ */
+export const getAllEnrollments = async (req, res) => {
+  try {
+    const { courseId, studentId } = req.query;
+    const where = {};
+    if (courseId) where.courseId = courseId;
+    if (studentId) where.studentId = studentId;
+
+    const enrollments = await prisma.enrollment.findMany({
+      where,
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            program: true,
+            mode: true,
+            level: true
+          }
+        },
+        course: {
+          select: {
+            id: true,
+            code: true,
+            name: true
+          }
+        }
+      }
+    });
+    res.status(200).json(enrollments);
+  } catch (error) {
+    console.error('Fetch all enrollments error:', error);
+    res.status(500).json({ message: 'Server error fetching enrollments', error: error.message });
   }
 };

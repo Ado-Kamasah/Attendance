@@ -292,7 +292,7 @@ import { useCoursesStore } from '@/stores/courses';
 import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
-import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
+import { matchesLecturerSchedule, getLecturerAssignedCourses } from '@/utils/lecturerHelper';
 import { 
   BookOpen, 
   Users, 
@@ -372,20 +372,28 @@ onUnmounted(() => {
 
 const lecturerName = computed(() => profile.value?.name ?? '');
 
-const lecturerCourseIds = computed(() => {
-  const ids = new Set(
-    schedules.value
-      .filter((s) => matchesLecturerSchedule(s, profile.value, authStore.user))
-      .map((s) => s.courseId)
+const lecturerCourses = computed(() => {
+  return getLecturerAssignedCourses(
+    schedules.value,
+    coursesStore.courses,
+    profile.value,
+    authStore.user
   );
-  return [...ids];
 });
 
-const lecturerCourses = computed(() =>
-  lecturerCourseIds.value
-    .map((id) => coursesStore.getCourseById(id))
-    .filter(Boolean)
-);
+const lecturerCourseIds = computed(() => {
+  const ids = new Set();
+  lecturerCourses.value.forEach((c) => {
+    if (c.id) ids.add(c.id);
+    if (c.code) ids.add(c.code);
+  });
+  schedules.value
+    .filter((s) => matchesLecturerSchedule(s, profile.value, authStore.user))
+    .forEach((s) => {
+      if (s.courseId) ids.add(s.courseId);
+    });
+  return [...ids];
+});
 
 const totalActiveCourses = computed(
   () => lecturerCourses.value.filter((c) => c.status === 'active').length

@@ -425,7 +425,7 @@ import { useCoursesStore } from '@/stores/courses.js';
 import { useSchedulesStore } from '@/stores/schedules.js';
 import { useEnrollmentsStore } from '@/stores/enrollments.js';
 import { supabase } from '@/stores/supabase';
-import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
+import { matchesLecturerSchedule, getLecturerAssignedCourses } from '@/utils/lecturerHelper';
 import {
   Users, Plus, Search, Trash2, X, CheckCircle2, AlertCircle,
   Loader2, BookOpen, Clock, Calendar
@@ -512,8 +512,20 @@ async function loadMyCourses() {
     const user = authStore.user;
     const allCourses = coursesStore.courses || [];
 
-    // 1. Gather course IDs from schedules matching this lecturer
+    // 1. Assigned courses from schedules and direct assignments
+    const assignedCourses = getLecturerAssignedCourses(
+      schedulesStore.schedules,
+      allCourses,
+      profile,
+      user
+    );
+
     const matchedCourseIds = new Set();
+    assignedCourses.forEach((c) => {
+      if (c.id) matchedCourseIds.add(c.id);
+      if (c.code) matchedCourseIds.add(c.code);
+    });
+
     (schedulesStore.schedules || []).forEach((s) => {
       if (isLecturerSchedule(s, profile, user)) {
         if (s.courseId) matchedCourseIds.add(s.courseId);
@@ -552,17 +564,6 @@ async function loadMyCourses() {
         program: c.program || c.programId || 'General',
       });
     });
-
-    // 4. Fallback: if no courses matched the schedules (e.g. testing or newly assigned lecturer)
-    if (list.length === 0 && allCourses.length > 0) {
-      list = allCourses.map((c) => ({
-        id: c.id,
-        code: c.code,
-        name: c.name,
-        level: c.level || '100',
-        program: c.program || c.programId || 'General',
-      }));
-    }
 
     myCourses.value = list;
   } catch (e) {

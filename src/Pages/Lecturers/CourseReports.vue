@@ -580,7 +580,7 @@ import { useSessionsStore } from '@/stores/sessions';
 import { useAttendancesStore } from '@/stores/attendances';
 import { supabase } from '@/stores/supabase';
 import AttendanceExportModal from '@/components/AttendanceExportModal.vue';
-import { matchesLecturerSchedule, normalizeTitleName } from '@/utils/lecturerHelper';
+import { matchesLecturerSchedule, normalizeTitleName, getLecturerAssignedCourses } from '@/utils/lecturerHelper';
 import {
   Download,
   BookOpen,
@@ -699,7 +699,7 @@ const isAdmin = computed(() => {
   return role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SUPERADMIN';
 });
 
-// Courses this lecturer actually teaches, inferred from schedules and held sessions
+// Courses this lecturer actually teaches, inferred from schedules, assignments, and held sessions
 const coursesForLecturer = computed(() => {
   if (isAdmin.value) {
     return courses.value;
@@ -710,10 +710,18 @@ const coursesForLecturer = computed(() => {
   const myName = (profile.value?.name || '').trim().toLowerCase();
   const cleanMyName = normalizeTitleName(myName);
 
-  const scheduledCourseIds = new Set();
+  const assigned = getLecturerAssignedCourses(
+    schedulesStore.schedules,
+    courses.value,
+    profile.value,
+    authStore.user
+  );
+  const assignedIds = new Set(assigned.map((c) => c.id));
+  const assignedCodes = new Set(assigned.map((c) => c.code));
+
   (schedulesStore.schedules || []).forEach((s) => {
     if (matchesLecturerSchedule(s, profile.value, authStore.user)) {
-      if (s.courseId) scheduledCourseIds.add(s.courseId);
+      if (s.courseId) assignedIds.add(s.courseId);
     }
   });
 
@@ -729,11 +737,11 @@ const coursesForLecturer = computed(() => {
       (cleanMyName && cleanSName && cleanMyName === cleanSName);
 
     if (matchesSessionLecturer && s.courseId) {
-      scheduledCourseIds.add(s.courseId);
+      assignedIds.add(s.courseId);
     }
   });
 
-  return courses.value.filter((c) => scheduledCourseIds.has(c.id));
+  return courses.value.filter((c) => assignedIds.has(c.id) || assignedCodes.has(c.code));
 });
 
 // Identifies whether a session belongs to the logged-in lecturer

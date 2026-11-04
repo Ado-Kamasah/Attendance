@@ -8,7 +8,8 @@ import {
   getAvailableCoursesForStudent,
   getCourseStudents,
   updateCourse,
-  archiveCourse
+  archiveCourse,
+  getAllEnrollments
 } from '../controllers/courseController.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
@@ -25,6 +26,9 @@ router.put('/:id', authenticateToken, requireRole(['ADMIN']), updateCourse);
 
 // Admin archives a course
 router.patch('/:id/archive', authenticateToken, requireRole(['ADMIN']), archiveCourse);
+
+// Master enrollments endpoint
+router.get('/enrollments/master', authenticateToken, getAllEnrollments);
 
 // Get student's enrolled courses
 router.get('/enrolled', authenticateToken, getStudentEnrollments);

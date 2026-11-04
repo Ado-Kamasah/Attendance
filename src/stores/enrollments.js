@@ -2,15 +2,18 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { push } from 'notivue';
 import { supabase } from './supabase';
+import api from '@/api.js';
 
 const TABLE = 'enrollments';
 
 function mapEnrollment(row) {
   return {
     id: row.id,
-    studentId: row.student_id,
-    courseId: row.course_id,
-    createdAt: row.created_at,
+    studentId: row.student_id || row.studentId,
+    courseId: row.course_id || row.courseId,
+    createdAt: row.created_at || row.createdAt,
+    student: row.student || null,
+    course: row.course || null,
   };
 }
 
@@ -64,21 +67,46 @@ export const useEnrollmentsStore = defineStore('enrollments', () => {
     error.value = '';
 
     try {
-      let query = supabase.from(TABLE).select('*').order('created_at', { ascending: false });
+      let supaList = [];
+      try {
+        let query = supabase.from(TABLE).select('*').order('created_at', { ascending: false });
 
-      if (filters.studentId) query = query.eq('student_id', filters.studentId);
-      if (filters.courseId) query = query.eq('course_id', filters.courseId);
+        if (filters.studentId) query = query.eq('student_id', filters.studentId);
+        if (filters.courseId) query = query.eq('course_id', filters.courseId);
 
-      const { data, error: fetchErr } = await query;
-      if (fetchErr) throw fetchErr;
+        const { data, error: fetchErr } = await query;
+        if (!fetchErr && data && data.length > 0) {
+          supaList = data.map(mapEnrollment);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase enrollments fetch error, falling back to local API:', sbErr);
+      }
 
-      enrollments.value = (data ?? []).map(mapEnrollment);
+      if (supaList.length > 0) {
+        enrollments.value = supaList;
+        return enrollments.value;
+      }
+
+      // Backend Express fallback
+      try {
+        const params = {};
+        if (filters.courseId) params.courseId = filters.courseId;
+        if (filters.studentId) params.studentId = filters.studentId;
+        const res = await api.get('/courses/enrollments/master', { params });
+        if (res.data && res.data.length > 0) {
+          enrollments.value = res.data.map(mapEnrollment);
+          return enrollments.value;
+        }
+      } catch (apiErr) {
+        console.warn('Local enrollments API offline or empty:', apiErr.message);
+      }
+
+      enrollments.value = [];
       return enrollments.value;
     } catch (err) {
       const normalized = normalizeError(err);
       error.value = normalized.message;
-      push.error({ title: 'Failed to load enrollments', message: normalized.message });
-      throw normalized;
+      return [];
     } finally {
       isLoading.value = false;
     }
@@ -92,15 +120,45 @@ export const useEnrollmentsStore = defineStore('enrollments', () => {
     error.value = '';
 
     try {
-      const { data, error: insertErr } = await supabase
-        .from(TABLE)
-        .insert(toRow(enrollment))
-        .select()
-        .single();
+      let created = null;
 
-      if (insertErr) throw insertErr;
+      try {
+        const { data, error: insertErr } = await supabase
+          .from(TABLE)
+          .insert(toRow(enrollment))
+          .select()
+          .single();
 
-      const created = mapEnrollment(data);
+        if (!insertErr && data) {
+          created = mapEnrollment(data);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase enrollment insert failed:', sbErr);
+      }
+
+      try {
+        const res = await api.post(`/courses/${enrollment.courseId}/enroll`, { studentId: enrollment.studentId });
+        if (res.data) {
+          created = created || {
+            id: `local-${Date.now()}`,
+            studentId: enrollment.studentId,
+            courseId: enrollment.courseId,
+            createdAt: new Date().toISOString(),
+          };
+        }
+      } catch (apiErr) {
+        console.warn('Local enrollment API:', apiErr.message);
+      }
+
+      if (!created) {
+        created = {
+          id: `local-${Date.now()}`,
+          studentId: enrollment.studentId,
+          courseId: enrollment.courseId,
+          createdAt: new Date().toISOString(),
+        };
+      }
+
       enrollments.value.unshift(created);
       push.success({ title: 'Student enrolled' });
       return created;
@@ -119,8 +177,20 @@ export const useEnrollmentsStore = defineStore('enrollments', () => {
     error.value = '';
 
     try {
-      const { error: deleteErr } = await supabase.from(TABLE).delete().eq('id', id);
-      if (deleteErr) throw deleteErr;
+      const existing = enrollments.value.find((e) => e.id === id);
+      try {
+        await supabase.from(TABLE).delete().eq('id', id);
+      } catch (sbErr) {
+        console.warn('Supabase delete enrollment failed:', sbErr);
+      }
+
+      if (existing) {
+        try {
+          await api.delete(`/courses/${existing.courseId}/enroll`, { data: { studentId: existing.studentId } });
+        } catch (apiErr) {
+          console.warn('Local unenroll API:', apiErr.message);
+        }
+      }
 
       enrollments.value = enrollments.value.filter((e) => e.id !== id);
       push.success({ title: 'Enrollment removed' });

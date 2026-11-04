@@ -65,7 +65,8 @@ export const useCoursesStore = defineStore('courses', () => {
   }
 
   function getCourseById(id) {
-    return courses.value.find((c) => c.id === id) ?? null;
+    if (!id) return null;
+    return courses.value.find((c) => c.id === id || c.code === id) ?? null;
   }
 
   function getCourseByCode(code) {
@@ -116,6 +117,9 @@ export const useCoursesStore = defineStore('courses', () => {
             level: c.level,
             semester: c.semester || 'Semester 1',
             status: c.status || 'active',
+            lecturer: c.lecturer || null,
+            lecturerId: c.lecturerId || null,
+            schedules: Array.isArray(c.schedules) ? c.schedules : [],
             createdAt: c.createdAt,
             updatedAt: c.updatedAt
           }));

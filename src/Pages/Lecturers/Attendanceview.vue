@@ -319,7 +319,7 @@ import { useEnrollmentsStore } from '@/stores/enrollments';
 import { useCoursesStore } from '@/stores/courses';
 import { useSchedulesStore } from '@/stores/schedules';
 import { useAuditLogsStore } from '@/stores/auditlogs';
-import { matchesLecturerSchedule } from '@/utils/lecturerHelper';
+import { matchesLecturerSchedule, getLecturerAssignedCourses } from '@/utils/lecturerHelper';
 import { supabase } from '@/stores/supabase';
 import api from '@/api.js';
 import { 
@@ -345,11 +345,12 @@ const { profile } = storeToRefs(authStore);
 
 // Strictly compute courses assigned to THIS lecturer
 const myAssignedCourses = computed(() => {
-  const mySchedules = (schedulesStore.schedules || []).filter((s) =>
-    matchesLecturerSchedule(s, profile.value, authStore.user)
+  return getLecturerAssignedCourses(
+    schedulesStore.schedules,
+    coursesStore.courses,
+    profile.value,
+    authStore.user
   );
-  const courseIdSet = new Set(mySchedules.map((s) => s.courseId));
-  return (coursesStore.courses || []).filter((c) => courseIdSet.has(c.id) || courseIdSet.has(c.code));
 });
 
 const courseId = ref(localStorage.getItem('activeCourseId') || '');
@@ -411,16 +412,18 @@ const loadStudentsForCourse = async (cId) => {
   try {
     await enrollmentsStore.fetchEnrollments({ courseId: cId });
     const studentIds = enrollmentsStore.enrollmentsByCourse(cId).map((e) => e.studentId);
+    let loadedStudents = [];
+
     if (studentIds.length > 0) {
       // Fetch users with their mode field so we can filter by study mode
       const { data, error } = await supabase
         .from('users')
         .select('id, name, email, id_number, mode')
         .in('id', studentIds);
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         // Update the global mode lookup
         data.forEach((u) => { studentModeById.value[u.id] = u.mode || ''; });
-        enrolledStudents.value = data.map((u) => ({
+        loadedStudents = data.map((u) => ({
           id: u.id,
           name: u.name,
           email: u.email,
@@ -428,9 +431,27 @@ const loadStudentsForCourse = async (cId) => {
           mode: u.mode || '',
         }));
       }
-    } else {
-      enrolledStudents.value = [];
     }
+
+    if (loadedStudents.length === 0) {
+      try {
+        const res = await api.get(`/courses/${cId}/students`);
+        if (res.data && res.data.length > 0) {
+          res.data.forEach((u) => { studentModeById.value[u.id] = u.mode || ''; });
+          loadedStudents = res.data.map((u) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            studentId: u.studentId || u.id,
+            mode: u.mode || 'Regular',
+          }));
+        }
+      } catch (backendErr) {
+        console.warn('Backend API getCourseStudents error:', backendErr.message);
+      }
+    }
+
+    enrolledStudents.value = loadedStudents;
   } catch (e) {
     console.error('Error fetching students:', e);
   }
