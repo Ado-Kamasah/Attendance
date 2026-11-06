@@ -382,6 +382,7 @@
                   v-model="fpOtp[i]"
                   @input="onFpOtpInput(i, $event)"
                   @keydown.backspace="onFpOtpBack(i, $event)"
+                  @paste="onFpOtpPaste($event)"
                   :ref="el => { if (el) fpOtpRefs[i] = el }"
                   class="w-11 h-12 text-center text-lg font-bold font-mono bg-background dark:bg-dark-background border-2 rounded-xl text-foreground dark:text-white transition-all focus:outline-none focus:ring-4 focus:ring-primary/10 dark:focus:ring-dark-secondary/10"
                   :class="fpOtp[i] ? 'border-secondary dark:border-dark-secondary shadow-sm' : 'border-outline dark:border-dark-outline'"
@@ -629,7 +630,8 @@ const handleResend = async () => {
 };
 
 // ── Forgot-password flow ────────────────────────────────────────────────────
-const OTP_API = import.meta.env.VITE_OTP_API_URL || '';
+const OTP_API = import.meta.env.VITE_OTP_API_URL || 'http://localhost:5000';
+const LOCAL_API = 'http://localhost:5000';
 
 const forgotOpen  = ref(false);
 const forgotStep  = ref(1);   // 1=email, 2=otp, 3=newPw, 4=done
@@ -651,6 +653,31 @@ const fpNewPw      = ref('');
 const fpConfirmPw  = ref('');
 const fpShowPw     = ref(false);
 
+/** Helper to call OTP API with automatic fallback to local backend if remote fails */
+async function fetchOtpApi(endpoint, bodyObj) {
+  const urlPrimary = `${OTP_API}${endpoint}`;
+  try {
+    const res = await fetch(urlPrimary, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyObj),
+    });
+    // If not a network error, return the response directly
+    return res;
+  } catch (netErr) {
+    // If remote service failed (e.g. offline / DNS), fallback to local backend if different
+    if (OTP_API !== LOCAL_API) {
+      console.warn(`Remote OTP API failed (${netErr.message}), falling back to ${LOCAL_API}...`);
+      return await fetch(`${LOCAL_API}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyObj),
+      });
+    }
+    throw netErr;
+  }
+}
+
 function startResendCountdown() {
   fpResendCountdown.value = 60;
   clearInterval(fpResendTimer);
@@ -662,7 +689,14 @@ function startResendCountdown() {
 
 function openForgot() {
   forgotStep.value = 1;
-  fpEmail.value = '';
+  // Prefill email if available from error or current input
+  if (forgotPrefillEmail.value) {
+    fpEmail.value = forgotPrefillEmail.value;
+  } else if (loginId.value) {
+    fpEmail.value = loginId.value.trim();
+  } else {
+    fpEmail.value = '';
+  }
   fpOtp.value = ['', '', '', '', '', ''];
   fpNewPw.value = '';
   fpConfirmPw.value = '';
@@ -674,6 +708,13 @@ function openForgot() {
 }
 
 function closeForgot() {
+  if (forgotStep.value === 4) {
+    // Successfully reset: prefill login input and clear password for instant sign in
+    loginId.value = fpEmail.value;
+    password.value = '';
+    errorMsg.value = '';
+    showForgotLink.value = false;
+  }
   forgotOpen.value = false;
   clearInterval(fpResendTimer);
 }
@@ -681,15 +722,24 @@ function closeForgot() {
 // Step 1 — send OTP
 async function sendFpOtp() {
   fpError.value = '';
-  if (!fpEmail.value.trim()) { fpError.value = 'Please enter your email.'; return; }
+  const raw = fpEmail.value.trim();
+  if (!raw) { fpError.value = 'Please enter your institutional email or ID.'; return; }
   fpLoading.value = true;
   try {
-    const res = await fetch(`${OTP_API}/api/auth/forgot-password/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: fpEmail.value.trim().toLowerCase() }),
-    });
-    const data = await res.json();
+    // Resolve ID to email if not containing '@'
+    let targetEmail = raw.toLowerCase();
+    if (!targetEmail.includes('@')) {
+      const resolved = await authStore.resolveLoginEmail(raw);
+      if (resolved) {
+        targetEmail = resolved;
+      } else {
+        targetEmail = `${raw.toLowerCase()}@southshore.edu.gh`;
+      }
+    }
+    fpEmail.value = targetEmail;
+
+    const res = await fetchOtpApi('/api/auth/forgot-password/send', { email: targetEmail });
+    const data = await res.json().catch(() => ({}));
     if (res.status === 429) throw new Error(data.message || 'Too many requests. Please wait.');
     if (!res.ok && res.status !== 200) throw new Error(data.message || 'Failed to send code.');
     // Advance to step 2
@@ -697,7 +747,7 @@ async function sendFpOtp() {
     fpOtp.value = ['', '', '', '', '', ''];
     startResendCountdown();
   } catch (e) {
-    fpError.value = e.message;
+    fpError.value = e.message || 'Failed to send reset code.';
   } finally {
     fpLoading.value = false;
   }
@@ -710,8 +760,25 @@ function onFpOtpInput(idx, event) {
   fpError.value = '';
   if (fpOtp.value[idx] && idx < 5) fpOtpRefs.value[idx + 1]?.focus();
 }
+
 function onFpOtpBack(idx, event) {
   if (!fpOtp.value[idx] && idx > 0) fpOtpRefs.value[idx - 1]?.focus();
+}
+
+function onFpOtpPaste(event) {
+  event.preventDefault();
+  const paste = (event.clipboardData || window.clipboardData)?.getData('text') || '';
+  const digits = paste.replace(/\D/g, '').slice(0, 6).split('');
+  if (digits.length === 0) return;
+  digits.forEach((d, i) => {
+    fpOtp.value[i] = d;
+  });
+  fpError.value = '';
+  const nextIdx = Math.min(digits.length, 5);
+  fpOtpRefs.value[nextIdx]?.focus();
+  if (digits.length === 6) {
+    verifyFpOtp();
+  }
 }
 
 // Step 2 — verify OTP
@@ -721,17 +788,16 @@ async function verifyFpOtp() {
   if (code.length < 6) { fpError.value = 'Enter the full 6-digit code.'; return; }
   fpLoading.value = true;
   try {
-    const res = await fetch(`${OTP_API}/api/auth/forgot-password/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: fpEmail.value.trim().toLowerCase(), otp: code }),
+    const res = await fetchOtpApi('/api/auth/forgot-password/verify', {
+      email: fpEmail.value.trim().toLowerCase(),
+      otp: code
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || 'Invalid or expired code.');
     fpResetToken.value = data.resetToken;
     forgotStep.value = 3;
   } catch (e) {
-    fpError.value = e.message;
+    fpError.value = e.message || 'Failed to verify code.';
     fpOtp.value = ['', '', '', '', '', ''];
     fpOtpRefs.value[0]?.focus();
   } finally {
@@ -746,20 +812,16 @@ async function resetFpPassword() {
   if (fpNewPw.value !== fpConfirmPw.value) { fpError.value = 'Passwords do not match.'; return; }
   fpLoading.value = true;
   try {
-    const res = await fetch(`${OTP_API}/api/auth/forgot-password/reset`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: fpEmail.value.trim().toLowerCase(),
-        resetToken: fpResetToken.value,
-        newPassword: fpNewPw.value,
-      }),
+    const res = await fetchOtpApi('/api/auth/forgot-password/reset', {
+      email: fpEmail.value.trim().toLowerCase(),
+      resetToken: fpResetToken.value,
+      newPassword: fpNewPw.value,
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || 'Failed to reset password.');
     forgotStep.value = 4;
   } catch (e) {
-    fpError.value = e.message;
+    fpError.value = e.message || 'Failed to update password.';
   } finally {
     fpLoading.value = false;
   }

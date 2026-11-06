@@ -1346,7 +1346,7 @@ app.post('/api/auth/forgot-password/send', async (req, res) => {
   const { data: profile, error: profileErr } = await supabase
     .from('users')
     .select('id, name, email')
-    .eq('email', email)
+    .ilike('email', email)
     .maybeSingle()
 
   if (profileErr) {
@@ -1506,20 +1506,38 @@ app.post('/api/auth/forgot-password/reset', async (req, res) => {
     return res.status(400).json({ message: INVALID_MESSAGE })
   }
 
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  let targetAuthId = null;
+
   const { data: profile, error: profileErr } = await supabase
     .from('users')
     .select('id')
-    .eq('email', email)
-    .maybeSingle()
+    .ilike('email', email)
+    .maybeSingle();
 
-  if (profileErr || !profile) {
-    console.error('❌ Failed to look up user for password reset:', profileErr?.message)
-    return res.status(500).json({ message: 'Something went wrong. Please try again.' })
+  if (profile?.id && uuidRegex.test(profile.id)) {
+    targetAuthId = profile.id;
+  } else {
+    // Resolve UUID from Supabase Auth admin
+    try {
+      const { data: authList, error: listErr } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      if (!listErr && authList?.users) {
+        const found = authList.users.find(u => u.email && u.email.toLowerCase() === email);
+        if (found) targetAuthId = found.id;
+      }
+    } catch (e) {
+      console.warn('Notice listing auth users:', e.message);
+    }
   }
 
-  const { error: adminErr } = await supabase.auth.admin.updateUserById(profile.id, {
+  if (!targetAuthId) {
+    console.error('❌ Failed to look up user auth ID for password reset:', email, profileErr?.message);
+    return res.status(500).json({ message: 'User account not found for password reset. Please contact administration.' });
+  }
+
+  const { error: adminErr } = await supabase.auth.admin.updateUserById(targetAuthId, {
     password: newPassword,
-  })
+  });
 
   if (adminErr) {
     console.error(`❌ Failed to update password for ${email}:`, adminErr.message)

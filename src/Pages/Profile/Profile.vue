@@ -435,6 +435,7 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/authstore';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
+import api from '@/api.js';
 import { 
   Edit3, 
   CheckCircle2, 
@@ -579,6 +580,15 @@ async function changePassword() {
   try {
     const { error } = await supabase.auth.updateUser({ password: pwForm.value.newPassword });
     if (error) throw error;
+
+    // Also sync password hash to local backend if user exists there
+    try {
+      if (profile.value?.id) {
+        await api.put(`/users/${profile.value.id}`, { password: pwForm.value.newPassword });
+      }
+    } catch (localSyncErr) {
+      console.warn('Backend password sync notice:', localSyncErr?.message);
+    }
     pwForm.value = { newPassword: '', confirmPassword: '' };
     showPasswordSection.value = false;
     auditLogsStore.logAction({
