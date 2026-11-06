@@ -80,7 +80,7 @@
                 <span class="text-[10px] font-mono uppercase tracking-wider font-bold"
                   :class="registrationOpen ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'"
                 >
-                  {{ registrationOpen ? '⏳ REGISTRATION WINDOW ACTIVE' : '🔒 REGISTRATION WINDOW CLOSED' }}
+                  {{ registrationOpen ? '⏳ REGISTRATION WINDOW ACTIVE' : (isManuallyClosed ? '🔒 REGISTRATION CLOSED BY ADMIN' : '🔒 REGISTRATION WINDOW CLOSED') }}
                 </span>
               </div>
               <p class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
@@ -106,10 +106,12 @@
           <div v-else class="flex flex-col items-end gap-1 shrink-0">
             <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-100 dark:bg-rose-900/60 border border-rose-300 dark:border-rose-700">
               <Lock class="w-4 h-4 text-rose-600 dark:text-rose-400" />
-              <span class="font-mono font-bold text-sm text-rose-800 dark:text-rose-200">Window Expired</span>
+              <span class="font-mono font-bold text-sm text-rose-800 dark:text-rose-200">
+                {{ isManuallyClosed ? 'Closed by Admin' : 'Window Expired' }}
+              </span>
             </div>
             <span class="text-[10px] font-mono text-slate-400">
-              Closed {{ daysOverDeadline }} day{{ daysOverDeadline === 1 ? '' : 's' }} ago
+              {{ isManuallyClosed ? 'Registration is currently locked' : `Closed ${daysOverDeadline} day${daysOverDeadline === 1 ? '' : 's'} ago` }}
             </span>
           </div>
         </div>
@@ -157,9 +159,14 @@
         <div v-if="!registrationOpen" class="mt-1 p-3 rounded-xl bg-rose-100/80 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 flex items-start gap-2.5">
           <ShieldAlert class="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
           <div>
-            <p class="text-xs font-bold text-rose-800 dark:text-rose-300">Self-registration is no longer available</p>
+            <p class="text-xs font-bold text-rose-800 dark:text-rose-300">
+              {{ isManuallyClosed ? 'Course registration closed by administration' : 'Self-registration is no longer available' }}
+            </p>
             <p class="text-[11px] font-mono text-rose-700 dark:text-rose-400 mt-0.5">
-              The 2-week enrollment window has passed. To register late or make changes, please contact your Academic Office or Registry — only administrators can process course registrations on your behalf at this stage.
+              {{ isManuallyClosed
+                ? 'An academic administrator has closed course enrollment for this semester. Contact the Academic Registry for assistance or late approval.'
+                : 'The enrollment deadline has passed. To register late or make changes, please contact your Academic Office or Registry — only administrators can process registrations on your behalf.'
+              }}
             </p>
           </div>
         </div>
@@ -186,13 +193,18 @@
         </div>
 
         <h2 class="text-2xl font-display font-extrabold text-slate-900 dark:text-white mb-2">
-          Registration Window Expired
+          {{ isManuallyClosed ? 'Course Registration Closed' : 'Registration Window Expired' }}
         </h2>
         <p class="text-sm font-mono text-slate-500 dark:text-white/70 max-w-md mb-3">
-          The 2-week self-registration period for <strong class="text-slate-700 dark:text-slate-200">{{ activeSemester?.name }}</strong> ended on <strong class="text-rose-600 dark:text-rose-400">{{ formatDate(registrationDeadline) }}</strong>.
+          <span v-if="isManuallyClosed">
+            Course self-registration for <strong class="text-slate-700 dark:text-slate-200">{{ activeSemester?.name }}</strong> has been closed by your academic administrator.
+          </span>
+          <span v-else>
+            The self-registration period for <strong class="text-slate-700 dark:text-slate-200">{{ activeSemester?.name }}</strong> ended on <strong class="text-rose-600 dark:text-rose-400">{{ formatDate(registrationDeadline) }}</strong>.
+          </span>
         </p>
         <p class="text-xs font-mono text-slate-400 dark:text-white/50 max-w-sm">
-          To enroll in courses after the deadline, you must visit the Academic Registry or Student Services desk and request admin-assisted course registration.
+          To enroll in courses while self-registration is closed, you must visit the Academic Registry or Student Services desk and request admin-assisted course registration.
         </p>
 
         <!-- Show currently enrolled courses if any -->
@@ -239,7 +251,7 @@
     <!-- ============================================================ -->
     <!-- OPEN STATE: Normal registration UI                           -->
     <!-- ============================================================ -->
-    <div v-if="registrationOpen || !activeSemester">
+    <div v-if="registrationOpen && activeSemester">
       <!-- Notification Toast Banners -->
       <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
         <div v-if="feedbackMsg" class="p-3.5 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-between gap-2.5 mb-6" :class="feedbackIsError ? 'bg-error/10 border-error/30 text-error' : 'bg-success/10 border-success/30 text-success'">
@@ -535,22 +547,48 @@ const currentUserProgram = computed(() => profile.value?.program || 'Enrolled St
 // REGISTRATION WINDOW LOGIC
 // ==========================================
 
-/** Deadline = semester start + 14 days */
+/** Whether registration was manually closed by administrator */
+const isManuallyClosed = computed(() => {
+  return activeSemester.value?.registrationOpen === false;
+});
+
+/** Registration deadline: admin-defined date, or fallback to semester start + 14 days */
 const registrationDeadline = computed(() => {
+  if (activeSemester.value?.registrationDeadline) {
+    const dl = new Date(activeSemester.value.registrationDeadline);
+    dl.setHours(23, 59, 59, 999);
+    return dl;
+  }
   if (!activeSemester.value?.startDate) return null;
   const start = new Date(activeSemester.value.startDate);
   const deadline = new Date(start);
   deadline.setDate(start.getDate() + REGISTRATION_WINDOW_DAYS);
-  deadline.setHours(23, 59, 59, 999); // End of day 14
+  deadline.setHours(23, 59, 59, 999);
   return deadline;
 });
 
 /** Whether the registration window is currently open */
 const registrationOpen = computed(() => {
-  if (!activeSemester.value?.startDate) return false;
+  if (!activeSemester.value) return false;
+
+  // 1. Explicit admin closure overrides all
+  if (activeSemester.value.registrationOpen === false) return false;
+
+  // 2. Explicit admin open (manual override) - admin has opened it
+  if (activeSemester.value.registrationOpen === true) {
+    // If admin explicitly set a custom deadline date, check if that deadline has passed
+    if (activeSemester.value.registrationDeadline && registrationDeadline.value) {
+      if (now.value > registrationDeadline.value) return false;
+    }
+    // Otherwise, admin has explicitly opened registration!
+    return true;
+  }
+
+  // 3. Fallback when unset: default 14-day auto window
+  if (!activeSemester.value.startDate) return false;
   const start = new Date(activeSemester.value.startDate);
-  if (now.value < start) return false; // Semester hasn't started yet
-  return now.value <= registrationDeadline.value;
+  if (now.value < start) return false;
+  return registrationDeadline.value ? now.value <= registrationDeadline.value : false;
 });
 
 /** Days past the semester start (clamped to 0 minimum) */

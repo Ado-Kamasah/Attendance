@@ -120,12 +120,16 @@ model Faculty {
 }
 
 model Semester {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  startDate DateTime?
-  endDate   DateTime?
-  isActive  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id                   String    @id @default(uuid())
+  name                 String    @unique
+  startDate            DateTime?
+  endDate              DateTime?
+  examsStart           DateTime?
+  examsEnd             DateTime?
+  registrationDeadline DateTime?
+  registrationOpen     Boolean   @default(true)
+  isActive             Boolean   @default(false)
+  createdAt            DateTime  @default(now())
 }
 
 model AuditLog {

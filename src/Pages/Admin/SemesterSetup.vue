@@ -97,6 +97,45 @@
             </div>
           </div>
 
+          <!-- ============================= -->
+          <!-- COURSE REGISTRATION WINDOW    -->
+          <!-- ============================= -->
+          <div class="rounded-xl border border-slate-200 dark:border-dark-outline/70 bg-slate-50/60 dark:bg-dark-muted/30 p-4 space-y-4">
+            <div class="flex items-center gap-2 mb-1">
+              <BookOpen class="w-4 h-4 text-secondary" />
+              <span class="text-[11px] font-mono uppercase tracking-wider text-slate-600 dark:text-white/80 font-bold">Course Registration Window</span>
+            </div>
+
+            <!-- Registration Deadline date picker -->
+            <div class="space-y-1">
+              <label class="text-[10px] text-slate-400 dark:text-white/50 font-mono">Registration Deadline (optional — overrides the auto 14-day window)</label>
+              <input type="date" v-model="form.registrationDeadline"
+                class="w-full bg-white dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50" />
+            </div>
+
+            <!-- Registration Open toggle -->
+            <label class="flex items-center justify-between gap-3 cursor-pointer group p-3 rounded-xl border border-slate-200 dark:border-dark-outline/60 bg-white dark:bg-dark-surface hover:border-secondary/40 transition-colors">
+              <div>
+                <div class="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
+                  <component :is="form.registrationOpen ? Unlock : Lock" class="w-3.5 h-3.5" :class="form.registrationOpen ? 'text-emerald-500' : 'text-rose-500'" />
+                  Registration {{ form.registrationOpen ? 'Open' : 'Closed' }}
+                </div>
+                <div class="text-xs text-slate-400 dark:text-white/50 mt-0.5">
+                  {{ form.registrationOpen
+                    ? 'Students can self-register for courses.'
+                    : 'Students cannot register — only admins can enroll.' }}
+                </div>
+              </div>
+              <!-- Toggle switch -->
+              <button type="button" @click="form.registrationOpen = !form.registrationOpen"
+                :class="['relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-secondary/50 flex-shrink-0',
+                  form.registrationOpen ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600']">
+                <span :class="['inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                  form.registrationOpen ? 'translate-x-6' : 'translate-x-1']" />
+              </button>
+            </label>
+          </div>
+
           <!-- Active checkbox -->
           <label class="flex items-start gap-3 cursor-pointer group">
             <input type="checkbox" v-model="form.isCurrent"
@@ -130,10 +169,21 @@
         <div v-if="activeSemester" class="relative bg-primary dark:bg-[#0a1f3d] border border-primary/80 dark:border-secondary/40 rounded-2xl p-5 shadow-md overflow-hidden">
           <div class="absolute inset-0 bg-[radial-gradient(#bc9333_1px,transparent_1px)] opacity-[0.06] bg-[size:14px_14px] pointer-events-none"></div>
           <div class="relative z-10">
-            <span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary/20 text-secondary border border-secondary/30 mb-3">
-              <span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
-              CURRENTLY ACTIVE
-            </span>
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+              <span class="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary/20 text-secondary border border-secondary/30">
+                <span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+                CURRENTLY ACTIVE
+              </span>
+              <!-- Registration status pill on active card -->
+              <span :class="['inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border',
+                activeSemester.registrationOpen
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  : 'bg-rose-500/20 text-rose-300 border-rose-500/40']">
+                <component :is="activeSemester.registrationOpen ? Unlock : Lock" class="w-2.5 h-2.5" />
+                REG {{ activeSemester.registrationOpen ? 'OPEN' : 'CLOSED' }}
+              </span>
+            </div>
+
             <div class="text-2xl font-display font-extrabold text-white">{{ activeSemester.year }}</div>
             <div class="text-sm font-bold text-secondary mt-1">{{ activeSemester.term }}</div>
             <div class="mt-4 space-y-2">
@@ -147,7 +197,23 @@
                 <span>Semester Ends</span>
                 <span class="ml-auto font-mono text-white font-bold">{{ formatDate(activeSemester.examsEnd || activeSemester.endDate) }}</span>
               </div>
+              <div v-if="activeSemester.registrationDeadline" class="flex items-center gap-2 text-xs text-white/70">
+                <div class="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
+                <span>Reg. Deadline</span>
+                <span class="ml-auto font-mono text-white font-bold">{{ formatDate(activeSemester.registrationDeadline) }}</span>
+              </div>
             </div>
+
+            <!-- Quick-toggle on active semester -->
+            <button @click="toggleReg(activeSemester.id, !activeSemester.registrationOpen)"
+              :disabled="semestersStore.isLoading"
+              :class="['mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wide border transition-all disabled:opacity-50',
+                activeSemester.registrationOpen
+                  ? 'bg-rose-500/20 border-rose-400/40 text-rose-300 hover:bg-rose-500/30'
+                  : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/30']">
+              <component :is="activeSemester.registrationOpen ? Lock : Unlock" class="w-3.5 h-3.5" />
+              {{ activeSemester.registrationOpen ? 'Close Registration' : 'Open Registration' }}
+            </button>
           </div>
         </div>
 
@@ -180,9 +246,20 @@
                     <span v-if="editingSemesterId === sem.id" class="inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary dark:bg-secondary/10 dark:text-secondary border border-primary/20 dark:border-secondary/20">
                       EDITING...
                     </span>
+                    <!-- Registration status badge -->
+                    <span :class="['inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full border',
+                      sem.registrationOpen
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700'
+                        : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-700']">
+                      <component :is="sem.registrationOpen ? Unlock : Lock" class="w-2 h-2" />
+                      {{ sem.registrationOpen ? 'REG OPEN' : 'REG CLOSED' }}
+                    </span>
                   </div>
                   <div class="text-[11px] font-mono text-slate-400 dark:text-white/50 mt-0.5">
                     {{ formatDate(sem.startDate) }} — {{ formatDate(sem.endDate) }}
+                  </div>
+                  <div v-if="sem.registrationDeadline" class="text-[10px] font-mono text-amber-600 dark:text-amber-400 mt-0.5">
+                    Reg. deadline: {{ formatDate(sem.registrationDeadline) }}
                   </div>
 
                   <!-- Inline delete confirmation bar -->
@@ -210,6 +287,15 @@
                       class="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-1 rounded-lg text-slate-500 dark:text-white/60 hover:text-primary dark:hover:text-secondary hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
                       <Edit3 class="w-3 h-3" /> Edit
                     </button>
+                    <!-- Registration quick-toggle -->
+                    <button @click="toggleReg(sem.id, !sem.registrationOpen)" :disabled="semestersStore.isLoading"
+                      :class="['inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-1 rounded-lg border transition-colors disabled:opacity-50',
+                        sem.registrationOpen
+                          ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-transparent hover:border-rose-200 dark:hover:border-rose-800'
+                          : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-transparent hover:border-emerald-200 dark:hover:border-emerald-800']">
+                      <component :is="sem.registrationOpen ? Lock : Unlock" class="w-3 h-3" />
+                      {{ sem.registrationOpen ? 'Close Reg.' : 'Open Reg.' }}
+                    </button>
                     <button @click="confirmDeleteId = sem.id"
                       class="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-800 transition-colors">
                       <Trash2 class="w-3 h-3" /> Delete
@@ -230,7 +316,10 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useSemestersStore } from '@/stores/semesters';
 import { useAuditLogsStore } from '@/stores/auditlogs';
 import { supabase } from '@/stores/supabase';
-import { GraduationCap, Save, Clock, CheckCircle2, Edit3, Trash2, Loader2, AlertTriangle } from 'lucide-vue-next';
+import {
+  GraduationCap, Save, Clock, CheckCircle2, Edit3, Trash2, Loader2, AlertTriangle,
+  Lock, Unlock, BookOpen
+} from 'lucide-vue-next';
 
 const semestersStore = useSemestersStore();
 const auditLogsStore = useAuditLogsStore();
@@ -238,7 +327,17 @@ const auditLogsStore = useAuditLogsStore();
 // Template ref used to scroll the form into view when Edit is clicked
 const formPanel = ref(null);
 
-const initialForm = { year: '', term: '', startDate: '', endDate: '', examsStart: '', examsEnd: '', isCurrent: false };
+const initialForm = {
+  year: '',
+  term: '',
+  startDate: '',
+  endDate: '',
+  examsStart: '',
+  examsEnd: '',
+  registrationDeadline: '',
+  registrationOpen: true,
+  isCurrent: false,
+};
 const form = ref({ ...initialForm });
 const editingSemesterId = ref(null);
 const confirmDeleteId = ref(null);
@@ -305,6 +404,8 @@ const editSemester = (sem) => {
     endDate: sem.endDate ? sem.endDate.split('T')[0] : '',
     examsStart: sem.examsStart ? sem.examsStart.split('T')[0] : '',
     examsEnd: sem.examsEnd ? sem.examsEnd.split('T')[0] : '',
+    registrationDeadline: sem.registrationDeadline ? sem.registrationDeadline.split('T')[0] : '',
+    registrationOpen: sem.registrationOpen !== undefined ? sem.registrationOpen : true,
     isCurrent: sem.isCurrent,
   };
   formPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -318,6 +419,8 @@ const saveSemester = async () => {
     endDate: form.value.endDate,
     examsStart: form.value.examsStart || null,
     examsEnd: form.value.examsEnd || null,
+    registrationDeadline: form.value.registrationDeadline || null,
+    registrationOpen: form.value.registrationOpen,
   };
   try {
     let semesterId = editingSemesterId.value;
@@ -346,6 +449,20 @@ const setActive = async (id) => {
     if (sem) logAudit('semester_activated', `Set semester "${sem.name}" as active`);
   } catch (err) {
     console.error('Error setting active semester:', err);
+  }
+};
+
+/** Toggle registration open/closed for a semester */
+const toggleReg = async (id, open) => {
+  try {
+    const sem = semesters.value.find((s) => s.id === id);
+    await semestersStore.toggleRegistration(id, open);
+    logAudit(
+      open ? 'registration_opened' : 'registration_closed',
+      `${open ? 'Opened' : 'Closed'} course registration for "${sem?.name ?? id}"`
+    );
+  } catch (err) {
+    console.error('Error toggling registration:', err);
   }
 };
 

@@ -5,7 +5,6 @@
 
 /**
  * Normalizes a person's name by stripping honorific titles and extra whitespace.
- * Handles both "Dr. Kwame" and "Dr Kwame", as well as parenthetical annotations like "(CS)".
  * @param {string} name
  * @returns {string}
  */
@@ -13,9 +12,7 @@ export function normalizeTitleName(name) {
   if (!name || typeof name !== 'string') return '';
   return name
     .toLowerCase()
-    .replace(/\b(dr|prof|professor|mr|mrs|ms|assoc\s*prof|associate\s*professor|rev|reverend|ing|engr|lecturer|instructor)\b\.?/gi, ' ')
-    .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/^(dr\.|prof\.|mr\.|mrs\.|ms\.|assoc\.\s*prof\.|rev\.)\s+/i, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -51,7 +48,7 @@ export function matchesLecturerSchedule(schedule, profile, user) {
   }
 
   // 2. Match by Email
-  if (pEmail && sLect && sLect.toLowerCase() === pEmail) {
+  if (pEmail && sLect.toLowerCase() === pEmail) {
     return true;
   }
 
@@ -61,55 +58,12 @@ export function matchesLecturerSchedule(schedule, profile, user) {
   }
 
   // 4. Exact title-stripped normalized name matching (e.g., "Dr. Kwame Nkrumah" === "Kwame Nkrumah")
+  // Strict EQUALITY only — NEVER use .includes() as it causes partial name collisions!
   const cleanSLect = normalizeTitleName(sLect);
   const cleanPName = normalizeTitleName(pName);
 
-  if (cleanSLect && cleanPName) {
-    if (cleanSLect === cleanPName) {
-      return true;
-    }
-
-    // Compare word tokens (order-independent matching for full names, e.g. "Nkrumah Kwame" vs "Kwame Nkrumah")
-    const wordsSLect = cleanSLect.split(' ').filter(Boolean);
-    const wordsPName = cleanPName.split(' ').filter(Boolean);
-
-    if (wordsSLect.length >= 2 && wordsPName.length >= 2) {
-      // Check if both contain the exact same words
-      const sortedA = [...wordsSLect].sort().join(' ');
-      const sortedB = [...wordsPName].sort().join(' ');
-      if (sortedA === sortedB) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-/**
- * Checks whether a course is assigned to the specified lecturer
- * via course.lecturer, course.lecturerId, or any embedded schedule.
- *
- * @param {object} course
- * @param {object} profile
- * @param {object} [user]
- * @returns {boolean}
- */
-export function matchesLecturerCourse(course, profile, user) {
-  if (!course) return false;
-
-  // Direct lecturer fields on the course
-  if (course.lecturer || course.lecturerId) {
-    if (matchesLecturerSchedule({ lecturer: course.lecturer, lecturerId: course.lecturerId }, profile, user)) {
-      return true;
-    }
-  }
-
-  // Embedded schedules array on the course
-  if (Array.isArray(course.schedules) && course.schedules.length > 0) {
-    if (course.schedules.some((s) => matchesLecturerSchedule(s, profile, user))) {
-      return true;
-    }
+  if (cleanSLect && cleanPName && cleanSLect === cleanPName) {
+    return true;
   }
 
   return false;
@@ -124,17 +78,12 @@ export function filterLecturerSchedules(schedules, profile, user) {
 }
 
 /**
- * Retrieves the distinct courses taught by a lecturer according to the schedule roster
- * and direct course assignments.
+ * Retrieves the distinct courses taught by a lecturer according to the schedule roster.
  */
 export function getLecturerAssignedCourses(schedules, allCourses, profile, user) {
   if (!Array.isArray(allCourses)) return [];
   const mySchedules = filterLecturerSchedules(schedules, profile, user);
   const courseIdSet = new Set(mySchedules.map((s) => s.courseId));
 
-  return allCourses.filter((c) => {
-    if (courseIdSet.has(c.id) || courseIdSet.has(c.code)) return true;
-    if (matchesLecturerCourse(c, profile, user)) return true;
-    return false;
-  });
+  return allCourses.filter((c) => courseIdSet.has(c.id) || courseIdSet.has(c.code));
 }

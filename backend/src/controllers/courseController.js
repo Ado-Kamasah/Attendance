@@ -116,6 +116,35 @@ export const enrollInCourse = async (req, res) => {
       return res.status(400).json({ message: 'Invalid student ID. Enrolled users must have the STUDENT role.' });
     }
 
+    // If not admin, verify that course registration is currently open for the active semester
+    if (req.user.role !== 'ADMIN') {
+      const activeSemester = await prisma.semester.findFirst({
+        where: { isActive: true }
+      });
+
+      if (!activeSemester) {
+        return res.status(403).json({
+          message: 'Course registration is unavailable because there is no active semester.',
+          code: 'NO_ACTIVE_SEMESTER'
+        });
+      }
+
+      if (activeSemester.registrationOpen === false) {
+        return res.status(403).json({
+          message: 'Course registration has been closed by the academic administrator.',
+          code: 'REGISTRATION_CLOSED'
+        });
+      }
+
+      const now = new Date();
+      if (activeSemester.registrationDeadline && now > new Date(activeSemester.registrationDeadline)) {
+        return res.status(403).json({
+          message: 'The course registration deadline has passed.',
+          code: 'REGISTRATION_DEADLINE_PASSED'
+        });
+      }
+    }
+
     // Verify duplicate enrollments
     const existingEnrollment = await prisma.enrollment.findUnique({
       where: {
