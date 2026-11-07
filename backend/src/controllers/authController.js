@@ -61,11 +61,11 @@ export const register = async (req, res) => {
     if (prismaRole === 'STUDENT' && !userProgram) {
       const idUpper = userId.toUpperCase();
       if (idUpper.startsWith('BSC/CSM/')) {
-        userProgram = 'Computer Science';
+        userProgram = 'BSc Computer Science with Management';
       } else if (idUpper.startsWith('BBA/')) {
-        userProgram = 'Business';
+        userProgram = 'BBA Accounting';
       } else {
-        userProgram = 'General Science';
+        userProgram = 'BBA Accounting';
       }
     }
 

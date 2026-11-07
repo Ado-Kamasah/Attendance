@@ -459,6 +459,7 @@ import { storeToRefs } from 'pinia';
 import {
   getProgrammesForFaculty,
   FACULTY_PROGRAMME_MAP,
+  OFFICIAL_FACULTIES,
   isValidProgrammeFacultyPair
 } from '@/utils/academicRelationships';
 import {
@@ -519,18 +520,9 @@ onMounted(async () => {
   }
 });
 
-// List of available faculties, combining store results with standard map fallbacks
+// List of available faculties (official university schools)
 const availableFaculties = computed(() => {
-  const list = [];
-  if (faculties.value && faculties.value.length > 0) {
-    faculties.value.forEach((f) => {
-      if (f.name && !list.includes(f.name)) list.push(f.name);
-    });
-  }
-  Object.keys(FACULTY_PROGRAMME_MAP).forEach((facName) => {
-    if (!list.includes(facName)) list.push(facName);
-  });
-  return list;
+  return OFFICIAL_FACULTIES;
 });
 
 // Cascaded programmes for currently selected faculty

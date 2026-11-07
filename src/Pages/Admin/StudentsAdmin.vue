@@ -1477,6 +1477,7 @@ import { useSchedulesStore } from '@/stores/schedules.js';
 import { useFacultiesStore } from '@/stores/faculties.js';
 import {
   FACULTY_PROGRAMME_MAP,
+  OFFICIAL_FACULTIES,
   getProgrammesForFaculty,
   getFacultyForProgramme,
   isValidProgrammeFacultyPair
@@ -1722,12 +1723,9 @@ const getInitials = (name) => {
 const allCoursesList = computed(() => coursesStore.courses || []);
 
 // Available distinct programs — faculty store is primary source, student/course data is supplementary
-// Distinct university faculties
+// Distinct university faculties (official schools)
 const availableFacultiesList = computed(() => {
-  const set = new Set();
-  Object.keys(FACULTY_PROGRAMME_MAP).forEach((f) => set.add(f));
-  availableFaculties.value.forEach((f) => { if (f.name) set.add(f.name); });
-  return Array.from(set).filter(Boolean).sort();
+  return OFFICIAL_FACULTIES;
 });
 
 // Cascading programmes dynamically filtered by selected faculty in the form

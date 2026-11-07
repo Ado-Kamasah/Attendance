@@ -3,52 +3,72 @@
 // ============================================================================
 
 /**
+ * Official University Schools (Faculties)
+ */
+export const OFFICIAL_FACULTIES = [
+  'School of Business & Leadership',
+  'School of Computing & Digital Innovation',
+  'School of Statistics & Data Science',
+  'School of Health Sciences',
+  'School of Humanities, Arts and Social Science (SHASS)',
+  'School of Law',
+  'Tali Graduate School'
+];
+
+/**
  * Standard faculty-to-programme relationship dictionary.
  * Maps university faculties to their respective academic departments/programmes.
+ * All Business programmes are strictly BBA (not B.Sc.).
  */
 export const FACULTY_PROGRAMME_MAP = {
-  'School of Computing': [
-    'B.Sc. Computer Science',
-    'B.Sc. Information Technology',
-    'B.Sc. Data Science',
-    'B.Sc. Software Engineering',
-    'B.Sc. Cybersecurity & Networks',
-    'Computer Science',
-    'Data Science'
+  'School of Business & Leadership': [
+    'BBA Accounting',
+    'BBA Banking & Finance',
+    'BBA Human Resource Management',
+    'BBA Marketing'
   ],
-  'School of Computational Sciences': [
-    'B.Sc. Computer Science',
-    'B.Sc. Data Science',
-    'B.Sc. Mathematics & Computing',
-    'B.Sc. Statistics & Data Analytics',
-    'Statistics'
+  'School of Computing & Digital Innovation': [
+    'BSc Computer Science with Management'
   ],
-  'School of Business': [
-    'BBA Business Administration',
-    'B.Sc. Accounting & Finance',
-    'B.Sc. Marketing',
-    'B.Sc. Human Resource Management',
-    'B.Sc. Banking & Finance',
-    'Business',
-    'Business Administration'
+  'School of Statistics & Data Science': [
+    'BSc Statistics and Data Science'
   ],
-  'School of  Business Administration': [
-    'BBA Business Administration',
-    'B.Sc. Marketing',
-    'B.Sc. Accounting & Finance',
-    'Business Administration',
-    'Business'
+  'School of Health Sciences': [
+    'BSc Nursing'
   ],
-  'School of Humanities Arts and Social Sciences': [
-    'B.A. Communication Studies',
-    'B.A. Economics',
-    'B.A. Public Relations',
-    'B.A. International Relations',
-    'B.A. Sociology & Social Work',
-    'General Studies',
-    'Humanities'
+  'School of Humanities, Arts and Social Science (SHASS)': [
+    'BA Pastoral Care & Counselling',
+    'BA Theology'
+  ],
+  'School of Law': [
+    'Bachelor of Laws (LLB)'
+  ],
+  'Tali Graduate School': [
+    'PhD Business Administration',
+    'PhD Statistics',
+    'Doctor of Business Administration',
+    'Doctor of Statistics & Data Science',
+    'MPhil Business Administration',
+    'MPhil Information Technology',
+    'MPhil Statistics',
+    'MBA Human Resource Management',
+    'MBA Marketing',
+    'MA Management',
+    'MSc Computer Science',
+    'MSc Data Sciences',
+    'MSc Health Informatics',
+    'MSc Information Technology',
+    'MSc Statistics',
+    'MSc in Strategic Management and Leadership',
+    'Master of Public Health',
+    'Postgraduate Diploma in Statistics'
   ]
 };
+
+/**
+ * Flattened list of all official programmes across all schools
+ */
+export const ALL_OFFICIAL_PROGRAMMES = Object.values(FACULTY_PROGRAMME_MAP).flat();
 
 /**
  * Normalizes text for case-insensitive and whitespace-tolerant matching.
@@ -58,12 +78,49 @@ function normalizeKey(str) {
 }
 
 /**
+ * Resolves legacy or abbreviated school names to the official school name.
+ */
+export function resolveOfficialFaculty(facultyName) {
+  if (!facultyName) return OFFICIAL_FACULTIES[0];
+  const norm = normalizeKey(facultyName);
+
+  if (norm.includes('business') || norm.includes('leadership')) {
+    return 'School of Business & Leadership';
+  }
+  if (norm.includes('comput') || norm.includes('digital') || norm.includes('inno')) {
+    return 'School of Computing & Digital Innovation';
+  }
+  if (norm.includes('stat') && (norm.includes('data') || !norm.includes('phd'))) {
+    return 'School of Statistics & Data Science';
+  }
+  if (norm.includes('health') || norm.includes('nurs')) {
+    return 'School of Health Sciences';
+  }
+  if (norm.includes('human') || norm.includes('art') || norm.includes('social') || norm.includes('shass') || norm.includes('theol')) {
+    return 'School of Humanities, Arts and Social Science (SHASS)';
+  }
+  if (norm.includes('law') || norm.includes('llb')) {
+    return 'School of Law';
+  }
+  if (norm.includes('grad') || norm.includes('tali') || norm.includes('postgrad') || norm.includes('master') || norm.includes('doctor') || norm.includes('phd') || norm.includes('mphil') || norm.includes('mba')) {
+    return 'Tali Graduate School';
+  }
+
+  // Exact or direct match
+  const match = OFFICIAL_FACULTIES.find(f => normalizeKey(f) === norm);
+  return match || facultyName;
+}
+
+/**
  * Returns the list of programmes valid for a given faculty name.
- * If the faculty is not in the standard map, returns general programmes or programmes
- * that might match dynamically.
  */
 export function getProgrammesForFaculty(facultyName, allKnownProgrammes = []) {
-  if (!facultyName) return allKnownProgrammes;
+  if (!facultyName) return ALL_OFFICIAL_PROGRAMMES;
+
+  const resolved = resolveOfficialFaculty(facultyName);
+  if (FACULTY_PROGRAMME_MAP[resolved]) {
+    return FACULTY_PROGRAMME_MAP[resolved];
+  }
 
   const normFac = normalizeKey(facultyName);
   for (const [fac, progs] of Object.entries(FACULTY_PROGRAMME_MAP)) {
@@ -72,47 +129,51 @@ export function getProgrammesForFaculty(facultyName, allKnownProgrammes = []) {
     }
   }
 
-  // Fallback: check if any known programmes mention keywords from the faculty
-  if (normFac.includes('comput') || normFac.includes('tech')) {
-    return FACULTY_PROGRAMME_MAP['School of Computing'];
-  }
-  if (normFac.includes('busin') || normFac.includes('admin') || normFac.includes('mgt')) {
-    return FACULTY_PROGRAMME_MAP['School of Business'];
-  }
-  if (normFac.includes('human') || normFac.includes('art') || normFac.includes('social')) {
-    return FACULTY_PROGRAMME_MAP['School of Humanities Arts and Social Sciences'];
-  }
-
-  // If faculty has exact matching programmes in known list
-  return allKnownProgrammes.length > 0 ? allKnownProgrammes : ['B.Sc. Computer Science', 'BBA Business Administration', 'B.A. Communication Studies'];
+  return allKnownProgrammes.length > 0 ? allKnownProgrammes : FACULTY_PROGRAMME_MAP['School of Business & Leadership'];
 }
 
 /**
  * Infers the most suitable faculty for a given programme name.
  */
 export function getFacultyForProgramme(programmeName, availableFaculties = []) {
-  if (!programmeName) return availableFaculties[0] || 'School of Computing';
+  if (!programmeName) return OFFICIAL_FACULTIES[0];
 
   const normProg = normalizeKey(programmeName);
 
+  // 1. Direct match in programme map
   for (const [fac, progs] of Object.entries(FACULTY_PROGRAMME_MAP)) {
-    if (progs.some((p) => normalizeKey(p) === normProg || normProg.includes(normalizeKey(p)) || normalizeKey(p).includes(normProg))) {
-      // Find matching entry in availableFaculties if present
-      const match = availableFaculties.find((f) => normalizeKey(f) === normalizeKey(fac));
-      return match || fac;
+    if (progs.some((p) => {
+      const np = normalizeKey(p);
+      return np === normProg || normProg.includes(np) || np.includes(normProg);
+    })) {
+      return fac;
     }
   }
 
-  if (normProg.includes('comput') || normProg.includes('data') || normProg.includes('soft') || normProg.includes('it') || normProg.includes('stat')) {
-    const match = availableFaculties.find((f) => normalizeKey(f).includes('comput'));
-    return match || 'School of Computing';
+  // 2. Keyword heuristic checks
+  if (normProg.includes('bba') || (normProg.includes('business') && !normProg.includes('phd') && !normProg.includes('mphil') && !normProg.includes('mba') && !normProg.includes('doctor')) || normProg.includes('account') || normProg.includes('banking') || normProg.includes('humanres') || (normProg.includes('market') && !normProg.includes('mba'))) {
+    return 'School of Business & Leadership';
   }
-  if (normProg.includes('bus') || normProg.includes('mark') || normProg.includes('acc') || normProg.includes('fin') || normProg.includes('mgt')) {
-    const match = availableFaculties.find((f) => normalizeKey(f).includes('busin'));
-    return match || 'School of Business';
+  if (normProg.includes('comput') && !normProg.includes('phd') && !normProg.includes('mphil') && !normProg.includes('msc')) {
+    return 'School of Computing & Digital Innovation';
+  }
+  if (normProg.includes('stat') && !normProg.includes('phd') && !normProg.includes('mphil') && !normProg.includes('msc') && !normProg.includes('postgrad')) {
+    return 'School of Statistics & Data Science';
+  }
+  if (normProg.includes('nurs') || (normProg.includes('health') && !normProg.includes('master') && !normProg.includes('msc'))) {
+    return 'School of Health Sciences';
+  }
+  if (normProg.includes('pastor') || normProg.includes('theol') || normProg.includes('counsel')) {
+    return 'School of Humanities, Arts and Social Science (SHASS)';
+  }
+  if (normProg.includes('law') || normProg.includes('llb')) {
+    return 'School of Law';
+  }
+  if (normProg.includes('phd') || normProg.includes('doctor') || normProg.includes('mphil') || normProg.includes('mba') || normProg.includes('msc') || normProg.includes('master') || normProg.includes('postgrad') || normProg.includes('diploma')) {
+    return 'Tali Graduate School';
   }
 
-  return availableFaculties[0] || 'School of Computing';
+  return OFFICIAL_FACULTIES[0];
 }
 
 /**
@@ -122,6 +183,8 @@ export function isValidProgrammeFacultyPair(programmeName, facultyName) {
   if (!programmeName || !facultyName) return false;
   const validProgrammes = getProgrammesForFaculty(facultyName);
   const normProg = normalizeKey(programmeName);
-  return validProgrammes.some((p) => normalizeKey(p) === normProg || normProg.includes(normalizeKey(p)) || normalizeKey(p).includes(normProg));
+  return validProgrammes.some((p) => {
+    const np = normalizeKey(p);
+    return np === normProg || normProg.includes(np) || np.includes(normProg);
+  });
 }
-

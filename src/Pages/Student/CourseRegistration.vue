@@ -696,10 +696,16 @@ const filteredCourses = computed(() => {
       if (cp.includes('comput') && studentProg.includes('comput')) return true;
       if (cp.includes('data') && studentProg.includes('data')) return true;
       if (cp.includes('soft') && studentProg.includes('soft')) return true;
-      if (cp.includes('busin') && studentProg.includes('busin')) return true;
-      if (cp.includes('admin') && studentProg.includes('admin')) return true;
-      if (cp.includes('account') && studentProg.includes('account')) return true;
-      if (cp.includes('human') && studentProg.includes('human')) return true;
+      if (cp.includes('stat') && studentProg.includes('stat')) return true;
+      // BBA & Business programmes compatibility
+      if ((studentProg.includes('bba') || studentProg.includes('busin')) && (cp.includes('bba') || cp.includes('busin'))) return true;
+      if (studentProg.includes('account') && (cp.includes('account') || cp.includes('bba') || cp.includes('busin'))) return true;
+      if ((studentProg.includes('bank') || studentProg.includes('financ')) && (cp.includes('bank') || cp.includes('financ') || cp.includes('bba') || cp.includes('busin'))) return true;
+      if (studentProg.includes('market') && (cp.includes('market') || cp.includes('bba') || cp.includes('busin'))) return true;
+      if (studentProg.includes('human') && (cp.includes('human') || cp.includes('bba') || cp.includes('busin'))) return true;
+      if (studentProg.includes('nurs') && cp.includes('nurs')) return true;
+      if ((studentProg.includes('pastor') || studentProg.includes('theol')) && (cp.includes('pastor') || cp.includes('theol') || cp.includes('shass'))) return true;
+      if ((studentProg.includes('law') || studentProg.includes('llb')) && (cp.includes('law') || cp.includes('llb'))) return true;
       if (cp.includes('commun') && studentProg.includes('commun')) return true;
       return false;
     });

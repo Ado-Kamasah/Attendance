@@ -72,7 +72,7 @@ async function main() {
       passwordHash: studentPasswordHash,
       name: 'Student CS',
       role: 'STUDENT',
-      program: 'Computer Science'
+      program: 'BSc Computer Science with Management'
     }
   });
 
@@ -85,7 +85,7 @@ async function main() {
       passwordHash: studentPasswordHash,
       name: 'Student Business',
       role: 'STUDENT',
-      program: 'Business'
+      program: 'BBA Accounting'
     }
   });
 
@@ -125,7 +125,7 @@ async function main() {
       code: 'BBA 101',
       name: 'Introduction to Business Administration',
       credits: 3,
-      program: 'Business',
+      program: 'BBA Accounting',
       level: '100',
       status: 'active'
     }
@@ -138,7 +138,7 @@ async function main() {
       code: 'MKT 201',
       name: 'Marketing Principles',
       credits: 3,
-      program: 'Business',
+      program: 'BBA Marketing',
       level: '200',
       status: 'active'
     }
