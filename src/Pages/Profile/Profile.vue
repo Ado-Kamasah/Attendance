@@ -170,7 +170,7 @@
 
               <div class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40">
                 <span class="text-[10px] font-mono text-foreground/50 dark:text-white/65 uppercase">Assigned Faculty</span>
-                <p class="font-bold text-sm text-foreground dark:text-white mt-0.5 truncate">{{ profile?.faculty || 'School of Computing' }}</p>
+                <p class="font-bold text-sm text-foreground dark:text-white mt-0.5 truncate">{{ profile?.faculty || 'School of Business & Leadership' }}</p>
               </div>
 
               <div v-if="profile?.program" class="p-3 rounded-xl bg-muted/20 dark:bg-dark-muted/20 border border-outline/30 dark:border-dark-outline/40 sm:col-span-2">
@@ -337,65 +337,85 @@
               />
             </div>
 
-            <!-- Institutional Academic Records: LOCKED for Students -->
-            <div class="pt-2 border-t border-outline/30 dark:border-dark-outline/40">
-              <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs mb-3 flex items-start gap-2.5">
-                <Lock class="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <!-- Institutional Academic Records: Student Editable -->
+            <div class="pt-3 border-t border-outline/30 dark:border-dark-outline/40 space-y-3">
+              <div class="flex items-center gap-2 pb-1">
+                <GraduationCap class="w-4 h-4 text-secondary" />
+                <h4 class="text-xs font-bold font-display uppercase tracking-wider text-foreground dark:text-white">
+                  Academic Information & Enrolment
+                </h4>
+              </div>
+              <p class="text-[11px] text-foreground/60 dark:text-white/70">
+                Update your faculty, degree programme, academic level, and study track mode.
+              </p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <!-- Faculty / School -->
+                <div class="sm:col-span-2">
+                  <label for="edit-faculty" class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
+                    Faculty / School <span class="text-error">*</span>
+                  </label>
+                  <select
+                    id="edit-faculty"
+                    v-model="editForm.faculty"
+                    @change="onFacultyChange"
+                    class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-medium"
+                  >
+                    <option v-for="fac in availableFaculties" :key="fac" :value="fac">
+                      {{ fac }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Academic Programme (Cascading based on selected Faculty) -->
+                <div class="sm:col-span-2">
+                  <label for="edit-program" class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
+                    Academic Programme <span class="text-error">*</span>
+                  </label>
+                  <select
+                    id="edit-program"
+                    v-model="editForm.program"
+                    class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-medium"
+                  >
+                    <option v-for="prog in availableProgrammes" :key="prog" :value="prog">
+                      {{ prog }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Academic Level -->
                 <div>
-                  <span class="font-bold uppercase tracking-wider text-[10px] block">Protected Academic Information</span>
-                  <p class="text-[11px] leading-relaxed mt-0.5">
-                    Faculty, Programme, Level, and Study Mode are official institutional credentials. To protect academic records, students cannot modify these values directly. Contact your Academic Registry administrator to request changes.
-                  </p>
-                </div>
-              </div>
-
-              <!-- Read-only academic summary grid -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30">
-                  <span class="text-[10px] font-mono text-foreground/50 uppercase">Faculty</span>
-                  <p class="font-semibold text-foreground dark:text-white mt-0.5 truncate">{{ profile?.faculty || 'School of Computing' }}</p>
-                </div>
-
-                <div class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30">
-                  <span class="text-[10px] font-mono text-foreground/50 uppercase">Programme</span>
-                  <p class="font-semibold text-foreground dark:text-white mt-0.5 truncate">{{ profile?.program || 'General Studies' }}</p>
-                </div>
-
-                <div class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30">
-                  <span class="text-[10px] font-mono text-foreground/50 uppercase">Academic Level</span>
-                  <p class="font-semibold text-foreground dark:text-white mt-0.5">Level {{ profile?.level || '100' }}</p>
+                  <label for="edit-level" class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
+                    Academic Level <span class="text-error">*</span>
+                  </label>
+                  <select
+                    id="edit-level"
+                    v-model="editForm.level"
+                    class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-medium font-mono"
+                  >
+                    <option value="100">Level 100</option>
+                    <option value="200">Level 200</option>
+                    <option value="300">Level 300</option>
+                    <option value="400">Level 400</option>
+                    <option value="500">Level 500</option>
+                    <option value="600">Level 600</option>
+                    <option value="700">Level 700</option>
+                  </select>
                 </div>
 
-                <div class="p-2.5 rounded-xl bg-muted/30 dark:bg-dark-muted/30 border border-outline/30">
-                  <span class="text-[10px] font-mono text-foreground/50 uppercase">Study Track Mode</span>
-                  <p class="font-semibold text-foreground dark:text-white mt-0.5">{{ profile?.mode || 'Regular' }}</p>
-                </div>
-              </div>
-
-              <!-- If Admin editing their own profile, optionally allow admin override -->
-              <div v-if="isAdmin" class="mt-4 p-3 rounded-xl bg-secondary/10 border border-secondary/30 space-y-3">
-                <span class="text-[10px] font-mono font-bold uppercase text-secondary tracking-wider block">
-                  Administrator Academic Override
-                </span>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="block font-mono text-[10px] text-foreground/70 mb-1">Programme</label>
-                    <input 
-                      type="text" 
-                      v-model="editForm.program" 
-                      class="w-full px-3 py-1.5 text-xs bg-surface dark:bg-dark-surface border border-outline/40 rounded-lg outline-hidden text-foreground dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label class="block font-mono text-[10px] text-foreground/70 mb-1">Study Mode</label>
-                    <select 
-                      v-model="editForm.mode" 
-                      class="w-full px-3 py-1.5 text-xs bg-surface dark:bg-dark-surface border border-outline/40 rounded-lg outline-hidden text-foreground dark:text-white font-mono"
-                    >
-                      <option value="Regular">Regular</option>
-                      <option value="Weekend">Weekend</option>
-                    </select>
-                  </div>
+                <!-- Study Track Mode -->
+                <div>
+                  <label for="edit-mode" class="block font-mono text-[11px] text-foreground/70 dark:text-white/80 mb-1">
+                    Study Track Mode <span class="text-error">*</span>
+                  </label>
+                  <select
+                    id="edit-mode"
+                    v-model="editForm.mode"
+                    class="w-full px-3.5 py-2 text-xs bg-muted/40 dark:bg-dark-muted/40 border border-outline/40 dark:border-dark-outline/40 focus:border-secondary rounded-xl outline-hidden text-foreground dark:text-white font-medium font-mono"
+                  >
+                    <option value="Regular">Regular</option>
+                    <option value="Weekend">Weekend</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -447,8 +467,14 @@ import {
   EyeOff, 
   RefreshCw, 
   Calendar, 
-  CalendarDays 
+  CalendarDays,
+  GraduationCap
 } from 'lucide-vue-next';
+import {
+  OFFICIAL_FACULTIES,
+  getProgrammesForFaculty,
+  resolveOfficialFaculty
+} from '@/utils/academicRelationships.js';
 
 const authStore = useAuthStore();
 const auditLogsStore = useAuditLogsStore();
@@ -465,11 +491,28 @@ const errorMsg = ref('');
 const editError = ref('');
 const pwError = ref('');
 
-const editForm = ref({ name: '', phoneNumber: '', program: '', mode: '' });
+const editForm = ref({
+  name: '',
+  phoneNumber: '',
+  faculty: '',
+  program: '',
+  level: '100',
+  mode: 'Regular'
+});
 const pwForm = ref({ newPassword: '', confirmPassword: '' });
 
 const roleLower = computed(() => (profile.value?.role || 'student').toLowerCase());
 const isAdmin = computed(() => ['admin', 'super_admin'].includes(roleLower.value));
+
+const availableFaculties = computed(() => OFFICIAL_FACULTIES);
+const availableProgrammes = computed(() => getProgrammesForFaculty(editForm.value.faculty));
+
+function onFacultyChange() {
+  const progs = getProgrammesForFaculty(editForm.value.faculty);
+  if (!progs.includes(editForm.value.program)) {
+    editForm.value.program = progs[0] || '';
+  }
+}
 
 const initials = computed(() => {
   const name = profile.value?.name || '';
@@ -503,8 +546,16 @@ function clearAlerts() {
 function startEdit() {
   editForm.value.name        = profile.value?.name || '';
   editForm.value.phoneNumber = profile.value?.phone_number || profile.value?.phoneNumber || profile.value?.phone || '';
-  editForm.value.program     = profile.value?.program || '';
-  editForm.value.mode        = profile.value?.mode || '';
+  
+  const currentFaculty       = resolveOfficialFaculty(profile.value?.faculty) || OFFICIAL_FACULTIES[0];
+  editForm.value.faculty     = currentFaculty;
+
+  const validProgs           = getProgrammesForFaculty(currentFaculty);
+  const currentProgram       = profile.value?.program || '';
+  editForm.value.program     = validProgs.includes(currentProgram) ? currentProgram : (validProgs[0] || currentProgram);
+
+  editForm.value.level       = profile.value?.level ? String(profile.value.level) : '100';
+  editForm.value.mode        = profile.value?.mode || 'Regular';
   editError.value = '';
   isEditing.value = true;
 }
@@ -523,34 +574,69 @@ async function saveProfile() {
   }
   isSaving.value = true;
   try {
-    const cleanPhone = editForm.value.phoneNumber?.trim() || null;
+    const cleanPhone   = editForm.value.phoneNumber?.trim() || null;
+    const cleanFaculty = editForm.value.faculty?.trim() || null;
+    const cleanProgram = editForm.value.program?.trim() || null;
+    const cleanLevel   = editForm.value.level ? String(editForm.value.level).trim() : '100';
+    const cleanMode    = editForm.value.mode === 'Weekend' ? 'Weekend' : 'Regular';
+
     const updates = { 
       name: editForm.value.name.trim(),
-      phone_number: cleanPhone
+      phone_number: cleanPhone,
+      faculty: cleanFaculty,
+      program: cleanProgram,
+      level: cleanLevel,
+      mode: cleanMode
     };
 
-    // Only administrators are allowed to change academic fields (programme, mode)
-    if (isAdmin.value) {
-      if (editForm.value.program) {
-        updates.program = editForm.value.program.trim();
-      }
-      if (editForm.value.mode) {
-        updates.mode = editForm.value.mode;
-      }
-    }
-
+    // 1. Update in Supabase users table
     const { error } = await supabase
       .from('users')
       .update(updates)
       .eq('id', profile.value.id);
 
-    if (error) throw error;
+    if (error) {
+      console.warn('Supabase profile update warning:', error);
+    }
+
+    // 2. Sync to local backend SQLite / Express server
+    try {
+      if (profile.value?.id) {
+        await api.put(`/users/${profile.value.id}`, {
+          name: updates.name,
+          phoneNumber: cleanPhone,
+          faculty: cleanFaculty,
+          program: cleanProgram,
+          level: cleanLevel,
+          mode: cleanMode
+        });
+      }
+    } catch (backendSyncErr) {
+      console.warn('Backend user profile sync notice:', backendSyncErr?.message);
+    }
+
+    // 3. Update Supabase Auth user metadata so session & JWT remain in sync
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          name: updates.name,
+          faculty: cleanFaculty,
+          program: cleanProgram,
+          level: cleanLevel,
+          mode: cleanMode
+        }
+      });
+    } catch (authMetaErr) {
+      console.warn('Auth metadata update notice:', authMetaErr?.message);
+    }
+
+    // 4. Reload active auth profile
     await authStore.fetchProfile();
     isEditing.value = false;
 
     auditLogsStore.logAction({
       action: 'profile_updated',
-      details: `Updated profile info (Name: "${updates.name}"${cleanPhone ? `, Phone: "${cleanPhone}"` : ''})`,
+      details: `Updated profile info (Name: "${updates.name}", Faculty: "${cleanFaculty}", Programme: "${cleanProgram}", Level: "${cleanLevel}", Mode: "${cleanMode}"${cleanPhone ? `, Phone: "${cleanPhone}"` : ''})`,
       userId:   profile.value.id,
       userRole: profile.value.role,
       userName: profile.value.name,
