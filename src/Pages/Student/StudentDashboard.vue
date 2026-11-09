@@ -625,7 +625,7 @@ onMounted(async () => {
   await notifStore.fetchNotifications(uid);
   sessStore.subscribeToSessions();
   attStore.subscribeToAttendances();
-  notifStore.subscribeToAttendance(uid);  // realtime warnings
+  notifStore.subscribeToAttendance(uid, { mode: profile.value?.mode });  // realtime warnings
   isLoading.value = false;
 });
 

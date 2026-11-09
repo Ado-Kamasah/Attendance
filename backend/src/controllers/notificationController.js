@@ -138,7 +138,14 @@ export async function runAbsencesCheck(sessionId) {
     }
 
     await prisma.studentNotification.create({
-      data: { studentId: student.id, courseId, type: notificationType, message },
+      data: {
+        studentId: student.id,
+        courseId,
+        sessionId,
+        mode: sessionMode,
+        type: notificationType,
+        message,
+      },
     });
 
     const emailPayload = {
@@ -191,13 +198,22 @@ export const checkAbsencesForSession = async (req, res) => {
 // Internal helper – notify a student that their attendance was marked present.
 // Called from sessionController after a successful attendance.create().
 // ─────────────────────────────────────────────────────────────────────────────
-export async function runPresentNotification({ studentId, courseId, courseName, courseCode, sessionDate }) {
+export async function runPresentNotification({ studentId, courseId, sessionId, courseName, courseCode, sessionDate, mode }) {
   try {
     const student = await prisma.user.findUnique({
       where: { id: studentId },
-      select: { name: true, email: true },
+      select: { name: true, email: true, mode: true },
     });
     if (!student) return;
+
+    const studentMode = (student.mode || 'Regular').trim().toLowerCase();
+    const sessionMode = (mode || 'Regular').trim().toLowerCase();
+
+    // STRICT CHECK: Student's study mode must match the session's study mode!
+    if (studentMode !== sessionMode) {
+      console.warn(`[runPresentNotification] Cross-mode rejected: student ${student.email} (${student.mode}) vs session mode (${mode})`);
+      return;
+    }
 
     const message = `✅ Attendance Confirmed: Your attendance for ${courseName} (${courseCode}) has been successfully recorded. Session date: ${
       sessionDate
@@ -207,7 +223,14 @@ export async function runPresentNotification({ studentId, courseId, courseName, 
 
     // Persist in-app notification
     await prisma.studentNotification.create({
-      data: { studentId, courseId, type: 'attendance_present', message },
+      data: {
+        studentId,
+        courseId,
+        sessionId: sessionId || null,
+        mode: mode || student.mode || 'Regular',
+        type: 'attendance_present',
+        message
+      },
     });
 
     // Fire confirmation email (non-blocking — we swallow errors)
@@ -236,6 +259,12 @@ export const getMyNotifications = async (req, res) => {
   try {
     const studentId = req.user.id;
 
+    const studentUser = await prisma.user.findUnique({
+      where: { id: studentId },
+      select: { mode: true }
+    });
+    const studentMode = (studentUser?.mode || 'Regular').trim().toLowerCase();
+
     const notifications = await prisma.studentNotification.findMany({
       where: { studentId },
       include: {
@@ -244,11 +273,19 @@ export const getMyNotifications = async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
+    // STRICT CHECK: Exclude cross-mode notifications
+    const filtered = notifications.filter((n) => {
+      if (n.mode && n.mode.trim().toLowerCase() !== studentMode) return false;
+      return true;
+    });
+
     res.status(200).json(
-      notifications.map((n) => ({
+      filtered.map((n) => ({
         id: n.id,
         type: n.type,
         message: n.message,
+        sessionId: n.sessionId || null,
+        mode: n.mode || studentUser?.mode || 'Regular',
         isRead: n.isRead,
         courseCode: n.course.code,
         courseName: n.course.name,

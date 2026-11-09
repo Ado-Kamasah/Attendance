@@ -625,10 +625,16 @@ function generateResetToken() {
  */
 async function getConsecutiveAbsences(studentId, courseId, currentSessionId) {
   try {
+    // 1. Resolve student study mode
+    const { data: uData } = await supabase.from('users').select('mode').eq('id', studentId).maybeSingle();
+    const studentMode = (uData?.mode || 'Regular').trim();
+
+    // 2. Query sessions strictly for student's study mode!
     const { data: sessions, error: sessErr } = await supabase
       .from('sessions')
-      .select('id, created_at, date')
+      .select('id, created_at, date, mode')
       .eq('course_id', courseId)
+      .eq('mode', studentMode)
       .order('created_at', { ascending: false })
 
     if (sessErr || !sessions || sessions.length === 0) return 1
@@ -666,11 +672,13 @@ async function getConsecutiveAbsences(studentId, courseId, currentSessionId) {
 /**
  * Persists an in-app student notification if student_notifications table exists.
  */
-async function recordStudentNotification({ studentId, courseId, type, message }) {
+async function recordStudentNotification({ studentId, courseId, sessionId, mode, type, message }) {
   try {
     await supabase.from('student_notifications').insert({
       student_id: studentId,
       course_id: courseId,
+      session_id: sessionId || null,
+      mode: mode || 'Regular',
       type,
       message,
       is_read: false,
@@ -812,15 +820,16 @@ async function handleNotifySession(req, res) {
       })
     }
 
-    // 5. Fetch student user accounts for these attendances
+    // 5. Fetch student user accounts for these attendances (including study mode)
     const studentIds = [...new Set(attendances.map(a => a.student_id))]
     const { data: studentUsers } = await supabase
       .from('users')
-      .select('id, name, email, id_number')
+      .select('id, name, email, id_number, mode')
       .in('id', studentIds)
 
     const userMap = new Map((studentUsers || []).map(u => [u.id, u]))
 
+    const sessionMode = (session.mode || 'Regular').trim().toLowerCase()
     const presentStudents = []
     const absentStudents  = []
 
@@ -828,12 +837,20 @@ async function handleNotifySession(req, res) {
       const u = userMap.get(a.student_id)
       if (!u || !u.email) continue
 
+      // STRICT MODE SEPARATION: Ensure student's study mode matches session study mode!
+      const studentMode = (u.mode || 'Regular').trim().toLowerCase()
+      if (studentMode !== sessionMode) {
+        console.warn(`[notify-session] Skipping student ${u.email} (${u.mode}) because session is for ${session.mode || 'Regular'} mode.`)
+        continue
+      }
+
       const sObj = {
         id: u.id,
         name: u.name || 'Student',
         email: u.email,
         studentIdNumber: u.id_number || 'N/A',
         status: a.status,
+        mode: u.mode || 'Regular',
       }
 
       if (a.status === 'present') {
@@ -897,6 +914,8 @@ async function handleNotifySession(req, res) {
             await recordStudentNotification({
               studentId: student.id,
               courseId: session.course_id,
+              sessionId: actualSessionId,
+              mode: session.mode || student.mode || 'Regular',
               type: 'warning_2',
               message: `⚠️ Urgent Warning: You have missed 2 consecutive lectures in ${course.code}. You must attend the upcoming class to prevent examination disqualification.`,
             })
@@ -933,6 +952,8 @@ async function handleNotifySession(req, res) {
             await recordStudentNotification({
               studentId: student.id,
               courseId: session.course_id,
+              sessionId: actualSessionId,
+              mode: session.mode || student.mode || 'Regular',
               type: 'ineligible',
               message: `🚨 Examination Ineligibility Notice: Having missed ${consecutiveCount} consecutive classes in ${course.code}, you are flagged as exempt / ineligible from writing the final examination.`,
             })

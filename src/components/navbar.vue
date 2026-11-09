@@ -592,7 +592,7 @@ onMounted(async () => {
     const uid = profile.value?.id;
     if (uid) {
       studentNotifStore.fetchNotifications(uid);
-      studentNotifStore.subscribeToAttendance(uid);
+      studentNotifStore.subscribeToAttendance(uid, { mode: profile.value?.mode });
     }
   }
 });

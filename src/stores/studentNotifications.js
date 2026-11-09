@@ -54,24 +54,51 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
       const results = [];
       const dbCoveredCourseIds = new Set();
 
+      // 0. Resolve student's study mode (Regular vs Weekend)
+      let studentMode = 'Regular';
+      try {
+        const { useAuthStore } = await import("./authstore");
+        const authStore = useAuthStore();
+        if (authStore.profile?.id === studentId && authStore.profile?.mode) {
+          studentMode = authStore.profile.mode;
+        } else {
+          const { data: userRow } = await supabase
+            .from("users")
+            .select("mode")
+            .eq("id", studentId)
+            .maybeSingle();
+          if (userRow?.mode) studentMode = userRow.mode;
+        }
+      } catch (err) {
+        console.warn("Could not determine student study mode, defaulting to Regular:", err);
+      }
+      const normalizedStudentMode = (studentMode || 'Regular').trim().toLowerCase();
+
       // 1. Absence warnings & ineligibility notices from student_notifications table
       //    (written by backend if available)
       const { data: dbNotifs, error: dbErr } = await supabase
         .from("student_notifications")
-        .select("id, type, message, is_read, created_at, course_id, courses(code, name)")
+        .select("id, type, message, is_read, created_at, course_id, session_id, mode, courses(code, name)")
         .eq("student_id", studentId)
         .order("created_at", { ascending: false })
         .limit(50);
 
       if (!dbErr && dbNotifs && dbNotifs.length > 0) {
         dbNotifs.forEach((n) => {
+          // STRICT MODE SEPARATION: If notification specifies a study mode, ensure it matches student's mode
+          if (n.mode && n.mode.trim().toLowerCase() !== normalizedStudentMode) {
+            return;
+          }
+
           if (n.course_id && (n.type === 'warning_1' || n.type === 'warning_2' || n.type === 'ineligible')) {
             dbCoveredCourseIds.add(n.course_id);
           }
           const id = "db-" + n.id;
           results.push({
             id,
-            type: n.type,           // warning_1 | warning_2 | ineligible | eval_open
+            type: n.type,           // warning_1 | warning_2 | ineligible | eval_open | attendance_present | attendance_absent
+            sessionId: n.session_id || null,
+            mode: n.mode || studentMode,
             isRead: n.is_read || readIds.value.has(id),
             createdAt: n.created_at,
             courseCode: n.courses?.code ?? "",
@@ -143,6 +170,7 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
           date: s.date,
           isActive: s.isActive,
           createdAt: s.createdAt,
+          mode: s.mode || 'Regular',
         }));
       } catch {}
 
@@ -163,13 +191,14 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
 
       // If sessionsMap is empty, query Supabase
       if (sessionsMap.size === 0) {
-        const { data: dbSessions } = await supabase.from("sessions").select("id, course_id, date, is_active, created_at");
+        const { data: dbSessions } = await supabase.from("sessions").select("id, course_id, date, is_active, created_at, mode");
         (dbSessions || []).forEach(s => sessionsMap.set(s.id, {
           id: s.id,
           courseId: s.course_id,
           date: s.date,
           isActive: s.is_active,
           createdAt: s.created_at,
+          mode: s.mode || 'Regular',
         }));
       }
 
@@ -189,36 +218,57 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
       // Process all explicit attendances
       allStudentAttendances.forEach(att => {
         if (!att.session_id) return;
+        const session = sessionsMap.get(att.session_id);
+        const sessionMode = (session?.mode || 'Regular').trim().toLowerCase();
+
+        // STRICT SEPARATION: Skip any attendance record belonging to another study mode session
+        if (session && sessionMode !== normalizedStudentMode) {
+          return;
+        }
+
         processedSessionIds.add(att.session_id);
 
-        if (att.status === "absent") {
-          const session = sessionsMap.get(att.session_id);
-          const courseId = session?.courseId;
-          const course = courseId ? coursesMap.get(courseId) : null;
-          const courseCode = course?.code || "Course";
-          const courseName = course?.name || "Enrolled Course";
-          const timestamp = att.timestamp || session?.date || session?.createdAt || new Date().toISOString();
+        const courseId = session?.courseId;
+        const course = courseId ? coursesMap.get(courseId) : null;
+        const courseCode = course?.code || "Course";
+        const courseName = course?.name || "Enrolled Course";
+        const timestamp = att.timestamp || session?.date || session?.createdAt || new Date().toISOString();
+        const sessionDateStr = timestamp
+          ? new Date(timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+          : "Recent Session";
 
-          if (courseId) {
-            if (!absencesByCourse.has(courseId)) {
-              absencesByCourse.set(courseId, {
-                courseId,
-                code: courseCode,
-                name: courseName,
-                missedSessions: [],
-                latestTimestamp: timestamp,
-              });
-            }
-            const group = absencesByCourse.get(courseId);
-            group.missedSessions.push({
-              sessionId: att.session_id,
-              recordId: att.id,
-              timestamp,
+        if (att.status === "absent" && courseId) {
+          if (!absencesByCourse.has(courseId)) {
+            absencesByCourse.set(courseId, {
+              courseId,
+              code: courseCode,
+              name: courseName,
+              missedSessions: [],
+              latestTimestamp: timestamp,
             });
-            if (new Date(timestamp) > new Date(group.latestTimestamp)) {
-              group.latestTimestamp = timestamp;
-            }
           }
+          const group = absencesByCourse.get(courseId);
+          group.missedSessions.push({
+            sessionId: att.session_id,
+            recordId: att.id,
+            timestamp,
+          });
+          if (new Date(timestamp) > new Date(group.latestTimestamp)) {
+            group.latestTimestamp = timestamp;
+          }
+        } else if (att.status === "present" && courseId) {
+          const notifId = "att-pres-" + (att.id || att.session_id);
+          results.push({
+            id: notifId,
+            type: "attendance_present",
+            sessionId: att.session_id,
+            mode: session?.mode || studentMode,
+            isRead: readIds.value.has(notifId),
+            createdAt: timestamp,
+            courseCode,
+            courseName,
+            message: `✅ Attendance Confirmed: You were marked present for ${courseName} (${courseCode}) on ${sessionDateStr}.`,
+          });
         }
       });
 
@@ -226,6 +276,13 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
       const now = new Date();
       sessionsMap.forEach(sess => {
         if (!enrolledCourseIds.has(sess.courseId)) return;
+
+        // STRICT SEPARATION: Only consider sessions matching student's study mode!
+        const sessionMode = (sess.mode || 'Regular').trim().toLowerCase();
+        if (sessionMode !== normalizedStudentMode) {
+          return; // A Weekend session never affects Regular students, and vice versa!
+        }
+
         if (processedSessionIds.has(sess.id)) return; // already processed explicit attendance
 
         // Check if session has occurred (is not active, or date in past)
@@ -282,6 +339,8 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
           results.push({
             id: warnId,
             type: warningType,
+            sessionId: group.missedSessions[group.missedSessions.length - 1]?.sessionId || null,
+            mode: studentMode,
             isRead: readIds.value.has(warnId),
             createdAt: group.latestTimestamp,
             courseCode: group.code,
@@ -300,6 +359,8 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
           results.push({
             id: notifId,
             type: "attendance_absent",
+            sessionId: item.sessionId,
+            mode: studentMode,
             isRead: readIds.value.has(notifId),
             createdAt: item.timestamp,
             courseCode: group.code,
@@ -373,8 +434,10 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
   }
 
   // ── Realtime ──────────────────────────────────────────────────────────────────
-  function subscribeToAttendance(studentId) {
+  function subscribeToAttendance(studentId, options = {}) {
     if (realtimeChannel || !studentId) return;
+
+    const targetMode = options.mode ? options.mode.trim().toLowerCase() : null;
 
     // Channel 1: attendances & sessions table changes (absent marked/updated)
     realtimeChannel = supabase
@@ -390,7 +453,12 @@ export const useStudentNotificationsStore = defineStore("studentNotifications", 
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "sessions" },
-        async () => {
+        async (payload) => {
+          // STRICT FILTER: If incoming session mode is known and does not match targetMode, ignore event!
+          const incomingMode = (payload.new?.mode || payload.old?.mode);
+          if (incomingMode && targetMode && incomingMode.trim().toLowerCase() !== targetMode) {
+            return;
+          }
           await fetchNotifications(studentId);
         }
       )

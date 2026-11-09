@@ -146,7 +146,9 @@ model StudentNotification {
   id        String   @id @default(uuid())
   studentId String
   courseId  String
-  type      String   // 'warning_1' | 'warning_2' | 'ineligible' | 'eval_open'
+  sessionId String?
+  mode      String?  @default("Regular")
+  type      String   // 'warning_1' | 'warning_2' | 'ineligible' | 'eval_open' | 'attendance_present' | 'attendance_absent'
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())

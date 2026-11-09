@@ -53,10 +53,11 @@ export const startSession = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    // Deactivate any active sessions for this course to prevent conflicts
+    // Deactivate any active sessions for this course and mode to prevent conflicts
     await prisma.session.updateMany({
       where: {
         courseId,
+        mode: sessionMode,
         isActive: true
       },
       data: {
@@ -82,6 +83,7 @@ export const startSession = async (req, res) => {
         courseId,
         lecturerId,
         pin: sessionPin,
+        mode: sessionMode,
         maxStudents: maxStudents ? parseInt(maxStudents, 10) : 100,
         isActive: true
       },
@@ -248,6 +250,19 @@ export const markAttendance = async (req, res) => {
       return res.status(403).json({ message: 'Access denied: You are not enrolled in this course.' });
     }
 
+    // STRICT CHECK: Student study mode must match session study mode!
+    const studentUser = await prisma.user.findUnique({
+      where: { id: studentId },
+      select: { mode: true }
+    });
+    const sessionMode = (session.mode || 'Regular').trim().toLowerCase();
+    const studentMode = (studentUser?.mode || 'Regular').trim().toLowerCase();
+    if (studentMode !== sessionMode) {
+      return res.status(403).json({
+        message: `Access denied: This attendance session is exclusively for ${session.mode || 'Regular'} students. Your profile is in ${studentUser?.mode || 'Regular'} mode.`
+      });
+    }
+
     // Check if attendance already marked
     const existingAttendance = await prisma.attendance.findUnique({
       where: {
@@ -283,9 +298,11 @@ export const markAttendance = async (req, res) => {
     // Fire present notification (non-blocking)
     runPresentNotification({
       studentId,
-      courseId:   session.courseId,
-      courseName: session.course.name,
-      courseCode: session.course.code,
+      courseId:    session.courseId,
+      sessionId:   session.id,
+      mode:        session.mode || 'Regular',
+      courseName:  session.course.name,
+      courseCode:  session.course.code,
       sessionDate: session.date || session.createdAt,
     }).catch(err => console.error('runPresentNotification failed:', err.message));
 
