@@ -274,14 +274,6 @@
                     <Users class="w-3.5 h-3.5" />
                   </button>
                   <button
-                    @click="openEditModal(user)"
-                    :id="'btn-edit-' + user.id"
-                    title="Edit User"
-                    class="p-1.5 text-slate-500 dark:text-white/75 hover:text-primary dark:hover:text-secondary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                  >
-                    <Edit3 class="w-3.5 h-3.5" />
-                  </button>
-                  <button
                     @click="openDeleteModal(user)"
                     :id="'btn-delete-' + user.id"
                     :disabled="isCurrentUser(user.id)"
