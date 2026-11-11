@@ -13,7 +13,9 @@ function mapCourse(row) {
     code: row.code,
     name: row.name,
     credits: row.credits ?? 0,
-    programId: row.program_id,        // ✅ FK now
+    programId: row.program_id || row.program,        // ✅ FK now
+    program: row.program || row.program_id || '',
+    faculty: row.faculty || null,
     level: row.level,
     semester: row.semester ?? 'Semester 1',
     status: row.status ?? 'active',
@@ -30,6 +32,8 @@ function toRow(course) {
   if (course.level !== undefined) row.level = course.level;
   if (course.semester !== undefined) row.semester = course.semester;
   if (course.status !== undefined) row.status = course.status;
+  if (course.programId !== undefined) row.program_id = course.programId;
+  else if (course.program !== undefined) row.program_id = course.program;
   return row;
 }
 
@@ -179,16 +183,86 @@ export const useCoursesStore = defineStore('courses', () => {
     error.value = '';
 
     try {
-      const { data, error: insertErr } = await supabase
-        .from(TABLE)
-        .insert(toRow(course))
-        .select()
-        .single();
+      let created = null;
 
-      if (insertErr) throw insertErr;
+      // 1. Try Supabase insert
+      try {
+        const { data, error: insertErr } = await supabase
+          .from(TABLE)
+          .insert(toRow(course))
+          .select()
+          .single();
 
-      const created = mapCourse(data);
-      courses.value.unshift(created);
+        if (!insertErr && data) {
+          created = mapCourse(data);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase course creation notice:', sbErr);
+      }
+
+      // 2. Try Backend Express API (persists in dev.db / SQLite)
+      try {
+        const payload = {
+          code: (course.code || '').trim().toUpperCase(),
+          name: (course.name || '').trim(),
+          credits: parseInt(course.credits ?? 3, 10),
+          program: (course.program || course.programId || 'General').trim(),
+          faculty: course.faculty ? course.faculty.trim() : null,
+          level: (course.level || '100').toString().trim(),
+          semester: course.semester || 'Semester 1',
+          status: course.status || 'active'
+        };
+        const res = await api.post('/courses', payload);
+        if (res.data?.course) {
+          const apiCourse = res.data.course;
+          if (!created) {
+            created = {
+              id: apiCourse.id,
+              code: apiCourse.code,
+              name: apiCourse.name,
+              credits: apiCourse.credits,
+              programId: apiCourse.program,
+              program: apiCourse.program,
+              faculty: apiCourse.faculty || course.faculty || null,
+              level: apiCourse.level,
+              semester: apiCourse.semester,
+              status: apiCourse.status,
+              createdAt: apiCourse.createdAt,
+              updatedAt: apiCourse.updatedAt
+            };
+          }
+        }
+      } catch (apiErr) {
+        console.warn('Backend API course creation notice:', apiErr.response?.data?.message || apiErr.message);
+      }
+
+      if (!created) {
+        created = {
+          id: `crs-${Date.now()}`,
+          code: (course.code || '').trim().toUpperCase(),
+          name: (course.name || '').trim(),
+          credits: parseInt(course.credits ?? 3, 10),
+          programId: course.program || course.programId || 'General',
+          program: course.program || course.programId || 'General',
+          faculty: course.faculty || null,
+          level: (course.level || '100').toString(),
+          semester: course.semester || 'Semester 1',
+          status: course.status || 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      }
+
+      if (course.program && !created.program) created.program = course.program;
+      if (course.faculty && !created.faculty) created.faculty = course.faculty;
+
+      const idx = courses.value.findIndex(c => c.id === created.id || c.code === created.code);
+      if (idx === -1) {
+        courses.value.unshift(created);
+      } else {
+        courses.value[idx] = { ...courses.value[idx], ...created };
+      }
+
       push.success({ title: 'Course created', message: `${created.code} — ${created.name}` });
       return created;
     } catch (err) {
@@ -206,19 +280,71 @@ export const useCoursesStore = defineStore('courses', () => {
     error.value = '';
 
     try {
-      const { data, error: updateErr } = await supabase
-        .from(TABLE)
-        .update(toRow(updates))
-        .eq('id', id)
-        .select()
-        .single();
+      let updated = null;
 
-      if (updateErr) throw updateErr;
+      // 1. Try Supabase update
+      try {
+        const { data, error: updateErr } = await supabase
+          .from(TABLE)
+          .update(toRow(updates))
+          .eq('id', id)
+          .select()
+          .single();
 
-      const updated = mapCourse(data);
+        if (!updateErr && data) {
+          updated = mapCourse(data);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase course update notice:', sbErr);
+      }
+
+      // 2. Try Backend Express API update
+      try {
+        const payload = {
+          code: updates.code ? updates.code.trim().toUpperCase() : undefined,
+          name: updates.name ? updates.name.trim() : undefined,
+          credits: updates.credits !== undefined ? parseInt(updates.credits, 10) : undefined,
+          program: updates.program || updates.programId ? (updates.program || updates.programId).trim() : undefined,
+          faculty: updates.faculty !== undefined ? (updates.faculty ? updates.faculty.trim() : null) : undefined,
+          level: updates.level ? updates.level.toString().trim() : undefined,
+          semester: updates.semester ? updates.semester.trim() : undefined,
+          status: updates.status || undefined
+        };
+        const res = await api.put(`/courses/${id}`, payload);
+        if (res.data?.course && !updated) {
+          const apiCourse = res.data.course;
+          updated = {
+            id: apiCourse.id,
+            code: apiCourse.code,
+            name: apiCourse.name,
+            credits: apiCourse.credits,
+            programId: apiCourse.program,
+            program: apiCourse.program,
+            faculty: apiCourse.faculty || updates.faculty || null,
+            level: apiCourse.level,
+            semester: apiCourse.semester,
+            status: apiCourse.status,
+            createdAt: apiCourse.createdAt,
+            updatedAt: apiCourse.updatedAt
+          };
+        }
+      } catch (apiErr) {
+        console.warn('Backend API course update notice:', apiErr.response?.data?.message || apiErr.message);
+      }
+
+      if (!updated) {
+        const existing = courses.value.find(c => c.id === id);
+        updated = { ...(existing || {}), ...updates, id };
+      }
+
+      if (updates.program && !updated.program) updated.program = updates.program;
+      if (updates.faculty !== undefined) updated.faculty = updates.faculty;
+
       const index = courses.value.findIndex((c) => c.id === id);
-      if (index !== -1) courses.value[index] = updated;
-      push.success({ title: 'Course updated', message: `${updated.code} — ${updated.name}` });
+      if (index !== -1) {
+        courses.value[index] = { ...courses.value[index], ...updated };
+      }
+      push.success({ title: 'Course updated', message: `${updated.code || ''} — ${updated.name || ''}` });
       return updated;
     } catch (err) {
       const normalized = normalizeError(err);

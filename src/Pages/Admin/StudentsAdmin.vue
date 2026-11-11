@@ -362,7 +362,7 @@
               <td class="py-3.5 px-4">
                 <div class="space-y-0.5">
                   <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold truncate max-w-[200px]" :title="student.faculty">
-                    {{ student.faculty || 'School of Computing' }}
+                    {{ student.faculty || resolveOfficialFaculty(student.faculty) || getFacultyForProgramme(student.program) || 'School of Business & Leadership' }}
                   </div>
                   <div class="font-medium text-slate-800 dark:text-white text-xs truncate max-w-[200px]" :title="student.program">
                     {{ student.program || 'General Studies' }}
@@ -521,7 +521,7 @@
           <!-- Academic Badge, Level & Study Mode -->
           <div class="space-y-1.5 p-2.5 rounded-xl bg-slate-50 dark:bg-dark-muted/40 border border-slate-200/70 dark:border-dark-outline/50 text-xs">
             <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 font-semibold uppercase">
-              <span class="truncate max-w-[140px]" :title="student.faculty">{{ student.faculty || 'School of Computing' }}</span>
+              <span class="truncate max-w-[140px]" :title="student.faculty">{{ student.faculty || resolveOfficialFaculty(student.faculty) || getFacultyForProgramme(student.program) || 'School of Business & Leadership' }}</span>
               <div class="flex items-center gap-1.5 shrink-0">
                 <span class="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-200/80 dark:bg-dark-muted text-slate-700 dark:text-slate-200">
                   Lvl {{ student.level || '100' }}
@@ -1478,6 +1478,7 @@ import { useFacultiesStore } from '@/stores/faculties.js';
 import {
   FACULTY_PROGRAMME_MAP,
   OFFICIAL_FACULTIES,
+  resolveOfficialFaculty,
   getProgrammesForFaculty,
   getFacultyForProgramme,
   isValidProgrammeFacultyPair
@@ -1723,14 +1724,27 @@ const getInitials = (name) => {
 const allCoursesList = computed(() => coursesStore.courses || []);
 
 // Available distinct programs — faculty store is primary source, student/course data is supplementary
-// Distinct university faculties (official schools)
+// Distinct university faculties (combining official schools and registered faculties)
 const availableFacultiesList = computed(() => {
-  return OFFICIAL_FACULTIES;
+  const set = new Set(OFFICIAL_FACULTIES);
+  if (Array.isArray(availableFaculties.value)) {
+    availableFaculties.value.forEach((f) => {
+      if (f?.name && f.name.trim()) set.add(f.name.trim());
+    });
+  }
+  if (studentForm.value?.faculty && studentForm.value.faculty.trim()) {
+    set.add(studentForm.value.faculty.trim());
+  }
+  return Array.from(set);
 });
 
 // Cascading programmes dynamically filtered by selected faculty in the form
 const programmesForSelectedFaculty = computed(() => {
-  return getProgrammesForFaculty(studentForm.value.faculty, availablePrograms.value);
+  const progs = [...getProgrammesForFaculty(studentForm.value.faculty, availablePrograms.value)];
+  if (studentForm.value?.program && !progs.includes(studentForm.value.program)) {
+    progs.push(studentForm.value.program);
+  }
+  return progs;
 });
 
 // Auto-reset or default programme when faculty changes in the form
@@ -1806,7 +1820,8 @@ const fetchStudentsData = async () => {
 
       const existing = unifiedMap.get(dedupeKey) || (rawId ? unifiedMap.get(`id:${rawId}`) : null);
 
-      const resolvedFaculty = u.faculty || existing?.faculty || getFacultyForProgramme(u.program || u.program_id || existing?.program, availableFacultiesList.value);
+      const rawFaculty = u.faculty || existing?.faculty;
+      const resolvedFaculty = rawFaculty ? resolveOfficialFaculty(rawFaculty) : (getFacultyForProgramme(u.program || u.program_id || existing?.program, availableFacultiesList.value) || OFFICIAL_FACULTIES[0]);
       const resolvedPhone = u.phone_number || u.phoneNumber || u.phone || existing?.phoneNumber || '';
 
       const resolved = {
@@ -2121,7 +2136,7 @@ const openAddStudentModal = () => {
   isEditingStudent.value = false;
   studentModalError.value = '';
   showStudentPassword.value = false;
-  const initialFaculty = availableFacultiesList.value[0] || 'School of Computing';
+  const initialFaculty = availableFacultiesList.value[0] || OFFICIAL_FACULTIES[0];
   const progs = getProgrammesForFaculty(initialFaculty, availablePrograms.value);
   studentForm.value = {
     id: '',
@@ -2142,7 +2157,8 @@ const openEditStudentModal = (student) => {
   isEditingStudent.value = true;
   studentModalError.value = '';
   showStudentPassword.value = false;
-  const inferredFaculty = student.faculty || getFacultyForProgramme(student.program, availableFacultiesList.value);
+  const rawFac = student.faculty || '';
+  const inferredFaculty = (rawFac ? resolveOfficialFaculty(rawFac) : '') || getFacultyForProgramme(student.program, availableFacultiesList.value) || OFFICIAL_FACULTIES[0];
   studentForm.value = {
     id: student.id,
     name: student.name || '',
@@ -2171,7 +2187,7 @@ const saveStudent = async () => {
   try {
     const cleanName = studentForm.value.name.trim();
     const cleanEmail = studentForm.value.email.trim().toLowerCase();
-    const cleanFaculty = studentForm.value.faculty?.trim() || 'School of Computing';
+    const cleanFaculty = studentForm.value.faculty?.trim() || resolveOfficialFaculty(studentForm.value.faculty) || OFFICIAL_FACULTIES[0];
     const cleanProgram = studentForm.value.program?.trim();
     const cleanLevel = studentForm.value.level;
     const cleanMode = studentForm.value.mode || 'Regular';

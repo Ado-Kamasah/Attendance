@@ -5,7 +5,7 @@ import prisma from '../config/db.js';
  */
 export const createCourse = async (req, res) => {
   try {
-    const { code, name, credits, program, level, semester, status } = req.body;
+    const { code, name, credits, program, faculty, level, semester, status } = req.body;
 
     if (!code || !name || !credits || !program || !level) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -26,6 +26,7 @@ export const createCourse = async (req, res) => {
         name: name.trim(),
         credits: parseInt(credits, 10),
         program: program.trim(),
+        faculty: faculty ? faculty.trim() : null,
         level: level.trim(),
         semester: semester ? semester.trim() : 'Semester 1',
         status: status || 'active'
@@ -325,7 +326,7 @@ export const getCourseStudents = async (req, res) => {
 export const updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, name, credits, program, level, semester, status } = req.body;
+    const { code, name, credits, program, faculty, level, semester, status } = req.body;
 
     if (!id) {
       return res.status(400).json({ message: 'Course ID is required' });
@@ -350,6 +351,7 @@ export const updateCourse = async (req, res) => {
         name: name ? name.trim() : undefined,
         credits: credits ? parseInt(credits, 10) : undefined,
         program: program ? program.trim() : undefined,
+        faculty: faculty !== undefined ? (faculty ? faculty.trim() : null) : undefined,
         level: level ? level.trim() : undefined,
         semester: semester ? semester.trim() : undefined,
         status: status || undefined
