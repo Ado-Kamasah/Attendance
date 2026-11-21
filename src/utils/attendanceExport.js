@@ -34,7 +34,7 @@ export async function fetchCourseAttendanceExportData(courseId, options = {}) {
   // 2. Fetch Sessions for this course (chronologically ascending)
   let sessQuery = supabase
     .from('sessions')
-    .select('id, pin, date, created_at, lecturer_id')
+    .select('id, pin, date, created_at, lecturer_id, mode')
     .eq('course_id', courseId)
     .order('created_at', { ascending: true });
 
@@ -42,11 +42,16 @@ export async function fetchCourseAttendanceExportData(courseId, options = {}) {
     sessQuery = sessQuery.eq('id', options.sessionId);
   }
 
+  if (options.mode && options.mode !== 'all') {
+    sessQuery = sessQuery.ilike('mode', options.mode);
+  }
+
   const { data: rawSessions, error: sErr } = await sessQuery;
   if (sErr) throw sErr;
 
   if (!rawSessions || rawSessions.length === 0) {
-    throw new Error(`No attendance sessions recorded for ${course.code} - ${course.name}.`);
+    const modeSuffix = options.mode && options.mode !== 'all' ? ` for ${options.mode} mode` : '';
+    throw new Error(`No attendance sessions recorded for ${course.code} - ${course.name}${modeSuffix}.`);
   }
 
   // 3. Lecturer lookup
@@ -102,7 +107,7 @@ export async function fetchCourseAttendanceExportData(courseId, options = {}) {
   if (allStudentIds.length > 0) {
     const { data: users, error: uErr } = await supabase
       .from('users')
-      .select('id, name, id_number, email')
+      .select('id, name, id_number, email, mode')
       .in('id', allStudentIds);
     if (!uErr && users) studentUsers = users;
   }
@@ -112,19 +117,33 @@ export async function fetchCourseAttendanceExportData(courseId, options = {}) {
     (a.name || '').localeCompare(b.name || '')
   );
 
-  // 5. Build Weeks (Week 1++, Week 2++, ...)
-  const sessions = rawSessions.map((sess, index) => {
-    const weekNumber = index + 1;
+  // 5. Build Weeks per Mode (e.g. Regular - Week 1++, Weekend - Week 1++)
+  // Tracks separate week counters for each mode so Regular and Weekend are never conflated as one mode.
+  const modeCounters = { Regular: 0, Weekend: 0 };
+
+  const sessions = rawSessions.map((sess) => {
+    const sessMode = sess.mode || 'Regular';
+    modeCounters[sessMode] = (modeCounters[sessMode] || 0) + 1;
+    const weekNumber = modeCounters[sessMode];
     const sessionAtts = (allAttendances || []).filter((a) => a.session_id === sess.id);
     const attMap = new Map(sessionAtts.map((a) => [a.student_id, a.status]));
 
-    const studentRows = sortedStudents.map((st) => {
+    // Only include students relevant to this mode (or students who have an attendance record or no specified mode)
+    // to avoid falsely marking Weekend students as absent in Regular sessions, and vice versa.
+    const relevantStudents = sortedStudents.filter((st) => {
+      if (attMap.has(st.id)) return true;
+      if (!st.mode) return true;
+      return st.mode.toLowerCase() === sessMode.toLowerCase();
+    });
+
+    const studentRows = relevantStudents.map((st) => {
       const statusRaw = attMap.get(st.id);
       const isPresent = statusRaw === 'present';
       return {
         id: st.id_number || st.id,
         name: st.name || 'Student',
         email: st.email || '',
+        mode: st.mode || sessMode,
         status: isPresent ? 'Present' : 'Absent',
       };
     });
@@ -142,8 +161,9 @@ export async function fetchCourseAttendanceExportData(courseId, options = {}) {
 
     return {
       sessionId: sess.id,
+      mode: sessMode,
       weekNumber,
-      weekLabel: `Week ${weekNumber}`,
+      weekLabel: `${sessMode} - Week ${weekNumber}`,
       sessionCode: sess.pin,
       date: dateStr,
       students: studentRows,
@@ -180,7 +200,7 @@ export function exportAttendanceToExcel(exportData) {
   let worksheetsXml = '';
 
   for (const s of sessions) {
-    const sheetName = sanitizeSheetName(`Week ${s.weekNumber}`);
+    const sheetName = sanitizeSheetName(`${s.mode || 'Regular'} Wk ${s.weekNumber}`);
     const studentRowsXml = s.students
       .map(
         (st) => `
@@ -217,14 +237,19 @@ export function exportAttendanceToExcel(exportData) {
             <Data ss:Type="String">Lecturer: ${escapeXml(lecturerName)}</Data>
           </Cell>
         </Row>
+        <Row ss:Height="20">
+          <Cell ss:MergeAcross="2" ss:StyleID="HeadingMode">
+            <Data ss:Type="String">Study Mode: ${escapeXml(s.mode || 'Regular')} Programme</Data>
+          </Cell>
+        </Row>
         <Row ss:Height="22">
           <Cell ss:MergeAcross="2" ss:StyleID="HeadingWeek">
-            <Data ss:Type="String">Week number: Week ${s.weekNumber} (Session Code: ${escapeXml(s.sessionCode)})</Data>
+            <Data ss:Type="String">Week number: ${escapeXml(s.mode || 'Regular')} - Week ${s.weekNumber} (Session Code: ${escapeXml(s.sessionCode)})</Data>
           </Cell>
         </Row>
         <Row ss:Height="18">
           <Cell ss:MergeAcross="2" ss:StyleID="HeadingMeta">
-            <Data ss:Type="String">Date: ${escapeXml(s.date)} | Enrolled: ${s.totalCount} | Present: ${s.presentCount} | Absent: ${s.absentCount} | Turnout: ${s.rate}%</Data>
+            <Data ss:Type="String">Date: ${escapeXml(s.date)} | Mode: ${escapeXml(s.mode || 'Regular')} | Enrolled: ${s.totalCount} | Present: ${s.presentCount} | Absent: ${s.absentCount} | Turnout: ${s.rate}%</Data>
           </Cell>
         </Row>
 
@@ -296,6 +321,15 @@ export function exportAttendanceToExcel(exportData) {
       <Alignment ss:Horizontal="Left" ss:Vertical="Center" />
       <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#334155" />
       <Interior ss:Color="#F8FAFC" ss:Pattern="Solid" />
+    </Style>
+
+    <Style ss:ID="HeadingMode">
+      <Alignment ss:Horizontal="Left" ss:Vertical="Center" />
+      <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#0369A1" />
+      <Interior ss:Color="#E0F2FE" ss:Pattern="Solid" />
+      <Borders>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#0284C7" />
+      </Borders>
     </Style>
 
     <Style ss:ID="HeadingWeek">
@@ -398,7 +432,7 @@ export function exportAttendanceToPdf(exportData) {
           <div class="brand-sub">Southshore University College · Official Academic Audit</div>
           <h1 class="header-title">Lecture Attendance Register</h1>
         </div>
-        <div class="badge-code">CODE: #${escapeXml(s.sessionCode)}</div>
+        <div class="badge-code">${escapeXml((s.mode || 'Regular').toUpperCase())} · CODE: #${escapeXml(s.sessionCode)}</div>
       </div>
 
       <!-- Required Heading Block -->
@@ -411,12 +445,17 @@ export function exportAttendanceToPdf(exportData) {
           <span class="heading-label">Lecturer:</span>
           <span class="heading-value">${escapeXml(lecturerName)}</span>
         </div>
+        <div class="heading-row">
+          <span class="heading-label">Study Mode:</span>
+          <span class="heading-value">${escapeXml(s.mode || 'Regular')} Programme</span>
+        </div>
         <div class="heading-row week-highlight">
           <span class="heading-label">Week Number:</span>
-          <span class="heading-value">Week ${s.weekNumber} (Session Code: ${escapeXml(s.sessionCode)})</span>
+          <span class="heading-value">${escapeXml(s.mode || 'Regular')} - Week ${s.weekNumber} (Session Code: ${escapeXml(s.sessionCode)})</span>
         </div>
         <div class="stats-pills">
           <div class="stat-pill"><strong>Date:</strong> ${escapeXml(s.date || 'Class Session')}</div>
+          <div class="stat-pill"><strong>Mode:</strong> ${escapeXml(s.mode || 'Regular')}</div>
           <div class="stat-pill"><strong>Enrolled:</strong> ${s.totalCount}</div>
           <div class="stat-pill present"><strong>Present:</strong> ${s.presentCount}</div>
           <div class="stat-pill absent"><strong>Absent:</strong> ${s.absentCount}</div>
@@ -454,7 +493,7 @@ export function exportAttendanceToPdf(exportData) {
       <!-- Sheet Footer -->
       <div class="footer">
         <div>Southshore University College · Generated on ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
-        <div>Week ${s.weekNumber} · Session #${escapeXml(s.sessionCode)}</div>
+        <div>${escapeXml(s.mode || 'Regular')} Mode · Week ${s.weekNumber} · Session #${escapeXml(s.sessionCode)}</div>
       </div>
     </div>`
     )

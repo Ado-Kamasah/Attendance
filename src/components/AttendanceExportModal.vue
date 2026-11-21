@@ -49,6 +49,31 @@
           </select>
         </div>
 
+        <!-- Study Mode Filter (Regular vs Weekend) -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="block font-mono font-semibold uppercase tracking-wider text-[11px] text-slate-600 dark:text-white/80">
+              Study Programme Mode
+            </label>
+            <span class="text-[10px] font-mono text-slate-400 dark:text-white/60">Avoid counting weeks as one mode</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="m in modeOptions"
+              :key="m.value"
+              type="button"
+              @click="selectedMode = m.value"
+              class="py-2 px-2.5 rounded-xl border text-center transition-all cursor-pointer font-mono text-xs flex flex-col items-center justify-center gap-0.5"
+              :class="selectedMode === m.value
+                ? 'bg-secondary/10 border-secondary text-primary dark:text-white font-bold shadow-2xs'
+                : 'bg-slate-50/70 dark:bg-dark-muted/40 border-slate-200 dark:border-dark-outline text-slate-600 dark:text-white/70 hover:bg-slate-100'"
+            >
+              <span>{{ m.label }}</span>
+              <span class="text-[10px] opacity-75 font-normal">({{ m.count }} sess)</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Session Scope -->
         <div class="space-y-1.5">
           <label class="block font-mono font-semibold uppercase tracking-wider text-[11px] text-slate-600 dark:text-white/80">
@@ -68,14 +93,14 @@
                 All Sessions (Weeks)
               </span>
               <span class="text-[10px] font-mono opacity-80 mt-1">
-                Creates separate sheet per week if sessions &gt; 1
+                Creates separate sheet per week (partitioned by mode)
               </span>
             </button>
 
             <button
               type="button"
               @click="exportScope = 'single'"
-              :disabled="sessionsForCourse.length === 0"
+              :disabled="filteredSessionsForCourse.length === 0"
               class="p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between disabled:opacity-40 disabled:cursor-not-allowed"
               :class="exportScope === 'single'
                 ? 'bg-secondary/10 border-secondary text-primary dark:text-white font-semibold shadow-2xs'
@@ -101,8 +126,8 @@
             v-model="selectedSessionId"
             class="w-full bg-slate-50 dark:bg-dark-muted border border-slate-200 dark:border-dark-outline rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 dark:text-white focus:outline-hidden focus:border-secondary transition-all"
           >
-            <option v-for="(s, idx) in sessionsForCourse" :key="s.id" :value="s.id">
-              Week {{ idx + 1 }} &bull; PIN #{{ s.pin }} ({{ s.date ? s.date.slice(0, 10) : 'Session' }})
+            <option v-for="s in filteredSessionsForCourse" :key="s.id" :value="s.id">
+              {{ s.displayLabel }}
             </option>
           </select>
         </div>
@@ -153,15 +178,20 @@
         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-dark-muted/30 border border-slate-200/80 dark:border-dark-outline/60 space-y-1 font-mono text-[11px] text-slate-600 dark:text-white/75">
           <div class="flex items-center justify-between">
             <span class="text-slate-500">Target Heading:</span>
-            <span class="font-bold text-slate-800 dark:text-white">{ Course, Lecturer, Week 1++(Code) }</span>
+            <span class="font-bold text-slate-800 dark:text-white">{ Course, Lecturer, Mode - Week 1++(Code) }</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-slate-500">Columns:</span>
             <span class="font-bold text-slate-800 dark:text-white">ID, Student Name, Attendance</span>
           </div>
-          <div v-if="sessionsForCourse.length > 0" class="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-dark-outline/40 text-secondary">
-            <span>Sessions Available:</span>
-            <span class="font-bold">{{ sessionsForCourse.length }} Session{{ sessionsForCourse.length > 1 ? 's' : '' }}</span>
+          <div v-if="sessionsForCourse.length > 0" class="flex flex-col gap-1 pt-1.5 border-t border-slate-200/60 dark:border-dark-outline/40">
+            <div class="flex items-center justify-between text-secondary font-bold">
+              <span>Sessions Found:</span>
+              <span>{{ sessionsForCourse.length }} Total ({{ modeCounts.regular }} Regular &bull; {{ modeCounts.weekend }} Weekend)</span>
+            </div>
+            <div class="text-[10px] text-slate-400 dark:text-white/60">
+              Export will partition weeks per study mode to avoid lumping into a single counter.
+            </div>
           </div>
         </div>
 
@@ -197,7 +227,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { supabase } from '@/stores/supabase';
 import { 
   Download, 
@@ -223,6 +253,7 @@ const emit = defineEmits(['close', 'exported']);
 
 const courseList = ref([]);
 const selectedCourseId = ref('');
+const selectedMode = ref('all'); // 'all' | 'Regular' | 'Weekend'
 const exportScope = ref('all');
 const selectedSessionId = ref('');
 const format = ref('excel');
@@ -230,11 +261,59 @@ const isExporting = ref(false);
 const errorMessage = ref('');
 const sessionsForCourse = ref([]);
 
+const modeCounts = computed(() => {
+  let regular = 0;
+  let weekend = 0;
+  for (const s of sessionsForCourse.value) {
+    if ((s.mode || 'Regular').toLowerCase() === 'weekend') weekend++;
+    else regular++;
+  }
+  return { regular, weekend };
+});
+
+const modeOptions = computed(() => [
+  { value: 'all', label: 'All Modes', count: sessionsForCourse.value.length },
+  { value: 'Regular', label: 'Regular', count: modeCounts.value.regular },
+  { value: 'Weekend', label: 'Weekend', count: modeCounts.value.weekend },
+]);
+
+const enrichedSessions = computed(() => {
+  const counters = { Regular: 0, Weekend: 0 };
+  return sessionsForCourse.value.map((s) => {
+    const m = s.mode || 'Regular';
+    counters[m] = (counters[m] || 0) + 1;
+    const weekNum = counters[m];
+    return {
+      ...s,
+      mode: m,
+      weekNumber: weekNum,
+      displayLabel: `[${m}] Week ${weekNum} • PIN #${s.pin} (${s.date ? s.date.slice(0, 10) : 'Session'})`,
+    };
+  });
+});
+
+const filteredSessionsForCourse = computed(() => {
+  if (selectedMode.value === 'all') return enrichedSessions.value;
+  return enrichedSessions.value.filter(
+    (s) => s.mode.toLowerCase() === selectedMode.value.toLowerCase()
+  );
+});
+
+watch(
+  () => filteredSessionsForCourse.value,
+  (list) => {
+    if (list.length > 0 && (!selectedSessionId.value || !list.some((s) => s.id === selectedSessionId.value))) {
+      selectedSessionId.value = list[0].id;
+    }
+  }
+);
+
 watch(
   () => props.isOpen,
   async (newVal) => {
     if (newVal) {
       errorMessage.value = '';
+      selectedMode.value = 'all';
       courseList.value = props.courses && props.courses.length > 0 ? props.courses : await loadCoursesFallback();
       selectedCourseId.value = props.initialCourseId || (courseList.value[0]?.id || '');
       if (selectedCourseId.value) {
@@ -264,7 +343,7 @@ async function loadSessionsForCourse(courseId) {
   try {
     const { data } = await supabase
       .from('sessions')
-      .select('id, pin, date, created_at')
+      .select('id, pin, date, created_at, mode')
       .eq('course_id', courseId)
       .order('created_at', { ascending: true });
     sessionsForCourse.value = data || [];
@@ -292,6 +371,7 @@ async function handleExport() {
   try {
     const options = {
       lecturerName: props.lecturerNameOverride,
+      mode: selectedMode.value,
     };
     if (exportScope.value === 'single' && selectedSessionId.value) {
       options.sessionId = selectedSessionId.value;
@@ -305,7 +385,7 @@ async function handleExport() {
       exportAttendanceToPdf(exportData);
     }
 
-    emit('exported', { courseId: selectedCourseId.value, format: format.value });
+    emit('exported', { courseId: selectedCourseId.value, format: format.value, mode: selectedMode.value });
     close();
   } catch (err) {
     console.error('Export failed:', err);

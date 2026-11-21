@@ -35,6 +35,16 @@
           </select>
 
           <select 
+            v-model="selectedModeFilter" 
+            id="mode-filter"
+            class="bg-slate-50 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 dark:text-white focus:outline-hidden focus:border-secondary shadow-2xs"
+          >
+            <option value="">All Modes</option>
+            <option value="Regular">Regular Mode</option>
+            <option value="Weekend">Weekend Mode</option>
+          </select>
+
+          <select 
             v-model="selectedStatusFilter" 
             id="status-filter"
             class="bg-slate-50 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 dark:text-white focus:outline-hidden focus:border-secondary shadow-2xs"
@@ -134,6 +144,7 @@
           <thead class="text-[11px] font-mono uppercase bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-white/75 border-b border-slate-200/80 dark:border-dark-outline/60">
             <tr>
               <th scope="col" class="px-5 py-3.5">Course</th>
+              <th scope="col" class="px-5 py-3.5">Mode</th>
               <th scope="col" class="px-5 py-3.5">Sessions</th>
               <th scope="col" class="px-5 py-3.5">Present</th>
               <th scope="col" class="px-5 py-3.5">Absent</th>
@@ -143,17 +154,25 @@
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
             <tr v-if="courseBreakdown.length === 0">
-              <td colspan="6" class="px-5 py-10 text-center text-xs font-mono text-slate-400 dark:text-white/50">
+              <td colspan="7" class="px-5 py-10 text-center text-xs font-mono text-slate-400 dark:text-white/50">
                 No data available.
               </td>
             </tr>
             <tr 
               v-for="row in courseBreakdown" 
-              :key="row.courseId"
+              :key="row.key"
               class="hover:bg-slate-50/70 dark:hover:bg-slate-900/30 transition-colors"
             >
               <td class="px-5 py-4 font-semibold text-slate-800 dark:text-white">
                 {{ row.courseName }}
+              </td>
+              <td class="px-5 py-4">
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-mono font-bold"
+                  :class="row.mode === 'Weekend' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30'"
+                >
+                  {{ row.mode }}
+                </span>
               </td>
               <td class="px-5 py-4 font-mono font-medium text-slate-700 dark:text-white/90">
                 {{ row.sessionCount }}
@@ -236,6 +255,7 @@
             <tr>
               <th scope="col" class="px-5 py-3.5">Student</th>
               <th scope="col" class="px-5 py-3.5">Student ID</th>
+              <th scope="col" class="px-5 py-3.5">Mode</th>
               <th scope="col" class="px-5 py-3.5">Programme</th>
               <th scope="col" class="px-5 py-3.5">Course</th>
               <th scope="col" class="px-5 py-3.5">Sessions</th>
@@ -247,7 +267,7 @@
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
             <tr v-if="filteredStudentBreakdown.length === 0">
-              <td colspan="9" class="px-5 py-10 text-center text-xs font-mono text-slate-400 dark:text-white/50">
+              <td colspan="10" class="px-5 py-10 text-center text-xs font-mono text-slate-400 dark:text-white/50">
                 No data matches your filters.
               </td>
             </tr>
@@ -261,6 +281,14 @@
               </td>
               <td class="px-5 py-4 font-mono font-medium text-slate-700 dark:text-white/90">
                 {{ row.idNumber }}
+              </td>
+              <td class="px-5 py-4">
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-mono font-bold"
+                  :class="row.mode === 'Weekend' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30'"
+                >
+                  {{ row.mode }}
+                </span>
               </td>
               <td class="px-5 py-4 text-slate-500 dark:text-white/75 truncate max-w-[150px]">
                 {{ row.programmeName }}
@@ -356,6 +384,7 @@
             <tr>
               <th scope="col" class="px-5 py-3.5">Student</th>
               <th scope="col" class="px-5 py-3.5">Student ID</th>
+              <th scope="col" class="px-5 py-3.5">Mode</th>
               <th scope="col" class="px-5 py-3.5">Course</th>
               <th scope="col" class="px-5 py-3.5">Session Date</th>
               <th scope="col" class="px-5 py-3.5">Status</th>
@@ -364,7 +393,7 @@
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
             <tr v-if="filteredAttendances.length === 0">
-              <td colspan="6" class="px-5 py-10 text-center text-xs font-mono text-slate-400 dark:text-white/50">
+              <td colspan="7" class="px-5 py-10 text-center text-xs font-mono text-slate-400 dark:text-white/50">
                 No records match your filters.
               </td>
             </tr>
@@ -378,6 +407,14 @@
               </td>
               <td class="px-5 py-4 font-mono font-medium text-slate-700 dark:text-white/90">
                 {{ rec.idNumber }}
+              </td>
+              <td class="px-5 py-4">
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-mono font-bold"
+                  :class="rec.mode === 'Weekend' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30'"
+                >
+                  {{ rec.mode }}
+                </span>
               </td>
               <td class="px-5 py-4 font-medium text-slate-800 dark:text-white">
                 {{ rec.courseName }}
@@ -471,7 +508,7 @@ const coursesStore = useCoursesStore();
 const enrollmentsStore = useEnrollmentsStore();
 const programmesStore = useProgrammesStore();
 
-// Map: users.id → { idNumber, name }
+// Map: users.id → { idNumber, name, programId, mode }
 const userMap = ref({});
 
 async function loadUsers(ids) {
@@ -481,12 +518,12 @@ async function loadUsers(ids) {
   if (missing.length === 0) return;
   const { data } = await supabase
     .from('users')
-    .select('id, name, id_number, program_id')
+    .select('id, name, id_number, program_id, mode')
     .in('id', missing);
   if (data) {
     const updated = { ...userMap.value };
     data.forEach(u => {
-      updated[u.id] = { idNumber: u.id_number || '—', name: u.name || '—', programId: u.program_id ?? null };
+      updated[u.id] = { idNumber: u.id_number || '—', name: u.name || '—', programId: u.program_id ?? null, mode: u.mode || 'Regular' };
     });
     userMap.value = updated;
   }
@@ -499,6 +536,7 @@ const { enrollments } = storeToRefs(enrollmentsStore);
 const { programmes } = storeToRefs(programmesStore);
 
 const selectedCourseFilter = ref('');
+const selectedModeFilter = ref('');
 const selectedStatusFilter = ref('');
 const searchQuery = ref('');
 const currentPage = ref(1);
@@ -538,7 +576,7 @@ onUnmounted(() => {
 });
 
 // Reset pages when filters change
-watch([selectedCourseFilter, selectedStatusFilter, searchQuery], () => {
+watch([selectedCourseFilter, selectedModeFilter, selectedStatusFilter, searchQuery], () => {
   currentPage.value = 1;
 });
 watch([studentProgramFilter, studentCourseFilter, studentSearch], () => {
@@ -562,51 +600,58 @@ const overallRate = computed(() => {
   return Math.round((present / total) * 100);
 });
 
-// ─── Course Breakdown ─────────────────────────────────────────────────────────
+// ─── Course Breakdown (Partitioned by Study Mode) ─────────────────────────────
 
 const courseBreakdown = computed(() => {
-  return courses.value.map(course => {
-    const courseSessions = sessions.value.filter(s => s.courseId === course.id);
-    const sessionIds = new Set(courseSessions.map(s => s.id));
-    const courseAttendances = attendances.value.filter(a => sessionIds.has(a.sessionId));
-    const present = courseAttendances.filter(a => a.status === 'present').length;
-    const absent  = courseAttendances.filter(a => a.status === 'absent').length;
-    const total   = courseAttendances.length;
-    const rate    = total > 0 ? Math.round((present / total) * 100) : 0;
-    return {
-      courseId: course.id,
-      courseName: course.name || course.code || 'Unknown',
-      sessionCount: courseSessions.length,
-      present,
-      absent,
-      rate,
-    };
-  }).filter(r => selectedCourseFilter.value === '' || r.courseId === selectedCourseFilter.value);
-});
+  const list = [];
+  courses.value.forEach((course) => {
+    const courseSessions = sessions.value.filter((s) => s.courseId === course.id);
+    if (!courseSessions.length) return;
 
-// ─── Per-Student Breakdown ────────────────────────────────────────────────────
-
-const courseSessionMap = computed(() => {
-  const map = {};
-  sessions.value.forEach(s => {
-    if (!map[s.courseId]) map[s.courseId] = new Set();
-    map[s.courseId].add(s.id);
+    const modes = [...new Set(courseSessions.map((s) => s.mode || 'Regular'))];
+    modes.forEach((m) => {
+      if (selectedModeFilter.value && m.toLowerCase() !== selectedModeFilter.value.toLowerCase()) return;
+      const modeSessions = courseSessions.filter((s) => (s.mode || 'Regular').toLowerCase() === m.toLowerCase());
+      const sessionIds = new Set(modeSessions.map((s) => s.id));
+      const courseAttendances = attendances.value.filter((a) => sessionIds.has(a.sessionId));
+      const present = courseAttendances.filter((a) => a.status === 'present').length;
+      const absent  = courseAttendances.filter((a) => a.status === 'absent').length;
+      const total   = courseAttendances.length;
+      const rate    = total > 0 ? Math.round((present / total) * 100) : 0;
+      list.push({
+        key: `${course.id}::${m}`,
+        courseId: course.id,
+        courseName: course.name || course.code || 'Unknown',
+        mode: m,
+        sessionCount: modeSessions.length,
+        present,
+        absent,
+        rate,
+      });
+    });
   });
-  return map;
+  return list.filter((r) => selectedCourseFilter.value === '' || r.courseId === selectedCourseFilter.value);
 });
+
+// ─── Per-Student Breakdown (Evaluated against their own study mode) ───────────
 
 const studentCourseBreakdown = computed(() => {
-  return enrollments.value.map(enr => {
-    const sessionIds = courseSessionMap.value[enr.courseId] ?? new Set();
-    const stuAttendances = attendances.value.filter(
-      a => a.studentId === enr.studentId && sessionIds.has(a.sessionId)
-    );
-    const present = stuAttendances.filter(a => a.status === 'present').length;
-    const absent  = stuAttendances.filter(a => a.status === 'absent').length;
-    const total   = stuAttendances.length;
-    const rate    = total > 0 ? Math.round((present / total) * 100) : 0;
-
+  return enrollments.value.map((enr) => {
     const user = userMap.value[enr.studentId];
+    const stuMode = (user?.mode || 'Regular').toLowerCase();
+
+    const allCourseSessions = sessions.value.filter((s) => s.courseId === enr.courseId);
+    const modeCourseSessions = allCourseSessions.filter((s) => (s.mode || 'Regular').toLowerCase() === stuMode);
+    const relevantSessions = modeCourseSessions.length > 0 ? modeCourseSessions : allCourseSessions;
+    const sessionIds = new Set(relevantSessions.map((s) => s.id));
+
+    const stuAttendances = attendances.value.filter(
+      (a) => a.studentId === enr.studentId && sessionIds.has(a.sessionId)
+    );
+    const present = stuAttendances.filter((a) => a.status === 'present').length;
+    const absent  = stuAttendances.filter((a) => a.status === 'absent').length;
+    const rate    = sessionIds.size > 0 ? Math.round((present / sessionIds.size) * 100) : 0;
+
     const course = coursesStore.getCourseById(enr.courseId);
     const programme = user?.programId ? programmesStore.getProgrammeById(user.programId) : null;
 
@@ -615,6 +660,7 @@ const studentCourseBreakdown = computed(() => {
       studentId: enr.studentId,
       idNumber: user?.idNumber ?? '…',
       studentName: user?.name ?? '…',
+      mode: user?.mode || 'Regular',
       programId: user?.programId ?? null,
       programmeName: programme?.name ?? '—',
       courseId: enr.courseId,
@@ -629,6 +675,7 @@ const studentCourseBreakdown = computed(() => {
 
 const filteredStudentBreakdown = computed(() => {
   let list = studentCourseBreakdown.value;
+  if (selectedModeFilter.value)   list = list.filter(r => (r.mode || 'Regular').toLowerCase() === selectedModeFilter.value.toLowerCase());
   if (studentProgramFilter.value) list = list.filter(r => r.programId === studentProgramFilter.value);
   if (studentCourseFilter.value)  list = list.filter(r => r.courseId  === studentCourseFilter.value);
   if (studentSearch.value.trim()) {
@@ -636,7 +683,8 @@ const filteredStudentBreakdown = computed(() => {
     list = list.filter(r =>
       r.studentName.toLowerCase().includes(q) ||
       r.idNumber.toLowerCase().includes(q) ||
-      r.courseName.toLowerCase().includes(q)
+      r.courseName.toLowerCase().includes(q) ||
+      (r.mode && r.mode.toLowerCase().includes(q))
     );
   }
   return list.sort((a, b) => a.studentName.localeCompare(b.studentName));
@@ -663,6 +711,7 @@ const enrichedAttendances = computed(() => {
       studentId: a.studentId,
       idNumber: user?.idNumber ?? '…',
       studentName: user?.name ?? '…',
+      mode: session?.mode || user?.mode || 'Regular',
       status: a.status,
       sessionDate: session?.date
         ? new Date(session.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -679,13 +728,15 @@ const enrichedAttendances = computed(() => {
 const filteredAttendances = computed(() => {
   let list = enrichedAttendances.value;
   if (selectedCourseFilter.value) list = list.filter(r => r.courseId === selectedCourseFilter.value);
+  if (selectedModeFilter.value)   list = list.filter(r => (r.mode || 'Regular').toLowerCase() === selectedModeFilter.value.toLowerCase());
   if (selectedStatusFilter.value) list = list.filter(r => r.status === selectedStatusFilter.value);
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.trim().toLowerCase();
     list = list.filter(r =>
       (r.idNumber && r.idNumber.toLowerCase().includes(q)) ||
       (r.studentName && r.studentName.toLowerCase().includes(q)) ||
-      (r.courseName && r.courseName.toLowerCase().includes(q))
+      (r.courseName && r.courseName.toLowerCase().includes(q)) ||
+      (r.mode && r.mode.toLowerCase().includes(q))
     );
   }
   return list;

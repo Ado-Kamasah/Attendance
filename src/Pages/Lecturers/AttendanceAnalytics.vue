@@ -68,6 +68,16 @@
             <option v-for="c in myCourses" :key="c.id" :value="c.id">{{ c.code }} — {{ c.name }}</option>
           </select>
 
+          <select
+            v-model="selectedModeFilter"
+            :disabled="isAdmin && !selectedLecturerId"
+            class="bg-slate-50 dark:bg-dark-muted/80 border border-slate-200 dark:border-dark-outline/70 rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-secondary/50 disabled:opacity-40"
+          >
+            <option value="all">All Modes</option>
+            <option value="Regular">Regular Mode</option>
+            <option value="Weekend">Weekend Mode</option>
+          </select>
+
           <div v-if="lastUpdated" class="flex items-center gap-1.5 text-xs text-slate-400 dark:text-white/50 font-mono">
             <Clock class="w-3.5 h-3.5" />
             {{ lastUpdated }}
@@ -177,6 +187,12 @@
                 <div class="flex items-center gap-2 min-w-0">
                   <span class="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary dark:bg-secondary/15 dark:text-secondary flex-shrink-0">
                     {{ c.code }}
+                  </span>
+                  <span
+                    class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0"
+                    :class="c.mode === 'Weekend' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30'"
+                  >
+                    {{ c.mode }}
                   </span>
                   <span class="text-sm font-medium text-slate-700 dark:text-white/90 truncate">{{ c.name }}</span>
                 </div>
@@ -321,7 +337,7 @@
               <tr class="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-white/75 font-mono uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-dark-outline">
                 <th class="py-3 px-4 font-semibold">Date & Time</th>
                 <th class="py-3 px-4 font-semibold">Course</th>
-                <th class="py-3 px-4 font-semibold">Mode</th>
+                <th class="py-3 px-4 font-semibold">Mode / Week</th>
                 <th class="py-3 px-4 font-semibold">PIN</th>
                 <th class="py-3 px-4 font-semibold text-center">Present</th>
                 <th class="py-3 px-4 font-semibold text-center">Absent</th>
@@ -340,10 +356,20 @@
                     <span class="text-slate-500 dark:text-white/75 text-[11px] max-w-[140px] truncate">{{ s.courseName }}</span>
                   </div>
                 </td>
-                <td class="py-3 px-4">
-                  <span class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900">
-                    {{ s.mode || 'Regular' }}
-                  </span>
+                <td class="py-3 px-4 font-mono text-xs whitespace-nowrap">
+                  <div class="flex items-center gap-1.5">
+                    <span
+                      class="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md"
+                      :class="(s.mode || 'Regular') === 'Weekend'
+                        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
+                        : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30'"
+                    >
+                      {{ s.mode || 'Regular' }}
+                    </span>
+                    <span class="text-[11px] font-mono font-semibold text-slate-500 dark:text-white/70">
+                      Wk {{ sessionWeekMap.get(s.id) || 1 }}
+                    </span>
+                  </div>
                 </td>
                 <td class="py-3 px-4">
                   <code class="font-mono text-xs px-2 py-0.5 rounded bg-slate-900 dark:bg-slate-950 text-cyan-300 tracking-widest">{{ s.pin }}</code>
@@ -472,6 +498,7 @@ const authStore = useAuthStore();
 
 const isLoading = ref(true);
 const selectedCourseFilter = ref('all');
+const selectedModeFilter = ref('all');
 const lastUpdated = ref('');
 const rawSessions = ref([]);
 const rawLecturerAttendances = ref([]);
@@ -485,11 +512,33 @@ const myCourses = computed(() => {
     .map(s => ({ id: s.courseId, code: s.courseCode, name: s.courseName }));
 });
 
-const filteredSessions = computed(() =>
-  selectedCourseFilter.value === 'all'
-    ? rawSessions.value
-    : rawSessions.value.filter(s => s.courseId === selectedCourseFilter.value)
-);
+// Chronological week numbering per course & study mode (Regular vs Weekend)
+const sessionWeekMap = computed(() => {
+  const map = new Map();
+  const sorted = [...rawSessions.value].sort(
+    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+  );
+  const counters = new Map();
+  sorted.forEach((s) => {
+    const m = s.mode || 'Regular';
+    const key = `${s.courseId}::${m}`;
+    const count = (counters.get(key) || 0) + 1;
+    counters.set(key, count);
+    map.set(s.id, count);
+  });
+  return map;
+});
+
+const filteredSessions = computed(() => {
+  let list = rawSessions.value;
+  if (selectedCourseFilter.value !== 'all') {
+    list = list.filter((s) => s.courseId === selectedCourseFilter.value);
+  }
+  if (selectedModeFilter.value !== 'all') {
+    list = list.filter((s) => (s.mode || 'Regular').toLowerCase() === selectedModeFilter.value.toLowerCase());
+  }
+  return list;
+});
 
 const filteredLecturerAttendances = computed(() =>
   selectedCourseFilter.value === 'all'
@@ -500,18 +549,55 @@ const filteredLecturerAttendances = computed(() =>
 const atRiskStudents = computed(() => {
   const list = [];
   myCourses.value.forEach(course => {
-    const sessions = rawSessions.value.filter(s => s.courseId === course.id);
+    const allCourseSessions = rawSessions.value.filter(s => s.courseId === course.id);
+    if (!allCourseSessions.length) return;
+
+    // Filter sessions if mode filter is selected
+    const sessions = selectedModeFilter.value === 'all'
+      ? allCourseSessions
+      : allCourseSessions.filter(s => (s.mode || 'Regular').toLowerCase() === selectedModeFilter.value.toLowerCase());
     if (!sessions.length) return;
-    const ids = new Set(sessions.map(s => s.id));
-    const total = sessions.length;
+
+    const regSessionIds = new Set(sessions.filter(s => (s.mode || 'Regular').toLowerCase() === 'regular').map(s => s.id));
+    const wkdSessionIds = new Set(sessions.filter(s => (s.mode || 'Regular').toLowerCase() === 'weekend').map(s => s.id));
+    const allSessionIds = new Set(sessions.map(s => s.id));
+
     const byStudent = new Map();
-    rawAttendances.value.filter(a => ids.has(a.sessionId)).forEach(a => {
-      if (!byStudent.has(a.studentId)) byStudent.set(a.studentId, { present: 0, name: a.studentName, idNumber: a.idNumber });
+    rawAttendances.value.filter(a => allSessionIds.has(a.sessionId)).forEach(a => {
+      if (!byStudent.has(a.studentId)) {
+        byStudent.set(a.studentId, {
+          present: 0,
+          name: a.studentName,
+          idNumber: a.idNumber,
+          mode: a.studentMode,
+        });
+      }
       if (a.status === 'present') byStudent.get(a.studentId).present++;
     });
+
     byStudent.forEach((val, sid) => {
-      const rate = Math.round((val.present / total) * 100);
-      if (rate < 75) list.push({ key: `${course.id}-${sid}`, studentId: sid, name: val.name, idNumber: val.idNumber, courseCode: course.code, attended: val.present, total, rate });
+      const stuMode = (val.mode || '').toLowerCase();
+      let total = sessions.length;
+      if (stuMode === 'weekend' && wkdSessionIds.size > 0) {
+        total = wkdSessionIds.size;
+      } else if (stuMode === 'regular' && regSessionIds.size > 0) {
+        total = regSessionIds.size;
+      }
+
+      const rate = total > 0 ? Math.round((val.present / total) * 100) : 0;
+      if (rate < 75) {
+        list.push({
+          key: `${course.id}-${sid}`,
+          studentId: sid,
+          name: val.name,
+          idNumber: val.idNumber,
+          mode: val.mode || 'Regular',
+          courseCode: course.code,
+          attended: val.present,
+          total,
+          rate,
+        });
+      }
     });
   });
   return list.sort((a, b) => a.rate - b.rate);
@@ -520,16 +606,34 @@ const atRiskStudents = computed(() => {
 const perfectStudentCount = computed(() => {
   const s = new Set();
   myCourses.value.forEach(course => {
-    const sessions = rawSessions.value.filter(x => x.courseId === course.id);
+    const allCourseSessions = rawSessions.value.filter(x => x.courseId === course.id);
+    if (!allCourseSessions.length) return;
+
+    const sessions = selectedModeFilter.value === 'all'
+      ? allCourseSessions
+      : allCourseSessions.filter(x => (x.mode || 'Regular').toLowerCase() === selectedModeFilter.value.toLowerCase());
     if (!sessions.length) return;
-    const ids = new Set(sessions.map(x => x.id));
-    const total = sessions.length;
+
+    const regSessionIds = new Set(sessions.filter(x => (x.mode || 'Regular').toLowerCase() === 'regular').map(x => x.id));
+    const wkdSessionIds = new Set(sessions.filter(x => (x.mode || 'Regular').toLowerCase() === 'weekend').map(x => x.id));
+    const allSessionIds = new Set(sessions.map(x => x.id));
+
     const byS = new Map();
-    rawAttendances.value.filter(a => ids.has(a.sessionId)).forEach(a => {
-      if (!byS.has(a.studentId)) byS.set(a.studentId, 0);
-      if (a.status === 'present') byS.set(a.studentId, byS.get(a.studentId) + 1);
+    rawAttendances.value.filter(a => allSessionIds.has(a.sessionId)).forEach(a => {
+      if (!byS.has(a.studentId)) byS.set(a.studentId, { present: 0, mode: a.studentMode });
+      if (a.status === 'present') byS.get(a.studentId).present++;
     });
-    byS.forEach((c, sid) => { if (c === total) s.add(sid); });
+
+    byS.forEach((val, sid) => {
+      const stuMode = (val.mode || '').toLowerCase();
+      let targetCount = sessions.length;
+      if (stuMode === 'weekend' && wkdSessionIds.size > 0) {
+        targetCount = wkdSessionIds.size;
+      } else if (stuMode === 'regular' && regSessionIds.size > 0) {
+        targetCount = regSessionIds.size;
+      }
+      if (val.present === targetCount && targetCount > 0) s.add(sid);
+    });
   });
   return s.size;
 });
@@ -547,16 +651,37 @@ const kpi = computed(() => {
   };
 });
 
-const courseBreakdown = computed(() =>
-  myCourses.value.map((course) => {
-    const sessions = rawSessions.value.filter(s => s.courseId === course.id);
-    const ids = new Set(sessions.map(s => s.id));
-    const rel = rawAttendances.value.filter(a => ids.has(a.sessionId));
-    const present = rel.filter(a => a.status === 'present').length;
-    const total = rel.length;
-    return { id: course.id, code: course.code, name: course.name, sessions: sessions.length, present, total, rate: total > 0 ? Math.round((present / total) * 100) : 0 };
-  }).filter(c => c.sessions > 0).sort((a, b) => b.rate - a.rate)
-);
+const courseBreakdown = computed(() => {
+  const result = [];
+  myCourses.value.forEach((course) => {
+    const sessions = rawSessions.value.filter((s) => s.courseId === course.id);
+    if (!sessions.length) return;
+
+    const modes = [...new Set(sessions.map((s) => s.mode || 'Regular'))];
+    modes.forEach((m) => {
+      if (selectedModeFilter.value !== 'all' && m.toLowerCase() !== selectedModeFilter.value.toLowerCase()) {
+        return;
+      }
+      const modeSessions = sessions.filter((s) => (s.mode || 'Regular').toLowerCase() === m.toLowerCase());
+      const ids = new Set(modeSessions.map((s) => s.id));
+      const rel = rawAttendances.value.filter((a) => ids.has(a.sessionId));
+      const present = rel.filter((a) => a.status === 'present').length;
+      const total = rel.length;
+      result.push({
+        id: `${course.id}-${m}`,
+        courseId: course.id,
+        code: course.code,
+        name: course.name,
+        mode: m,
+        sessions: modeSessions.length,
+        present,
+        total,
+        rate: total > 0 ? Math.round((present / total) * 100) : 0,
+      });
+    });
+  });
+  return result.sort((a, b) => b.rate - a.rate);
+});
 
 // Sparkline
 const trendData = computed(() =>
@@ -622,6 +747,7 @@ async function loadAnalytics() {
   if (!lecturerId) { isLoading.value = false; return; }
   isLoading.value = true;
   selectedCourseFilter.value = 'all';
+  selectedModeFilter.value = 'all';
   rawSessions.value = [];
   rawAttendances.value = [];
   rawLecturerAttendances.value = [];
@@ -630,18 +756,18 @@ async function loadAnalytics() {
     const sessionIds = (sd ?? []).map(s => s.id);
     let ad = [];
     if (sessionIds.length) {
-      const { data } = await supabase.from('attendances').select('id,session_id,student_id,status,users(name,id_number)').in('session_id', sessionIds);
+      const { data } = await supabase.from('attendances').select('id,session_id,student_id,status,users(name,id_number,mode)').in('session_id', sessionIds);
       ad = data ?? [];
     }
     const bySession = new Map();
     ad.forEach(a => { if (!bySession.has(a.session_id)) bySession.set(a.session_id, []); bySession.get(a.session_id).push(a); });
-    rawAttendances.value = ad.map(a => ({ sessionId: a.session_id, studentId: a.student_id, status: a.status, studentName: a.users?.name || 'Unknown', idNumber: a.users?.id_number || '—' }));
+    rawAttendances.value = ad.map(a => ({ sessionId: a.session_id, studentId: a.student_id, status: a.status, studentName: a.users?.name || 'Unknown', idNumber: a.users?.id_number || '—', studentMode: a.users?.mode || null }));
     rawSessions.value = (sd ?? []).map(s => {
       const atts = bySession.get(s.id) ?? [];
       const presentCount = atts.filter(a => a.status === 'present').length;
       const absentCount = atts.filter(a => a.status === 'absent').length;
       const total = atts.length;
-      return { id: s.id, courseId: s.course_id, courseCode: s.courses?.code ?? '—', courseName: s.courses?.name ?? 'Unknown', mode: s.mode, pin: s.pin, createdAt: s.created_at, presentCount, absentCount, total, rate: total > 0 ? Math.round((presentCount / total) * 100) : 0 };
+      return { id: s.id, courseId: s.course_id, courseCode: s.courses?.code ?? '—', courseName: s.courses?.name ?? 'Unknown', mode: s.mode || 'Regular', pin: s.pin, createdAt: s.created_at, presentCount, absentCount, total, rate: total > 0 ? Math.round((presentCount / total) * 100) : 0 };
     });
     const lecturerCourseIds = [...new Set((sd ?? []).map(s => s.course_id))];
     if (lecturerCourseIds.length) {

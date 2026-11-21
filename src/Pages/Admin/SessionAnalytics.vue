@@ -44,6 +44,17 @@
             <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.code }} – {{ c.name }}</option>
           </select>
 
+          <!-- Mode select filter -->
+          <select 
+            v-model="modeFilter" 
+            id="sa-mode-filter"
+            class="bg-slate-50 dark:bg-dark-muted/70 border border-slate-200 dark:border-dark-outline rounded-xl px-3 py-1.5 text-xs font-mono text-slate-800 dark:text-white focus:outline-hidden focus:border-secondary shadow-2xs"
+          >
+            <option value="">All Modes</option>
+            <option value="Regular">Regular Mode</option>
+            <option value="Weekend">Weekend Mode</option>
+          </select>
+
           <!-- Status select filter -->
           <select 
             v-model="statusFilter" 
@@ -150,6 +161,14 @@
                 <span class="px-2 py-0.5 rounded-md bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-mono font-bold">
                   {{ s.courseCode }}
                 </span>
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-mono font-bold"
+                  :class="s.mode === 'Weekend'
+                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
+                    : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30'"
+                >
+                  {{ s.mode }} &bull; Wk {{ s.weekNumber }}
+                </span>
                 <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black uppercase tracking-wider bg-emerald-500 text-white animate-pulse">
                   LIVE
                 </span>
@@ -226,6 +245,7 @@
                 </div>
               </th>
               <th scope="col" class="px-5 py-3.5">Course</th>
+              <th scope="col" class="px-5 py-3.5">Mode / Week</th>
               <th scope="col" class="px-5 py-3.5">PIN</th>
               <th scope="col" @click="sortBy('present')" class="px-5 py-3.5 cursor-pointer select-none hover:text-slate-900 dark:hover:text-white transition-colors">
                 <div class="flex items-center gap-1.5">
@@ -251,7 +271,7 @@
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
             <tr v-if="paginatedSessions.length === 0">
-              <td colspan="8" class="px-5 py-12 text-center text-xs font-mono text-slate-400">
+              <td colspan="9" class="px-5 py-12 text-center text-xs font-mono text-slate-400">
                 No sessions match your search or filters.
               </td>
             </tr>
@@ -271,6 +291,19 @@
                   <span class="font-medium text-slate-800 dark:text-white truncate max-w-xs">
                     {{ s.courseName }}
                   </span>
+                </div>
+              </td>
+              <td class="px-5 py-4 font-mono text-xs whitespace-nowrap">
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="px-2 py-0.5 rounded text-[10px] font-mono font-bold"
+                    :class="s.mode === 'Weekend'
+                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
+                      : 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30'"
+                  >
+                    {{ s.mode }}
+                  </span>
+                  <span class="text-slate-500 dark:text-white/70 font-semibold text-[11px]">Wk {{ s.weekNumber }}</span>
                 </div>
               </td>
               <td class="px-5 py-4 font-mono font-bold text-slate-700 dark:text-white/90">
@@ -377,13 +410,14 @@ const { attendances } = storeToRefs(attStore);
 
 const courseFilter = ref('');
 const statusFilter = ref('');
+const modeFilter   = ref('');
 const searchQ      = ref('');
 const page         = ref(1);
 const pageSize     = 15;
 const sortField    = ref('date');
 const sortAsc      = ref(false);
 
-watch([courseFilter, statusFilter, searchQ], () => { page.value = 1; });
+watch([courseFilter, statusFilter, modeFilter, searchQ], () => { page.value = 1; });
 
 onMounted(async () => {
   await Promise.all([
@@ -400,20 +434,37 @@ onUnmounted(() => {
   attStore.unsubscribeFromAttendances();
 });
 
-// ── Enriched sessions ──────────────────────────────────────────────────────────
-const enriched = computed(() =>
-  sessions.value.map(s => {
+// ── Enriched sessions (weeks counted per course and mode) ──────────────────────
+const enriched = computed(() => {
+  // Sort chronologically ascending to compute week numbers per course & mode
+  const sortedRaw = [...sessions.value].sort(
+    (a, b) => new Date(a.createdAt || a.date) - new Date(b.createdAt || b.date)
+  );
+  const weekMap = new Map();
+  const counters = new Map();
+  sortedRaw.forEach((s) => {
+    const m = s.mode || 'Regular';
+    const key = `${s.courseId}::${m}`;
+    const count = (counters.get(key) || 0) + 1;
+    counters.set(key, count);
+    weekMap.set(s.id, count);
+  });
+
+  return sessions.value.map((s) => {
     const course      = courseStore.getCourseById(s.courseId);
-    const sessionAtts = attendances.value.filter(a => a.sessionId === s.id);
-    const present     = sessionAtts.filter(a => a.status === 'present').length;
-    const absent      = sessionAtts.filter(a => a.status === 'absent').length;
+    const sessionAtts = attendances.value.filter((a) => a.sessionId === s.id);
+    const present     = sessionAtts.filter((a) => a.status === 'present').length;
+    const absent      = sessionAtts.filter((a) => a.status === 'absent').length;
     const total       = sessionAtts.length;
     const rate        = total > 0 ? Math.round((present / total) * 100) : 0;
+    const mode        = s.mode || 'Regular';
     return {
       id:            s.id,
       courseId:      s.courseId,
       courseCode:    course?.code  ?? '—',
       courseName:    course?.name  ?? 'Unknown Course',
+      mode,
+      weekNumber:    weekMap.get(s.id) || 1,
       pin:           s.pin         ?? '—',
       isActive:      s.isActive,
       date:          s.date,
@@ -424,12 +475,17 @@ const enriched = computed(() =>
       total,
       rate,
     };
-  })
-);
+  });
+});
 
 // ── Active sessions (live card grid) ──────────────────────────────────────────
 const activeSessions = computed(() =>
-  enriched.value.filter(s => s.isActive)
+  enriched.value.filter((s) => {
+    if (!s.isActive) return false;
+    if (modeFilter.value && s.mode.toLowerCase() !== modeFilter.value.toLowerCase()) return false;
+    if (courseFilter.value && s.courseId !== courseFilter.value) return false;
+    return true;
+  })
 );
 
 // ── KPI: avg rate across all sessions with attendance ─────────────────────────
@@ -443,6 +499,7 @@ const avgRate = computed(() => {
 const filtered = computed(() => {
   let list = enriched.value;
   if (courseFilter.value) list = list.filter(s => s.courseId === courseFilter.value);
+  if (modeFilter.value)   list = list.filter(s => s.mode.toLowerCase() === modeFilter.value.toLowerCase());
   if (statusFilter.value === 'active') list = list.filter(s =>  s.isActive);
   if (statusFilter.value === 'closed') list = list.filter(s => !s.isActive);
   if (searchQ.value.trim()) {
@@ -450,6 +507,8 @@ const filtered = computed(() => {
     list = list.filter(s =>
       s.courseCode.toLowerCase().includes(q) ||
       s.courseName.toLowerCase().includes(q) ||
+      s.pin.toLowerCase().includes(q) ||
+      s.mode.toLowerCase().includes(q) ||
       s.dateFormatted.toLowerCase().includes(q)
     );
   }

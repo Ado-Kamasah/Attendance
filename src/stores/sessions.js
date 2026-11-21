@@ -11,7 +11,7 @@ function mapSession(row) {
     id: row.id,
     courseId: row.course_id,
     lecturerId: row.lecturer_id,
-    mode: row.mode ?? null,
+    mode: row.mode ?? 'Regular',
     date: row.date,
     pin: row.pin,
     maxStudents: row.max_students,
