@@ -21,26 +21,34 @@ function escapeXml(unsafe) {
  */
 export function buildStudentDossier(student, { enrollments = [], courses = [], sessions = [], attendances = [], programmes = [] }) {
   const studentId = student.id;
+  const idNumber = student.idNumber || student.id_number || student.studentId;
+  const altIds = new Set([studentId, idNumber].filter(Boolean));
   const studentMode = (student.mode || 'Regular').trim();
 
   // 1. Find all courses the student registered for (enrolled in)
-  const studentEnrollments = enrollments.filter(e => e.studentId === studentId);
-  const enrolledCourseIds = new Set(studentEnrollments.map(e => e.courseId));
+  // Match on either UUID or student ID number to be 100% resilient
+  const studentEnrollments = enrollments.filter(e => 
+    altIds.has(e.studentId) || altIds.has(e.student_id)
+  );
+  const enrolledCourseIds = new Set(studentEnrollments.map(e => e.courseId || e.course_id));
 
   // Build sessions map for quick lookup
   const courseSessionsMap = new Map();
   sessions.forEach(s => {
-    if (!courseSessionsMap.has(s.courseId)) {
-      courseSessionsMap.set(s.courseId, []);
+    const cId = s.courseId || s.course_id;
+    if (!courseSessionsMap.has(cId)) {
+      courseSessionsMap.set(cId, []);
     }
-    courseSessionsMap.get(s.courseId).push(s);
+    courseSessionsMap.get(cId).push(s);
   });
 
   // Build attendances map for this student: sessionId -> attendance record
   const studentAttendanceMap = new Map();
   attendances.forEach(a => {
-    if (a.studentId === studentId) {
-      studentAttendanceMap.set(a.sessionId, a);
+    const aStudentId = a.studentId || a.student_id;
+    const aSessionId = a.sessionId || a.session_id;
+    if (altIds.has(aStudentId)) {
+      studentAttendanceMap.set(aSessionId, a);
     }
   });
 

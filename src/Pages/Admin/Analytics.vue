@@ -12,19 +12,37 @@
 
       <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
-          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-mono uppercase tracking-wider mb-3">
-            <BarChart2 class="w-3.5 h-3.5" />
-            <span>ATTENDANCE INTELLIGENCE // INSTITUTIONAL AUDIT</span>
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-mono uppercase tracking-wider">
+              <BarChart2 class="w-3.5 h-3.5" />
+              <span>ATTENDANCE INTELLIGENCE // INSTITUTIONAL AUDIT</span>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-mono">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>SUPABASE DIRECT</span>
+            </div>
           </div>
+
           <h1 class="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white">
             Attendance <span class="text-secondary">Analytics</span>
           </h1>
           <p class="text-xs sm:text-sm font-mono text-slate-500 dark:text-white/75 mt-1">
-            Institutional rollcall metrics, student course performance dossiers, and batch download queue
+            Real-time Supabase rollcall data, student registered courses performance, and batch download queue
           </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
+          <!-- Live Sync Button -->
+          <button
+            @click="fetchSupabaseDataDirectly"
+            :disabled="isSyncing"
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-dark-muted border border-slate-200 dark:border-dark-outline text-slate-700 dark:text-white text-xs font-mono font-semibold hover:border-secondary transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+            title="Force immediate refresh directly from Supabase"
+          >
+            <RefreshCw class="w-3.5 h-3.5 text-secondary" :class="{ 'animate-spin': isSyncing }" />
+            <span>{{ isSyncing ? 'Syncing Supabase…' : 'Sync Supabase' }}</span>
+          </button>
+
           <select 
             v-model="selectedCourseFilter" 
             id="course-filter"
@@ -55,6 +73,12 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- Error Banner (if any) -->
+    <div v-if="syncError" class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-mono text-xs flex items-center justify-between">
+      <span>{{ syncError }}</span>
+      <button @click="fetchSupabaseDataDirectly" class="underline hover:no-underline font-bold ml-3 cursor-pointer">Retry</button>
     </div>
 
     <!-- KPI Grid -->
@@ -135,7 +159,7 @@
             </h2>
           </div>
           <p class="text-xs font-mono text-slate-500 dark:text-white/75 mt-0.5">
-            Full enrollment records for each student, course attendance performance, and verifiable class session logs
+            Direct Supabase records for each student, registered courses, attendance rates, and verifiable rollcall sessions
           </p>
         </div>
 
@@ -756,12 +780,6 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useAttendancesStore } from '@/stores/attendances';
-import { useSessionsStore } from '@/stores/sessions';
-import { useCoursesStore } from '@/stores/courses';
-import { useEnrollmentsStore } from '@/stores/enrollments';
-import { useProgrammesStore } from '@/stores/programmes';
 import { supabase } from '@/stores/supabase';
 import AttendanceExportModal from '@/components/AttendanceExportModal.vue';
 import StudentAttendanceDossierModal from '@/components/StudentAttendanceDossierModal.vue';
@@ -789,55 +807,24 @@ import {
   Layers,
   CheckSquare,
   Square,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-vue-next';
+
+// ─── Direct Supabase Reactive State ──────────────────────────────────────────
+const courses = ref([]);
+const sessions = ref([]);
+const attendances = ref([]);
+const enrollments = ref([]);
+const programmes = ref([]);
+const userMap = ref({});
+
+const isSyncing = ref(false);
+const syncError = ref('');
 
 const isExportModalOpen = ref(false);
 const isDossierModalOpen = ref(false);
 const activeDossier = ref(null);
-
-const attendancesStore = useAttendancesStore();
-const sessionsStore = useSessionsStore();
-const coursesStore = useCoursesStore();
-const enrollmentsStore = useEnrollmentsStore();
-const programmesStore = useProgrammesStore();
-
-// Map: users.id → full user object
-const userMap = ref({});
-
-async function loadUsers(ids) {
-  const uniqueIds = [...new Set(ids.filter(Boolean))];
-  if (uniqueIds.length === 0) return;
-  const missing = uniqueIds.filter(id => !userMap.value[id]);
-  if (missing.length === 0) return;
-  const { data } = await supabase
-    .from('users')
-    .select('id, name, id_number, email, program_id, faculty, level, mode, role')
-    .in('id', missing);
-  if (data) {
-    const updated = { ...userMap.value };
-    data.forEach(u => {
-      updated[u.id] = {
-        id: u.id,
-        idNumber: u.id_number || '—',
-        name: u.name || '—',
-        email: u.email || '—',
-        programId: u.program_id ?? null,
-        faculty: u.faculty || '—',
-        level: u.level || '100',
-        mode: u.mode || 'Regular',
-        role: u.role || 'Student',
-      };
-    });
-    userMap.value = updated;
-  }
-}
-
-const { attendances } = storeToRefs(attendancesStore);
-const { sessions } = storeToRefs(sessionsStore);
-const { courses } = storeToRefs(coursesStore);
-const { enrollments } = storeToRefs(enrollmentsStore);
-const { programmes } = storeToRefs(programmesStore);
 
 // View switch: 'dossiers' | 'matrix'
 const studentViewMode = ref('dossiers');
@@ -863,60 +850,231 @@ const studentDossierPageSize = ref(12);
 // Queued student IDs
 const queuedStudentIds = ref(new Set());
 
-onMounted(async () => {
-  await Promise.all([
-    attendancesStore.fetchAttendances(),
-    sessionsStore.fetchSessions(),
-    coursesStore.fetchCourses(),
-    enrollmentsStore.fetchEnrollments(),
-    programmesStore.fetchProgrammes(),
-  ]);
+// ─── Fetch All Data Directly From Supabase ───────────────────────────────────
+async function fetchSupabaseDataDirectly() {
+  isSyncing.value = true;
+  syncError.value = '';
 
-  // Load all students directly to ensure every registered student is present
   try {
-    const { data: allStudents } = await supabase
-      .from('users')
-      .select('id, name, id_number, email, program_id, faculty, level, mode, role')
-      .eq('role', 'Student');
-    
-    if (allStudents) {
-      const updated = { ...userMap.value };
-      allStudents.forEach(u => {
-        updated[u.id] = {
-          id: u.id,
-          idNumber: u.id_number || '—',
-          name: u.name || '—',
-          email: u.email || '—',
-          programId: u.program_id ?? null,
-          faculty: u.faculty || '—',
-          level: u.level || '100',
-          mode: u.mode || 'Regular',
-          role: u.role || 'Student',
-        };
-      });
-      userMap.value = updated;
-    }
+    const [
+      { data: rawUsers, error: uErr },
+      { data: rawCourses, error: cErr },
+      { data: rawEnrollments, error: eErr },
+      { data: rawSessions, error: sErr },
+      { data: rawAttendances, error: aErr },
+      { data: rawProgrammes, error: pErr },
+    ] = await Promise.all([
+      supabase
+        .from('users')
+        .select('id, name, email, role, faculty, program_id, level, mode, id_number')
+        .order('name'),
+      supabase
+        .from('courses')
+        .select('id, code, name, credits, semester, level, program_id, status')
+        .order('code'),
+      supabase
+        .from('enrollments')
+        .select('id, student_id, course_id, created_at'),
+      supabase
+        .from('sessions')
+        .select('id, course_id, lecturer_id, mode, date, pin, is_active, created_at')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('attendances')
+        .select('id, session_id, student_id, status, timestamp')
+        .order('timestamp', { ascending: false }),
+      supabase
+        .from('programmes')
+        .select('id, name, slug, level, degree_abbreviation')
+        .order('name'),
+    ]);
+
+    if (uErr) console.warn('Supabase users warning:', uErr.message);
+    if (cErr) console.warn('Supabase courses warning:', cErr.message);
+    if (eErr) console.warn('Supabase enrollments warning:', eErr.message);
+    if (sErr) console.warn('Supabase sessions warning:', sErr.message);
+    if (aErr) console.warn('Supabase attendances warning:', aErr.message);
+    if (pErr) console.warn('Supabase programmes warning:', pErr.message);
+
+    // Map courses directly
+    courses.value = (rawCourses || []).map(c => ({
+      id: c.id,
+      code: c.code || '—',
+      name: c.name || '—',
+      credits: c.credits ?? 3,
+      semester: c.semester || 'Semester 1',
+      level: c.level || '100',
+      programId: c.program_id,
+      status: c.status || 'active',
+    }));
+
+    // Map enrollments directly
+    enrollments.value = (rawEnrollments || []).map(e => ({
+      id: e.id,
+      studentId: e.student_id,
+      courseId: e.course_id,
+      createdAt: e.created_at,
+    }));
+
+    // Map sessions directly
+    sessions.value = (rawSessions || []).map(s => ({
+      id: s.id,
+      courseId: s.course_id,
+      lecturerId: s.lecturer_id,
+      mode: (s.mode || 'Regular').trim(),
+      date: s.date,
+      pin: s.pin || '—',
+      isActive: s.is_active ?? true,
+      createdAt: s.created_at,
+    }));
+
+    // Map attendances directly
+    attendances.value = (rawAttendances || []).map(a => ({
+      id: a.id,
+      sessionId: a.session_id,
+      studentId: a.student_id,
+      status: a.status ?? 'present',
+      timestamp: a.timestamp,
+    }));
+
+    // Map programmes directly
+    programmes.value = (rawProgrammes || []).map(p => ({
+      id: p.id,
+      name: p.name || '—',
+      slug: p.slug,
+      level: p.level,
+      degreeAbbreviation: p.degree_abbreviation,
+    }));
+
+    // Map users directly
+    const nextUserMap = {};
+    (rawUsers || []).forEach(u => {
+      nextUserMap[u.id] = {
+        id: u.id,
+        idNumber: u.id_number || '—',
+        name: u.name || '—',
+        email: u.email || '—',
+        programId: u.program_id ?? null,
+        faculty: u.faculty || '—',
+        level: u.level || '100',
+        mode: (u.mode || 'Regular').trim(),
+        role: u.role || 'Student',
+      };
+    });
+    userMap.value = nextUserMap;
   } catch (err) {
-    console.warn('Could not fetch all students:', err);
+    console.error('Failed to fetch from Supabase:', err);
+    syncError.value = err.message || 'Failed to connect to Supabase';
+  } finally {
+    isSyncing.value = false;
   }
+}
 
-  // Load all enrolled student profiles
-  const enrolledIds = enrollments.value.map(e => e.studentId);
-  const attendanceIds = attendances.value.map(a => a.studentId);
-  await loadUsers([...enrolledIds, ...attendanceIds]);
+// ─── Realtime Subscriptions Directly From Supabase ───────────────────────────
+let realtimeChannels = [];
 
-  attendancesStore.subscribeToAttendances();
-  sessionsStore.subscribeToSessions();
+function setupRealtimeSubscriptions() {
+  realtimeChannels.forEach(ch => supabase.removeChannel(ch));
+  realtimeChannels = [];
+
+  const attChannel = supabase
+    .channel('analytics-direct-attendances')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'attendances' }, (payload) => {
+      if (payload.eventType === 'INSERT') {
+        const item = {
+          id: payload.new.id,
+          sessionId: payload.new.session_id,
+          studentId: payload.new.student_id,
+          status: payload.new.status ?? 'present',
+          timestamp: payload.new.timestamp,
+        };
+        if (!attendances.value.some(a => a.id === item.id)) {
+          attendances.value.unshift(item);
+        }
+      } else if (payload.eventType === 'UPDATE') {
+        const idx = attendances.value.findIndex(a => a.id === payload.new.id);
+        if (idx !== -1) {
+          attendances.value[idx] = {
+            id: payload.new.id,
+            sessionId: payload.new.session_id,
+            studentId: payload.new.student_id,
+            status: payload.new.status ?? 'present',
+            timestamp: payload.new.timestamp,
+          };
+        }
+      } else if (payload.eventType === 'DELETE') {
+        attendances.value = attendances.value.filter(a => a.id !== payload.old.id);
+      }
+    })
+    .subscribe();
+
+  const sessChannel = supabase
+    .channel('analytics-direct-sessions')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, (payload) => {
+      if (payload.eventType === 'INSERT') {
+        const item = {
+          id: payload.new.id,
+          courseId: payload.new.course_id,
+          lecturerId: payload.new.lecturer_id,
+          mode: (payload.new.mode || 'Regular').trim(),
+          date: payload.new.date,
+          pin: payload.new.pin || '—',
+          isActive: payload.new.is_active ?? true,
+          createdAt: payload.new.created_at,
+        };
+        if (!sessions.value.some(s => s.id === item.id)) {
+          sessions.value.unshift(item);
+        }
+      } else if (payload.eventType === 'UPDATE') {
+        const idx = sessions.value.findIndex(s => s.id === payload.new.id);
+        if (idx !== -1) {
+          sessions.value[idx] = {
+            id: payload.new.id,
+            courseId: payload.new.course_id,
+            lecturerId: payload.new.lecturer_id,
+            mode: (payload.new.mode || 'Regular').trim(),
+            date: payload.new.date,
+            pin: payload.new.pin || '—',
+            isActive: payload.new.is_active ?? true,
+            createdAt: payload.new.created_at,
+          };
+        }
+      } else if (payload.eventType === 'DELETE') {
+        sessions.value = sessions.value.filter(s => s.id !== payload.old.id);
+      }
+    })
+    .subscribe();
+
+  const enrChannel = supabase
+    .channel('analytics-direct-enrollments')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollments' }, (payload) => {
+      if (payload.eventType === 'INSERT') {
+        const item = {
+          id: payload.new.id,
+          studentId: payload.new.student_id,
+          courseId: payload.new.course_id,
+          createdAt: payload.new.created_at,
+        };
+        if (!enrollments.value.some(e => e.id === item.id)) {
+          enrollments.value.unshift(item);
+        }
+      } else if (payload.eventType === 'DELETE') {
+        enrollments.value = enrollments.value.filter(e => e.id !== payload.old.id);
+      }
+    })
+    .subscribe();
+
+  realtimeChannels = [attChannel, sessChannel, enrChannel];
+}
+
+onMounted(async () => {
+  await fetchSupabaseDataDirectly();
+  setupRealtimeSubscriptions();
 });
 
-// When new attendance records arrive (realtime), load any new student ids
-watch(attendances, async (records) => {
-  await loadUsers(records.map(a => a.studentId));
-}, { deep: false });
-
 onUnmounted(() => {
-  attendancesStore.unsubscribeFromAttendances();
-  sessionsStore.unsubscribeFromSessions();
+  realtimeChannels.forEach(ch => supabase.removeChannel(ch));
+  realtimeChannels = [];
 });
 
 // Reset pages when filters change
@@ -1106,8 +1264,8 @@ const studentCourseBreakdown = computed(() => {
     const rate    = total > 0 ? Math.round((present / total) * 100) : 0;
 
     const user = userMap.value[enr.studentId];
-    const course = coursesStore.getCourseById(enr.courseId);
-    const programme = user?.programId ? programmesStore.getProgrammeById(user.programId) : null;
+    const course = courses.value.find(c => c.id === enr.courseId || c.code === enr.courseId);
+    const programme = user?.programId ? programmes.value.find(p => p.id === user.programId) : null;
 
     return {
       key: `${enr.studentId}::${enr.courseId}`,
@@ -1153,8 +1311,8 @@ const paginatedStudentBreakdown = computed(() => {
 
 const enrichedAttendances = computed(() => {
   return attendances.value.map(a => {
-    const session = sessionsStore.getSessionById(a.sessionId);
-    const course = session ? coursesStore.getCourseById(session.courseId) : null;
+    const session = sessions.value.find(s => s.id === a.sessionId);
+    const course = session ? courses.value.find(c => c.id === session.courseId || c.code === session.courseId) : null;
     const user = userMap.value[a.studentId];
     return {
       id: a.id,
